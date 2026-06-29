@@ -1,0 +1,140 @@
+{
+  "name": "ClientPayment",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Associated client ID"
+    },
+    "proposal_id": {
+      "type": "string",
+      "description": "Associated proposal ID if applicable"
+    },
+    "trip_id": {
+      "type": "string",
+      "description": "Associated trip ID if applicable"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Associated invoice ID for payment reconciliation"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Payment amount"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "credit_card",
+        "bank_transfer",
+        "paypal",
+        "check",
+        "cash",
+        "other"
+      ],
+      "default": "credit_card"
+    },
+    "transaction_id": {
+      "type": "string",
+      "description": "Payment transaction reference"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "refunded"
+      ],
+      "default": "pending"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "URL to receipt PDF"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "client_id",
+    "amount",
+    "payment_date"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.client_id": "{{user.client_id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "accounting"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

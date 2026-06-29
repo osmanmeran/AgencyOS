@@ -1,0 +1,69 @@
+{
+  "name": "BookingTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Email subject template"
+    },
+    "html_content": {
+      "type": "string",
+      "description": "HTML email body template with placeholders"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name",
+    "html_content"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    },
+    "read": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "update": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    }
+  }
+}

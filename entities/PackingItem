@@ -1,0 +1,124 @@
+{
+  "name": "PackingItem",
+  "type": "object",
+  "properties": {
+    "trip_id": {
+      "type": "string",
+      "description": "Associated trip ID"
+    },
+    "item_name": {
+      "type": "string",
+      "description": "Item to pack"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Clothing",
+        "Toiletries",
+        "Electronics",
+        "Documents",
+        "Medication",
+        "Activities",
+        "Other"
+      ],
+      "description": "Item category"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "packed": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "trip_id",
+    "item_name",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.trip_id": {
+            "_filter_from": "Trip",
+            "_query": {
+              "data.client_id": "{{user.client_id}}"
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        },
+        {
+          "data.trip_id": {
+            "_filter_from": "Trip",
+            "_query": {
+              "data.client_id": "{{user.client_id}}"
+            }
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}

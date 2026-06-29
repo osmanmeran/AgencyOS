@@ -1,0 +1,164 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "invoice_number": {
+      "type": "string",
+      "description": "Unique invoice number"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Linked client ID"
+    },
+    "proposal_id": {
+      "type": "string",
+      "description": "Linked proposal if applicable"
+    },
+    "trip_id": {
+      "type": "string",
+      "description": "Linked reservation (required, must be approved)"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "line_items": {
+      "type": "array",
+      "description": "Invoice line items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "tax_rate": {
+      "type": "number",
+      "default": 0
+    },
+    "tax_amount": {
+      "type": "number"
+    },
+    "total_amount": {
+      "type": "number"
+    },
+    "amount_paid": {
+      "type": "number",
+      "default": 0
+    },
+    "amount_due": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "cancelled_by": {
+      "type": "string",
+      "description": "Email of admin who cancelled the invoice"
+    },
+    "cancelled_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cancellation_reason": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "payment_terms": {
+      "type": "string",
+      "default": "Due within 30 days"
+    }
+  },
+  "required": [
+    "invoice_number",
+    "client_id",
+    "trip_id",
+    "issue_date",
+    "due_date",
+    "total_amount"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.client_id": "{{user.client_id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "accounting"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    }
+  }
+}

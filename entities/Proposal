@@ -1,0 +1,191 @@
+{
+  "name": "Proposal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Proposal title"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Linked client ID"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "client_email": {
+      "type": "string"
+    },
+    "trip_id": {
+      "type": "string",
+      "description": "Linked reservation if applicable"
+    },
+    "destination": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "num_travelers": {
+      "type": "number",
+      "default": 1
+    },
+    "services": {
+      "type": "array",
+      "description": "List of services included",
+      "items": {
+        "type": "object",
+        "properties": {
+          "service_id": {
+            "type": "string"
+          },
+          "supplier_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_cost": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "delivered",
+        "changed",
+        "rejected",
+        "approved"
+      ],
+      "default": "delivered"
+    },
+    "change_history": {
+      "type": "array",
+      "description": "History of changes made to the proposal",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changed_by": {
+            "type": "string"
+          },
+          "previous_status": {
+            "type": "string"
+          },
+          "new_status": {
+            "type": "string"
+          },
+          "changes_description": {
+            "type": "string"
+          },
+          "previous_services": {
+            "type": "array"
+          },
+          "previous_total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "terms_and_conditions": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "client_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.client_id": "{{user.client_id}}"
+        },
+        {
+          "data.client_email": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.client_id": "{{user.client_id}}"
+        },
+        {
+          "data.client_email": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    }
+  }
+}

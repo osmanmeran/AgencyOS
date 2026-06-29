@@ -1,0 +1,135 @@
+{
+  "name": "SupplierService",
+  "type": "object",
+  "properties": {
+    "supplier_id": {
+      "type": "string",
+      "description": "Associated supplier ID"
+    },
+    "subcategory_id": {
+      "type": "string",
+      "description": "Linked SupplierSubcategory ID"
+    },
+    "service_name": {
+      "type": "string",
+      "description": "Name of the service"
+    },
+    "description": {
+      "type": "string"
+    },
+    "budgeted_cost": {
+      "type": "number",
+      "description": "Expected/quoted cost"
+    },
+    "actual_cost": {
+      "type": "number",
+      "description": "Actual paid cost"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "per_person",
+        "per_group",
+        "per_night",
+        "per_trip",
+        "per_hour",
+        "per_day",
+        "flat_rate"
+      ],
+      "default": "per_person",
+      "description": "Per person, per night, per trip, etc."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "quoted",
+        "booked",
+        "paid",
+        "cancelled"
+      ],
+      "default": "quoted"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Admin approval status for supplier-created services"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "supplier_id",
+    "service_name"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    }
+  }
+}

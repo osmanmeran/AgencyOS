@@ -1,0 +1,180 @@
+{
+  "name": "SupplierPricing",
+  "type": "object",
+  "properties": {
+    "supplier_id": {
+      "type": "string",
+      "description": "Parent supplier ID"
+    },
+    "service_id": {
+      "type": "string",
+      "description": "Linked SupplierService ID"
+    },
+    "subcategory_id": {
+      "type": "string",
+      "description": "Linked SupplierSubcategory ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "Price tier name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "base_price": {
+      "type": "number",
+      "description": "Supplier cost / base price"
+    },
+    "client_price": {
+      "type": "number",
+      "description": "Manual client sell price (overrides markup calculation)"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "per_person",
+        "per_group",
+        "per_night",
+        "per_trip",
+        "per_hour",
+        "per_day",
+        "flat_rate"
+      ],
+      "default": "per_person"
+    },
+    "season_type": {
+      "type": "string",
+      "enum": [
+        "all_year",
+        "high_season",
+        "low_season",
+        "peak",
+        "custom"
+      ],
+      "default": "all_year"
+    },
+    "season_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "season_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "min_quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "max_quantity": {
+      "type": "number"
+    },
+    "occupancy": {
+      "type": "string",
+      "enum": ["single", "double", "twin", "triple", "quad", "family", "extra_bed"],
+      "description": "Hotel occupancy type (auto-sets min/max pax)"
+    },
+    "markup_percentage": {
+      "type": "number",
+      "default": 0,
+      "description": "Auto-calculated from base/client price"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "supplier_id",
+    "name",
+    "base_price"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        },
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        }
+      ]
+    }
+  }
+}

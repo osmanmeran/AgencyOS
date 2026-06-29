@@ -1,0 +1,192 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Client full name"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "client",
+        "supplier",
+        "representative"
+      ],
+      "default": "client",
+      "description": "Contact type"
+    },
+    "email": {
+      "type": "string",
+      "description": "Client email address"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company name if applicable"
+    },
+    "website": {
+      "type": "string",
+      "description": "Business website URL"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "Client/company logo URL"
+    },
+    "instagram": {
+      "type": "string",
+      "description": "Instagram handle or URL"
+    },
+    "linkedin": {
+      "type": "string",
+      "description": "LinkedIn profile URL"
+    },
+    "facebook": {
+      "type": "string",
+      "description": "Facebook page URL"
+    },
+    "twitter": {
+      "type": "string",
+      "description": "Twitter/X handle or URL"
+    },
+    "business_description": {
+      "type": "string",
+      "description": "Description of the client's business"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string",
+      "description": "Region or state"
+    },
+    "country": {
+      "type": "string"
+    },
+    "passport_number": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "invoice_address": {
+      "type": "string",
+      "description": "Billing address if different"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Tax ID or VAT number"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "credit_card",
+        "bank_transfer",
+        "paypal",
+        "check",
+        "cash",
+        "other"
+      ],
+      "default": "credit_card"
+    },
+    "total_paid": {
+      "type": "number",
+      "default": 0
+    },
+    "total_owed": {
+      "type": "number",
+      "default": 0
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes about client"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "vip",
+        "cancelled"
+      ],
+      "default": "active"
+    },
+    "portal_access": {
+      "type": "boolean",
+      "default": false
+    },
+    "potential_deal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mark as a potential deal"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.email": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.email": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    }
+  }
+}

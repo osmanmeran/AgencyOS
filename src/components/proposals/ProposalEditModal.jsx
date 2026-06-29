@@ -1,0 +1,600 @@
+const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import LocationSearch from '@/components/services/LocationSearch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Plus, Trash2, DollarSign, TrendingUp, Building2,
+  RefreshCw, ArrowRightLeft, Users, X, Save
+} from 'lucide-react';
+
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
+
+const emptyService = (supCur = 'USD', cliCur = 'USD') => ({
+  _key: `svc-${Date.now()}-${Math.random()}`,
+  supplier_id: '',
+  name: '',
+  description: '',
+  location: '',
+  acquiring_price: '',
+  selling_price: '',
+  quantity: 1,
+  pricing_id: '',
+  pax_tiers: [],
+  supplier_currency: supCur,
+  client_currency: cliCur,
+});
+
+export default function ProposalEditModal({ proposal, open, onClose }) {
+  const queryClient = useQueryClient();
+
+  const [formData, setFormData] = useState({
+    title: '',
+    client_id: '',
+    client_name: '',
+    client_email: '',
+    destination: '',
+    start_date: '',
+    end_date: '',
+    num_travelers: 1,
+    notes: '',
+    terms_and_conditions: '',
+  });
+
+  const [services, setServices] = useState([emptyService()]);
+  const [markupPct, setMarkupPct] = useState(0);
+  const [acquiringCurrency, setAcquiringCurrency] = useState('USD');
+  const [sellingCurrency, setSellingCurrency] = useState('USD');
+  const [exchangeRate, setExchangeRate] = useState(1);
+  const [loadingRate, setLoadingRate] = useState(false);
+
+  const [addProviderOpen, setAddProviderOpen] = useState(false);
+  const [addProviderForIndex, setAddProviderForIndex] = useState(null);
+  const [newProvider, setNewProvider] = useState({ name: '', email: '', phone: '', city: '' });
+
+  const { data: suppliers = [], refetch: refetchSuppliers } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: () => db.entities.Supplier.list(),
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['supplierCategories'],
+    queryFn: () => db.entities.SupplierCategory.list(),
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => db.entities.Client.list(),
+  });
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => db.auth.me(),
+  });
+
+  useEffect(() => {
+    if (proposal && open) {
+      setFormData({
+        title: proposal.title || '',
+        client_id: proposal.client_id || '',
+        client_name: proposal.client_name || '',
+        client_email: proposal.client_email || '',
+        destination: proposal.destination || '',
+        start_date: proposal.start_date || '',
+        end_date: proposal.end_date || '',
+        num_travelers: proposal.num_travelers || 1,
+        notes: proposal.notes || '',
+        terms_and_conditions: proposal.terms_and_conditions || '',
+      });
+
+      if (proposal.services?.length) {
+        setServices(proposal.services.map(s => ({
+          _key: `svc-${Date.now()}-${Math.random()}`,
+          supplier_id: s.supplier_id || '',
+          name: s.name || '',
+          description: s.description || '',
+          location: s.location || '',
+          acquiring_price: s.acquiring_price ?? '',
+          selling_price: s.cost ?? '',
+          quantity: s.quantity || 1,
+          pricing_id: s.pricing_id || '',
+          pax_tiers: s.pax_tiers || [],
+          supplier_currency: s.supplier_currency || acquiringCurrency,
+          client_currency: s.client_currency || sellingCurrency,
+        })));
+      } else {
+        setServices([emptyService()]);
+      }
+
+      setMarkupPct(proposal.markup_percentage || 0);
+      if (proposal.acquiring_currency) setAcquiringCurrency(proposal.acquiring_currency);
+      if (proposal.selling_currency) setSellingCurrency(proposal.selling_currency);
+      if (proposal.exchange_rate) setExchangeRate(proposal.exchange_rate);
+    }
+  }, [proposal, open]);
+
+  const updateProposalMutation = useMutation({
+    mutationFn: (data) => db.entities.Proposal.update(proposal.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proposal', proposal.id] });
+      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      onClose();
+    },
+  });
+
+  const createSupplierMutation = useMutation({
+    mutationFn: (data) => db.entities.Supplier.create(data),
+    onSuccess: async (created) => {
+      await refetchSuppliers();
+      if (addProviderForIndex !== null) updateService(addProviderForIndex, 'supplier_id', created.id);
+      setAddProviderOpen(false);
+      setNewProvider({ name: '', email: '', phone: '', city: '' });
+      setAddProviderForIndex(null);
+    },
+  });
+
+  const fetchExchangeRate = async () => {
+    if (acquiringCurrency === sellingCurrency) { setExchangeRate(1); return; }
+    setLoadingRate(true);
+    try {
+      const res = await db.integrations.Core.GetExchangeRate(acquiringCurrency, sellingCurrency);
+      setExchangeRate(res.rate || 1);
+    } catch {
+      setExchangeRate(1);
+    }
+    setLoadingRate(false);
+  };
+
+  const addService = () => setServices(prev => [...prev, emptyService(acquiringCurrency, sellingCurrency)]);
+
+  const updateService = (index, field, value) => {
+    setServices(prev => prev.map((s, i) => {
+      if (i !== index) return s;
+      const updated = { ...s, [field]: value };
+      if (field === 'quantity' && s.pax_tiers?.length) {
+        const pax = parseInt(value) || 1;
+        const best = s.pax_tiers.find(t => pax >= t.min && pax <= (t.max || 99999))
+          || s.pax_tiers[s.pax_tiers.length - 1];
+        if (best) updated.acquiring_price = best.base_price;
+      }
+      return updated;
+    }));
+  };
+
+  const removeService = (index) => setServices(prev => prev.filter((_, i) => i !== index));
+
+  const withMarkup = (price) => Math.ceil(((parseFloat(price) || 0) * (1 + markupPct / 100)) * 10) / 10;
+
+  const acquiringByCurrency = services.reduce((acc, s) => {
+    const cur = s.supplier_currency || acquiringCurrency;
+    acc[cur] = (acc[cur] || 0) + (parseFloat(s.acquiring_price) || 0) * (parseInt(s.quantity) || 1);
+    return acc;
+  }, {});
+  const sellingByCurrency = services.reduce((acc, s) => {
+    const cur = s.client_currency || 'USD';
+    const basePrice = parseFloat(s.base_selling_price ?? s.selling_price) || 0;
+    acc[cur] = (acc[cur] || 0) + withMarkup(basePrice) * (parseInt(s.quantity) || 1);
+    return acc;
+  }, {});
+  const totalSellingAll = Object.values(sellingByCurrency).reduce((s, v) => s + v, 0);
+  const totalAcquiringAll = Object.values(acquiringByCurrency).reduce((s, v) => s + v, 0);
+  const finalTotal = totalSellingAll;
+  const currenciesMixed = Object.keys(sellingByCurrency).length > 1 || Object.keys(acquiringByCurrency).length > 1;
+  const margin = !currenciesMixed && totalSellingAll > 0
+    ? ((totalSellingAll - totalAcquiringAll) / totalSellingAll) * 100
+    : 0;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const proposalServices = services.map(s => ({
+      supplier_id: s.supplier_id,
+      name: s.name,
+      description: s.description,
+      location: s.location || '',
+      base_selling_price: parseFloat(s.base_selling_price ?? s.selling_price) || 0,
+      cost: withMarkup(parseFloat(s.base_selling_price ?? s.selling_price) || 0),
+      quantity: parseInt(s.quantity) || 1,
+      acquiring_price: s.acquiring_price ? parseFloat(s.acquiring_price) : 0,
+      pricing_id: s.pricing_id || null,
+      pax_tiers: s.pax_tiers?.length ? s.pax_tiers : null,
+      supplier_currency: s.supplier_currency || acquiringCurrency,
+      client_currency: s.client_currency || sellingCurrency,
+    }));
+
+    const changeEntry = {
+      date: new Date().toISOString(),
+      changed_by: user?.email || 'Unknown',
+      changes_description: 'Proposal edited via edit modal',
+    };
+
+    updateProposalMutation.mutate({
+      ...formData,
+      services: proposalServices,
+      total_cost: finalTotal,
+      markup_percentage: markupPct,
+      change_history: [...(proposal.change_history || []), changeEntry],
+    });
+  };
+
+  const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || cur);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="text-2xl font-bold text-slate-900">Edit Proposal</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="px-6 pb-6 max-h-[calc(90vh-80px)]">
+          <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+            {/* Client Info */}
+            <Card className="p-6 bg-white shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Client Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Proposal Title *</Label>
+                  <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Summer Vacation Package" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Select Client (Optional)</Label>
+                  <Select value={formData.client_id} onValueChange={v => {
+                    const c = clients.find(x => x.id === v);
+                    if (c) setFormData({ ...formData, client_id: v, client_name: c.name, client_email: c.email });
+                    else setFormData({ ...formData, client_id: '' });
+                  }}>
+                    <SelectTrigger><SelectValue placeholder="Choose from database" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>None (Manual Entry)</SelectItem>
+                      {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name} – {c.email}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Client Name *</Label>
+                  <Input value={formData.client_name} onChange={e => setFormData({ ...formData, client_name: e.target.value })} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Client Email</Label>
+                  <Input type="email" value={formData.client_email} onChange={e => setFormData({ ...formData, client_email: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Number of Travelers</Label>
+                  <Input type="number" min="1" value={formData.num_travelers} onChange={e => setFormData({ ...formData, num_travelers: parseInt(e.target.value) || 1 })} />
+                </div>
+              </div>
+            </Card>
+
+            {/* Trip Details */}
+            <Card className="p-6 bg-white shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Trip Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Destination</Label>
+                  <Input value={formData.destination} onChange={e => setFormData({ ...formData, destination: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input type="date" value={formData.start_date} onChange={e => setFormData({ ...formData, start_date: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input type="date" value={formData.end_date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} />
+                </div>
+              </div>
+            </Card>
+
+            {/* Currency Settings */}
+            <Card className="p-5 bg-white shadow-sm border-l-4 border-blue-500">
+              <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <ArrowRightLeft className="w-4 h-4 text-blue-600" />
+                Currency Settings
+              </h2>
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="space-y-2">
+                  <Label>Acquiring Currency <span className="text-red-500 text-xs">(what you pay)</span></Label>
+                  <Select value={acquiringCurrency} onValueChange={v => { setAcquiringCurrency(v); setExchangeRate(1); }}>
+                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center pb-1 text-slate-400"><ArrowRightLeft className="w-5 h-5" /></div>
+                <div className="space-y-2">
+                  <Label>Selling Currency <span className="text-green-600 text-xs">(what client pays)</span></Label>
+                  <Select value={sellingCurrency} onValueChange={v => { setSellingCurrency(v); setExchangeRate(1); }}>
+                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                {acquiringCurrency !== sellingCurrency && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Exchange Rate <span className="text-xs text-slate-400">(1 {acquiringCurrency} = ? {sellingCurrency})</span></Label>
+                      <Input type="number" step="0.0001" min="0.0001" value={exchangeRate} onChange={e => setExchangeRate(parseFloat(e.target.value) || 1)} className="w-36" />
+                    </div>
+                    <Button type="button" variant="outline" onClick={fetchExchangeRate} disabled={loadingRate} className="gap-2 mb-0.5">
+                      <RefreshCw className={`w-4 h-4 ${loadingRate ? 'animate-spin' : ''}`} />
+                      {loadingRate ? 'Fetching...' : 'Get Live Rate'}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </Card>
+
+            {/* Services */}
+            <Card className="p-6 bg-white shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Services & Pricing</h2>
+                  <p className="text-sm text-slate-500 mt-0.5">
+                    Per-service currencies — select supplier and client currency for each line
+                  </p>
+                </div>
+                <Button type="button" onClick={addService} variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />Add Service
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 px-1">
+                <div className="col-span-3">Provider</div>
+                <div className="col-span-2">Service</div>
+                <div className="col-span-1 text-center">Pax</div>
+                <div className="col-span-3 text-right">Acq. / pax</div>
+                <div className="col-span-3 text-right">Sell / pax</div>
+              </div>
+              <Separator className="mb-4" />
+
+              <div className="space-y-4">
+                {services.map((service, index) => {
+                  const pax = parseInt(service.quantity) || 1;
+                  const sCur = service.supplier_currency || acquiringCurrency;
+                  const cCur = service.client_currency || sellingCurrency;
+                  const acqUnit = parseFloat(service.acquiring_price) || 0;
+                  const sellUnit = parseFloat(service.selling_price) || 0;
+                  const effectiveSellUnit = withMarkup(sellUnit);
+                  const lineAcquiring = acqUnit * pax;
+                  const lineSelling = effectiveSellUnit * pax;
+                  const sameCurrency = sCur === cCur;
+                  const lineMargin = sameCurrency && lineSelling > 0
+                    ? ((lineSelling - lineAcquiring) / lineSelling) * 100
+                    : null;
+                  const activeTier = service.pax_tiers?.find(t => pax >= t.min && pax <= (t.max || 99999));
+
+                  return (
+                    <div key={service._key} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                      <div className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-3">
+                          <div className="flex items-center gap-1">
+                            <Select value={service.supplier_id} onValueChange={v => updateService(index, 'supplier_id', v)}>
+                              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Provider" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={null}>— None —</SelectItem>
+                                {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-blue-600 hover:bg-blue-50"
+                              onClick={() => { setAddProviderForIndex(index); setAddProviderOpen(true); }}>
+                              <Building2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="col-span-2">
+                          <Input value={service.name} onChange={e => updateService(index, 'name', e.target.value)} placeholder="Service name" className="h-9 text-sm" />
+                        </div>
+                        <div className="col-span-1">
+                          <Input type="number" min="1" value={service.quantity} onChange={e => updateService(index, 'quantity', parseInt(e.target.value) || 1)} className="h-9 text-sm text-center" />
+                        </div>
+                        <div className="col-span-3">
+                          <div className="flex gap-1 items-end">
+                            <Select value={sCur} onValueChange={v => updateService(index, 'supplier_currency', v)}>
+                              <SelectTrigger className="h-9 w-20 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <div className="relative flex-1">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-red-400 text-xs font-bold">{currSymbol(sCur)}</span>
+                              <Input type="number" step="0.01" min="0" value={service.acquiring_price} onChange={e => updateService(index, 'acquiring_price', e.target.value)}
+                                className="h-9 text-sm text-right pl-6 bg-red-50 border-red-200" placeholder="0.00" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="col-span-3">
+                          <div className="flex gap-1 items-end">
+                            <Select value={cCur} onValueChange={v => updateService(index, 'client_currency', v)}>
+                              <SelectTrigger className="h-9 w-20 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <div className="relative flex-1">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-green-600 text-xs font-bold">{currSymbol(cCur)}</span>
+                              <Input type="number" step="0.01" min="0" value={service.selling_price} onChange={e => updateService(index, 'selling_price', e.target.value)}
+                                className="h-9 text-sm text-right pl-6 bg-green-50 border-green-200" placeholder="0.00" />
+                            </div>
+                          </div>
+                          {markupPct > 0 && effectiveSellUnit !== sellUnit && (
+                            <div className="text-xs text-orange-600 text-right mt-0.5">
+                              +{markupPct}% = {currSymbol(cCur)}{effectiveSellUnit.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="col-span-3 flex justify-end items-end gap-3">
+                          <div className="text-right">
+                            <div className="text-xs text-slate-400">Acq. total</div>
+                            <div className="font-semibold text-red-600 text-sm">{currSymbol(sCur)}{lineAcquiring.toFixed(2)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-slate-400">Sell total{markupPct > 0 ? ` (incl. ${markupPct}% markup)` : ''}</div>
+                            <div className="font-semibold text-green-700 text-sm">{currSymbol(cCur)}{lineSelling.toFixed(2)}</div>
+                          </div>
+                          {lineMargin !== null ? (
+                            <div className="text-right">
+                              <div className="text-xs text-slate-400">Margin</div>
+                              <div className={`font-semibold text-sm ${lineMargin >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{lineMargin.toFixed(1)}%</div>
+                            </div>
+                          ) : null}
+                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-red-400 hover:text-red-600 hover:bg-red-50 flex-shrink-0"
+                            onClick={() => removeService(index)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {service.pax_tiers?.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-slate-400">Price tiers:</span>
+                          {service.pax_tiers.map(t => (
+                            <Badge key={t.id} variant="outline"
+                              className={`text-xs cursor-pointer ${activeTier?.id === t.id ? 'bg-blue-100 border-blue-400 text-blue-700' : 'text-slate-500'}`}
+                              onClick={() => updateService(index, 'acquiring_price', t.base_price)}>
+                              {t.min}{t.max ? `–${t.max}` : '+'} pax · {currSymbol(sCur)}{t.base_price}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-12 gap-3 items-start">
+                        <div className="col-span-12">
+                          <Textarea value={service.description} onChange={e => updateService(index, 'description', e.target.value)}
+                            placeholder="Service description..." rows={2} className="text-xs resize-none" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-12 gap-3 items-start mt-2">
+                        <div className="col-span-12">
+                          <LocationSearch
+                            value={service.location}
+                            onChange={v => updateService(index, 'location', v)}
+                            placeholder="Search or type service location..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {services.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <div className="flex justify-end">
+                    <div className="w-96 space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-orange-500" />
+                          <span className="text-slate-700 font-medium">Markup</span>
+                          <Input type="number" min="0" max="200" step="0.5" value={markupPct}
+                            onChange={e => setMarkupPct(parseFloat(e.target.value) || 0)} className="w-16 h-7 text-xs text-center px-1" />
+                          <span className="text-slate-500 text-xs">%</span>
+                        </div>
+                        <span className="text-xs text-slate-400">Applied to each line</span>
+                      </div>
+                      <Separator />
+                      {Object.entries(acquiringByCurrency).map(([cur, total]) => (
+                        <div key={`acq-${cur}`} className="flex justify-between text-sm">
+                          <span className="text-slate-600">Cost ({cur})</span>
+                          <span className="font-semibold text-red-600">{currSymbol(cur)}{total.toFixed(2)}</span>
+                        </div>
+                      ))}
+                      {Object.entries(sellingByCurrency).map(([cur, total]) => (
+                        <div key={`sell-${cur}`} className="flex justify-between text-sm">
+                          <span className="text-slate-600">Selling ({cur})</span>
+                          <span className="font-semibold text-green-700">{currSymbol(cur)}{total.toFixed(2)}</span>
+                        </div>
+                      ))}
+                      {!currenciesMixed && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Gross Margin</span>
+                          <span className={`font-semibold ${margin >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{margin.toFixed(1)}%</span>
+                        </div>
+                      )}
+                      <Separator />
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="text-lg font-bold text-slate-900">Proposal Total</div>
+                          <div className="text-xs text-slate-400">All currencies</div>
+                        </div>
+                        <div className="text-3xl font-bold text-green-700">{currSymbol(Object.keys(sellingByCurrency)[0] || sellingCurrency)}{finalTotal.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Notes & Terms */}
+            <Card className="p-6 bg-white shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Additional Information</h2>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Proposal Notes</Label>
+                  <Textarea value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} rows={3} placeholder="Special notes for the client..." />
+                </div>
+                <div className="space-y-2">
+                  <Label>Terms & Conditions</Label>
+                  <Textarea value={formData.terms_and_conditions} onChange={e => setFormData({ ...formData, terms_and_conditions: e.target.value })} rows={4} />
+                </div>
+              </div>
+            </Card>
+
+            <div className="flex justify-end gap-3 pb-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                <X className="w-4 h-4 mr-2" />Cancel
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={updateProposalMutation.isPending}>
+                <Save className="w-4 h-4 mr-2" />
+                {updateProposalMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </ScrollArea>
+
+        {/* Add Provider Dialog */}
+        <Dialog open={addProviderOpen} onOpenChange={setAddProviderOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Add New Provider</DialogTitle></DialogHeader>
+            <form onSubmit={(e) => { e.preventDefault(); createSupplierMutation.mutate({ ...newProvider, category_id: categories[0]?.id || '' }); }} className="space-y-4 mt-2">
+              <div className="space-y-2">
+                <Label>Provider Name *</Label>
+                <Input value={newProvider.name} onChange={e => setNewProvider({ ...newProvider, name: e.target.value })} placeholder="e.g. Sunset Tours" required />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>City</Label>
+                  <Input value={newProvider.city} onChange={e => setNewProvider({ ...newProvider, city: e.target.value })} placeholder="Istanbul" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input value={newProvider.phone} onChange={e => setNewProvider({ ...newProvider, phone: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={newProvider.email} onChange={e => setNewProvider({ ...newProvider, email: e.target.value })} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setAddProviderOpen(false)}>Cancel</Button>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createSupplierMutation.isPending}>
+                  {createSupplierMutation.isPending ? 'Adding...' : 'Add Provider'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,0 +1,186 @@
+{
+  "name": "SupplierBooking",
+  "type": "object",
+  "properties": {
+    "supplier_id": {
+      "type": "string"
+    },
+    "booking_request_id": {
+      "type": "string",
+      "description": "Link back to the originating BookingRequest"
+    },
+    "supplier_name": {
+      "type": "string"
+    },
+    "category_name": {
+      "type": "string"
+    },
+    "service_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "num_people": {
+      "type": "number",
+      "default": 1
+    },
+    "service_type": {
+      "type": "string",
+      "description": "Type of service requested"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "total_cost": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "pricing_id": {
+      "type": "string",
+      "description": "Selected pricing tier ID"
+    },
+    "pricing_name": {
+      "type": "string"
+    },
+    "transfer_type": {
+      "type": "string",
+      "enum": [
+        "airport_pickup",
+        "airport_dropoff",
+        "point_to_point"
+      ],
+      "description": "For Transfers category"
+    },
+    "pickup_location": {
+      "type": "string"
+    },
+    "dropoff_location": {
+      "type": "string"
+    },
+    "flight_number": {
+      "type": "string"
+    },
+    "flight_time": {
+      "type": "string"
+    },
+    "client_phone": {
+      "type": "string"
+    },
+    "room_category": {
+      "type": "string",
+      "description": "For Hotels: room type/category"
+    },
+    "meal_basis": {
+      "type": "string",
+      "enum": [
+        "RO",
+        "BB",
+        "HB",
+        "FB",
+        "AI",
+        "UAI"
+      ],
+      "description": "For Hotels: meal plan"
+    },
+    "num_nights": {
+      "type": "number"
+    },
+    "check_in_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "check_out_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "supplier_id",
+    "service_date",
+    "num_people"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}

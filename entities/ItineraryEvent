@@ -1,0 +1,137 @@
+{
+  "name": "ItineraryEvent",
+  "type": "object",
+  "properties": {
+    "trip_id": {
+      "type": "string",
+      "description": "Associated trip ID"
+    },
+    "title": {
+      "type": "string",
+      "description": "Event title"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time": {
+      "type": "string",
+      "description": "Event time"
+    },
+    "location": {
+      "type": "string",
+      "description": "Event location"
+    },
+    "description": {
+      "type": "string"
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "Linked supplier if applicable"
+    },
+    "service_id": {
+      "type": "string",
+      "description": "Linked SupplierService ID"
+    },
+    "pricing_id": {
+      "type": "string",
+      "description": "Linked SupplierPricing ID for specific rate"
+    },
+    "subcategory_id": {
+      "type": "string",
+      "description": "Linked SupplierSubcategory ID"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "supplier_cost": {
+      "type": "number",
+      "description": "What you pay the supplier (total)"
+    },
+    "cost": {
+      "type": "number",
+      "description": "Client price (what you charge)"
+    }
+  },
+  "required": [
+    "trip_id",
+    "title",
+    "date"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.trip_id": {
+            "_filter_from": "Trip",
+            "_query": {
+              "data.client_id": "{{user.client_id}}"
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,272 @@
+const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ChevronDown, ChevronRight, Search, HelpCircle, Mail, FileText, Users, Shield, FileDown, Bell, History, Calendar, ListCheck, SendHorizontal, DollarSign, TrendingUp, Globe } from 'lucide-react';
+
+const CATEGORIES = [
+  { key: 'general', label: 'General', icon: HelpCircle },
+  { key: 'account', label: 'Account & Users', icon: Users },
+  { key: 'bookings', label: 'Bookings & Reservations', icon: FileText },
+  { key: 'tasks', label: 'Calendar & Tasks', icon: Calendar },
+  { key: 'suppliers', label: 'Suppliers & RFP', icon: SendHorizontal },
+  { key: 'email', label: 'Email & Notifications', icon: Mail },
+  { key: 'permissions', label: 'Roles & Permissions', icon: Shield },
+  { key: 'documents', label: 'Documents & PDFs', icon: FileDown },
+  { key: 'finance', label: 'Finance & Reports', icon: DollarSign },
+];
+
+const FAQS = [
+  {
+    q: 'How do I create a new booking?',
+    a: 'Navigate to Reservations in the top nav and click "New Reservation". Fill in the client details, select services, and save. You can also create bookings directly from a client profile.',
+    category: 'bookings',
+  },
+  {
+    q: 'How do I generate a proposal?',
+    a: 'Click "New Proposal" in the nav bar or go to Proposals and click "Create Proposal". Add client details, services, pricing, and click Save. You can then download a PDF or send it via email.',
+    category: 'bookings',
+  },
+  {
+    q: 'How do I send an invoice?',
+    a: 'Go to Invoices, create a new invoice with the client and line items. Once saved, click the email button to send it directly to the client. You can also download a PDF copy.',
+    category: 'bookings',
+  },
+  {
+    q: 'How do I reset my password?',
+    a: 'Click your avatar in the top-right, go to your profile settings, and use the "Change Password" section. You\'ll need your current password to set a new one.',
+    category: 'account',
+  },
+  {
+    q: 'How do I add a new user to the system?',
+    a: 'Go to Settings > User Management (shield icon in the nav). Click "Add User", fill in the email, name, and password, and assign a role tier. The user will receive access immediately.',
+    category: 'permissions',
+  },
+  {
+    q: 'What are the user tiers and what can they do?',
+    a: 'There are four tiers: Tier 1 (Admin) — full control, Tier 2 (Manager) — modify trips/invoices, Tier 3 (Agent) — create trips/proposals, Tier 4 (Accounting) — view reports and invoices. Each tier has specific permissions that can be customized.',
+    category: 'permissions',
+  },
+  {
+    q: 'How do I attach a file to a client or booking?',
+    a: 'Open the client or booking detail page and use the document upload section. You can upload images, PDFs, Word docs, and spreadsheets. Uploaded files are linked to the entity and accessible from its detail view.',
+    category: 'documents',
+  },
+  {
+    q: 'How do I download a PDF of a proposal/invoice?',
+    a: 'On the proposal or invoice detail page, click the "Download PDF" button. The PDF will be generated server-side and downloaded automatically. You can also generate PDFs from the PDF generation endpoint in the API.',
+    category: 'documents',
+  },
+  {
+    q: 'Can I send emails from the app?',
+    a: 'Yes. Go to Settings and connect your Microsoft 365/Outlook account under the Outlook section. Once connected, you can send emails directly from client profiles, booking details, and the email composer.',
+    category: 'email',
+  },
+  {
+    q: 'How do real-time notifications work?',
+    a: 'When someone creates or updates a booking, invoice, or proposal, a notification appears in the bell icon in the top nav bar. Notifications arrive in real-time via WebSocket — no page refresh needed.',
+    category: 'email',
+  },
+  {
+    q: 'How do I change the app language?',
+    a: 'Click your avatar in the top-right, hover over the Language option, and select your preferred language. The app supports English, Spanish, French, German, Italian, Turkish, and Portuguese.',
+    category: 'general',
+  },
+  {
+    q: 'How do I enable dark mode?',
+    a: 'Click the sun/moon icon in the top nav bar next to the notification bell. You can choose Light, Dark, or System mode (follows your OS setting).',
+    category: 'general',
+  },
+  {
+    q: 'Where can I see the audit trail?',
+    a: 'Admins can access the Audit Trail from the admin nav section (History icon). It shows all state-changing actions: who did what, when, and what changed. Filter by entity type, action, or user.',
+    category: 'general',
+  },
+  {
+    q: 'How does the global search work?',
+    a: 'Press Ctrl+K (Cmd+K on Mac) to open the command palette. Start typing to search across clients, bookings, suppliers, invoices, and proposals. Results are grouped by type.',
+    category: 'general',
+  },
+  {
+    q: 'Can I customize invoice headers and branding?',
+    a: 'Yes. Go to Settings and scroll to the Invoice Header section. You can add your company name, address, tax ID, bank details, and logo. These details appear on all generated invoices.',
+    category: 'general',
+  },
+  {
+    q: 'What file types are supported for upload?',
+    a: 'The system accepts images (JPEG, PNG, GIF, WebP, SVG), PDFs, plain text, CSV, Word documents (DOC/DOCX), Excel spreadsheets (XLS/XLSX), and JSON files. Maximum file size is 20 MB.',
+    category: 'documents',
+  },
+  {
+    q: 'How do I import data into the system?',
+    a: 'Go to Settings > Import Hub. You can import suppliers from CSV files, analyze market pricing, and import contacts from Outlook. The import hub guides you through each format.',
+    category: 'general',
+  },
+  {
+    q: 'Why did my session expire?',
+    a: 'Sessions expire after 24 hours for security. If you see a login prompt, just sign in again. Your data is preserved. Check "Remember me" during login to stay signed in longer.',
+    category: 'account',
+  },
+  {
+    q: 'How do I use the Calendar view?',
+    a: 'Go to "Calendar" in the top nav. The month grid shows all trips color-coded by status (planning/confirmed/in_progress/completed/cancelled). Click any date to see day details in the side panel. Use the arrows to navigate between months.',
+    category: 'tasks',
+  },
+  {
+    q: 'How does the Task Board work?',
+    a: 'Go to "Tasks" in the top nav. The Kanban board has three columns: Pending, In Progress, and Done. Drag cards between columns or click "New Task" to create one. Each task can have a client, priority (low/medium/high), and due date.',
+    category: 'tasks',
+  },
+  {
+    q: 'How do I request quotes from multiple suppliers at once?',
+    a: 'Go to Suppliers > RFP Manager (or navigate directly to the RFP Manager page). Click "New RFP" and follow the 3-step wizard: (1) enter service details like name, quantity, and deadline, (2) select suppliers individually or filter by category, (3) review and send. Each supplier gets a Booking Request that you can track through pending → quoted → confirmed/rejected.',
+    category: 'suppliers',
+  },
+  {
+    q: 'How do I track agent commissions?',
+    a: 'Go to Revenue > Commission Report. It calculates commissions from completed/confirmed trips based on profit × commission rate. The dashboard shows total revenue, profit, commission, and average rate. Bar and pie charts break down commission by agent. Use the Export CSV button to download the data.',
+    category: 'finance',
+  },
+  {
+    q: 'Can clients request a quote online?',
+    a: 'Yes. Share the public link /request-quote with potential clients. The form collects name, email, destination, dates, traveler count, budget, and trip description. Submissions create a new client lead with source "web_quote_request" so your team can follow up.',
+    category: 'general',
+  },
+  {
+    q: 'How does the multi-currency dashboard work?',
+    a: 'Go to Revenue and select the "Multi-Currency" tab. Choose a base currency (USD, EUR, GBP, etc.) and the dashboard converts all invoices and trip costs using live exchange rates. Bar charts show revenue by currency and by month, all converted to your selected base currency.',
+    category: 'finance',
+  },
+  {
+    q: 'What automated reminders exist?',
+    a: 'The system runs hourly checks: (1) invoices due in 3 days trigger a "due soon" notification, (2) overdue invoices trigger an "overdue" notification, (3) trips starting tomorrow trigger a "trip starting soon" notification. Notifications appear in the bell icon. Reminders are deduplicated so you won\'t get the same alert twice in 24 hours.',
+    category: 'email',
+  },
+  {
+    q: 'How do I create and manage extra columns in the supplier table?',
+    a: 'On the Suppliers page, click "Columns" (admin only) to add custom fields like contact info, tags, or region. These appear as new columns in the table and as editable fields in the supplier form.',
+    category: 'suppliers',
+  },
+];
+
+export default function FAQ() {
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [openItems, setOpenItems] = useState(new Set());
+
+  const filtered = FAQS.filter(faq => {
+    const matchesSearch = !search ||
+      faq.q.toLowerCase().includes(search.toLowerCase()) ||
+      faq.a.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = activeCategory === 'all' || faq.category === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const toggleItem = (index) => {
+    const next = new Set(openItems);
+    if (next.has(index)) next.delete(index);
+    else next.add(index);
+    setOpenItems(next);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Frequently Asked Questions</h1>
+        <p className="text-slate-500 dark:text-slate-400">Find answers to common questions about using Marvelops TravelPro.</p>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+        <Input
+          placeholder="Search FAQs..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="pl-10 h-12 text-base"
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setActiveCategory('all')}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            activeCategory === 'all'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+          }`}
+        >
+          All
+        </button>
+        {CATEGORIES.map(cat => {
+          const Icon = cat.icon;
+          return (
+            <button
+              key={cat.key}
+              onClick={() => setActiveCategory(cat.key)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                activeCategory === cat.key
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="space-y-2">
+        {filtered.length === 0 ? (
+          <Card className="p-12 text-center">
+            <HelpCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400">No matching questions</h3>
+            <p className="text-sm text-slate-400 mt-1">Try a different search or category.</p>
+          </Card>
+        ) : (
+          filtered.map((faq, i) => {
+            const idx = FAQS.indexOf(faq);
+            const isOpen = openItems.has(idx);
+            const cat = CATEGORIES.find(c => c.key === faq.category);
+            const CatIcon = cat?.icon || HelpCircle;
+            return (
+              <Card
+                key={idx}
+                className="overflow-hidden transition-shadow hover:shadow-md cursor-pointer dark:bg-slate-900 dark:border-slate-700"
+                onClick={() => toggleItem(idx)}
+              >
+                <div className="p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50 mt-0.5 flex-shrink-0">
+                      <CatIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{faq.q}</h3>
+                        {isOpen ? (
+                          <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" />
+                        )}
+                      </div>
+                      {isOpen && (
+                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{faq.a}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      <div className="text-center py-8">
+        <p className="text-sm text-slate-400 dark:text-slate-500">
+          Still have questions? Contact your system administrator or email support@travelpro.com
+        </p>
+      </div>
+    </div>
+  );
+}

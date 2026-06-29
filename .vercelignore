@@ -1,0 +1,15 @@
+node_modules
+.git
+.github
+.gitignore
+README.md
+Dockerfile
+docker-compose.yml
+ecosystem.config.cjs
+scripts
+logs
+data
+ssl
+dist-pkg
+tests
+**.tar.gz

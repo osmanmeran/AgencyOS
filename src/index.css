@@ -1,0 +1,361 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── M3 Light Color Scheme ─────────────────────────── */
+    --m3-primary: 221.2 83.2% 53.3%;
+    --m3-on-primary: 210 40% 98%;
+    --m3-primary-container: 214.3 94.6% 92.7%;
+    --m3-on-primary-container: 221.2 83.2% 15%;
+    --m3-secondary: 215.4 25.3% 40%;
+    --m3-on-secondary: 210 40% 98%;
+    --m3-secondary-container: 215 25% 90%;
+    --m3-on-secondary-container: 215 25% 15%;
+    --m3-tertiary: 173.6 70% 35%;
+    --m3-on-tertiary: 180 100% 97%;
+    --m3-tertiary-container: 164.3 80% 85%;
+    --m3-on-tertiary-container: 173.6 70% 12%;
+    --m3-error: 0 72.2% 50.6%;
+    --m3-on-error: 0 0% 100%;
+    --m3-error-container: 0 100% 92%;
+    --m3-on-error-container: 0 70% 25%;
+    --m3-background: 0 0% 98%;
+    --m3-on-background: 0 0% 11%;
+    --m3-surface: 0 0% 98%;
+    --m3-on-surface: 0 0% 11%;
+    --m3-surface-variant: 210 17% 92%;
+    --m3-on-surface-variant: 215 10% 37%;
+    --m3-outline: 215 10% 55%;
+    --m3-outline-variant: 215 10% 82%;
+    --m3-shadow: 0 0% 0%;
+    --m3-scrim: 0 0% 0%;
+    --m3-inverse-surface: 0 0% 11%;
+    --m3-inverse-on-surface: 0 0% 95%;
+    --m3-inverse-primary: 214.3 94.6% 80%;
+
+    /* ── M3 Surface Elevation Colors (light) ───────────── */
+    --m3-surface-dim: 0 0% 90%;
+    --m3-surface-bright: 0 0% 98%;
+    --m3-surface-container-lowest: 0 0% 100%;
+    --m3-surface-container-low: 0 0% 96%;
+    --m3-surface-container: 0 0% 93%;
+    --m3-surface-container-high: 0 0% 88%;
+    --m3-surface-container-highest: 0 0% 84%;
+
+    /* ── M3 Shape (Corner Radii) ───────────────────────── */
+    --m3-shape-none: 0;
+    --m3-shape-extra-small: 4px;
+    --m3-shape-small: 8px;
+    --m3-shape-medium: 12px;
+    --m3-shape-large: 16px;
+    --m3-shape-extra-large: 28px;
+    --m3-shape-full: 9999px;
+
+    /* ── M3 Elevation / Shadow ─────────────────────────── */
+    --m3-elevation-0: none;
+    --m3-elevation-1: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --m3-elevation-2: 0 3px 6px 0 rgb(0 0 0 / 0.10), 0 1px 3px -1px rgb(0 0 0 / 0.06);
+    --m3-elevation-3: 0 6px 14px 0 rgb(0 0 0 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+    --m3-elevation-4: 0 10px 24px 0 rgb(0 0 0 / 0.12), 0 4px 8px -2px rgb(0 0 0 / 0.08);
+    --m3-elevation-5: 0 20px 48px 0 rgb(0 0 0 / 0.14), 0 8px 16px -4px rgb(0 0 0 / 0.10);
+
+    /* ── M3 Motion ─────────────────────────────────────── */
+    --m3-duration-short1: 50ms;
+    --m3-duration-short2: 100ms;
+    --m3-duration-short3: 150ms;
+    --m3-duration-medium1: 200ms;
+    --m3-duration-medium2: 250ms;
+    --m3-duration-medium3: 300ms;
+    --m3-duration-long1: 350ms;
+    --m3-duration-long2: 400ms;
+    --m3-duration-long3: 450ms;
+    --m3-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --m3-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --m3-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+    --m3-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+    /* ── Map to shadcn/ui CSS Variables ────────────────── */
+    --background: var(--m3-background);
+    --foreground: var(--m3-on-background);
+    --card: var(--m3-surface);
+    --card-foreground: var(--m3-on-surface);
+    --popover: var(--m3-surface);
+    --popover-foreground: var(--m3-on-surface);
+    --primary: var(--m3-primary);
+    --primary-foreground: var(--m3-on-primary);
+    --secondary: var(--m3-secondary-container);
+    --secondary-foreground: var(--m3-on-secondary-container);
+    --muted: var(--m3-surface-variant);
+    --muted-foreground: var(--m3-on-surface-variant);
+    --accent: var(--m3-secondary-container);
+    --accent-foreground: var(--m3-on-secondary-container);
+    --destructive: var(--m3-error);
+    --destructive-foreground: var(--m3-on-error);
+    --border: var(--m3-outline-variant);
+    --input: var(--m3-outline);
+    --ring: var(--m3-primary);
+    --radius: var(--m3-shape-medium);
+
+    /* ── Chart Colors (M3 tonal palette) ───────────────── */
+    --chart-1: 221.2 83.2% 53.3%;
+    --chart-2: 173.6 70% 35%;
+    --chart-3: 330 70% 45%;
+    --chart-4: 42 90% 50%;
+    --chart-5: 160 60% 40%;
+
+    /* ── Sidebar (M3 surface container) ────────────────── */
+    --sidebar-background: var(--m3-surface-container);
+    --sidebar-foreground: var(--m3-on-surface);
+    --sidebar-primary: var(--m3-primary);
+    --sidebar-primary-foreground: var(--m3-on-primary);
+    --sidebar-accent: var(--m3-secondary-container);
+    --sidebar-accent-foreground: var(--m3-on-secondary-container);
+    --sidebar-border: var(--m3-outline-variant);
+    --sidebar-ring: var(--m3-primary);
+  }
+
+  .dark {
+    /* ── M3 Dark Color Scheme ──────────────────────────── */
+    --m3-primary: 214.3 94.6% 80%;
+    --m3-on-primary: 221.2 83.2% 15%;
+    --m3-primary-container: 221.2 83.2% 25%;
+    --m3-on-primary-container: 214.3 94.6% 87%;
+    --m3-secondary: 215 25% 70%;
+    --m3-on-secondary: 215 25% 10%;
+    --m3-secondary-container: 215 25% 25%;
+    --m3-on-secondary-container: 215 25% 90%;
+    --m3-tertiary: 165 60% 70%;
+    --m3-on-tertiary: 173.6 70% 10%;
+    --m3-tertiary-container: 173.6 60% 22%;
+    --m3-on-tertiary-container: 164.3 70% 87%;
+    --m3-error: 0 72% 65%;
+    --m3-on-error: 0 70% 20%;
+    --m3-error-container: 0 60% 28%;
+    --m3-on-error-container: 0 100% 90%;
+    --m3-background: 0 0% 6%;
+    --m3-on-background: 0 0% 90%;
+    --m3-surface: 0 0% 6%;
+    --m3-on-surface: 0 0% 90%;
+    --m3-surface-variant: 215 10% 20%;
+    --m3-on-surface-variant: 215 10% 75%;
+    --m3-outline: 215 10% 55%;
+    --m3-outline-variant: 215 10% 28%;
+    --m3-shadow: 0 0% 0%;
+    --m3-scrim: 0 0% 0%;
+    --m3-inverse-surface: 215 10% 90%;
+    --m3-inverse-on-surface: 215 10% 10%;
+    --m3-inverse-primary: 221.2 83.2% 48%;
+
+    /* ── M3 Surface Elevation Colors (dark) ────────────── */
+    --m3-surface-dim: 0 0% 6%;
+    --m3-surface-bright: 0 0% 16%;
+    --m3-surface-container-lowest: 0 0% 4%;
+    --m3-surface-container-low: 0 0% 10%;
+    --m3-surface-container: 0 0% 14%;
+    --m3-surface-container-high: 0 0% 18%;
+    --m3-surface-container-highest: 0 0% 22%;
+
+    /* ── M3 Shape & Elevation (same as light) ──────────── */
+    /* (inherited from :root, no need to redeclare) */
+
+    /* ── Map to shadcn/ui CSS Variables ────────────────── */
+    --background: var(--m3-background);
+    --foreground: var(--m3-on-background);
+    --card: var(--m3-surface);
+    --card-foreground: var(--m3-on-surface);
+    --popover: var(--m3-surface-container-high);
+    --popover-foreground: var(--m3-on-surface);
+    --primary: var(--m3-primary);
+    --primary-foreground: var(--m3-on-primary);
+    --secondary: var(--m3-secondary-container);
+    --secondary-foreground: var(--m3-on-secondary-container);
+    --muted: var(--m3-surface-variant);
+    --muted-foreground: var(--m3-on-surface-variant);
+    --accent: var(--m3-secondary-container);
+    --accent-foreground: var(--m3-on-secondary-container);
+    --destructive: var(--m3-error);
+    --destructive-foreground: var(--m3-on-error);
+    --border: var(--m3-outline-variant);
+    --input: var(--m3-outline);
+    --ring: var(--m3-primary);
+    --radius: 12px;
+
+    /* ── Chart Colors (dark M3 tonal) ──────────────────── */
+    --chart-1: 214.3 94.6% 65%;
+    --chart-2: 165 60% 60%;
+    --chart-3: 330 65% 60%;
+    --chart-4: 42 85% 55%;
+    --chart-5: 160 55% 50%;
+
+    /* ── Sidebar ───────────────────────────────────────── */
+    --sidebar-background: var(--m3-surface-container);
+    --sidebar-foreground: var(--m3-on-surface);
+    --sidebar-primary: var(--m3-primary);
+    --sidebar-primary-foreground: var(--m3-on-primary);
+    --sidebar-accent: var(--m3-secondary-container);
+    --sidebar-accent-foreground: var(--m3-on-secondary-container);
+    --sidebar-border: var(--m3-outline-variant);
+    --sidebar-ring: var(--m3-primary);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'BaselGrotesk', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* ── M3 Typography Scale Utility Classes ──────────────────── */
+@layer utilities {
+  /* Display */
+  .m3-display-large {
+    font-size: 57px;
+    line-height: 64px;
+    letter-spacing: -0.25px;
+    font-weight: 400;
+  }
+  .m3-display-medium {
+    font-size: 45px;
+    line-height: 52px;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+  .m3-display-small {
+    font-size: 36px;
+    line-height: 44px;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+
+  /* Headline */
+  .m3-headline-large {
+    font-size: 32px;
+    line-height: 40px;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+  .m3-headline-medium {
+    font-size: 28px;
+    line-height: 36px;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+  .m3-headline-small {
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+
+  /* Title */
+  .m3-title-large {
+    font-size: 22px;
+    line-height: 28px;
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+  .m3-title-medium {
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.15px;
+    font-weight: 500;
+  }
+  .m3-title-small {
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+    font-weight: 500;
+  }
+
+  /* Body */
+  .m3-body-large {
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.5px;
+    font-weight: 400;
+  }
+  .m3-body-medium {
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.25px;
+    font-weight: 400;
+  }
+  .m3-body-small {
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.4px;
+    font-weight: 400;
+  }
+
+  /* Label */
+  .m3-label-large {
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+    font-weight: 500;
+  }
+  .m3-label-medium {
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  .m3-label-small {
+    font-size: 11px;
+    line-height: 16px;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+
+  /* ── M3 Surface Elevation Utility ──────────────────────── */
+  .m3-surface-1 {
+    background-color: hsl(var(--m3-surface-container-low));
+  }
+  .m3-surface-2 {
+    background-color: hsl(var(--m3-surface-container));
+  }
+  .m3-surface-3 {
+    background-color: hsl(var(--m3-surface-container-high));
+  }
+  .m3-surface-4 {
+    background-color: hsl(var(--m3-surface-container-highest));
+  }
+
+  /* ── M3 Elevation Shadow Utility ───────────────────────── */
+  .m3-elevation-0 { box-shadow: var(--m3-elevation-0); }
+  .m3-elevation-1 { box-shadow: var(--m3-elevation-1); }
+  .m3-elevation-2 { box-shadow: var(--m3-elevation-2); }
+  .m3-elevation-3 { box-shadow: var(--m3-elevation-3); }
+  .m3-elevation-4 { box-shadow: var(--m3-elevation-4); }
+  .m3-elevation-5 { box-shadow: var(--m3-elevation-5); }
+
+  /* ── M3 State Layer (hover/focus/press) ────────────────── */
+  .m3-state-hover {
+    position: relative;
+  }
+  .m3-state-hover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-color: currentColor;
+    opacity: 0;
+    transition: opacity var(--m3-duration-short2) var(--m3-easing-standard);
+    pointer-events: none;
+  }
+  .m3-state-hover:hover::before {
+    opacity: 0.08;
+  }
+  .m3-state-hover:focus-visible::before {
+    opacity: 0.12;
+  }
+  .m3-state-hover:active::before {
+    opacity: 0.12;
+  }
+}

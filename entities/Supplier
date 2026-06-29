@@ -1,0 +1,111 @@
+{
+  "name": "Supplier",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Supplier name"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "Category ID"
+    },
+    "contact_person": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string",
+      "description": "City where the supplier is located"
+    },
+    "area": {
+      "type": "string",
+      "description": "Area or region of operation"
+    },
+    "pricing_info": {
+      "type": "string",
+      "description": "Pricing details and packages"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "custom_fields": {
+      "type": "object",
+      "description": "Extra admin-defined fields as key-value pairs"
+    }
+  },
+  "required": [
+    "name",
+    "category_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "id": "{{user.data.linked_supplier_id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "id": "{{user.data.linked_supplier_id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    }
+  }
+}

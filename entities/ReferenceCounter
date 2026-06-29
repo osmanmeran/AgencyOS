@@ -1,0 +1,55 @@
+{
+  "name": "ReferenceCounter",
+  "type": "object",
+  "properties": {
+    "department": {
+      "type": "string",
+      "description": "Department name"
+    },
+    "year": {
+      "type": "number"
+    },
+    "month": {
+      "type": "number"
+    },
+    "counter": {
+      "type": "number",
+      "default": 0,
+      "description": "Current counter for this dept/year/month"
+    }
+  },
+  "required": [
+    "department",
+    "year",
+    "month"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": ["admin", "manager", "agent", "accounting"]
+        }
+      }
+    },
+    "create": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    },
+    "write": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "name": "EmailLog",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Recipient client ID"
+    },
+    "to_email": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "template_type": {
+      "type": "string",
+      "enum": [
+        "proposal",
+        "invoice",
+        "custom"
+      ],
+      "default": "custom"
+    },
+    "reference_id": {
+      "type": "string",
+      "description": "ID of the proposal or invoice sent"
+    },
+    "reference_label": {
+      "type": "string",
+      "description": "Human-readable label (e.g. invoice number, proposal title)"
+    },
+    "sent_by": {
+      "type": "string",
+      "description": "Email of the agent who sent it"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "failed"
+      ],
+      "default": "sent"
+    }
+  },
+  "required": [
+    "client_id",
+    "to_email",
+    "subject",
+    "body"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.sent_by": "{{user.email}}"
+        },
+        {
+          "data.client_id": "{{user.client_id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    }
+  }
+}

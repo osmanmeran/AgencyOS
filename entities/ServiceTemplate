@@ -1,0 +1,143 @@
+{
+  "name": "ServiceTemplate",
+  "type": "object",
+  "properties": {
+    "category_id": {
+      "type": "string",
+      "description": "Service category ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "Service name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "meeting_point": {
+      "type": "string"
+    },
+    "meeting_time": {
+      "type": "string"
+    },
+    "meeting_point_map_url": {
+      "type": "string"
+    },
+    "duration": {
+      "type": "string"
+    },
+    "included": {
+      "type": "string"
+    },
+    "not_included": {
+      "type": "string"
+    },
+    "supplier_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of supplier IDs that can provide this service"
+    },
+    "supplier_contacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "supplier_id": {
+            "type": "string"
+          },
+          "contact_name": {
+            "type": "string"
+          },
+          "contact_email": {
+            "type": "string"
+          },
+          "contact_phone": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Specific contacts for each supplier"
+    },
+    "base_price": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "price_unit": {
+      "type": "string",
+      "enum": [
+        "per_person",
+        "per_group",
+        "per_night",
+        "per_trip",
+        "per_hour",
+        "per_day",
+        "flat_rate"
+      ],
+      "default": "per_person"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "category_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    }
+  }
+}

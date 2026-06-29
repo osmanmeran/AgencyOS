@@ -1,0 +1,124 @@
+{
+  "name": "AppSettings",
+  "type": "object",
+  "properties": {
+    "app_name": {
+      "type": "string",
+      "default": "TravelPro"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "default_language": {
+      "type": "string",
+      "default": "en"
+    },
+    "reference_format": {
+      "type": "object",
+      "properties": {
+        "include_department": {
+          "type": "boolean",
+          "default": true
+        },
+        "include_category": {
+          "type": "boolean",
+          "default": true
+        },
+        "include_year": {
+          "type": "boolean",
+          "default": true
+        },
+        "include_client": {
+          "type": "boolean",
+          "default": false
+        },
+        "prefix": {
+          "type": "string",
+          "default": "TRP"
+        }
+      }
+    },
+    "departments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "invoice_header": {
+      "type": "object",
+      "properties": {
+        "company_name": {
+          "type": "string"
+        },
+        "address_line1": {
+          "type": "string"
+        },
+        "address_line2": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "postal_code": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "tax_id": {
+          "type": "string"
+        },
+        "bank_details": {
+          "type": "string"
+        },
+        "logo_url": {
+          "type": "string"
+        }
+      },
+      "description": "Company header info for invoices"
+    },
+    "default_payment_terms": {
+      "type": "string",
+      "default": "Due within 30 days"
+    },
+    "default_invoice_notes": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": ["admin", "manager", "accounting"]
+        }
+      }
+    },
+    "update": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    },
+    "write": {
+      "user_condition": {
+        "data.user_tier": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "name": "SupplierReview",
+  "type": "object",
+  "properties": {
+    "supplier_id": {
+      "type": "string",
+      "description": "Reviewed supplier ID"
+    },
+    "trip_id": {
+      "type": "string",
+      "description": "Associated trip ID"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Client who gave review"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Star rating 1-5"
+    },
+    "service_quality": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "value_for_money": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "communication": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "review_text": {
+      "type": "string"
+    },
+    "would_recommend": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "supplier_id",
+    "rating"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.supplier_id": "{{user.data.linked_supplier_id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
