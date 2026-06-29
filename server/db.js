@@ -12,8 +12,6 @@ const DATA_DIR = isVercel
   : path.join(__dirname, '..', 'data');
 const DB_PATH = path.join(DATA_DIR, 'marvelops.db');
 
-let db;
-
 const ENTITIES = [
   'AppSettings', 'BookingRequest', 'BookingTemplate', 'Client', 'ClientPayment',
   'ClientTask', 'EmailLog', 'Invoice', 'ItineraryEvent', 'Message', 'PackingItem',
@@ -23,15 +21,90 @@ const ENTITIES = [
   'SupplierSubcategory', 'Trip', 'OutlookToken'
 ];
 
-export function getDb() {
-  if (!db) {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    migrate(db, { quiet: false });
-    rebuildFts(db);
+let db;
+
+// --- Vercel Blob persistence ---
+
+async function loadDbFromBlob() {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return false;
+  try {
+    const { list } = await import('@vercel/blob');
+    const { blobs } = await list({ token: process.env.BLOB_READ_WRITE_TOKEN });
+    const blob = blobs.find(b => b.pathname === 'marvelops.db');
+    if (blob) {
+      const resp = await fetch(blob.url);
+      const buffer = Buffer.from(await resp.arrayBuffer());
+      if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(DB_PATH, buffer);
+      console.log('[DB] Restored from Vercel Blob');
+      return true;
+    }
+  } catch (e) {
+    console.log('[DB] Blob load skipped:', e.message);
   }
+  return false;
+}
+
+function startBlobPersistence(db) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return;
+  let uploading = false;
+
+  setInterval(async () => {
+    if (uploading) return;
+    uploading = true;
+    try {
+      db.pragma('wal_checkpoint(TRUNCATE)');
+      const buffer = fs.readFileSync(DB_PATH);
+      const { put } = await import('@vercel/blob');
+      await put('marvelops.db', buffer, {
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+        access: 'private',
+        addRandomSuffix: false,
+      });
+      console.log('[DB] Persisted to Vercel Blob');
+    } catch (e) {
+      console.error('[DB] Blob persist failed:', e.message);
+    } finally {
+      uploading = false;
+    }
+  }, 60000);
+}
+
+// --- Eager initialization with top-level await ---
+
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+// On Vercel, try to restore from Blob before opening DB
+if (isVercel) {
+  await loadDbFromBlob();
+}
+
+db = new Database(DB_PATH);
+db.pragma('journal_mode = WAL');
+migrate(db, { quiet: false });
+rebuildFts(db);
+
+if (isVercel) {
+  startBlobPersistence(db);
+}
+
+console.log(`[DB] Initialized at ${DB_PATH}`);
+
+// --- Exports ---
+
+export function getDb() {
   return db;
+}
+
+export function getEntities() {
+  return ENTITIES;
+}
+
+export function uid() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let id = '';
+  for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
 }
 
 function rebuildFts(db) {
@@ -50,15 +123,4 @@ function rebuildFts(db) {
   } catch (e) {
     console.error('[FTS] rebuild failed:', e.message);
   }
-}
-
-export function getEntities() {
-  return ENTITIES;
-}
-
-export function uid() {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let id = '';
-  for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
-  return id;
 }
