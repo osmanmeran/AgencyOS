@@ -26,8 +26,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/leaflet')) return 'leaflet';
-          if (id.includes('node_modules/react')) return 'react';
           if (id.includes('node_modules/lucide-react')) return 'icons';
           if (id.includes('node_modules/@tanstack')) return 'tanstack';
           if (id.includes('node_modules/next-themes')) return 'themes';

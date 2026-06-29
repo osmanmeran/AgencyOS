@@ -5,7 +5,6 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { seedDatabase } from './seed.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
@@ -25,7 +24,6 @@ import suggestionRoutes from './routes/suggestions.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
-const isVercel = !!process.env.VERCEL;
 
 seedDatabase();
 
@@ -102,21 +100,25 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/testing', testingRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 
-const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
+// On Vercel, static files + SPA fallback are handled by vercel.json
+// Only serve static files + SPA on non-Vercel environments
+if (!process.env.VERCEL) {
+  const distPath = path.join(__dirname, '..', 'dist');
+  app.use(express.static(distPath));
 
-const uploadsPath = path.join(__dirname, 'uploads');
-app.use('/uploads', express.static(uploadsPath));
+  const uploadsPath = path.join(__dirname, 'uploads');
+  app.use('/uploads', express.static(uploadsPath));
+
+  if (isProduction) {
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+}
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
-
-if (isProduction) {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
 
 app.use(notFoundHandler);
 app.use(errorHandler);
