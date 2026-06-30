@@ -9,7 +9,7 @@
     "start": "concurrently \"npm run server\" \"npm run dev\"",
     "prod": "NODE_ENV=production npm run build && NODE_ENV=production node server/server.js",
     "build": "vite build",
-    "vercel-build": "npm run build",
+    "vercel-build": "npm rebuild better-sqlite3 && npm run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
