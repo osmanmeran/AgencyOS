@@ -141,7 +141,7 @@ export default function AppSettings() {
         .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       const redirectUri = window.location.origin + '/auth/outlook-callback';
       const authUrl =
-        'https://login.microsoftonline.com/common/oauth2/v2.0/authorize' +
+        'https://login.microsoftonline.com/' + (import.meta.env.VITE_MICROSOFT_TENANT_ID || 'common') + '/oauth2/v2.0/authorize' +
         '?client_id=' + encodeURIComponent(import.meta.env.VITE_MICROSOFT_CLIENT_ID) +
         '&response_type=code' +
         '&redirect_uri=' + encodeURIComponent(redirectUri) +

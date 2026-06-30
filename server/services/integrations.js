@@ -36,7 +36,7 @@ export function logEmail(to, subject, body) {
 
 // ── Outlook / Microsoft Graph ──────────────────────────────────────────
 
-const GRAPH_AUTH = 'https://login.microsoftonline.com/common/oauth2/v2.0';
+const GRAPH_AUTH = `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID || 'common'}/oauth2/v2.0`;
 const GRAPH_API = 'https://graph.microsoft.com/v1.0';
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID;
 const SCOPES = 'https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read offline_access';
