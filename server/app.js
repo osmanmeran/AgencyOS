@@ -106,6 +106,23 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+app.post('/api/email/test', authMiddleware, async (req, res) => {
+  try {
+    const { sendEmail, isSmtpConfigured } = await import('./services/email.js');
+    if (!isSmtpConfigured()) {
+      return res.status(400).json({ error: 'SMTP not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS environment variables.' });
+    }
+    const result = await sendEmail({
+      to: req.user.email,
+      subject: 'Marvelops – Test Email',
+      body: '<p>This is a test email from Marvelops. SMTP is working correctly.</p>',
+    });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/app-logs', authMiddleware, (req, res) => {
   try {
     const { pageName } = req.body || {};
