@@ -29,7 +29,7 @@ export function isMicrosoftSsoConfigured() {
 export async function loginWithMicrosoft(returnUrl) {
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
   const tenant = import.meta.env.VITE_MICROSOFT_TENANT || 'common';
-  const redirectUri = window.location.origin + '/mock-login/';
+  const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || (window.location.origin + '/mock-login/');
 
   if (!clientId) {
     throw new Error('Microsoft SSO is not configured. Set VITE_MICROSOFT_CLIENT_ID in .env');
