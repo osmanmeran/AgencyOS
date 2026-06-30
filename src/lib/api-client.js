@@ -119,13 +119,6 @@
       login: function (email) {
         return this.loginViaEmailPassword(email, 'password123');
       },
-      microsoftLogin: function (idToken) {
-        return api('/auth/microsoft', { method: 'POST', body: JSON.stringify({ idToken: idToken }) }).then(function (result) {
-          setToken(result.token);
-          setCurrentUser(result.user);
-          return result.user;
-        });
-      },
       updateMe: function (data) {
         return api('/auth/me', { method: 'PUT', body: JSON.stringify(data || {}) }).then(function (user) {
           setCurrentUser(user);

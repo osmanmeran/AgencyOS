@@ -462,11 +462,7 @@ export function initMockBackend() {
       redirectToLogin: (returnUrl) => {
         window.location.href = '/mock-login?returnUrl=' + encodeURIComponent(returnUrl || window.location.href);
       },
-      microsoftLogin: async (idToken) => {
-        const user = MOCK_USERS_STORED[0];
-        setCurrentUser(user);
-        return user;
-      },
+
     },
     entities: entityApis,
     integrations: {

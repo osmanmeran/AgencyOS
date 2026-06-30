@@ -20,6 +20,7 @@ import { I18nProvider } from '@/lib/i18n/I18nContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ErrorBoundary from '@/lib/ErrorBoundary';
 import MockLogin from '@/pages/MockLogin';
+import MicrosoftCallback from '@/pages/MicrosoftCallback';
 import OutlookCallback from '@/pages/OutlookCallback';
 import ClientItinerary from '@/pages/ClientItinerary';
 import RequestQuote from '@/pages/RequestQuote';
@@ -51,7 +52,7 @@ const AuthenticatedApp = () => {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
       // Don't redirect if already on the login page (breaks redirect loop)
-      if (window.location.pathname === '/mock-login' || window.location.pathname === '/accept-invite') {
+      if (['/mock-login', '/accept-invite', '/auth/microsoft/callback'].includes(window.location.pathname)) {
         // Allow the login page to render without a valid session
       } else {
         navigateToLogin();
@@ -100,6 +101,7 @@ const AuthenticatedApp = () => {
         </LayoutWrapper>
       } />
       <Route path="/mock-login" element={<MockLogin />} />
+      <Route path="/auth/microsoft/callback" element={<MicrosoftCallback />} />
       <Route path="/accept-invite" element={<AcceptInvite />} />
       <Route path="/auth/outlook-callback" element={<OutlookCallback />} />
       <Route path="/client-itinerary" element={<ClientItinerary />} />

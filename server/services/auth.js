@@ -6,34 +6,11 @@ import { getJwtSecret } from '../middleware/auth.js';
 import { ForbiddenError, ConflictError, UnauthorizedError } from '../middleware/errors.js';
 import logger from '../lib/logger.js';
 
-const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || process.env.VITE_MICROSOFT_CLIENT_ID || '';
-const MICROSOFT_TENANT = process.env.MICROSOFT_TENANT || process.env.VITE_MICROSOFT_TENANT || 'common';
-const MICROSOFT_JWKS_URI = `https://login.microsoftonline.com/${MICROSOFT_TENANT}/discovery/v2.0/keys`;
-
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '';
-const GOOGLE_JWKS_URI = 'https://www.googleapis.com/oauth2/v3/certs';
-
-// Log configuration on startup for debugging
-if (!MICROSOFT_CLIENT_ID) {
-  logger.warn('Microsoft OAuth not configured: MICROSOFT_CLIENT_ID or VITE_MICROSOFT_CLIENT_ID is not set');
-} else {
-  logger.info({ clientId: MICROSOFT_CLIENT_ID.substring(0, 8) + '...', tenant: MICROSOFT_TENANT }, 'Microsoft OAuth configured');
-}
-
-if (!GOOGLE_CLIENT_ID) {
-  logger.warn('Google OAuth not configured: GOOGLE_CLIENT_ID or VITE_GOOGLE_CLIENT_ID is not set');
-} else {
-  logger.info({ clientId: GOOGLE_CLIENT_ID.substring(0, 8) + '...' }, 'Google OAuth configured');
-}
+const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
+const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
 
 const msJwksClient = jwksClient({
-  jwksUri: MICROSOFT_JWKS_URI,
-  cache: true,
-  cacheMaxAge: 86400000,
-});
-
-const googleJwksClient = jwksClient({
-  jwksUri: GOOGLE_JWKS_URI,
+  jwksUri: `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/discovery/v2.0/keys`,
   cache: true,
   cacheMaxAge: 86400000,
 });
@@ -73,199 +50,73 @@ export function authenticateLocal(email, password) {
 }
 
 export async function authenticateMicrosoft(idToken) {
-  if (!MICROSOFT_CLIENT_ID) {
-    logger.error('Microsoft OAuth attempted but MICROSOFT_CLIENT_ID is not configured');
-    throw new UnauthorizedError('Microsoft login not configured', 'MICROSOFT_NOT_CONFIGURED');
+  if (!MICROSOFT_CLIENT_ID || !MICROSOFT_TENANT_ID) {
+    throw new UnauthorizedError('Microsoft SSO non configurato sul server.');
   }
 
-  const payload = await verifyMicrosoftToken(idToken);
-  if (!payload) {
-    logger.error('Microsoft token verification failed - payload is null');
-    throw new UnauthorizedError('Invalid or expired Microsoft token');
+  const decoded = jwt.decode(idToken, { complete: true });
+  if (!decoded?.header?.kid) {
+    throw new UnauthorizedError('Token Microsoft non valido.');
+  }
+
+  let publicKey;
+  try {
+    const key = await msJwksClient.getSigningKey(decoded.header.kid);
+    publicKey = key.getPublicKey();
+  } catch (err) {
+    logger.error({ err: err.message }, 'Impossibile ottenere la chiave pubblica Microsoft');
+    throw new UnauthorizedError('Verifica del token Microsoft fallita.');
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(idToken, publicKey, {
+      algorithms: ['RS256'],
+      audience: MICROSOFT_CLIENT_ID,
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Verifica token Microsoft fallita');
+    throw new UnauthorizedError('Token Microsoft non valido o scaduto.');
+  }
+
+  // Verifica che l'utente appartenga al tenant aziendale corretto
+  if (payload.tid !== MICROSOFT_TENANT_ID) {
+    logger.warn({ tid: payload.tid, expected: MICROSOFT_TENANT_ID }, 'Accesso negato: tenant non autorizzato');
+    throw new ForbiddenError('Accesso negato: il tuo account non appartiene all\'organizzazione autorizzata.');
   }
 
   const microsoftId = payload.oid || payload.sub;
-  const email = payload.preferred_username || payload.email || payload.unique_name || `${microsoftId}@microsoft.local`;
+  const email = payload.preferred_username || payload.email || payload.unique_name;
   const name = payload.name || email.split('@')[0];
 
-  logger.info({ email, microsoftId: microsoftId.substring(0, 8) + '...' }, 'Microsoft token verified, authenticating user');
+  if (!email) {
+    throw new UnauthorizedError('Impossibile ottenere l\'email dall\'account Microsoft.');
+  }
 
   const db = getDb();
-  const txn = db.transaction(() => {
-    let user = db.prepare('SELECT * FROM users WHERE microsoft_id = ?').get(microsoftId);
-    if (!user) {
-      const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-      if (existingUser) {
-        logger.info({ email, userId: existingUser.id }, 'Linking Microsoft ID to existing user');
+  const user = db.transaction(() => {
+    let u = db.prepare('SELECT * FROM users WHERE microsoft_id = ?').get(microsoftId);
+    if (!u) {
+      u = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+      if (u) {
         db.prepare('UPDATE users SET microsoft_id = ?, updated_date = ? WHERE id = ?')
-          .run(microsoftId, new Date().toISOString(), existingUser.id);
-        user = existingUser;
+          .run(microsoftId, new Date().toISOString(), u.id);
       } else {
-        logger.info({ email }, 'Creating new user from Microsoft SSO');
         const now = new Date().toISOString();
         const id = uid();
-        const hashed = bcrypt.hashSync(microsoftId, 10);
         db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, microsoft_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
-          .run(id, email, hashed, name, 'agent', 'agent', 'en', '[]', microsoftId, '[]', now, now);
-        user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+          .run(id, email, bcrypt.hashSync(microsoftId, 10), name, 'agent', 'agent', 'en', '[]', microsoftId, '[]', now, now);
+        u = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
       }
     }
-    return user;
-  });
+    return u;
+  })();
 
-  const user = txn();
   if (!user.is_active) {
-    logger.warn({ email }, 'Microsoft login attempted but account is inactive');
-    throw new ForbiddenError('Account pending approval. Contact an administrator.', 'ACCOUNT_PENDING');
+    throw new ForbiddenError('Account in attesa di approvazione. Contatta un amministratore.', 'ACCOUNT_PENDING');
   }
 
-  logger.info({ email, userId: user.id }, 'Microsoft SSO authentication successful');
   return safeUser(user);
-}
-
-export async function authenticateGoogle(idToken) {
-  if (!GOOGLE_CLIENT_ID) {
-    logger.error('Google OAuth attempted but GOOGLE_CLIENT_ID is not configured');
-    throw new UnauthorizedError('Google login not configured', 'GOOGLE_NOT_CONFIGURED');
-  }
-
-  const payload = await verifyGoogleToken(idToken);
-  if (!payload) {
-    logger.error('Google token verification failed - payload is null');
-    throw new UnauthorizedError('Invalid or expired Google token');
-  }
-
-  const googleId = payload.sub;
-  const email = payload.email;
-  const name = payload.name || email.split('@')[0];
-
-  logger.info({ email, googleId: googleId.substring(0, 8) + '...' }, 'Google token verified, authenticating user');
-
-  const db = getDb();
-  const txn = db.transaction(() => {
-    let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(googleId);
-    if (!user) {
-      const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-      if (existingUser) {
-        logger.info({ email, userId: existingUser.id }, 'Linking Google ID to existing user');
-        db.prepare('UPDATE users SET google_id = ?, updated_date = ? WHERE id = ?')
-          .run(googleId, new Date().toISOString(), existingUser.id);
-        user = existingUser;
-      } else {
-        logger.info({ email }, 'Creating new user from Google SSO');
-        const now = new Date().toISOString();
-        const id = uid();
-        const hashed = bcrypt.hashSync(googleId, 10);
-        db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, google_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
-          .run(id, email, hashed, name, 'agent', 'agent', 'en', '[]', googleId, '[]', now, now);
-        user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
-      }
-    }
-    return user;
-  });
-
-  const user = txn();
-  if (!user.is_active) {
-    logger.warn({ email }, 'Google login attempted but account is inactive');
-    throw new ForbiddenError('Account pending approval. Contact an administrator.', 'ACCOUNT_PENDING');
-  }
-
-  logger.info({ email, userId: user.id }, 'Google SSO authentication successful');
-  return safeUser(user);
-}
-
-async function verifyMicrosoftToken(idToken) {
-  try {
-    const decoded = jwt.decode(idToken, { complete: true });
-    if (!decoded || !decoded.header || !decoded.header.kid) {
-      logger.error({ header: decoded?.header }, 'Microsoft token missing kid in header');
-      return null;
-    }
-
-    logger.debug({ kid: decoded.header.kid, alg: decoded.header.alg }, 'Microsoft token decoded');
-
-    let publicKey;
-    try {
-      const key = await msJwksClient.getSigningKey(decoded.header.kid);
-      publicKey = key.getPublicKey();
-      logger.debug('Microsoft signing key obtained successfully');
-    } catch (err) {
-      logger.error({ err: err.message, kid: decoded.header.kid, jwksUri: MICROSOFT_JWKS_URI }, 'Failed to get Microsoft signing key');
-      return null;
-    }
-
-    try {
-      const payload = jwt.verify(idToken, publicKey, {
-        algorithms: ['RS256'],
-        audience: MICROSOFT_CLIENT_ID,
-      });
-
-      const iss = payload.iss;
-      const validIssuer =
-        /^https:\/\/login\.microsoftonline\.com\/[^/]+\/v2\.0$/.test(iss) ||
-        /^https:\/\/sts\.windows\.net\/[^/]+\/$/.test(iss);
-      
-      if (!validIssuer) {
-        logger.error({ iss, MICROSOFT_CLIENT_ID, expectedIssuer: `https://login.microsoftonline.com/*/v2.0` }, 'Microsoft token rejected: invalid issuer');
-        return null;
-      }
-
-      logger.debug({ iss, aud: payload.aud, oid: payload.oid }, 'Microsoft token verified successfully');
-      return payload;
-    } catch (err) {
-      logger.error({ err: err.message, errName: err.name, MICROSOFT_CLIENT_ID, audience: MICROSOFT_CLIENT_ID }, 'Microsoft token verification failed');
-      return null;
-    }
-  } catch (err) {
-    logger.error({ err: err.message, stack: err.stack }, 'Unexpected error during Microsoft token verification');
-    return null;
-  }
-}
-
-async function verifyGoogleToken(idToken) {
-  try {
-    const decoded = jwt.decode(idToken, { complete: true });
-    if (!decoded || !decoded.header || !decoded.header.kid) {
-      logger.error({ header: decoded?.header }, 'Google token missing kid in header');
-      return null;
-    }
-
-    logger.debug({ kid: decoded.header.kid, alg: decoded.header.alg }, 'Google token decoded');
-
-    let publicKey;
-    try {
-      const key = await googleJwksClient.getSigningKey(decoded.header.kid);
-      publicKey = key.getPublicKey();
-      logger.debug('Google signing key obtained successfully');
-    } catch (err) {
-      logger.error({ err: err.message, kid: decoded.header.kid, jwksUri: GOOGLE_JWKS_URI }, 'Failed to get Google signing key');
-      return null;
-    }
-
-    try {
-      const payload = jwt.verify(idToken, publicKey, {
-        algorithms: ['RS256'],
-        audience: GOOGLE_CLIENT_ID,
-      });
-
-      const iss = payload.iss;
-      const validIssuer = /^https:\/\/accounts\.google\.com$/.test(iss) || /^https:\/\/accounts\.google\.com\/$/.test(iss);
-      
-      if (!validIssuer) {
-        logger.error({ iss, GOOGLE_CLIENT_ID, expectedIssuer: 'https://accounts.google.com' }, 'Google token rejected: invalid issuer');
-        return null;
-      }
-
-      logger.debug({ iss, aud: payload.aud, sub: payload.sub }, 'Google token verified successfully');
-      return payload;
-    } catch (err) {
-      logger.error({ err: err.message, errName: err.name, GOOGLE_CLIENT_ID, audience: GOOGLE_CLIENT_ID }, 'Google token verification failed');
-      return null;
-    }
-  } catch (err) {
-    logger.error({ err: err.message, stack: err.stack }, 'Unexpected error during Google token verification');
-    return null;
-  }
 }
 
 export function getUserById(id) {

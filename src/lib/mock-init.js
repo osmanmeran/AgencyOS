@@ -32,9 +32,7 @@
       redirectToLogin: function (url) {
         window.location.href = '/mock-login?returnUrl=' + encodeURIComponent(url || window.location.href);
       },
-      microsoftLogin: function (idToken) {
-        return Promise.resolve({ id: 'mock_ms_' + Date.now(), name: 'Microsoft User', email: 'msuser@example.com', user_tier: 'agent', role: 'agent', custom_permissions: [] });
-      },
+
     },
     entities: makeApi(),
     integrations: {

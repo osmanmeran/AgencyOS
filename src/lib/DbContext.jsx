@@ -4,7 +4,7 @@ const db = globalThis.__B44_DB__ || {
   auth: {
     isAuthenticated: async () => false,
     me: async () => null,
-    microsoftLogin: async () => { throw new Error('API client not loaded'); },
+
     loginViaEmailPassword: async () => { throw new Error('API client not loaded'); },
     logout: () => {},
     redirectToLogin: () => {},
