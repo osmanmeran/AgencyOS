@@ -4,7 +4,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const LOG_DIR = path.join(__dirname, '..', '..', 'logs');
+const LOG_DIR = path.join('/tmp', 'logs');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
