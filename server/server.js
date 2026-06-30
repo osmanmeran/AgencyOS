@@ -13,7 +13,7 @@ import { startReminderService } from './services/reminders.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
-const BIND_ADDRESS = process.env.BIND_ADDRESS || '127.0.0.1';
+const BIND_ADDRESS = process.env.BIND_ADDRESS || '0.0.0.0';
 
 const server = http.createServer(app);
 
