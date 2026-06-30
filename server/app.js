@@ -7,7 +7,9 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { seedDatabase } from './seed.js';
+import { getDb, uid } from './db.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
+import { authMiddleware } from './middleware/auth.js';
 import { auditMiddleware } from './services/audit.js';
 import logger from './lib/logger.js';
 import authRoutes from './routes/auth.js';
@@ -102,6 +104,18 @@ app.use('/api/suggestions', suggestionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+app.post('/api/app-logs', authMiddleware, (req, res) => {
+  try {
+    const { pageName } = req.body || {};
+    if (pageName) {
+      const db = getDb();
+      db.prepare('INSERT INTO app_logs (id, page_name, user_id, created_date) VALUES (?, ?, ?, ?)')
+        .run(uid(), pageName, req.user?.id || null, new Date().toISOString());
+    }
+  } catch (e) {}
+  res.json({ ok: true });
 });
 
 // On Vercel, static files + SPA fallback are handled by vercel.json
