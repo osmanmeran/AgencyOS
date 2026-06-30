@@ -3,20 +3,25 @@ import { handleMicrosoftCallback, exchangeIdTokenWithServer } from '@/lib/micros
 
 export default function MicrosoftCallback() {
   const [error, setError] = useState('');
+  const [step, setStep] = useState('Verifica codice di autorizzazione...');
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        setStep('Scambio codice con token Microsoft...');
         const { idToken, returnUrl } = await handleMicrosoftCallback();
         if (cancelled) return;
 
+        setStep('Autenticazione sul server...');
         await exchangeIdTokenWithServer(idToken);
         if (cancelled) return;
 
+        setStep('Accesso completato, reindirizzamento...');
         window.location.href = returnUrl;
       } catch (err) {
         if (!cancelled) {
+          console.error('[MicrosoftCallback] Login error:', err);
           setError(err.message || 'Login Microsoft fallito.');
         }
       }
@@ -34,7 +39,7 @@ export default function MicrosoftCallback() {
             </svg>
           </div>
           <h2 className="text-lg font-semibold text-slate-900 mb-2">Login fallito</h2>
-          <p className="text-sm text-slate-500 mb-6">{error}</p>
+          <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3 mb-6 text-left">{error}</p>
           <a href="/mock-login" className="inline-block px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700">
             Torna al login
           </a>
@@ -47,7 +52,7 @@ export default function MicrosoftCallback() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <div className="text-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-sm text-slate-500">Accesso in corso...</p>
+        <p className="text-sm text-slate-500">{step}</p>
       </div>
     </div>
   );

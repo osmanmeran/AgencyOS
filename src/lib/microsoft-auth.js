@@ -112,16 +112,29 @@ export async function handleMicrosoftCallback() {
 }
 
 export async function exchangeIdTokenWithServer(idToken) {
-  const res = await fetch('/api/auth/microsoft', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idToken }),
-    credentials: 'include',
-  });
+  let res;
+  try {
+    res = await fetch('/api/auth/microsoft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+      credentials: 'include',
+    });
+  } catch (networkErr) {
+    throw new Error(`Errore di rete: impossibile raggiungere il server. (${networkErr.message})`);
+  }
 
-  const data = await res.json();
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    // Il server ha risposto con testo non-JSON (crash serverless)
+    throw new Error(`Errore del server (${res.status}): ${text.slice(0, 200)}`);
+  }
+
   if (!res.ok) {
-    throw new Error(data?.error?.message || data?.message || 'Login Microsoft fallito.');
+    throw new Error(data?.error?.message || data?.message || `Errore ${res.status} dal server.`);
   }
 
   try {
