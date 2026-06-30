@@ -38,6 +38,7 @@ import TaskBoard from './pages/TaskBoard';
 import RFPManager from './pages/RFPManager';
 import CommissionReport from './pages/CommissionReport';
 import SuggestionsManager from './pages/SuggestionsManager';
+import UserManagement from './pages/UserManagement';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -80,6 +81,7 @@ export const PAGES = {
     "RFPManager": RFPManager,
     "CommissionReport": CommissionReport,
     "SuggestionsManager": SuggestionsManager,
+    "UserManagement": UserManagement,
 }
 
 export const pagesConfig = {

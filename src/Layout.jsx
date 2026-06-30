@@ -75,6 +75,7 @@ const NAV_SECTIONS = {
     ]},
   ],
   admin: (t) => [
+    { label: 'User Management', icon: <PeopleRounded />, page: 'UserManagement' },
     { label: t('nav.settings'), icon: <SettingsRounded />, page: 'AppSettings', children: [
       { label: t('nav.importHub'), page: 'ImportHub' },
     ]},

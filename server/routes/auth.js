@@ -5,6 +5,8 @@ import { requireTier } from '../middleware/permissions.js';
 import { catchAsync, BadRequestError, NotFoundError, ForbiddenError } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
 import { authenticateLocal, authenticateMicrosoft, authenticateGoogle, safeUser, setTokenCookie, getUserById, getUserPassword, updateUser, deleteUser, getAllUsers, createUser, inviteUser, acceptInvite } from '../services/auth.js';
+import { sendEmail } from '../services/email.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -94,6 +96,19 @@ router.delete('/users/:id', authMiddleware, requireTier('admin'), catchAsync(asy
 
 router.post('/invite', authMiddleware, requireTier('admin'), validate(schemas.inviteUser), catchAsync(async (req, res) => {
   const result = inviteUser({ ...req.body, invited_by: req.user.id });
+
+  const inviter = getUserById(req.user.id);
+  const inviterName = inviter?.name || req.user.email;
+  const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+  const inviteUrl = `${appUrl}/accept-invite?token=${result.token}`;
+
+  sendEmail({
+    to: result.email,
+    subject: "You've been invited to Marvelops TravelPro",
+    template: 'invite_user',
+    templateData: { inviteUrl, inviterName },
+  }).catch(err => logger.warn({ err: err.message, email: result.email }, 'Failed to send invite email'));
+
   res.status(201).json(result);
 }));
 
