@@ -4,12 +4,19 @@ import { generateToken, authMiddleware } from '../middleware/auth.js';
 import { requireTier } from '../middleware/permissions.js';
 import { catchAsync, BadRequestError, NotFoundError, ForbiddenError } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
-import { authenticateLocal, authenticateMicrosoft, safeUser, setTokenCookie, getUserById, getUserPassword, updateUser, deleteUser, getAllUsers, createUser, inviteUser, acceptInvite } from '../services/auth.js';
+import { authenticateLocal, authenticateMicrosoft, authenticateGoogle, safeUser, setTokenCookie, getUserById, getUserPassword, updateUser, deleteUser, getAllUsers, createUser, inviteUser, acceptInvite } from '../services/auth.js';
 
 const router = Router();
 
 router.post('/microsoft', validate(schemas.microsoftAuth), catchAsync(async (req, res) => {
   const user = await authenticateMicrosoft(req.body.idToken);
+  const token = generateToken(user);
+  setTokenCookie(res, token);
+  res.json({ token, user });
+}));
+
+router.post('/google', validate(schemas.googleAuth), catchAsync(async (req, res) => {
+  const user = await authenticateGoogle(req.body.idToken);
   const token = generateToken(user);
   setTokenCookie(res, token);
   res.json({ token, user });
