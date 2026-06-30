@@ -3,14 +3,21 @@ import jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import { getDb, uid } from '../db.js';
 import { getJwtSecret } from '../middleware/auth.js';
-import { ForbiddenError, ConflictError, UnauthorizedError } from '../middleware/errors.js';
+import { ForbiddenError, ConflictError, UnauthorizedError, BadRequestError } from '../middleware/errors.js';
 import logger from '../lib/logger.js';
 
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
 const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 
 const msJwksClient = jwksClient({
   jwksUri: `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/discovery/v2.0/keys`,
+  cache: true,
+  cacheMaxAge: 86400000,
+});
+
+const googleJwksClient = jwksClient({
+  jwksUri: 'https://www.googleapis.com/oauth2/v3/certs',
   cache: true,
   cacheMaxAge: 86400000,
 });
@@ -106,6 +113,71 @@ export async function authenticateMicrosoft(idToken) {
         const id = uid();
         db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, microsoft_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
           .run(id, email, bcrypt.hashSync(microsoftId, 10), name, 'agent', 'agent', 'en', '[]', microsoftId, '[]', now, now);
+        u = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+      }
+    }
+    return u;
+  })();
+
+  if (!user.is_active) {
+    throw new ForbiddenError('Account in attesa di approvazione. Contatta un amministratore.', 'ACCOUNT_PENDING');
+  }
+
+  return safeUser(user);
+}
+
+export async function authenticateGoogle(idToken) {
+  if (!GOOGLE_CLIENT_ID) {
+    throw new UnauthorizedError('Google SSO non configurato sul server.');
+  }
+
+  const decoded = jwt.decode(idToken, { complete: true });
+  if (!decoded?.header?.kid) {
+    throw new UnauthorizedError('Token Google non valido.');
+  }
+
+  let publicKey;
+  try {
+    const key = await googleJwksClient.getSigningKey(decoded.header.kid);
+    publicKey = key.getPublicKey();
+  } catch (err) {
+    logger.error({ err: err.message }, 'Impossibile ottenere la chiave pubblica Google');
+    throw new UnauthorizedError('Verifica del token Google fallita.');
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(idToken, publicKey, {
+      algorithms: ['RS256'],
+      audience: GOOGLE_CLIENT_ID,
+      issuer: ['https://accounts.google.com', 'accounts.google.com'],
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Verifica token Google fallita');
+    throw new UnauthorizedError('Token Google non valido o scaduto.');
+  }
+
+  const googleId = payload.sub;
+  const email = payload.email;
+  const name = payload.name || (email ? email.split('@')[0] : null);
+
+  if (!email) {
+    throw new UnauthorizedError('Impossibile ottenere l\'email dall\'account Google.');
+  }
+
+  const db = getDb();
+  const user = db.transaction(() => {
+    let u = db.prepare('SELECT * FROM users WHERE google_id = ?').get(googleId);
+    if (!u) {
+      u = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+      if (u) {
+        db.prepare('UPDATE users SET google_id = ?, updated_date = ? WHERE id = ?')
+          .run(googleId, new Date().toISOString(), u.id);
+      } else {
+        const now = new Date().toISOString();
+        const id = uid();
+        db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, google_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
+          .run(id, email, '', name, 'agent', 'agent', 'en', '[]', googleId, '[]', now, now);
         u = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
       }
     }
