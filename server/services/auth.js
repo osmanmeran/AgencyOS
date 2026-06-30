@@ -6,8 +6,8 @@ import { getJwtSecret } from '../middleware/auth.js';
 import { ForbiddenError, ConflictError, UnauthorizedError } from '../middleware/errors.js';
 import logger from '../lib/logger.js';
 
-const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
-const MICROSOFT_TENANT = process.env.MICROSOFT_TENANT || 'common';
+const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || process.env.VITE_MICROSOFT_CLIENT_ID || '';
+const MICROSOFT_TENANT = process.env.MICROSOFT_TENANT || process.env.VITE_MICROSOFT_TENANT || 'common';
 const MICROSOFT_JWKS_URI = `https://login.microsoftonline.com/${MICROSOFT_TENANT}/discovery/v2.0/keys`;
 
 const msJwksClient = jwksClient({

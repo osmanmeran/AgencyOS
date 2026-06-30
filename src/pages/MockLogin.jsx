@@ -160,7 +160,7 @@ export default function MockLogin() {
                     <li>Enter a name (e.g. <em>Marvelops TravelPro</em>)</li>
                     <li>Under <strong>Supported account types</strong>, select <em>Accounts in any organizational directory (Any Microsoft ID tenant) and personal Microsoft accounts</em></li>
                     <li>Under <strong>Redirect URI</strong>, select <em>Single-page application (SPA)</em> and enter:<br/>
-                      <code className="bg-slate-200 px-1 rounded text-xs break-all">http://localhost:5173/mock-login</code></li>
+                      <code className="bg-slate-200 px-1 rounded text-xs break-all">http://localhost:5173/mock-login/</code></li>
                     <li>Click <strong>Register</strong></li>
                   </ol>
                   <p className="font-semibold text-slate-800">Step 2: Copy the Client ID</p>
