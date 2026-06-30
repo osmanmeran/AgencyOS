@@ -1,12 +1,12 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], list:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Lightbulb, Star, Bug, Heart, CheckCircle2, Clock, XCircle, GitBranch } from 'lucide-react';
+import { Lightbulb, Star, Bug, Heart } from 'lucide-react';
 
 const STATUS_STYLES = {
   open: 'bg-slate-100 text-slate-700 border-slate-300',
@@ -40,7 +40,7 @@ export default function SuggestionsManager() {
   const [filterStatus, setFilterStatus] = useState('all');
   const queryClient = useQueryClient();
 
-  const { data: suggestions = [] } = useQuery({
+  const { data: suggestions = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suggestions'],
     queryFn: async () => {
       try {
@@ -52,10 +52,10 @@ export default function SuggestionsManager() {
         return data;
       }
     },
-  });
+  }));
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }) => {
+  const updateStatus = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ { id, /** @type {any} */ status }) => {
       try {
         const item = suggestions.find(s => s.id === id);
         if (item) await db.entities.Suggestion.update(id, { ...item, status });
@@ -63,7 +63,7 @@ export default function SuggestionsManager() {
       } catch (err) { throw err; }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suggestions'] }),
-  });
+  }));
 
   const filtered = filterStatus === 'all' ? suggestions : suggestions.filter(s => s.status === filterStatus);
 

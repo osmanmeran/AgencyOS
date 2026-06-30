@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
-const db = globalThis.__B44_DB__;
+// const db = globalThis.__B44_DB__;
 
 export default function OutlookCallback() {
   const [searchParams] = useSearchParams();

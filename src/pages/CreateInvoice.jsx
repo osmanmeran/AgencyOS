@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { ArrowLeft, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { parseISO, isBefore, isAfter } from 'date-fns';
+import { parseISO, isBefore } from 'date-fns';
 
 const CURRENCIES = { USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' };
 
@@ -38,28 +38,28 @@ export default function CreateInvoice() {
     status: 'draft'
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
-  const { data: proposals = [] } = useQuery({
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['proposals'],
     queryFn: () => db.entities.Proposal.list()
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['trips'],
     queryFn: () => db.entities.Trip.list()
-  });
+  }));
 
-  const { data: appSettings } = useQuery({
+  const { data: appSettings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0];
     }
-  });
+  }));
 
   // Init defaults from app settings on mount
   useEffect(() => {
@@ -81,8 +81,8 @@ export default function CreateInvoice() {
     return isOngoing && isApproved;
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data) => {
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const invoice = await db.entities.Invoice.create(data);
       
       // Update client balance
@@ -103,7 +103,7 @@ export default function CreateInvoice() {
       navigate(createPageUrl(`InvoiceDetails?id=${invoice.id}`));
     },
     onError: (error) => showError('Failed to create invoice', error.message)
-  });
+  }));
 
   const addLineItem = () => {
     setFormData({
@@ -157,7 +157,7 @@ export default function CreateInvoice() {
     const qty = parseInt(svc.quantity) || 1;
     if (svc.unit === 'per_night' || svc.unit === 'per_day') {
       if (svc.start_date && svc.end_date) {
-        const days = Math.max(1, Math.round((new Date(svc.end_date) - new Date(svc.start_date)) / 86400000));
+        const days = Math.max(1, Math.round((+(new Date(svc.end_date)) - +(new Date(svc.start_date))) / 86400000));
         return qty * days;
       }
       return qty;
@@ -442,9 +442,9 @@ export default function CreateInvoice() {
           <Button 
             type="submit" 
             className="bg-blue-600 hover:bg-blue-700" 
-            disabled={createMutation.isLoading || !formData.client_id || !formData.trip_id || formData.line_items.length === 0 || eligibleReservations.length === 0}
+            disabled={createMutation.isPending || !formData.client_id || !formData.trip_id || formData.line_items.length === 0 || eligibleReservations.length === 0}
           >
-            {createMutation.isLoading ? 'Creating...' : 'Create Invoice'}
+            {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
           </Button>
         </div>
       </form>

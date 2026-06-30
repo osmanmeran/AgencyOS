@@ -13,12 +13,12 @@ export default function MessageThread({ clientId, referenceType = 'general', ref
   const queryClient = useQueryClient();
   const [newMessage, setNewMessage] = useState('');
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser } = /** @type {any} */ (useQuery({
     queryKey: ['currentUser'],
     queryFn: () => db.auth.me()
-  });
+  }));
 
-  const { data: messages = [] } = useQuery({
+  const { data: messages = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['messages', clientId, referenceType, referenceId],
     queryFn: async () => {
       let filter = { client_id: clientId };
@@ -29,10 +29,10 @@ export default function MessageThread({ clientId, referenceType = 'general', ref
       return db.entities.Message.filter(filter, 'created_date');
     },
     enabled: !!clientId
-  });
+  }));
 
-  const sendMutation = useMutation({
-    mutationFn: (content) => db.entities.Message.create({
+  const sendMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ content) => db.entities.Message.create({
       client_id: clientId,
       sender_type: isAgent ? 'agent' : 'client',
       sender_email: currentUser?.email,
@@ -45,12 +45,12 @@ export default function MessageThread({ clientId, referenceType = 'general', ref
       queryClient.invalidateQueries({ queryKey: ['messages', clientId, referenceType, referenceId] });
       setNewMessage('');
     }
-  });
+  }));
 
-  const markAsReadMutation = useMutation({
-    mutationFn: (messageId) => db.entities.Message.update(messageId, { is_read: true }),
+  const markAsReadMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ messageId) => db.entities.Message.update(messageId, { is_read: true }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages', clientId, referenceType, referenceId] })
-  });
+  }));
 
   // Mark unread messages as read
   React.useEffect(() => {

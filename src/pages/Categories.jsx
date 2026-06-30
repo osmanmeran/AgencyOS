@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SkeletonTable } from '@/components/ui/skeletons';
 import { Plus, Edit, Trash2, FolderTree, BookOpen, ArrowRight } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
@@ -22,44 +21,44 @@ export default function Categories() {
   const [formData, setFormData] = useState({ name: '', description: '', color: '#3B82F6' });
   const queryClient = useQueryClient();
 
-  const { data: categories = [], isLoading } = useQuery({
+  const { data: categories = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['categories'],
     queryFn: () => db.entities.SupplierCategory.list()
-  });
+  }));
 
-  const { data: serviceTemplates = [] } = useQuery({
+  const { data: serviceTemplates = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['serviceTemplates'],
     queryFn: () => db.entities.ServiceTemplate.list()
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.SupplierCategory.create(data),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.SupplierCategory.create(data),
     onSuccess: () => {
       showSuccess('Category created');
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       closeModal();
     },
     onError: (error) => showError('Failed to create category', error.message)
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.SupplierCategory.update(id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierCategory.update(id, data),
     onSuccess: () => {
       showSuccess('Category updated');
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       closeModal();
     },
     onError: (error) => showError('Failed to update category', error.message)
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.SupplierCategory.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.SupplierCategory.delete(id),
     onSuccess: () => {
       showSuccess('Category deleted');
       queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
     onError: (error) => showError('Failed to delete category', error.message)
-  });
+  }));
 
   const openModal = (category = null) => {
     if (category) {

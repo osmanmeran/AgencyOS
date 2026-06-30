@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -58,27 +58,27 @@ export default function SupplierServices({ supplierId }) {
     notes: ''
   });
 
-  const { data: services = [] } = useQuery({
+  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierServices', supplierId],
     queryFn: () => db.entities.SupplierService.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: pricings = [] } = useQuery({
+  const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierPricings', supplierId],
     queryFn: () => db.entities.SupplierPricing.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: subcategories = [] } = useQuery({
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierSubcategories', supplierId],
     queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
   // Service mutations
-  const createServiceMutation = useMutation({
-    mutationFn: (data) => db.entities.SupplierService.create({
+  const createServiceMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.SupplierService.create({
       ...data,
       supplier_id: supplierId,
       budgeted_cost: parseFloat(data.budgeted_cost) || 0,
@@ -89,10 +89,10 @@ export default function SupplierServices({ supplierId }) {
       queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] });
       closeServiceModal();
     }
-  });
+  }));
 
-  const updateServiceMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.SupplierService.update(id, {
+  const updateServiceMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierService.update(id, {
       ...data,
       budgeted_cost: parseFloat(data.budgeted_cost) || 0,
       approval_status: 'pending' // Re-submit for approval on edit
@@ -101,16 +101,16 @@ export default function SupplierServices({ supplierId }) {
       queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] });
       closeServiceModal();
     }
-  });
+  }));
 
-  const deleteServiceMutation = useMutation({
-    mutationFn: (id) => db.entities.SupplierService.delete(id),
+  const deleteServiceMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.SupplierService.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] })
-  });
+  }));
 
   // Pricing mutations
-  const createPricingMutation = useMutation({
-    mutationFn: (data) => db.entities.SupplierPricing.create({
+  const createPricingMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.SupplierPricing.create({
       ...data,
       supplier_id: supplierId,
       base_price: parseFloat(data.base_price) || 0,
@@ -123,10 +123,10 @@ export default function SupplierServices({ supplierId }) {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
       closePricingModal();
     }
-  });
+  }));
 
-  const updatePricingMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.SupplierPricing.update(id, {
+  const updatePricingMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierPricing.update(id, {
       ...data,
       base_price: parseFloat(data.base_price) || 0,
       min_quantity: parseInt(data.min_quantity) || 1,
@@ -137,12 +137,12 @@ export default function SupplierServices({ supplierId }) {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
       closePricingModal();
     }
-  });
+  }));
 
-  const deletePricingMutation = useMutation({
-    mutationFn: (id) => db.entities.SupplierPricing.delete(id),
+  const deletePricingMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.SupplierPricing.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] })
-  });
+  }));
 
   const openServiceModal = (service = null) => {
     if (service) {

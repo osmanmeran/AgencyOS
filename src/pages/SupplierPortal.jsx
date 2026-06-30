@@ -1,16 +1,15 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useT } from '@/lib/i18n/I18nContext';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { SkeletonList } from '@/components/ui/skeletons';
 import { 
-  Package, FileText, Star, DollarSign, ClipboardList, 
-  CheckCircle, Clock, XCircle, BarChart3, MessageSquare
+  Package, Star, ClipboardList, 
+  CheckCircle, Clock
 } from 'lucide-react';
 import SupplierServices from '../components/supplier-portal/SupplierServices';
 import SupplierBookings from '../components/supplier-portal/SupplierBookings';
@@ -39,17 +38,17 @@ export default function SupplierPortal() {
     });
   }, []);
 
-  const { data: bookings = [] } = useQuery({
+  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierBookings', supplier?.id],
     queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplier.id }),
     enabled: !!supplier
-  });
+  }));
 
-  const { data: reviews = [] } = useQuery({
+  const { data: reviews = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierReviews', supplier?.id],
     queryFn: () => db.entities.SupplierReview.filter({ supplier_id: supplier.id }),
     enabled: !!supplier
-  });
+  }));
 
   if (!user) return <SkeletonList />;
 

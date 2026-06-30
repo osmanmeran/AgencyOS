@@ -7,8 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Users, CheckCircle, XCircle, MessageSquare, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, CheckCircle, XCircle, MapPin } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -38,21 +37,21 @@ export default function ClientProposalDetails() {
     });
   }, []);
 
-  const { data: proposal, isLoading } = useQuery({
+  const { data: proposal, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['proposal', proposalId],
     queryFn: () => db.entities.Proposal.get(proposalId),
     enabled: !!proposalId
-  });
+  }));
 
-  const updateProposalMutation = useMutation({
-    mutationFn: (status) => db.entities.Proposal.update(proposalId, { ...proposal, status }),
+  const updateProposalMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ status) => db.entities.Proposal.update(proposalId, { ...proposal, status }),
     onSuccess: () => {
       showSuccess('Proposal updated');
       queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
       queryClient.invalidateQueries({ queryKey: ['myProposals', client?.id] });
     },
     onError: (error) => showError('Failed to update proposal', error.message)
-  });
+  }));
 
   if (isLoading) {
     return <SkeletonCard />;

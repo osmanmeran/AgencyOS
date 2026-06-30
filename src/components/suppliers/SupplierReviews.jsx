@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -25,30 +25,30 @@ export default function SupplierReviews({ supplierId }) {
     trip_id: ''
   });
 
-  const { data: reviews = [] } = useQuery({
+  const { data: reviews = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierReviews', supplierId],
     queryFn: () => db.entities.SupplierReview.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['trips'],
     queryFn: () => db.entities.Trip.list()
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.SupplierReview.create({ ...data, supplier_id: supplierId }),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.SupplierReview.create({ ...data, supplier_id: supplierId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierReviews', supplierId] });
       setModalOpen(false);
       setFormData({ rating: 5, service_quality: 5, value_for_money: 5, communication: 5, review_text: '', would_recommend: true, trip_id: '' });
     }
-  });
+  }));
 
   const avgRating = reviews.length > 0 
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) 
@@ -65,7 +65,7 @@ export default function SupplierReviews({ supplierId }) {
   const getClientName = (id) => clients.find(c => c.id === id)?.name || 'Anonymous';
   const getTripName = (id) => trips.find(t => t.id === id)?.name || '';
 
-  const StarRating = ({ value, onChange, readonly = false }) => (
+  const StarRating = ({ value, onChange = (_v) => {}, readonly = false }) => (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map(star => (
         <button
@@ -99,7 +99,7 @@ export default function SupplierReviews({ supplierId }) {
         <div className="bg-slate-50 rounded-lg p-4 text-center">
           <div className="text-3xl font-bold text-slate-900">{avgRating}</div>
           <div className="flex justify-center mt-1">
-            <StarRating value={Math.round(avgRating)} readonly />
+            <StarRating value={Math.round(Number(avgRating))} readonly />
           </div>
           <div className="text-sm text-slate-600 mt-1">{reviews.length} reviews</div>
         </div>

@@ -16,7 +16,7 @@ const DrawerPortal = DrawerPrimitive.Portal
 
 const DrawerClose = DrawerPrimitive.Close
 
-const DrawerOverlay = React.forwardRef(({ className, ...props }, ref) => (
+const DrawerOverlay = React.forwardRef((/** @type {any} */ { className = "", ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
     className={cn("fixed inset-0 z-50 bg-black/50 backdrop-blur-sm", className)}
@@ -25,7 +25,7 @@ const DrawerOverlay = React.forwardRef(({ className, ...props }, ref) => (
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
-const DrawerContent = React.forwardRef(({ className, children, ...props }, ref) => (
+const DrawerContent = React.forwardRef((/** @type {any} */ { className = "", children, ...props }, ref) => (
   <DrawerPortal>
     <DrawerOverlay />
     <DrawerPrimitive.Content
@@ -43,7 +43,7 @@ const DrawerContent = React.forwardRef(({ className, children, ...props }, ref) 
 ))
 DrawerContent.displayName = "DrawerContent"
 
-const DrawerHeader = ({ className, ...props }) => (
+const DrawerHeader = ({ className = "", ...props }) => (
   <div
     className={cn("grid gap-1.5 p-4 text-center sm:text-left", className)}
     {...props}
@@ -51,12 +51,12 @@ const DrawerHeader = ({ className, ...props }) => (
 )
 DrawerHeader.displayName = "DrawerHeader"
 
-const DrawerFooter = ({ className, ...props }) => (
+const DrawerFooter = ({ className = "", ...props }) => (
   <div className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />
 )
 DrawerFooter.displayName = "DrawerFooter"
 
-const DrawerTitle = React.forwardRef(({ className, ...props }, ref) => (
+const DrawerTitle = React.forwardRef((/** @type {any} */ { className = "", ...props }, ref) => (
   <DrawerPrimitive.Title
     ref={ref}
     className={cn("m3-title-large font-semibold", className)}
@@ -65,7 +65,7 @@ const DrawerTitle = React.forwardRef(({ className, ...props }, ref) => (
 ))
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName
 
-const DrawerDescription = React.forwardRef(({ className, ...props }, ref) => (
+const DrawerDescription = React.forwardRef((/** @type {any} */ { className = "", ...props }, ref) => (
   <DrawerPrimitive.Description
     ref={ref}
     className={cn("m3-body-medium text-m3-on-surface-variant", className)}

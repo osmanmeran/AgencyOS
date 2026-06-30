@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -10,15 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, ChevronDown, ChevronRight, Users } from 'lucide-react';
 
-export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, sellingCurrency, onAddService }) {
+export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, _sellingCurrency, onAddService }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [expanded, setExpanded] = useState({});
+  const [expanded, setExpanded] = useState(/** @type {any} */ ({}));
 
-  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list() });
-  const { data: allPricings = [] } = useQuery({ queryKey: ['supplierPricings'], queryFn: () => db.entities.SupplierPricing.list() });
-  const { data: subcategories = [] } = useQuery({ queryKey: ['supplierSubcategories'], queryFn: () => db.entities.SupplierSubcategory.list() });
-  const { data: categories = [] } = useQuery({ queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list() });
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list() }));
+  const { data: allPricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierPricings'], queryFn: () => db.entities.SupplierPricing.list() }));
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierSubcategories'], queryFn: () => db.entities.SupplierSubcategory.list() }));
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list() }));
 
   // Find the best price tier for current pax count
   const getBestPricing = (supplierId) => {

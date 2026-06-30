@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
-import { DollarSign, TrendingUp, Users, Plane, CheckCircle, Download, Search, Calendar } from 'lucide-react';
+import { DollarSign, TrendingUp, Plane, CheckCircle, Download, Search, Calendar } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
@@ -20,51 +20,43 @@ export default function ReportsSection() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['reportInvoices'],
     queryFn: () => db.entities.Invoice.list()
-  });
+  }));
 
-  const { data: payments = [] } = useQuery({
+  const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['reportPayments'],
     queryFn: () => db.entities.ClientPayment.list()
-  });
+  }));
 
-  const { data: proposals = [] } = useQuery({
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['reportProposals'],
     queryFn: () => db.entities.Proposal.list()
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['reportTrips'],
     queryFn: () => db.entities.Trip.list()
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['reportClients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['reportSuppliers'],
     queryFn: () => db.entities.Supplier.list()
-  });
+  }));
 
-  const { data: services = [] } = useQuery({
+  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['reportServices'],
     queryFn: () => db.entities.SupplierService.list()
-  });
+  }));
 
   // Filter data based on search and date range
-  const getDateRange = () => {
-    if (customStartDate && customEndDate) {
-      return { start: parseISO(customStartDate), end: parseISO(customEndDate) };
-    }
-    const months = parseInt(timeRange);
-    return { start: subMonths(new Date(), months), end: new Date() };
-  };
-
-  const dateRange = getDateRange();
+  /* getDateRange and dateRange removed (unused) */
 
   // Generate monthly revenue data
   const months = parseInt(timeRange);
@@ -316,7 +308,7 @@ export default function ReportsSection() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value) => `$${value.toFixed(0)}`} />
+                  <Tooltip formatter={(value) => `$${Number(value).toFixed(0)}`} />
                   <Legend />
                   <Bar dataKey="invoiced" name="Invoiced" fill="#3b82f6" />
                   <Bar dataKey="revenue" name="Collected" fill="#10b981" />
@@ -336,7 +328,7 @@ export default function ReportsSection() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="name" type="category" width={80} />
-                  <Tooltip formatter={(value) => `$${value.toFixed(0)}`} />
+                  <Tooltip formatter={(value) => `$${Number(value).toFixed(0)}`} />
                   <Bar dataKey="revenue" fill="#10b981" />
                 </BarChart>
               </ResponsiveContainer>
@@ -361,7 +353,7 @@ export default function ReportsSection() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
                     <YAxis dataKey="name" type="category" width={80} />
-                    <Tooltip formatter={(value) => `$${value.toFixed(0)}`} />
+                    <Tooltip formatter={(value) => `$${Number(value).toFixed(0)}`} />
                     <Bar dataKey="outstanding" fill="#f59e0b" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -375,7 +367,7 @@ export default function ReportsSection() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value) => `$${value.toFixed(0)}`} />
+                  <Tooltip formatter={(value) => `$${Number(value).toFixed(0)}`} />
                   <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
@@ -496,7 +488,7 @@ export default function ReportsSection() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value) => `$${value.toFixed(0)}`} />
+                  <Tooltip formatter={(value) => `$${Number(value).toFixed(0)}`} />
                   <Legend />
                   <Bar dataKey="budgeted" name="Budgeted" fill="#3b82f6" />
                   <Bar dataKey="actual" name="Actual" fill="#10b981" />

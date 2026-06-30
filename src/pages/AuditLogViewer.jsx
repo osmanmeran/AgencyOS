@@ -1,7 +1,6 @@
-const db = globalThis.__B44_DB__ || { auth: { isAuthenticated: async () => false, me: async () => null }, entities: new Proxy({}, { get: () => ({ filter: async () => [], get: async () => null, create: async () => ({}), update: async () => ({}), delete: async () => ({}) }) }), integrations: { Core: { UploadFile: async () => ({ file_url: '' }) } } };
+// const db = globalThis.__B44_DB__ || { auth: { isAuthenticated: async () => false, me: async () => null }, entities: new Proxy({}, { get: () => ({ filter: async () => [], get: async () => null, create: async () => ({}), update: async () => ({}), delete: async () => ({}) }) }), integrations: { Core: { UploadFile: async () => ({ file_url: '' }) } } };
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/AuthContext';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +36,7 @@ async function api(path, opts = {}) {
 const ENTITY_TYPE_OPTIONS = ['', 'auth', 'entities', 'notifications', 'documents', 'proposal', 'booking', 'invoice', 'email'];
 
 export default function AuditLogViewer() {
-  const { user } = useAuth();
+//   const { user } = useAuth();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterEntity, setFilterEntity] = useState('');

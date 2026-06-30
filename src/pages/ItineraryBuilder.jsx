@@ -1,9 +1,9 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { eachDayOfInterval, parseISO, format, differenceInDays } from 'date-fns';
+import { eachDayOfInterval, parseISO, format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 
@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import {
   ArrowLeft, Plus, MapPin, Clock, Trash2, Edit2, CalendarDays,
   Building2, Star, Search, ChevronLeft, ChevronRight, Plane, Hotel,
-  Car, Activity, Utensils, Camera, DollarSign, X, Check
+  Car, Activity, Utensils, Camera, X, Check
 } from 'lucide-react';
 
 const CATEGORY_ICONS = {
@@ -53,36 +53,35 @@ export default function ItineraryBuilder() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [supplierSearch, setSupplierSearch] = useState('');
-  const [selectedDay, setSelectedDay] = useState(null);
-
+  const [_selectedDay, setSelectedDay] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: trips = [] } = useQuery({ queryKey: ['trips'], queryFn: () => db.entities.Trip.list('-start_date') });
-  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list() });
-  const { data: allServices = [] } = useQuery({ queryKey: ['supplierServices'], queryFn: () => db.entities.SupplierService.list() });
-  const { data: allPricings = [] } = useQuery({ queryKey: ['supplierPricings'], queryFn: () => db.entities.SupplierPricing.list() });
-  const { data: categories = [] } = useQuery({ queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list() });
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['trips'], queryFn: () => db.entities.Trip.list('-start_date') }));
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list() }));
+  const { data: allServices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierServices'], queryFn: () => db.entities.SupplierService.list() }));
+  const { data: allPricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierPricings'], queryFn: () => db.entities.SupplierPricing.list() }));
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list() }));
 
   const selectedTrip = trips.find(t => t.id === selectedTripId);
 
-  const { data: events = [] } = useQuery({
+  const { data: events = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['itineraryEvents', selectedTripId],
     queryFn: () => db.entities.ItineraryEvent.filter({ trip_id: selectedTripId }),
     enabled: !!selectedTripId
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.ItineraryEvent.create({ ...data, trip_id: selectedTripId }),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ItineraryEvent.create({ ...data, trip_id: selectedTripId }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] }); closeModal(); }
-  });
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.ItineraryEvent.update(id, data),
+  }));
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ItineraryEvent.update(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] }); closeModal(); }
-  });
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.ItineraryEvent.delete(id),
+  }));
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.ItineraryEvent.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] })
-  });
+  }));
 
   // Days of trip
   const tripDays = useMemo(() => {
@@ -163,13 +162,13 @@ export default function ItineraryBuilder() {
     const pricing = allPricings.find(p => p.id === pricingId);
     if (pricing) {
       const cp = pricing.client_price > 0 ? pricing.client_price : pricing.base_price * (1 + (pricing.markup_percentage || 0) / 100);
-      setFormData(f => ({
+      setFormData(/** @type {any} */ (f => ({
         ...f,
         pricing_id: pricingId,
         supplier_id: f.supplier_id || pricing.supplier_id,
         supplier_cost: pricing.base_price * (f.quantity || 1),
         cost: cp * (f.quantity || 1)
-      }));
+      })));
     }
   };
 

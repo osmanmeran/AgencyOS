@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
@@ -68,23 +68,23 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
     check_out_date: '',
   });
 
-  const { data: pricings = [] } = useQuery({
+  const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierPricings', supplier?.id],
     queryFn: () => db.entities.SupplierPricing.filter({ supplier_id: supplier.id }),
     enabled: !!supplier?.id && open
-  });
+  }));
 
-  const { data: subcategories = [] } = useQuery({
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierSubcategories', supplier?.id],
     queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplier.id }),
     enabled: !!supplier?.id && open
-  });
+  }));
 
-  const { data: allSuppliers = [] } = useQuery({
+  const { data: allSuppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allSuppliers'],
     queryFn: () => db.entities.Supplier.list(),
     enabled: open
-  });
+  }));
 
   useEffect(() => {
     if (open) { setSuccess(false); setForm(f => ({ ...f, service_date: '', num_people: 1, pricing_id: '', pricing_name: '',
@@ -102,15 +102,15 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
     }
   }, [form.check_in_date, form.num_nights]);
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.SupplierBooking.create(data),
-    onSuccess: (created) => {
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.SupplierBooking.create(data),
+    onSuccess: (/** @type {any} */ created) => {
       queryClient.invalidateQueries({ queryKey: ['supplierBookings'] });
       setCreatedBookingId(created.id);
       if (onCreated) onCreated(created);
       setSuccess(true);
     }
-  });
+  }));
 
   const selectedPricing = pricings.find(p => p.id === form.pricing_id);
   const getSubcatName = (id) => subcategories.find(s => s.id === id)?.name || '';

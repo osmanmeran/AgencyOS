@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -32,30 +32,30 @@ export default function ClientTasksPanel({ clientId }) {
   const [form, setForm] = useState({ title: '', description: '', type: 'task', due_date: '', priority: 'medium', assigned_to: '' });
   const queryClient = useQueryClient();
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientTasks', clientId],
     queryFn: () => db.entities.ClientTask.filter({ client_id: clientId }, '-created_date'),
     enabled: !!clientId,
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.ClientTask.create({ ...data, client_id: clientId }),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ClientTask.create({ ...data, client_id: clientId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientTasks', clientId] });
       setOpen(false);
       setForm({ title: '', description: '', type: 'task', due_date: '', priority: 'medium', assigned_to: '' });
     }
-  });
+  }));
 
-  const toggleMutation = useMutation({
-    mutationFn: (task) => db.entities.ClientTask.update(task.id, { status: task.status === 'done' ? 'pending' : 'done' }),
+  const toggleMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ task) => db.entities.ClientTask.update(task.id, { status: task.status === 'done' ? 'pending' : 'done' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clientTasks', clientId] }),
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.ClientTask.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.ClientTask.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clientTasks', clientId] }),
-  });
+  }));
 
   const filtered = filter === 'all' ? tasks : tasks.filter(t => t.type === filter || (filter === 'pending' && t.status === 'pending') || (filter === 'done' && t.status === 'done'));
 

@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,19 +20,19 @@ const TIERS = [
 
 export default function PermissionManager() {
   const queryClient = useQueryClient();
-  const { user: currentUser, hasPermission } = usePermissions();
-  const [tierPerms, setTierPerms] = useState({});
+  const { hasPermission } = usePermissions();
+  const [tierPerms, setTierPerms] = useState(/** @type {any} */ ({}));
   const [expandedGroups, setExpandedGroups] = useState(new Set(PERMISSION_GROUPS.map(g => g.key)));
   const [dirty, setDirty] = useState(false);
   const [selectedTier, setSelectedTier] = useState('agent');
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0];
     },
-  });
+  }));
 
   useEffect(() => {
     if (settings?.tier_permissions) {
@@ -42,8 +42,8 @@ export default function PermissionManager() {
     }
   }, [settings]);
 
-  const saveMutation = useMutation({
-    mutationFn: async (data) => {
+  const saveMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const cleanData = { ...settings, tier_permissions: data };
       if (settings?.id) {
         return db.entities.AppSettings.update(settings.id, cleanData);
@@ -59,7 +59,7 @@ export default function PermissionManager() {
     onError: (err) => {
       showError('Failed to save', err.message);
     },
-  });
+  }));
 
   const toggleGroup = (key) => {
     const next = new Set(expandedGroups);
@@ -181,7 +181,7 @@ export default function PermissionManager() {
         {PERMISSION_GROUPS.map(group => {
           const isExpanded = expandedGroups.has(group.key);
           const allChecked = hasAllInGroup(selectedTier, group);
-          const someChecked = group.permissions.some(p => (tierPerms[selectedTier] || []).includes(p.key));
+//           const someChecked = group.permissions.some(p => (tierPerms[selectedTier] || []).includes(p.key));
 
           return (
             <Card key={group.key} className="overflow-hidden dark:bg-slate-900 dark:border-slate-700">

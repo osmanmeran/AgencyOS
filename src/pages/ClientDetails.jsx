@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  ArrowLeft, Mail, Phone, Building, MapPin, CreditCard, FileText, 
+  ArrowLeft, Mail, Phone, MapPin, CreditCard, FileText, 
   DollarSign, Plus, Upload, Download, Plane, Star, Edit, Globe, XCircle, RotateCcw
 } from 'lucide-react';
 import {
@@ -52,7 +52,7 @@ export default function ClientDetails() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
-  const [editForm, setEditForm] = useState({});
+  const [editForm, setEditForm] = useState(/** @type {any} */ ({}));
   const [paymentFormData, setPaymentFormData] = useState({
     amount: '',
     payment_date: new Date().toISOString().split('T')[0],
@@ -63,39 +63,39 @@ export default function ClientDetails() {
   });
   const queryClient = useQueryClient();
 
-  const { data: client, isLoading } = useQuery({
+  const { data: client, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['client', clientId],
     queryFn: () => db.entities.Client.get(clientId),
     enabled: !!clientId
-  });
+  }));
 
-  const { data: payments = [] } = useQuery({
+  const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientPayments', clientId],
     queryFn: () => db.entities.ClientPayment.filter({ client_id: clientId }, '-payment_date'),
     enabled: !!clientId
-  });
+  }));
 
-  const { data: proposals = [] } = useQuery({
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientProposals', clientId],
     queryFn: () => db.entities.Proposal.filter({ client_id: clientId }),
     enabled: !!clientId
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientTrips', clientId],
     queryFn: () => db.entities.Trip.filter({ client_id: clientId }),
     enabled: !!clientId
-  });
+  }));
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientInvoices', clientId],
     queryFn: () => db.entities.Invoice.filter({ client_id: clientId }),
     enabled: !!clientId
-  });
+  }));
 
-  const addPaymentMutation = useMutation({
-    mutationFn: (data) => db.entities.ClientPayment.create({ ...data, client_id: clientId }),
-    onSuccess: async (payment) => {
+  const addPaymentMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ClientPayment.create({ ...data, client_id: clientId }),
+    onSuccess: async (/** @type {any} */ payment) => {
       showSuccess('Payment added');
       const newTotal = (client.total_paid || 0) + payment.amount;
       await db.entities.Client.update(clientId, {
@@ -115,7 +115,7 @@ export default function ClientDetails() {
       });
     },
     onError: (error) => showError('Failed to add payment', error.message)
-  });
+  }));
 
   const handleFileUpload = async (e, paymentId) => {
     const file = e.target.files[0];
@@ -135,8 +135,8 @@ export default function ClientDetails() {
     }
   };
 
-  const updateClientMutation = useMutation({
-    mutationFn: (data) => {
+  const updateClientMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => {
       return db.entities.Client.update(clientId, data);
     },
     onSuccess: () => {
@@ -145,9 +145,9 @@ export default function ClientDetails() {
       setEditModalOpen(false);
     },
     onError: (error) => showError('Failed to update client', error.message)
-  });
+  }));
 
-  const cancelClientMutation = useMutation({
+  const cancelClientMutation = /** @type {any} */ (useMutation({
     mutationFn: () => db.entities.Client.update(clientId, { status: 'cancelled' }),
     onSuccess: () => {
       showSuccess('Client cancelled');
@@ -155,16 +155,16 @@ export default function ClientDetails() {
       setCancelDialogOpen(false);
     },
     onError: (error) => showError('Failed to cancel client', error.message)
-  });
+  }));
 
-  const reactivateClientMutation = useMutation({
+  const reactivateClientMutation = /** @type {any} */ (useMutation({
     mutationFn: () => db.entities.Client.update(clientId, { status: 'active' }),
     onSuccess: () => {
       showSuccess('Client reactivated');
       queryClient.invalidateQueries({ queryKey: ['client', clientId] });
     },
     onError: (error) => showError('Failed to reactivate client', error.message)
-  });
+  }));
 
   const openEditModal = () => {
     setEditForm({

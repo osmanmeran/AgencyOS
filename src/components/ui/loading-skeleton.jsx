@@ -1,4 +1,3 @@
-import React from 'react';
 
 export function CardSkeleton({ count = 3 }) {
   return (

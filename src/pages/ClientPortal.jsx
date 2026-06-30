@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SkeletonStats } from '@/components/ui/skeletons';
-import { FileText, Plane, DollarSign, CheckCircle, Clock, XCircle, CreditCard, ArrowRight, Calendar, AlertCircle } from 'lucide-react';
+import { FileText, Plane, DollarSign, CheckCircle, CreditCard, ArrowRight, Calendar, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
@@ -26,29 +26,29 @@ export default function ClientPortal() {
     });
   }, []);
 
-  const { data: proposals = [] } = useQuery({
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myProposals', client?.id],
     queryFn: () => db.entities.Proposal.filter({ client_id: client.id }),
     enabled: !!client
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myTrips', client?.id],
     queryFn: () => db.entities.Trip.filter({ client_id: client.id }),
     enabled: !!client
-  });
+  }));
 
-  const { data: payments = [] } = useQuery({
+  const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myPayments', client?.id],
     queryFn: () => db.entities.ClientPayment.filter({ client_id: client.id }),
     enabled: !!client
-  });
+  }));
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myInvoices', client?.id],
     queryFn: () => db.entities.Invoice.filter({ client_id: client.id }),
     enabled: !!client
-  });
+  }));
 
   const pendingInvoices = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled');
   const overdueInvoices = pendingInvoices.filter(i => isBefore(parseISO(i.due_date), new Date()));
@@ -71,8 +71,8 @@ export default function ClientPortal() {
   }
 
   const totalPaid = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
-  const pendingProposals = proposals.filter(p => p.status === 'sent').length;
-  const acceptedProposals = proposals.filter(p => p.status === 'accepted').length;
+//   const pendingProposals = proposals.filter(p => p.status === 'sent').length;
+//   const acceptedProposals = proposals.filter(p => p.status === 'accepted').length;
 
   return (
     <div className="space-y-8">

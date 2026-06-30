@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -27,28 +27,28 @@ export default function SupplierBookings() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const { data: bookings = [], isLoading } = useQuery({
+  const { data: bookings = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['supplierBookings'],
     queryFn: () => db.entities.SupplierBooking.list('-created_date')
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, status }) => db.entities.SupplierBooking.update(id, { status }),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ status }) => db.entities.SupplierBooking.update(id, { status }),
     onSuccess: () => {
       showSuccess('Booking status updated');
       queryClient.invalidateQueries({ queryKey: ['supplierBookings'] });
     },
     onError: (error) => showError('Failed to update booking', error.message)
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.SupplierBooking.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.SupplierBooking.delete(id),
     onSuccess: () => {
       showSuccess('Booking deleted');
       queryClient.invalidateQueries({ queryKey: ['supplierBookings'] });
     },
     onError: (error) => showError('Failed to delete booking', error.message)
-  });
+  }));
 
   const filtered = bookings.filter(b => {
     const matchSearch = !search ||
@@ -91,7 +91,7 @@ export default function SupplierBookings() {
       <div className="grid grid-cols-3 gap-4">
         {['pending','confirmed','cancelled'].map(s => {
           const count = bookings.filter(b => b.status === s).length;
-          const { color } = STATUS_STYLES[s];
+//           const { color } = STATUS_STYLES[s];
           return (
             <Card key={s} className="p-4 bg-white text-center">
               <div className={`text-2xl font-bold ${s === 'pending' ? 'text-yellow-600' : s === 'confirmed' ? 'text-green-600' : 'text-red-600'}`}>{count}</div>

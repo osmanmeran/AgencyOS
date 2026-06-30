@@ -417,7 +417,7 @@ const translations = {
   },
 };
 
-const I18nContext = createContext({ t: (key) => key, language: 'en', setLanguage: () => {} });
+const I18nContext = createContext({ t: (key, params) => key, language: 'en', setLanguage: (lang) => {} });
 
 function getNestedValue(obj, keyPath) {
   return keyPath.split('.').reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : null), obj);

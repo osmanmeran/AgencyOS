@@ -1,7 +1,7 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useExport } from '@/hooks/useExport';
 import { Card } from '@/components/ui/card';
@@ -30,10 +30,10 @@ export default function Clients() {
   const queryClient = useQueryClient();
   const { exportCSV } = useExport();
 
-  const { data: clients = [], isLoading } = useQuery({
+  const { data: clients = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list('-created_date')
-  });
+  }));
 
   const filteredClients = clients.filter(client =>
     client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

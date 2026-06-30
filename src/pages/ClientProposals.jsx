@@ -34,14 +34,14 @@ export default function ClientProposals() {
     });
   }, []);
 
-  const { data: proposals = [] } = useQuery({
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myProposals', client?.id],
     queryFn: () => db.entities.Proposal.filter({ client_id: client.id }),
     enabled: !!client
-  });
+  }));
 
-  const updateProposalMutation = useMutation({
-    mutationFn: ({ id, status }) => {
+  const updateProposalMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ status }) => {
       const proposal = proposals.find(p => p.id === id);
       return db.entities.Proposal.update(id, { ...proposal, status });
     },
@@ -50,7 +50,7 @@ export default function ClientProposals() {
       queryClient.invalidateQueries({ queryKey: ['myProposals', client?.id] });
     },
     onError: (error) => showError('Failed to update proposal', error.message)
-  });
+  }));
 
   if (!client) {
     return <SkeletonTable />;

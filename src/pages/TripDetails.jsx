@@ -1,7 +1,7 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,37 +22,37 @@ export default function TripDetails() {
   const [generatingList, setGeneratingList] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: trip, isLoading } = useQuery({
+  const { data: trip, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['trip', tripId],
     queryFn: () => db.entities.Trip.get(tripId),
     enabled: !!tripId
-  });
+  }));
 
-  const { data: packingItems = [] } = useQuery({
+  const { data: packingItems = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['packingItems', tripId],
     queryFn: () => db.entities.PackingItem.filter({ trip_id: tripId })
-  });
+  }));
 
-  const { data: itineraryEvents = [] } = useQuery({
+  const { data: itineraryEvents = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['itineraryEvents', tripId],
     queryFn: () => db.entities.ItineraryEvent.filter({ trip_id: tripId }, 'date')
-  });
+  }));
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['tripInvoices'],
     queryFn: () => db.entities.Invoice.list()
-  });
+  }));
 
-  const { data: tripClient } = useQuery({
+  const { data: tripClient } = /** @type {any} */ (useQuery({
     queryKey: ['tripClient', trip?.client_id],
     queryFn: () => db.entities.Client.get(trip.client_id),
     enabled: !!trip?.client_id
-  });
+  }));
 
-  const { data: appSettings } = useQuery({
+  const { data: appSettings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => { const all = await db.entities.AppSettings.list(); return all[0]; }
-  });
+  }));
 
   const tripInvoices = invoices.filter(inv => inv.trip_id === tripId);
 

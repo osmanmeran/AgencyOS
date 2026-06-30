@@ -3,14 +3,13 @@ const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { ArrowLeft, Download, Send, DollarSign, CheckCircle, XCircle, Edit } from 'lucide-react';
+import { ArrowLeft, Download, Send, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import PaymentLinkPanel from '../components/invoices/PaymentLinkPanel';
 import PaymentReminderButton from '../components/invoices/PaymentReminderButton';
@@ -35,52 +34,52 @@ export default function InvoiceDetails() {
   const [paymentModalOpen, setPaymentModalOpen] = React.useState(false);
   const [paymentAmount, setPaymentAmount] = React.useState('');
 
-  const { data: invoice, isLoading } = useQuery({
+  const { data: invoice, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['invoice', invoiceId],
     queryFn: () => db.entities.Invoice.get(invoiceId),
     enabled: !!invoiceId
-  });
+  }));
 
-  const { data: client } = useQuery({
+  const { data: client } = /** @type {any} */ (useQuery({
     queryKey: ['client', invoice?.client_id],
     queryFn: () => db.entities.Client.get(invoice.client_id),
     enabled: !!invoice?.client_id
-  });
+  }));
 
-  const { data: settings } = useQuery({
+  const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0];
     }
-  });
+  }));
 
-  const { data: trip } = useQuery({
+  const { data: trip } = /** @type {any} */ (useQuery({
     queryKey: ['trip', invoice?.trip_id],
     queryFn: () => db.entities.Trip.get(invoice.trip_id),
     enabled: !!invoice?.trip_id
-  });
+  }));
 
   const invoiceHeader = settings?.invoice_header || {};
   const companyLogoUrl = invoiceHeader.logo_url || settings?.logo_url || '';
 
-  const updateStatusMutation = useMutation({
-    mutationFn: (status) => db.entities.Invoice.update(invoiceId, { ...invoice, status }),
+  const updateStatusMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ status) => db.entities.Invoice.update(invoiceId, { ...invoice, status }),
     onSuccess: () => {
       showSuccess('Invoice status updated');
       queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
     },
     onError: (error) => showError('Failed to update invoice status', error.message)
-  });
+  }));
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser } = /** @type {any} */ (useQuery({
     queryKey: ['currentUser'],
     queryFn: () => db.auth.me()
-  });
+  }));
 
   const isAdmin = currentUser?.role === 'admin';
 
-  const cancelInvoiceMutation = useMutation({
+  const cancelInvoiceMutation = /** @type {any} */ (useMutation({
     mutationFn: () => db.entities.Invoice.update(invoiceId, { 
       ...invoice, 
       status: 'cancelled',
@@ -92,10 +91,10 @@ export default function InvoiceDetails() {
       queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
     },
     onError: (error) => showError('Failed to cancel invoice', error.message)
-  });
+  }));
 
-  const recordPaymentMutation = useMutation({
-    mutationFn: async (amount) => {
+  const recordPaymentMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ amount) => {
       const payment = parseFloat(amount);
       const newAmountPaid = (invoice.amount_paid || 0) + payment;
       const newAmountDue = invoice.total_amount - newAmountPaid;
@@ -133,7 +132,7 @@ export default function InvoiceDetails() {
       setPaymentAmount('');
     },
     onError: (error) => showError('Failed to record payment', error.message)
-  });
+  }));
 
   if (isLoading) {
     return <SkeletonCard />;

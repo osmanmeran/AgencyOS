@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useExport } from '@/hooks/useExport';
@@ -23,7 +23,7 @@ import { createPageUrl } from '../utils';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { showSuccess, showError } from '@/lib/toast';
 
-const DEFAULT_COLUMNS = ['name', 'category', 'city', 'rating', 'area'];
+// const DEFAULT_COLUMNS = ['name', 'category', 'city', 'rating', 'area'];
 
 const SortHeader = ({ field, label, filter, filterActive, sortField, handleSort }) => (
   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider select-none">
@@ -65,33 +65,33 @@ export default function Suppliers() {
   const { hasPermission } = usePermissions();
   const isAdmin = hasPermission('manage_users');
 
-  const { data: suppliers = [], isLoading } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list()
-  });
+  }));
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'],
     queryFn: () => db.entities.SupplierCategory.list()
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.Supplier.create(data),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
     onSuccess: () => { showSuccess('Supplier created'); queryClient.invalidateQueries({ queryKey: ['suppliers'] }); closeModal(); },
     onError: (error) => showError('Failed to create supplier', error.message)
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.Supplier.update(id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.Supplier.update(id, data),
     onSuccess: () => { showSuccess('Supplier updated'); queryClient.invalidateQueries({ queryKey: ['suppliers'] }); closeModal(); },
     onError: (error) => showError('Failed to update supplier', error.message)
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.Supplier.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.Supplier.delete(id),
     onSuccess: () => { showSuccess('Supplier deleted'); queryClient.invalidateQueries({ queryKey: ['suppliers'] }); },
     onError: (error) => showError('Failed to delete supplier', error.message)
-  });
+  }));
 
   const openModal = (supplier = null) => {
     if (supplier) {

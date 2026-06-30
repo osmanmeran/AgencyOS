@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -9,32 +9,32 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import {
-  FolderTree, Users, DollarSign, ClipboardList, ChevronDown, ChevronRight,
-  ArrowRight, Star, Tag, TrendingUp
+  FolderTree, Users, ClipboardList, ChevronDown, ChevronRight,
+  ArrowRight, Star, Tag
 } from 'lucide-react';
 
 export default function SupplierCategorySummary() {
-  const [expandedCategories, setExpandedCategories] = useState({});
+  const [expandedCategories, setExpandedCategories] = useState(/** @type {any} */ ({}));
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'],
     queryFn: () => db.entities.SupplierCategory.list()
-  });
+  }));
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list()
-  });
+  }));
 
-  const { data: pricingList = [] } = useQuery({
+  const { data: pricingList = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allPricing'],
     queryFn: () => db.entities.SupplierPricing.list()
-  });
+  }));
 
-  const { data: bookingRequests = [] } = useQuery({
+  const { data: bookingRequests = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allBookingRequests'],
     queryFn: () => db.entities.BookingRequest.list('-service_date')
-  });
+  }));
 
   const toggleCategory = (id) => {
     setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));

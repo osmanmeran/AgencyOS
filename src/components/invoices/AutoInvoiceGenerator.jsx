@@ -1,12 +1,12 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Zap, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Zap, CheckCircle, Loader2 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
@@ -54,8 +54,8 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
     .map(inv => inv.milestone_key)
     .filter(Boolean);
 
-  const generateMutation = useMutation({
-    mutationFn: async (milestone) => {
+  const generateMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ milestone) => {
       const amount = parseFloat((totalAmount * milestone.percentage).toFixed(2));
       const issueDate = new Date().toISOString().split('T')[0];
       const dueDate = addDays(new Date(), milestone.dueDays).toISOString().split('T')[0];
@@ -106,7 +106,7 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
       setOpen(false);
       navigate(createPageUrl(`InvoiceDetails?id=${invoice.id}`));
     },
-  });
+  }));
 
   if (!totalAmount) return null;
 

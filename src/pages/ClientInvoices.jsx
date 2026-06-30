@@ -1,6 +1,5 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -9,34 +8,34 @@ import { SkeletonTable } from '@/components/ui/skeletons';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
-import { FileText, Calendar, DollarSign, CheckCircle } from 'lucide-react';
+import { FileText, Calendar, CheckCircle } from 'lucide-react';
 
 export default function ClientInvoices() {
-  const { data: user } = useQuery({
+  const { data: user } = /** @type {any} */ (useQuery({
     queryKey: ['currentUser'],
     queryFn: () => db.auth.me()
-  });
+  }));
 
-  const { data: client } = useQuery({
+  const { data: client } = /** @type {any} */ (useQuery({
     queryKey: ['myClient', user?.email],
     queryFn: async () => {
       const clients = await db.entities.Client.filter({ email: user.email });
       return clients[0];
     },
     enabled: !!user?.email
-  });
+  }));
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientInvoices', client?.id],
     queryFn: () => db.entities.Invoice.filter({ client_id: client.id }),
     enabled: !!client?.id
-  });
+  }));
 
   if (!client) {
     return <SkeletonTable />;
   }
 
-  const sortedInvoices = [...invoices].sort((a, b) => new Date(b.issue_date) - new Date(a.issue_date));
+  const sortedInvoices = [...invoices].sort((a, b) => +(new Date(b.issue_date)) - +(new Date(a.issue_date)));
 
   return (
     <div className="space-y-8">

@@ -1,4 +1,3 @@
-import React from 'react';
 import { usePermissions } from './PermissionContext';
 
 export default function PermissionGate({ permission, permissions, requireAll = false, children, fallback = null }) {

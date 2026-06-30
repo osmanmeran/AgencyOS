@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -31,7 +31,7 @@ export default function SupplierQuoteRequests({ supplierId }) {
   });
 
   // Fetch quote requests for this supplier
-  const { data: quoteRequests = [] } = useQuery({
+  const { data: quoteRequests = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierQuoteRequests', supplierId],
     queryFn: async () => {
       // Using BookingRequest with a special flag or filtering by those without confirmed status
@@ -42,20 +42,20 @@ export default function SupplierQuoteRequests({ supplierId }) {
       return requests;
     },
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['trips'],
     queryFn: () => db.entities.Trip.list()
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
-  const respondMutation = useMutation({
-    mutationFn: async ({ id, data, action }) => {
+  const respondMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ { id, /** @type {any} */ data, /** @type {any} */ action }) => {
       const updateData = {
         status: action === 'quote' ? 'quoted' : 'rejected',
         total_cost: action === 'quote' ? parseFloat(data.quoted_price) : undefined,
@@ -69,7 +69,7 @@ export default function SupplierQuoteRequests({ supplierId }) {
       setSelectedRequest(null);
       setQuoteForm({ quoted_price: '', valid_until: '', response_notes: '' });
     }
-  });
+  }));
 
   const getTrip = (id) => trips.find(t => t.id === id);
   const getClient = (id) => clients.find(c => c.id === id);

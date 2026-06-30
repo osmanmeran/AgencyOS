@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -36,15 +36,15 @@ export default function CreateClient() {
     portal_access: false
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.Client.create(data),
-    onSuccess: (newClient) => {
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Client.create(data),
+    onSuccess: (/** @type {any} */ newClient) => {
       showSuccess('Client created');
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       navigate(createPageUrl(`ClientDetails?id=${newClient.id}`));
     },
     onError: (error) => showError('Failed to create client', error.message)
-  });
+  }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -239,8 +239,8 @@ export default function CreateClient() {
           <Link to={createPageUrl('Clients')}>
             <Button type="button" variant="outline">Cancel</Button>
           </Link>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isLoading}>
-            {createMutation.isLoading ? 'Creating...' : 'Create Client'}
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
+            {createMutation.isPending ? 'Creating...' : 'Create Client'}
           </Button>
         </div>
       </form>

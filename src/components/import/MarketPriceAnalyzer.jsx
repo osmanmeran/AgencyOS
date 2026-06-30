@@ -1,7 +1,7 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Loader2, CheckCircle, Plus, Search, Globe } from 'lucide-react';
+import { TrendingUp, Loader2, CheckCircle, Plus, Globe } from 'lucide-react';
 
 export default function MarketPriceAnalyzer() {
   const [description, setDescription] = useState('');
@@ -18,19 +18,19 @@ export default function MarketPriceAnalyzer() {
   const [currency, setCurrency] = useState('USD');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
-  const [importing, setImporting] = useState({});
-  const [imported, setImported] = useState({});
+  const [importing, setImporting] = useState(/** @type {any} */ ({}));
+  const [imported, setImported] = useState(/** @type {any} */ ({}));
   const queryClient = useQueryClient();
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'],
     queryFn: () => db.entities.SupplierCategory.list()
-  });
+  }));
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list()
-  });
+  }));
 
   const analyze = async () => {
     if (!description.trim()) return;
@@ -117,11 +117,11 @@ Return a JSON with this structure:
         activity: ['activity', 'entertainment', 'sport'],
         flight: ['flight', 'airline', 'aviation'],
       };
-      let matchedCatId = categories[0]?.id || null;
-      for (const [key, keywords] of Object.entries(catKeywords)) {
+      let _matchedCatId = categories[0]?.id || null;
+      for (const [, keywords] of Object.entries(catKeywords)) {
         if (keywords.some(kw => svc.category.toLowerCase().includes(kw) || svc.name.toLowerCase().includes(kw))) {
           const found = categories.find(c => keywords.some(kw => c.name.toLowerCase().includes(kw)));
-          if (found) { matchedCatId = found.id; break; }
+          if (found) { _matchedCatId = found.id; break; }
         }
       }
 

@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Edit, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const STATUS_COLORS = {
@@ -35,31 +35,31 @@ export default function SupplierServices({ supplierId }) {
   });
   const queryClient = useQueryClient();
 
-  const { data: services = [] } = useQuery({
+  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierServices', supplierId],
     queryFn: () => db.entities.SupplierService.filter({ supplier_id: supplierId })
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.SupplierService.create({ ...data, supplier_id: supplierId }),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.SupplierService.create({ ...data, supplier_id: supplierId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] });
       closeModal();
     }
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.SupplierService.update(id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] });
       closeModal();
     }
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.SupplierService.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.SupplierService.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] })
-  });
+  }));
 
   const openModal = (service = null) => {
     if (service) {

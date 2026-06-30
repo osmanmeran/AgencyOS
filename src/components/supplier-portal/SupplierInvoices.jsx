@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, FileText, DollarSign, Calendar, Upload, Edit, Eye } from 'lucide-react';
+import { Plus, FileText, Calendar, Edit, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
 const STATUS_COLORS = {
@@ -36,25 +36,25 @@ export default function SupplierInvoices({ supplierId }) {
   });
   const [invoiceFile, setInvoiceFile] = useState(null);
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierInvoices', supplierId],
     queryFn: () => db.entities.SupplierInvoice.filter({ supplier_id: supplierId }, '-created_date'),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: bookings = [] } = useQuery({
+  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierBookings', supplierId],
     queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['trips'],
     queryFn: () => db.entities.Trip.list()
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: async (data) => {
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       let fileUrl = '';
       if (invoiceFile) {
         const { file_url } = await db.integrations.Core.UploadFile({ file: invoiceFile });
@@ -79,10 +79,10 @@ export default function SupplierInvoices({ supplierId }) {
       queryClient.invalidateQueries({ queryKey: ['supplierInvoices', supplierId] });
       closeModal();
     }
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ { id, /** @type {any} */ data }) => {
       let fileUrl = data.file_url || '';
       if (invoiceFile) {
         const { file_url } = await db.integrations.Core.UploadFile({ file: invoiceFile });
@@ -103,7 +103,7 @@ export default function SupplierInvoices({ supplierId }) {
       queryClient.invalidateQueries({ queryKey: ['supplierInvoices', supplierId] });
       closeModal();
     }
-  });
+  }));
 
   const openModal = (invoice = null) => {
     if (invoice) {

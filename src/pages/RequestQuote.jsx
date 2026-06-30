@@ -1,12 +1,12 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], list:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SendHorizontal, CheckCircle2, Plane, MapPin, Users, Calendar } from 'lucide-react';
+import { SendHorizontal, CheckCircle2, Plane } from 'lucide-react';
 
 export default function RequestQuote() {
   const [submitted, setSubmitted] = useState(false);
@@ -31,7 +31,7 @@ export default function RequestQuote() {
       };
       await db.entities.Client.create(lead);
       setSubmitted(true);
-    } catch (err) {
+    } catch {
       alert('Something went wrong. Please email us directly.');
     }
   };

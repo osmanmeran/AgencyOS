@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -46,17 +46,17 @@ const OCCUPANCY_OPTIONS = [
 export default function SupplierPricingManager({ supplierId }) {
   const queryClient = useQueryClient();
 
-  const { data: supplier } = useQuery({
+  const { data: supplier } = /** @type {any} */ (useQuery({
     queryKey: ['supplier', supplierId],
     queryFn: () => db.entities.Supplier.get(supplierId),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: supplierCategory } = useQuery({
+  const { data: supplierCategory } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategory', supplier?.category_id],
     queryFn: () => db.entities.SupplierCategory.get(supplier.category_id),
     enabled: !!supplier?.category_id
-  });
+  }));
 
   const isHotel = supplierCategory?.name?.toLowerCase().includes('hotel');
   const isTransfer = supplierCategory?.name?.toLowerCase().includes('transfer');
@@ -87,71 +87,66 @@ export default function SupplierPricingManager({ supplierId }) {
 
   const [pricingForm, setPricingForm] = useState(freshPricingForm());
 
-  const { data: subcategories = [] } = useQuery({
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierSubcategories', supplierId],
     queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: pricings = [] } = useQuery({
+  const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierPricings', supplierId],
     queryFn: () => db.entities.SupplierPricing.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: services = [] } = useQuery({
-    queryKey: ['supplierServices', supplierId],
-    queryFn: () => db.entities.SupplierService.filter({ supplier_id: supplierId }),
-    enabled: !!supplierId
-  });
 
   // Subcategory mutations
-  const createSubcatMutation = useMutation({
-    mutationFn: (data) => db.entities.SupplierSubcategory.create({ ...data, supplier_id: supplierId }),
+  const createSubcatMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.SupplierSubcategory.create({ ...data, supplier_id: supplierId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
       setSubcatModalOpen(false);
       setSubcatForm({ name: '', description: '', sort_order: 0 });
     }
-  });
+  }));
 
-  const updateSubcatMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.SupplierSubcategory.update(id, data),
+  const updateSubcatMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierSubcategory.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
       setSubcatModalOpen(false);
       setEditingSubcat(null);
     }
-  });
+  }));
 
-  const deleteSubcatMutation = useMutation({
-    mutationFn: (id) => db.entities.SupplierSubcategory.delete(id),
+  const deleteSubcatMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.SupplierSubcategory.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] })
-  });
+  }));
 
   // Pricing mutations
-  const createPricingMutation = useMutation({
-    mutationFn: (data) => db.entities.SupplierPricing.create({ ...data, supplier_id: supplierId }),
+  const createPricingMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.SupplierPricing.create({ ...data, supplier_id: supplierId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
       setPricingModalOpen(false);
       resetPricingForm();
     }
-  });
+  }));
 
-  const updatePricingMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.SupplierPricing.update(id, data),
+  const updatePricingMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierPricing.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
       setPricingModalOpen(false);
       setEditingPricing(null);
     }
-  });
+  }));
 
-  const deletePricingMutation = useMutation({
-    mutationFn: (id) => db.entities.SupplierPricing.delete(id),
+  const deletePricingMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.SupplierPricing.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] })
-  });
+  }));
 
   const resetPricingForm = () => {
     setPricingForm(freshPricingForm());
@@ -216,7 +211,7 @@ export default function SupplierPricingManager({ supplierId }) {
   };
 
   const getSubcategoryName = (id) => subcategories.find(s => s.id === id)?.name || '';
-  const getServiceName = (id) => services.find(s => s.id === id)?.service_name || '';
+//   const getServiceName = (id) => services.find(s => s.id === id)?.service_name || '';
   const getOccupancyLabel = (val) => OCCUPANCY_OPTIONS.find(o => o.value === val)?.label || '';
 
   // Auto-generate name from subcategory + occupancy + season for hotels

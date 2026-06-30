@@ -1,22 +1,30 @@
 import 'dotenv/config';
-import { getDb } from '../db.js';
+import Database from 'better-sqlite3';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { migrate, migrationStatus } from './runner.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DB_PATH = path.join(DATA_DIR, 'marvelops.db');
 
 const command = process.argv[2];
 
 function main() {
-  const db = getDb();
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  const db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
 
   switch (command) {
     case 'up': {
       const applied = migrate(db, { direction: 'up' });
-      if (applied.length === 0) process.exit(0);
       process.exit(0);
     }
 
     case 'down': {
       const rolledBack = migrate(db, { direction: 'down' });
-      process.exit(rolledBack.length > 0 ? 0 : 0);
+      process.exit(0);
     }
 
     case 'status': {
@@ -28,7 +36,7 @@ function main() {
         console.log('Migration'.padEnd(maxLen + 2) + 'Status');
         console.log('-'.repeat(maxLen + 2) + '--------');
         for (const s of statuses) {
-          console.log(s.name.padEnd(maxLen + 2) + (s.applied ? '✓ Applied' : '○ Pending'));
+          console.log(s.name.padEnd(maxLen + 2) + (s.applied ? '\u2713 Applied' : '\u25CB Pending'));
         }
       }
       process.exit(0);

@@ -1,15 +1,14 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], list:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ListCheck, Plus, MoreHorizontal, User, Calendar as CalendarIcon, AlertCircle, Clock } from 'lucide-react';
+import { ListCheck, Plus, MoreHorizontal, Calendar as CalendarIcon } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { format } from 'date-fns';
 
@@ -30,33 +29,33 @@ export default function TaskBoard() {
   const [newTask, setNewTask] = useState({ title: '', client_id: '', priority: 'medium', due_date: '' });
   const queryClient = useQueryClient();
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientTasks'],
     queryFn: () => db.entities.ClientTask.list(),
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list(),
-  });
+  }));
 
-  const createTask = useMutation({
+  const createTask = /** @type {any} */ (useMutation({
     mutationFn: data => db.entities.ClientTask.create(data),
     onSuccess: () => { showSuccess('Task created'); queryClient.invalidateQueries({ queryKey: ['clientTasks'] }); setNewTaskOpen(false); setNewTask({ title: '', client_id: '', priority: 'medium', due_date: '' }); },
     onError: (error) => showError('Failed to create task', error.message)
-  });
+  }));
 
-  const updateTask = useMutation({
-    mutationFn: ({ id, data }) => db.entities.ClientTask.update(id, data),
+  const updateTask = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ClientTask.update(id, data),
     onSuccess: () => { showSuccess('Task updated'); queryClient.invalidateQueries({ queryKey: ['clientTasks'] }); },
     onError: (error) => showError('Failed to update task', error.message)
-  });
+  }));
 
-  const deleteTask = useMutation({
+  const deleteTask = /** @type {any} */ (useMutation({
     mutationFn: id => db.entities.ClientTask.delete(id),
     onSuccess: () => { showSuccess('Task deleted'); queryClient.invalidateQueries({ queryKey: ['clientTasks'] }); },
     onError: (error) => showError('Failed to delete task', error.message)
-  });
+  }));
 
   const columns = COLUMNS.map(col => ({
     ...col,
@@ -130,11 +129,13 @@ export default function TaskBoard() {
                   <div ref={provided.innerRef} {...provided.droppableProps} className={`space-y-2 min-h-[200px] ${snapshot.isDraggingOver ? 'bg-white/50 rounded-lg' : ''}`}>
                     {col.tasks.map((task, index) => (
                       <Draggable key={task.id} draggableId={task.id} index={index}>
-                        {(provided, snapshot) => (
+                        {(provided, snapshot) => {
+                          const p = /** @type {any} */ (provided);
+                          return (
                           <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
+                            ref={p.innerRef}
+                            {...p.draggableProps}
+                            {...p.dragHandleProps}
                             className={`bg-white rounded-lg border border-slate-200 p-3 shadow-sm ${
                               snapshot.isDragging ? 'shadow-lg rotate-2' : ''
                             }`}
@@ -165,7 +166,8 @@ export default function TaskBoard() {
                               )}
                             </div>
                           </div>
-                        )}
+                        );
+                      }}
                       </Draggable>
                     ))}
                     {provided.placeholder}

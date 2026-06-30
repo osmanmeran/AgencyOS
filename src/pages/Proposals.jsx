@@ -1,6 +1,5 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useExport } from '@/hooks/useExport';
@@ -32,19 +31,19 @@ export default function Proposals() {
   const queryClient = useQueryClient();
   const { exportCSV } = useExport();
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.Proposal.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.Proposal.delete(id),
     onSuccess: () => {
       showSuccess('Proposal deleted');
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
     },
     onError: (error) => showError('Failed to delete proposal', error.message)
-  });
+  }));
 
-  const { data: proposals = [], isLoading } = useQuery({
+  const { data: proposals = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['proposals'],
     queryFn: () => db.entities.Proposal.list('-created_date')
-  });
+  }));
 
   if (isLoading) {
     return <SkeletonTable />;

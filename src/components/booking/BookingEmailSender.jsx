@@ -1,7 +1,7 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -61,21 +61,21 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
   const [subject, setSubject] = useState(`Booking Request - ${booking?.reference_number || ''}`);
   const [selectedTemplate, setSelectedTemplate] = useState('default');
   const [customHtml, setCustomHtml] = useState('');
-  const [previewMode, setPreviewMode] = useState(false);
+//   const [previewMode, setPreviewMode] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const { data: templates = [] } = useQuery({
+  const { data: templates = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['bookingTemplates'],
     queryFn: () => db.entities.BookingTemplate.list()
-  });
+  }));
 
-  const { data: settings } = useQuery({
+  const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0] || {};
     }
-  });
+  }));
 
   const getProcessedHtml = () => {
     let html = selectedTemplate === 'custom' 

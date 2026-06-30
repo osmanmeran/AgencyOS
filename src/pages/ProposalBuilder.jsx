@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -62,26 +62,26 @@ export default function ProposalBuilder() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
-  const [expandedCategories, setExpandedCategories] = useState({});
+  const [expandedCategories, setExpandedCategories] = useState(/** @type {any} */ ({}));
   const [isPreviewing, setIsPreviewing] = useState(false);
 
-  const { data: services = [] } = useQuery({
+  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['serviceTemplates'],
     queryFn: () => db.entities.ServiceTemplate.list()
-  });
+  }));
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['serviceCategories'],
     queryFn: () => db.entities.ServiceCategory.list()
-  });
+  }));
 
-  const { data: appSettings } = useQuery({
+  const { data: appSettings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => { const all = await db.entities.AppSettings.list(); return all[0]; }
-  });
+  }));
 
   const getCategoryName = (id) => categories.find(c => c.id === id)?.name || 'Uncategorized';
-  const getCategoryColor = (id) => categories.find(c => c.id === id)?.color || '#6366f1';
+//   const getCategoryColor = (id) => categories.find(c => c.id === id)?.color || '#6366f1';
 
   const filteredServices = services.filter(s => {
     const matchSearch = searchTerm === '' ||
@@ -200,7 +200,7 @@ export default function ProposalBuilder() {
                   <p className="text-sm text-slate-400 text-center py-6">No services found</p>
                 )}
                 {Object.entries(groupedServices).map(([catId, svcs]) => {
-                  const catColor = getCategoryColor(catId);
+//                   const catColor = getCategoryColor(catId);
                   const catName = getCategoryName(catId);
                   const isOpen = expandedCategories[catId] !== false;
                   return (
@@ -349,17 +349,19 @@ export default function ProposalBuilder() {
                           const UnitIcon = UNIT_ICONS[item.price_unit] || DollarSign;
                           return (
                             <Draggable key={item.id} draggableId={item.id} index={index}>
-                              {(provided, snapshot) => (
+                              {(provided, snapshot) => {
+                                const p = /** @type {any} */ (provided);
+                                return (
                                 <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
+                                  ref={p.innerRef}
+                                  {...p.draggableProps}
                                   className={`grid grid-cols-12 gap-2 items-start p-3 rounded-xl border transition-all ${
                                     snapshot.isDragging ? 'shadow-lg border-blue-300 bg-blue-50' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'
                                   } print:grid print:border-slate-200 print:bg-white`}
                                 >
                                   {/* Drag handle */}
                                   <div className="col-span-5 flex items-start gap-2">
-                                    <div {...provided.dragHandleProps} className="mt-1 print:hidden cursor-grab">
+                                    <div {...p.dragHandleProps} className="mt-1 print:hidden cursor-grab">
                                       <GripVertical className="w-4 h-4 text-slate-300 hover:text-slate-500" />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -447,7 +449,8 @@ export default function ProposalBuilder() {
                                     )}
                                   </div>
                                 </div>
-                              )}
+                              );
+                            }}
                             </Draggable>
                           );
                         })}

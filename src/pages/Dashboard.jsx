@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -24,7 +24,6 @@ import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import PlaceRounded from '@mui/icons-material/PlaceRounded';
-import FlightRounded from '@mui/icons-material/FlightRounded';
 import ReceiptLongRounded from '@mui/icons-material/ReceiptLongRounded';
 import RateReviewRounded from '@mui/icons-material/RateReviewRounded';
 
@@ -34,10 +33,10 @@ export default function Dashboard() {
   const next30Days = addDays(today, 30);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(today));
 
-  const { data: trips = [], isLoading: tripsLoading } = useQuery({
+  const { data: trips = /** @type {any} */ ([]), isLoading: tripsLoading } = /** @type {any} */ (useQuery({
     queryKey: ['allTrips'],
     queryFn: () => db.entities.Trip.list('-start_date')
-  });
+  }));
 
   const isLoading = tripsLoading;
 
@@ -45,22 +44,22 @@ export default function Dashboard() {
     if (!t.start_date) return false;
     const startDate = parseISO(t.start_date);
     return isWithinInterval(startDate, { start: today, end: next30Days });
-  }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+  }).sort((a, b) => +(new Date(a.start_date)) - +(new Date(b.start_date)));
 
   const upcomingDepartures = trips.filter(t => {
     if (!t.end_date) return false;
     const endDate = parseISO(t.end_date);
     return isWithinInterval(endDate, { start: today, end: next30Days });
-  }).sort((a, b) => new Date(a.end_date) - new Date(b.end_date));
+  }).sort((a, b) => +(new Date(a.end_date)) - +(new Date(b.end_date)));
 
   const pendingReservations = trips.filter(t => (t.proposal_status || 'pending') === 'pending')
-    .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+    .sort((a, b) => +(new Date(a.created_date)) - +(new Date(b.created_date)));
 
   const departingNext7 = trips.filter(t => {
     if (!t.start_date) return false;
     const startDate = parseISO(t.start_date);
     return isWithinInterval(startDate, { start: today, end: nextWeek });
-  }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+  }).sort((a, b) => +(new Date(a.start_date)) - +(new Date(b.start_date)));
 
   const monthStart = currentMonth;
   const monthEnd = endOfMonth(currentMonth);
@@ -81,14 +80,14 @@ export default function Dashboard() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Box>
-        <Typography variant="h4" fontWeight={700}>Dashboard</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>Dashboard</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Welcome back! Here's what's happening with your travel business.
         </Typography>
       </Box>
 
       <Grid container spacing={2.5}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
@@ -107,7 +106,7 @@ export default function Dashboard() {
                     <Box key={t.id} component={Link} to={createPageUrl(`ReservationDetails?id=${t.id}`)}
                       sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1, borderRadius: '8px', textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: 'warning.light' }, transition: 'all 0.15s' }}>
                       <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="body2" fontWeight={500} noWrap>{t.name}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>{t.name}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap>{t.client_name || '—'}</Typography>
                       </Box>
                       <ArrowForwardRounded fontSize="small" sx={{ color: 'text.secondary', ml: 1, flexShrink: 0 }} />
@@ -124,7 +123,7 @@ export default function Dashboard() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
             <CardContent sx={{ p: 2.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
@@ -141,14 +140,14 @@ export default function Dashboard() {
                     <Box key={t.id} component={Link} to={createPageUrl(`ReservationDetails?id=${t.id}`)}
                       sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1, borderRadius: '8px', textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: 'primary.light' }, transition: 'all 0.15s' }}>
                       <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="body2" fontWeight={500} noWrap>{t.name}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>{t.name}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                           <PlaceRounded sx={{ fontSize: 12 }} /> {t.destination}
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 1 }}>
-                        <Typography variant="caption" fontWeight={600} color="primary.main">{format(parseISO(t.start_date), 'MMM d')}</Typography>
-                        {t.passengers?.length > 0 && <Typography variant="caption" display="block" color="text.secondary">{t.passengers.length} pax</Typography>}
+                        <Typography variant="caption" sx={{ fontWeight: 600 }} color="primary.main">{format(parseISO(t.start_date), 'MMM d')}</Typography>
+                        {t.passengers?.length > 0 && <Typography variant="caption" sx={{ display: "block" }} color="text.secondary">{t.passengers.length} pax</Typography>}
                       </Box>
                     </Box>
                   ))
@@ -158,7 +157,7 @@ export default function Dashboard() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', mb: 1.5 }}>
@@ -172,7 +171,7 @@ export default function Dashboard() {
                 ].map(action => (
                   <Box key={action.to} component={Link} to={createPageUrl(action.to)}
                     sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1, borderRadius: '8px', textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: `${action.color}.light` }, transition: 'all 0.15s' }}>
-                    <Typography variant="body2" fontWeight={500}>{action.label}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{action.label}</Typography>
                     <ArrowForwardRounded fontSize="small" sx={{ color: 'text.secondary' }} />
                   </Box>
                 ))}
@@ -251,7 +250,7 @@ export default function Dashboard() {
                 if (!t.start_date) return false;
                 const start = parseISO(t.start_date);
                 return start >= monthStart && start <= monthEnd && (t.proposal_status === 'confirmed' || t.status === 'confirmed');
-              }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+              }).sort((a, b) => +(new Date(a.start_date)) - +(new Date(b.start_date)));
               if (confirmedArrivals.length === 0) {
                 return <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>No confirmed arrivals this month</Typography>;
               }
@@ -263,13 +262,13 @@ export default function Dashboard() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: 1 }}>
                         <CheckCircleRounded sx={{ color: 'success.main', fontSize: 18, flexShrink: 0 }} />
                         <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="body2" fontWeight={500} noWrap>{t.name}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>{t.name}</Typography>
                           <Typography variant="caption" color="text.secondary">{t.destination || '—'}</Typography>
                         </Box>
                       </Box>
                       <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 1 }}>
-                        <Typography variant="caption" fontWeight={600} color="success.dark">{format(parseISO(t.start_date), 'MMM d')}</Typography>
-                        <Typography variant="caption" display="block" color="text.secondary">{t.passengers?.length || 0} pax</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 600 }} color="success.dark">{format(parseISO(t.start_date), 'MMM d')}</Typography>
+                        <Typography variant="caption" sx={{ display: 'block' }} color="text.secondary">{t.passengers?.length || 0} pax</Typography>
                       </Box>
                     </Box>
                   ))}
@@ -285,7 +284,7 @@ export default function Dashboard() {
 
       {/* Arrivals & Departures */}
       <Grid container spacing={2.5}>
-        <Grid item xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -300,7 +299,7 @@ export default function Dashboard() {
                       sx={{ p: 2, borderRadius: '10px', bgcolor: 'success.light', border: '1px solid', borderColor: 'success.main', textDecoration: 'none', color: 'inherit', '&:hover': { boxShadow: 2 }, transition: 'all 0.15s' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Box>
-                          <Typography variant="subtitle2" fontWeight={600}>{trip.name}</Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{trip.name}</Typography>
                           <Typography variant="body2" color="text.secondary">{trip.destination}</Typography>
                         </Box>
                         <Chip label={format(parseISO(trip.start_date), 'MMM d')} size="small" color="success" variant="outlined" />
@@ -313,7 +312,7 @@ export default function Dashboard() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -328,7 +327,7 @@ export default function Dashboard() {
                       sx={{ p: 2, borderRadius: '10px', bgcolor: 'error.light', border: '1px solid', borderColor: 'error.main', textDecoration: 'none', color: 'inherit', '&:hover': { boxShadow: 2 }, transition: 'all 0.15s' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Box>
-                          <Typography variant="subtitle2" fontWeight={600}>{trip.name}</Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{trip.name}</Typography>
                           <Typography variant="body2" color="text.secondary">{trip.destination}</Typography>
                         </Box>
                         <Chip label={format(parseISO(trip.end_date), 'MMM d')} size="small" color="error" variant="outlined" />
@@ -349,7 +348,7 @@ export default function Dashboard() {
           { label: 'Proposals', to: 'Proposals', icon: <RateReviewRounded />, color: 'success' },
           { label: 'Invoices', to: 'Revenue', icon: <ReceiptLongRounded />, color: 'warning' },
         ].map(link => (
-          <Grid item xs={6} md={4} key={link.to}>
+          <Grid size={{ xs: 6, md: 4 }} key={link.to}>
             <Card component={Link} to={createPageUrl(link.to)}
               sx={{ p: 2, textDecoration: 'none', color: 'inherit', cursor: 'pointer', '&:hover': { boxShadow: 3, transform: 'translateY(-2px)' }, transition: 'all 0.2s' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -357,7 +356,7 @@ export default function Dashboard() {
                   <Box sx={{ bgcolor: `${link.color}.light`, p: 1, borderRadius: '8px', display: 'flex', color: `${link.color}.main` }}>
                     {link.icon}
                   </Box>
-                  <Typography variant="body2" fontWeight={600}>{link.label}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{link.label}</Typography>
                 </Box>
                 <ArrowForwardRounded sx={{ color: 'text.secondary' }} />
               </Box>

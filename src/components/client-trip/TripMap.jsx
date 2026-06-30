@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MapPin, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -42,23 +42,10 @@ export default function TripMap({ events = [] }) {
     );
   }
 
-  const { MapContainer, TileLayer, Marker, Popup, Polyline } = MapComponents;
+//   const { MapContainer, TileLayer, Marker, Popup, Polyline } = MapComponents;
 
   // Build numbered custom icons
-  const createNumberedIcon = (num) => L.divIcon({
-    html: `<div style="
-      background:#2563eb;color:#fff;width:28px;height:28px;
-      border-radius:50% 50% 50% 0;transform:rotate(-45deg);
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;
-    ">
-      <span style="transform:rotate(45deg);font-size:11px;font-weight:700">${num}</span>
-    </div>`,
-    className: '',
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-    popupAnchor: [0, -30],
-  });
+  /* createNumberedIcon removed (unused) */
 
   // Use placeholder coords via geocode-style approach — we geocode by building a query string
   // Since we can't do real geocoding, show the map centered on the first location name + list all
@@ -66,7 +53,7 @@ export default function TripMap({ events = [] }) {
   // but render a unified Leaflet map using the location names as search query labels.
   // Since Leaflet needs lat/lng, we'll show a Google Maps embed for the full route + pin list below.
 
-  const routeQuery = eventsWithLocations.map(e => encodeURIComponent(e.location)).join('/');
+//   const routeQuery = eventsWithLocations.map(e => encodeURIComponent(e.location)).join('/');
   const firstLocation = encodeURIComponent(eventsWithLocations[0].location);
 
   return (

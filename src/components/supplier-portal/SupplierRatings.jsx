@@ -1,17 +1,16 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
 import { Star, ThumbsUp, ThumbsDown } from 'lucide-react';
 
 export default function SupplierRatings({ supplierId }) {
-  const { data: reviews = [] } = useQuery({
+  const { data: reviews = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierReviews', supplierId],
     queryFn: () => db.entities.SupplierReview.filter({ supplier_id: supplierId }, '-created_date'),
     enabled: !!supplierId
-  });
+  }));
 
   const avgRating = reviews.length > 0 
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length)

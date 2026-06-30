@@ -1,7 +1,7 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 
 import AppBar from '@mui/material/AppBar';
@@ -15,7 +15,6 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
-import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
 import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
@@ -36,15 +35,10 @@ import AttachMoneyRounded from '@mui/icons-material/AttachMoneyRounded';
 import InventoryRounded from '@mui/icons-material/InventoryRounded';
 import RateReviewRounded from '@mui/icons-material/RateReviewRounded';
 import AddRounded from '@mui/icons-material/AddRounded';
-import ChevronRight from '@mui/icons-material/ChevronRight';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import LocalShippingRounded from '@mui/icons-material/LocalShippingRounded';
 import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
-import SearchIcon from '@mui/icons-material/Search';
-import DarkModeRounded from '@mui/icons-material/DarkModeRounded';
-import LightModeRounded from '@mui/icons-material/LightModeRounded';
-import NotificationsRounded from '@mui/icons-material/NotificationsRounded';
 
 import MarvelopsLogo from './components/layout/MarvelopsLogo';
 import { PermissionProvider } from './components/permissions/PermissionContext';
@@ -89,7 +83,7 @@ const NAV_SECTIONS = {
   ],
 };
 
-const CLIENT_NAV = (t) => [
+const CLIENT_NAV = (_t) => [
   { label: 'Dashboard', icon: <DashboardRounded />, page: 'ClientPortal' },
   { label: 'My Proposals', icon: <RateReviewRounded />, page: 'ClientProposals' },
   { label: 'My Trips', icon: <FlightTakeoffRounded />, page: 'ClientTrips' },
@@ -98,7 +92,7 @@ const CLIENT_NAV = (t) => [
 
 function NavItem({ item, currentPageName, depth = 0 }) {
   const [open, setOpen] = useState(false);
-  const location = useLocation();
+//   const location = useLocation();
   const hasChildren = item.children?.length > 0;
   const isActive = currentPageName === item.page || item.children?.some(c => c.page === currentPageName);
   const isExpanded = isActive || open;
@@ -131,7 +125,7 @@ function NavItem({ item, currentPageName, depth = 0 }) {
       </ListItemIcon>
       <ListItemText
         primary={item.label}
-        primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500 }}
+        slotProps={{ primary: { sx: { fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500 } } }}
       />
       {hasChildren && (
         <Box component="span" sx={{ color: 'text.secondary', display: 'flex' }}>
@@ -158,10 +152,14 @@ function NavItem({ item, currentPageName, depth = 0 }) {
             >
               <ListItemText
                 primary={child.label}
-                primaryTypographyProps={{
-                  fontSize: '0.8125rem',
-                  fontWeight: currentPageName === child.page ? 600 : 400,
-                  color: currentPageName === child.page ? 'primary.main' : 'text.secondary',
+                slotProps={{
+                  primary: {
+                    sx: {
+                      fontSize: '0.8125rem',
+                      fontWeight: currentPageName === child.page ? 600 : 400,
+                      color: currentPageName === child.page ? 'primary.main' : 'text.secondary',
+                    },
+                  },
                 }}
               />
             </ListItemButton>
@@ -174,7 +172,7 @@ function NavItem({ item, currentPageName, depth = 0 }) {
 
 function SidebarContent({ currentPageName, t, isClientPortal }) {
   const navSections = isClientPortal
-    ? { main: CLIENT_NAV(t) }
+    ? { main: () => CLIENT_NAV(t) }
     : NAV_SECTIONS;
 
   return (
@@ -182,7 +180,7 @@ function SidebarContent({ currentPageName, t, isClientPortal }) {
       <Toolbar sx={{ px: 2, minHeight: '64px !important' }}>
         <Box component={Link} to={createPageUrl('Dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none' }}>
           <MarvelopsLogo size={28} />
-          <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'text.primary', display: { xs: 'none', lg: 'block' } }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', lg: 'block' } }}>
             Marvelops
           </Typography>
         </Box>
@@ -246,7 +244,7 @@ export default function Layout({ children, currentPageName }) {
                 <Avatar sx={{ bgcolor: 'warning.main', width: 36, height: 36 }}>
                   <LocalShippingRounded fontSize="small" />
                 </Avatar>
-                <Typography variant="h6" fontWeight={700}>{t('nav.supplierPortal')}</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>{t('nav.supplierPortal')}</Typography>
               </Box>
               <Box sx={{ flex: 1 }} />
               <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -338,7 +336,7 @@ export default function Layout({ children, currentPageName }) {
 
               <Box component={Link} to={createPageUrl('Dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none' }}>
                 <MarvelopsLogo size={28} />
-                <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'text.primary', display: { xs: 'none', sm: 'block' } }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', sm: 'block' } }}>
                   Marvelops
                 </Typography>
               </Box>

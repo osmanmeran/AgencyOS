@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-const Pagination = ({ className, ...props }) => (
+const Pagination = ({ className = "", ...props }) => (
   <nav
     role="navigation"
     aria-label="pagination"
@@ -14,7 +14,7 @@ const Pagination = ({ className, ...props }) => (
 )
 Pagination.displayName = "Pagination"
 
-const PaginationContent = React.forwardRef(({ className, ...props }, ref) => (
+const PaginationContent = React.forwardRef((/** @type {any} */ { className = "", ...props }, ref) => (
   <ul
     ref={ref}
     className={cn("flex flex-row items-center gap-1", className)}
@@ -23,12 +23,12 @@ const PaginationContent = React.forwardRef(({ className, ...props }, ref) => (
 ))
 PaginationContent.displayName = "PaginationContent"
 
-const PaginationItem = React.forwardRef(({ className, ...props }, ref) => (
+const PaginationItem = React.forwardRef((/** @type {any} */ { className = "", ...props }, ref) => (
   <li ref={ref} className={cn("", className)} {...props} />
 ))
 PaginationItem.displayName = "PaginationItem"
 
-const PaginationLink = ({ className, isActive, size = "icon", ...props }) => (
+const PaginationLink = ({ className = "", isActive, size = "icon", ...props }) => (
   <a
     aria-current={isActive ? "page" : undefined}
     className={cn(
@@ -44,7 +44,7 @@ const PaginationLink = ({ className, isActive, size = "icon", ...props }) => (
 )
 PaginationLink.displayName = "PaginationLink"
 
-const PaginationPrevious = ({ className, ...props }) => (
+const PaginationPrevious = ({ className = "", ...props }) => (
   <PaginationLink
     aria-label="Go to previous page"
     size="default"
@@ -57,7 +57,7 @@ const PaginationPrevious = ({ className, ...props }) => (
 )
 PaginationPrevious.displayName = "PaginationPrevious"
 
-const PaginationNext = ({ className, ...props }) => (
+const PaginationNext = ({ className = "", ...props }) => (
   <PaginationLink
     aria-label="Go to next page"
     size="default"
@@ -70,7 +70,7 @@ const PaginationNext = ({ className, ...props }) => (
 )
 PaginationNext.displayName = "PaginationNext"
 
-const PaginationEllipsis = ({ className, ...props }) => (
+const PaginationEllipsis = ({ className = "", ...props }) => (
   <span
     aria-hidden
     className={cn("flex h-9 w-9 items-center justify-center", className)}

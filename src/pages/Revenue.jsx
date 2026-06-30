@@ -30,30 +30,30 @@ const INVOICE_STATUS_COLORS = {
 function OverviewTab() {
   const today = new Date();
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allTrips'],
     queryFn: () => db.entities.Trip.list('-start_date')
-  });
+  }));
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allInvoices'],
     queryFn: () => db.entities.Invoice.list('-due_date')
-  });
+  }));
 
-  const { data: proposals = [] } = useQuery({
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allProposals'],
     queryFn: () => db.entities.Proposal.list('-created_date')
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allClients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
-  const { data: payments = [] } = useQuery({
+  const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allPayments'],
     queryFn: () => db.entities.ClientPayment.list('-payment_date')
-  });
+  }));
 
   const monthStart = startOfMonth(today);
   const monthEnd = endOfMonth(today);
@@ -75,7 +75,7 @@ function OverviewTab() {
     if (inv.status === 'paid' || inv.status === 'cancelled') return false;
     const dueDate = parseISO(inv.due_date);
     return isWithinInterval(dueDate, { start: today, end: next30Days }) || isBefore(dueDate, today);
-  }).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+  }).sort((a, b) => +(new Date(a.due_date)) - +(new Date(b.due_date)));
 
   const getClientName = (id) => clients.find(c => c.id === id)?.name || 'Unknown';
 
@@ -179,8 +179,8 @@ function InvoicesTab() {
   const [bulkSent, setBulkSent] = useState(false);
   const queryClient = useQueryClient();
 
-  const deleteInvoiceMutation = useMutation({
-    mutationFn: async (id) => {
+  const deleteInvoiceMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ id) => {
       await db.entities.Invoice.delete(id);
     },
     onSuccess: () => {
@@ -189,9 +189,9 @@ function InvoicesTab() {
       queryClient.invalidateQueries({ queryKey: ['allInvoices'] });
     },
     onError: (error) => showError('Failed to delete invoice', error.message)
-  });
+  }));
 
-  const deleteAllCancelledMutation = useMutation({
+  const deleteAllCancelledMutation = /** @type {any} */ (useMutation({
     mutationFn: async () => {
       const cancelled = invoices.filter(i => i.status === 'cancelled');
       for (const inv of cancelled) {
@@ -204,17 +204,17 @@ function InvoicesTab() {
       queryClient.invalidateQueries({ queryKey: ['allInvoices'] });
     },
     onError: (error) => showError('Failed to delete cancelled invoices', error.message)
-  });
+  }));
 
-  const { data: invoices = [], isLoading } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['invoices'],
     queryFn: () => db.entities.Invoice.list('-issue_date')
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
   const getClientName = (clientId) => {
     const client = clients.find(c => c.id === clientId);
@@ -358,9 +358,9 @@ function InvoicesTab() {
                     deleteAllCancelledMutation.mutate();
                   }
                 }}
-                disabled={deleteAllCancelledMutation.isLoading}
+                disabled={deleteAllCancelledMutation.isPending}
               >
-                {deleteAllCancelledMutation.isLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
+                {deleteAllCancelledMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
                 Delete All Cancelled
               </Button>
             )}
@@ -459,18 +459,18 @@ function InvoicesTab() {
 
 function MultiCurrencyTab() {
   const [baseCurrency, setBaseCurrency] = useState('USD');
-  const [rates, setRates] = useState({});
+  const [rates, setRates] = useState(/** @type {any} */ ({}));
   const { exportCSV } = useExport();
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allTripsMulti'],
     queryFn: () => db.entities.Trip.list(),
-  });
+  }));
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['allInvoicesMulti'],
     queryFn: () => db.entities.Invoice.list(),
-  });
+  }));
 
   React.useEffect(() => {
     const fetchRates = async () => {

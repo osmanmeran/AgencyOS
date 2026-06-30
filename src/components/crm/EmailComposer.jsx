@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,8 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Send, Wand2, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Built-in templates
@@ -111,7 +109,7 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
     }
   }, [open, agentName]);
 
-  const sendMutation = useMutation({
+  const sendMutation = /** @type {any} */ (useMutation({
     mutationFn: async () => {
       const me = await db.auth.me();
       // Send the actual email
@@ -137,7 +135,7 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
       queryClient.invalidateQueries({ queryKey: ['emailLogs', client.id] });
       onClose();
     }
-  });
+  }));
 
   const resolvedSubject = resolveTemplate(subject, { ...variables, agent_name: agentName });
   const resolvedBody = resolveTemplate(body, { ...variables, agent_name: agentName });

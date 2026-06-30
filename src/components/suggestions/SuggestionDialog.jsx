@@ -1,11 +1,10 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], list:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Lightbulb, Bug, Heart, Star, SendHorizontal, CheckCircle2 } from 'lucide-react';
 
 const TYPES = [
@@ -35,7 +34,7 @@ export default function SuggestionDialog({ open, onOpenChange }) {
         created_date: new Date().toISOString(),
       });
       setSubmitted(true);
-    } catch (err) {
+    } catch {
       try {
         await fetch('/api/suggestions', {
           method: 'POST',
@@ -58,7 +57,7 @@ export default function SuggestionDialog({ open, onOpenChange }) {
     onOpenChange(false);
   };
 
-  const TypeIcon = TYPES.find(t => t.value === type)?.icon || Lightbulb;
+//   const TypeIcon = TYPES.find(t => t.value === type)?.icon || Lightbulb;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

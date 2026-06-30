@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -16,23 +16,23 @@ export default function PackingList({ tripId, items }) {
   const [newItem, setNewItem] = useState({ item_name: '', category: 'Other', quantity: 1 });
   const queryClient = useQueryClient();
 
-  const addMutation = useMutation({
-    mutationFn: (data) => db.entities.PackingItem.create({ ...data, trip_id: tripId }),
+  const addMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.PackingItem.create({ ...data, trip_id: tripId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['packingItems', tripId] });
       setNewItem({ item_name: '', category: 'Other', quantity: 1 });
     }
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.PackingItem.update(id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.PackingItem.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['packingItems', tripId] })
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.PackingItem.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.PackingItem.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['packingItems', tripId] })
-  });
+  }));
 
   const groupedItems = items.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];

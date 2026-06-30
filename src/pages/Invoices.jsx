@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { useExport } from '@/hooks/useExport';
@@ -30,15 +30,15 @@ export default function Invoices() {
   const [bulkSent, setBulkSent] = useState(false);
   const { exportCSV } = useExport();
 
-  const { data: invoices = [], isLoading } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['invoices'],
     queryFn: () => db.entities.Invoice.list('-issue_date')
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
   const getClientName = (clientId) => {
     const client = clients.find(c => c.id === clientId);

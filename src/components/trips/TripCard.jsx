@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Calendar, MapPin, ArrowRight, MoreVertical, Copy, Edit, Trash2, XCircle } from 'lucide-react';
 import { usePermissions } from '../permissions/PermissionContext';
-import { format, differenceInDays, addDays } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import TripEditModal from './TripEditModal';
@@ -26,17 +26,17 @@ export default function TripCard({ trip }) {
   const isUpcoming = daysUntil >= 0;
 
   const canModify = hasPermission('modify_trips');
-  const canCancel = hasPermission('cancel_trips');
-  const canDelete = hasPermission('delete_trips');
+//   const canCancel = hasPermission('cancel_trips');
+//   const canDelete = hasPermission('delete_trips');
 
-  const deleteMutation = useMutation({
+  const deleteMutation = /** @type {any} */ (useMutation({
     mutationFn: () => db.entities.Trip.delete(trip.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trips'] })
-  });
+  }));
 
-  const duplicateMutation = useMutation({
+  const duplicateMutation = /** @type {any} */ (useMutation({
     mutationFn: async () => {
-      const { id, created_date, updated_date, created_by, ...tripData } = trip;
+      const { ...tripData } = trip;
       return db.entities.Trip.create({
         ...tripData,
         name: `${trip.name} (Copy)`,
@@ -44,12 +44,12 @@ export default function TripCard({ trip }) {
       });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trips'] })
-  });
+  }));
 
-  const cancelMutation = useMutation({
+  const cancelMutation = /** @type {any} */ (useMutation({
     mutationFn: () => db.entities.Trip.update(trip.id, { ...trip, status: 'cancelled' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trips'] })
-  });
+  }));
 
   const handleAction = (e, action) => {
     e.preventDefault();

@@ -45,29 +45,56 @@ async function loadDbFromBlob() {
   return false;
 }
 
+async function persistDb() {
+  const { put } = await import('@vercel/blob');
+  db.pragma('wal_checkpoint(TRUNCATE)');
+  const buffer = fs.readFileSync(DB_PATH);
+  await put('marvelops.db', buffer, {
+    token: process.env.BLOB_READ_WRITE_TOKEN,
+    access: 'private',
+    addRandomSuffix: false,
+  });
+  console.log('[DB] Persisted to Vercel Blob');
+}
+
 function startBlobPersistence(db) {
   if (!process.env.BLOB_READ_WRITE_TOKEN) return;
   let uploading = false;
+  let lastMtime = 0;
 
-  setInterval(async () => {
+  const upload = async () => {
     if (uploading) return;
     uploading = true;
     try {
-      db.pragma('wal_checkpoint(TRUNCATE)');
-      const buffer = fs.readFileSync(DB_PATH);
-      const { put } = await import('@vercel/blob');
-      await put('marvelops.db', buffer, {
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-        access: 'private',
-        addRandomSuffix: false,
-      });
-      console.log('[DB] Persisted to Vercel Blob');
+      let currentMtime;
+      try { currentMtime = fs.statSync(DB_PATH).mtimeMs; } catch { currentMtime = 0; }
+      if (currentMtime <= lastMtime) {
+        lastMtime = currentMtime;
+        return;
+      }
+      await persistDb();
+      try { lastMtime = fs.statSync(DB_PATH).mtimeMs; } catch {}
     } catch (e) {
       console.error('[DB] Blob persist failed:', e.message);
     } finally {
       uploading = false;
     }
-  }, 60000);
+  };
+
+  setInterval(upload, 60000);
+
+  const cleanup = async () => {
+    if (uploading) return;
+    uploading = true;
+    try {
+      await persistDb();
+    } catch (e) {
+      console.error('[DB] Final persist failed:', e.message);
+    }
+  };
+  process.on('beforeExit', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('SIGINT', cleanup);
 }
 
 // --- Eager initialization with top-level await ---
@@ -82,7 +109,6 @@ if (isVercel) {
 db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 migrate(db, { quiet: false });
-rebuildFts(db);
 
 if (isVercel) {
   startBlobPersistence(db);

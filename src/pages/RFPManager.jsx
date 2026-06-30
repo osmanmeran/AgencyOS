@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], list:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SendHorizontal, CheckCircle2, XCircle, Clock, Building2, Plus, FileText } from 'lucide-react';
+import { SendHorizontal, CheckCircle2, XCircle, Building2, Plus } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 
 const STATUS_STYLES = {
@@ -21,18 +20,18 @@ const STATUS_STYLES = {
   cancelled: 'bg-slate-100 text-slate-500 border-slate-300',
 };
 
-function RFPWizard({ onClose, suppliers, categories, services }) {
+function RFPWizard({ onClose, suppliers, categories, _services }) {
   const [step, setStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSuppliers, setSelectedSuppliers] = useState([]);
   const [rfp, setRfp] = useState({ service_name: '', description: '', quantity: 1, unit: 'per_person', notes: '', deadline: '' });
   const queryClient = useQueryClient();
 
-  const sendRFP = useMutation({
+  const sendRFP = /** @type {any} */ (useMutation({
     mutationFn: data => db.entities.BookingRequest.create(data),
     onSuccess: () => { showSuccess('RFP sent'); queryClient.invalidateQueries({ queryKey: ['bookingRequests'] }); onClose(); },
     onError: (error) => showError('Failed to send RFP', error.message)
-  });
+  }));
 
   const filteredSuppliers = selectedCategory
     ? suppliers.filter(s => s.category_id === selectedCategory)
@@ -177,31 +176,31 @@ export default function RFPManager() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [filter, setFilter] = useState('all');
 
-  const { data: requests = [] } = useQuery({
+  const { data: requests = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['bookingRequests'],
     queryFn: () => db.entities.BookingRequest.list(),
-  });
+  }));
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list(),
-  });
+  }));
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'],
     queryFn: () => db.entities.SupplierCategory.list(),
-  });
+  }));
 
-  const { data: services = [] } = useQuery({
+  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['serviceTemplates'],
     queryFn: () => db.entities.ServiceTemplate.list(),
-  });
+  }));
 
-  const updateStatus = useMutation({
-    mutationFn: ({ id, data }) => db.entities.BookingRequest.update(id, data),
+  const updateStatus = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.BookingRequest.update(id, data),
     onSuccess: () => { showSuccess('RFP status updated'); queryClient.invalidateQueries({ queryKey: ['bookingRequests'] }); },
     onError: (error) => showError('Failed to update RFP status', error.message)
-  });
+  }));
 
   const queryClient = useQueryClient();
 
@@ -225,7 +224,7 @@ export default function RFPManager() {
           </Button>
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>New RFP Request</DialogTitle></DialogHeader>
-            <RFPWizard onClose={() => setWizardOpen(false)} suppliers={suppliers} categories={categories} services={services} />
+            <RFPWizard onClose={() => setWizardOpen(false)} suppliers={suppliers} categories={categories} _services={services} />
           </DialogContent>
         </Dialog>
       </div>

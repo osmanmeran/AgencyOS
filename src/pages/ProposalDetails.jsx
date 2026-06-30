@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { ArrowLeft, Download, Send, Calendar, Users as UsersIcon, DollarSign, History, CheckCircle, XCircle, Edit, Trash2, Mail, Clock, AlertCircle, Loader2, Pencil, MapPin } from 'lucide-react';
+import { ArrowLeft, Download, Send, Calendar, Users as UsersIcon, History, CheckCircle, XCircle, Edit, Trash2, Mail, Clock, AlertCircle, Loader2, Pencil, MapPin } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { showSuccess, showError } from '@/lib/toast';
@@ -58,31 +58,31 @@ export default function ProposalDetails() {
   const [newSupplierEmail, setNewSupplierEmail] = useState('');
   const [bookingNote, setBookingNote] = useState('');
 
-  const { data: proposal, isLoading } = useQuery({
+  const { data: proposal, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['proposal', proposalId],
     queryFn: () => db.entities.Proposal.get(proposalId),
     enabled: !!proposalId
-  });
+  }));
 
-  const { data: user } = useQuery({
+  const { data: user } = /** @type {any} */ (useQuery({
     queryKey: ['currentUser'],
     queryFn: () => db.auth.me()
-  });
+  }));
 
-  const { data: settings } = useQuery({
+  const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0];
     }
-  });
+  }));
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list()
-  });
+  }));
 
-  const deleteMutation = useMutation({
+  const deleteMutation = /** @type {any} */ (useMutation({
     mutationFn: () => db.entities.Proposal.delete(proposalId),
     onSuccess: () => {
       showSuccess('Proposal deleted');
@@ -90,10 +90,10 @@ export default function ProposalDetails() {
       navigate(createPageUrl('Proposals'));
     },
     onError: (error) => showError('Failed to delete proposal', error.message)
-  });
+  }));
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ status, description }) => {
+  const updateStatusMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ { status, /** @type {any} */ description }) => {
       const changeEntry = {
         date: new Date().toISOString(),
         changed_by: user?.email || 'Unknown',
@@ -117,10 +117,10 @@ export default function ProposalDetails() {
       setChangeDescription('');
     },
     onError: (error) => showError('Failed to update status', error.message)
-  });
+  }));
 
-  const sendBookingMutation = useMutation({
-    mutationFn: async ({ serviceIdx, email, note }) => {
+  const sendBookingMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ { serviceIdx, /** @type {any} */ email, /** @type {any} */ note }) => {
       const service = proposal.services[serviceIdx];
       const emailBody = buildProposalBookingEmail(proposal, service, note);
       await db.integrations.Core.SendEmail({
@@ -148,10 +148,10 @@ export default function ProposalDetails() {
       setBookingServiceIdx(null);
     },
     onError: (error) => showError('Failed to send booking request', error.message)
-  });
+  }));
 
-  const saveResponseMutation = useMutation({
-    mutationFn: async ({ serviceIdx, responseNotes, responseStatus }) => {
+  const saveResponseMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ { serviceIdx, /** @type {any} */ responseNotes, /** @type {any} */ responseStatus }) => {
       const updatedServices = [...proposal.services];
       updatedServices[serviceIdx] = {
         ...updatedServices[serviceIdx],
@@ -166,7 +166,7 @@ export default function ProposalDetails() {
       queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
     },
     onError: (error) => showError('Failed to save response', error.message)
-  });
+  }));
 
   if (isLoading) {
     return <SkeletonCard />;
@@ -195,7 +195,7 @@ export default function ProposalDetails() {
     setBookingModalOpen(true);
   };
 
-  const supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s.name]));
+//   const supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s.name]));
   const proposalCurrencies = [...new Set((proposal.services || []).map(s => s.client_currency).filter(Boolean))];
   const proposalCurrencySymbol = ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[proposalCurrencies[0] || 'USD'] || proposalCurrencies[0] || '$');
 
@@ -379,7 +379,7 @@ export default function ProposalDetails() {
                       {/* Supplier Response */}
                       <ResponseEditor
                         service={service}
-                        serviceIdx={index}
+                        _serviceIdx={index}
                         onSave={(responseNotes, responseStatus) => saveResponseMutation.mutate({ serviceIdx: index, responseNotes, responseStatus })}
                         loading={saveResponseMutation.isPending}
                       />
@@ -552,7 +552,7 @@ export default function ProposalDetails() {
   );
 }
 
-function ResponseEditor({ service, serviceIdx, onSave, loading }) {
+function ResponseEditor({ service, _serviceIdx, onSave, loading }) {
   const [editing, setEditing] = useState(false);
   const [responseNotes, setResponseNotes] = useState(service.booking_response_notes || '');
   const [responseStatus, setResponseStatus] = useState(service.booking_status || 'requested');

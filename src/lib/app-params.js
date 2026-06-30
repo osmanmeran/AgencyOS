@@ -1,6 +1,7 @@
+/// <reference types="vite/client" />
 const isNode = typeof window === 'undefined';
 const windowObj = isNode ? { localStorage: new Map() } : window;
-const storage = windowObj.localStorage;
+const storage = /** @type {Storage} */ (windowObj.localStorage);
 
 const MOCK_MODE_KEY = 'marvelops_mock_mode';
 export const isMockMode = () => localStorage.getItem(MOCK_MODE_KEY) === 'true';

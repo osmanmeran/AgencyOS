@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +14,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, Mail, Shield, Globe, Check, HelpCircle, FlaskConical, Lightbulb, UserCircle } from 'lucide-react';
+import { User, LogOut, Mail, Shield, Globe, Check, HelpCircle, FlaskConical, Lightbulb, UserCircle } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 import SuggestionDialog from '@/components/suggestions/SuggestionDialog';
 

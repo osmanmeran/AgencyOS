@@ -1,6 +1,7 @@
+/// <reference types="vite/client" />
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/components/permissions/PermissionContext';
@@ -12,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Globe, Hash, Plus, X, Upload, Save, FileText, Mail, Loader2, CheckCircle2, AlertCircle, Shield, RotateCcw, ChevronDown, ChevronRight, Users, KeyRound } from 'lucide-react';
+import { Settings, Globe, Hash, Plus, X, Save, FileText, Mail, Loader2, CheckCircle2, AlertCircle, Shield, RotateCcw, ChevronDown, ChevronRight, Users, KeyRound } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
@@ -86,13 +87,13 @@ export default function AppSettings() {
     default_invoice_notes: ''
   });
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0];
     }
-  });
+  }));
 
   useEffect(() => {
     if (settings) {
@@ -161,8 +162,8 @@ export default function AppSettings() {
       .catch(() => {});
   };
 
-  const saveSettingsMutation = useMutation({
-    mutationFn: async (data) => {
+  const saveSettingsMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const cleanInvoiceHeader = {};
       Object.entries(data.invoice_header || {}).forEach(([key, value]) => {
         if (value && typeof value === 'string' && value.trim() !== '') {
@@ -200,18 +201,18 @@ export default function AppSettings() {
     onError: (error) => {
       showError('Failed to save settings', error.message || 'Unknown error');
     }
-  });
+  }));
 
-  const updateUserLanguage = useMutation({
-    mutationFn: (language) => db.auth.updateMe({ language }),
+  const updateUserLanguage = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ language) => db.auth.updateMe({ language }),
     onSuccess: () => { refreshUser(); window.location.reload(); }
-  });
+  }));
 
-  const updateUserCurrency = useMutation({
-    mutationFn: (default_currency) => db.auth.updateMe({ default_currency }),
+  const updateUserCurrency = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ default_currency) => db.auth.updateMe({ default_currency }),
     onSuccess: () => { refreshUser(); showSuccess('Currency updated', 'Default currency saved'); },
     onError: (err) => showError('Failed to update currency', err.message)
-  });
+  }));
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
@@ -244,7 +245,7 @@ export default function AppSettings() {
 
   // --- User Management State ---
   const [users, setUsers] = useState([]);
-  const [usersLoading, setUsersLoading] = useState(true);
+  const [_usersLoading, setUsersLoading] = useState(true);
   const [userError, setUserError] = useState('');
   const [userSuccess, setUserUserSuccess] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -372,7 +373,7 @@ export default function AppSettings() {
   };
 
   // --- Permissions State ---
-  const [tierPerms, setTierPerms] = useState({});
+  const [tierPerms, setTierPerms] = useState(/** @type {any} */ ({}));
   const [expandedGroups, setExpandedGroups] = useState(new Set(PERMISSION_GROUPS.map(g => g.key)));
   const [permDirty, setPermDirty] = useState(false);
   const [selectedTier, setSelectedTier] = useState('agent');
@@ -386,8 +387,8 @@ export default function AppSettings() {
     }
   }, [settings, activeTab]);
 
-  const savePermMutation = useMutation({
-    mutationFn: async (data) => {
+  const savePermMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const cleanData = { ...settings, tier_permissions: data };
       if (settings?.id) {
         return db.entities.AppSettings.update(settings.id, cleanData);
@@ -401,7 +402,7 @@ export default function AppSettings() {
       showSuccess('Permissions saved', 'Tier permissions have been updated');
     },
     onError: (err) => showError('Failed to save', err.message),
-  });
+  }));
 
   const toggleGroup = (key) => {
     const next = new Set(expandedGroups);
@@ -873,7 +874,7 @@ export default function AppSettings() {
                   </tr>
                 ))}
                 {users.filter(u => u.is_active || u.id === currentUser?.id).length === 0 && (
-                  <tr><td colSpan="6" className="px-4 py-8 text-center text-slate-400">No users found</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No users found</td></tr>
                 )}
               </tbody>
             </table>

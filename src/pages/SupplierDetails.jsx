@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { ArrowLeft, Mail, Phone, Globe, MapPin, Star, Edit, XCircle, Send, CalendarDays, Search, ExternalLink, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Globe, MapPin, Star, Edit, Send, CalendarDays, Search, ExternalLink, Check, Loader2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import SupplierServices from '../components/suppliers/SupplierServices';
@@ -29,7 +29,7 @@ export default function SupplierDetails() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [bookingEmailOpen, setBookingEmailOpen] = useState(false);
   const [bookingFormOpen, setBookingFormOpen] = useState(false);
-  const [editForm, setEditForm] = useState({});
+  const [editForm, setEditForm] = useState(/** @type {any} */ ({}));
   const [webSearchOpen, setWebSearchOpen] = useState(false);
   const [webResults, setWebResults] = useState([]);
   const [webSearchLoading, setWebSearchLoading] = useState(false);
@@ -37,22 +37,22 @@ export default function SupplierDetails() {
 
   const canModify = hasPermission('modify_suppliers');
   const canModifyBasic = hasPermission('modify_suppliers_basic');
-  const canDelete = hasPermission('delete_suppliers');
+//   const canDelete = hasPermission('delete_suppliers');
 
-  const { data: supplier, isLoading } = useQuery({
+  const { data: supplier, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['supplier', supplierId],
     queryFn: () => db.entities.Supplier.get(supplierId),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: category } = useQuery({
+  const { data: category } = /** @type {any} */ (useQuery({
     queryKey: ['category', supplier?.category_id],
     queryFn: () => db.entities.SupplierCategory.get(supplier.category_id),
     enabled: !!supplier?.category_id
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: (data) => db.entities.Supplier.update(supplierId, {
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Supplier.update(supplierId, {
       name: data.name,
       category_id: supplier.category_id,
       contact_person: data.contact_person || '',
@@ -73,7 +73,7 @@ export default function SupplierDetails() {
       setEditModalOpen(false);
     },
     onError: (error) => showError('Failed to update supplier', error.message)
-  });
+  }));
 
   const openEditModal = () => {
     setEditForm({
@@ -337,6 +337,7 @@ export default function SupplierDetails() {
         onClose={() => setBookingFormOpen(false)}
         supplier={supplier}
         categoryName={category?.name}
+        onCreated={() => {}}
       />
 
       {/* Booking Email Sender */}

@@ -1,11 +1,10 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Upload, Users, CheckCircle, XCircle, AlertTriangle, Loader2, Download, Eye, EyeOff } from 'lucide-react';
 import { parseCsv } from '@/lib/csv';
 
@@ -63,12 +62,12 @@ function parseOutlookCSV(text) {
 
 export default function OutlookContactsImporter() {
   const [contacts, setContacts] = useState([]);
-  const [selected, setSelected] = useState({});
+  const [selected, setSelected] = useState(/** @type {any} */ ({}));
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState(null);
   const [showPreview, setShowPreview] = useState(true);
   const [dragOver, setDragOver] = useState(false);
-  const fileRef = useRef();
+  const fileRef = useRef(null);
   const queryClient = useQueryClient();
 
   const handleFile = (file) => {
@@ -118,7 +117,7 @@ export default function OutlookContactsImporter() {
         try {
           await db.entities.Client.bulkCreate(chunk);
           ok += chunk.length;
-        } catch (e) {
+        } catch {
           // If bulk fails, try one by one for this chunk
           for (const contact of chunk) {
             try {
@@ -167,7 +166,7 @@ export default function OutlookContactsImporter() {
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
-          onClick={() => fileRef.current.click()}
+          onClick={() => fileRef.current?.click()}
         >
           <Upload className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <p className="text-lg font-medium text-slate-700">Drop your Outlook CSV here</p>

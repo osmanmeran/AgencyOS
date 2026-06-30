@@ -1,8 +1,7 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,24 +21,24 @@ const MEAL_BASIS_LABELS = { RO: 'Room Only', BB: 'B&B', HB: 'Half Board', FB: 'F
 export default function SupplierBookingDetails() {
   const [params] = useSearchParams();
   const bookingId = params.get('id');
-  const navigate = useNavigate();
+//   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: booking, isLoading } = useQuery({
+  const { data: booking, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['supplierBooking', bookingId],
     queryFn: () => db.entities.SupplierBooking.get(bookingId),
     enabled: !!bookingId
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ status }) => db.entities.SupplierBooking.update(bookingId, { status }),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { status }) => db.entities.SupplierBooking.update(bookingId, { status }),
     onSuccess: () => {
       showSuccess('Booking updated');
       queryClient.invalidateQueries({ queryKey: ['supplierBooking', bookingId] });
       queryClient.invalidateQueries({ queryKey: ['supplierBookings'] });
     },
     onError: (error) => showError('Failed to update booking', error.message)
-  });
+  }));
 
   if (isLoading) return <SkeletonCard />;
   if (!booking) return <div className="text-center py-20 text-slate-500">Booking not found.</div>;

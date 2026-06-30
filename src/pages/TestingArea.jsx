@@ -1,10 +1,8 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+// const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle2, Loader2, Mail, FileText, Bell, Upload, Shield, RefreshCw, Database, Plus, Trash2 } from 'lucide-react';
@@ -24,8 +22,8 @@ async function api(path, opts = {}) {
 
 export default function TestingArea() {
   const { user } = useAuth();
-  const [results, setResults] = useState({});
-  const [loading, setLoading] = useState({});
+  const [results, setResults] = useState(/** @type {any} */ ({}));
+  const [loading, setLoading] = useState(/** @type {any} */ ({}));
 
   const addResult = (key, data) => {
     const status = data?.error ? 'fail' : 'pass';

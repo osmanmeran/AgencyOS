@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ export default function SaveAsTemplateButton({ trip, services = [] }) {
     const startDate = trip.start_date ? new Date(trip.start_date) : null;
     const endDate = trip.end_date ? new Date(trip.end_date) : null;
     const durationDays = startDate && endDate
-      ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
+      ? Math.ceil((+endDate - +startDate) / (1000 * 60 * 60 * 24))
       : null;
 
     await db.entities.ProposalTemplate.create({

@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,25 +12,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarClock, Save
  } from 'lucide-react';
-import { addDays, differenceInDays, format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 
 export default function TripEditModal({ open, onClose, trip }) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState(/** @type {any} */ ({}));
   const [moveDays, setMoveDays] = useState(0);
 
-  const { data: settings } = useQuery({
+  const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0] || { departments: [] };
     }
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
   useEffect(() => {
     if (trip) {
@@ -48,13 +48,13 @@ export default function TripEditModal({ open, onClose, trip }) {
     }
   }, [trip]);
 
-  const updateMutation = useMutation({
-    mutationFn: (data) => db.entities.Trip.update(trip.id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Trip.update(trip.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
       onClose();
     }
-  });
+  }));
 
   const handleMoveDates = () => {
     if (moveDays !== 0) {

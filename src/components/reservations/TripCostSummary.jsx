@@ -1,8 +1,3 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -10,12 +5,6 @@ import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, CheckCircle } from
 const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || (cur || '$'));
 
 export default function TripCostSummary({ trip }) {
-  const { data: supplierServices = [] } = useQuery({
-    queryKey: ['supplierServices', trip.id],
-    queryFn: () => db.entities.SupplierService.filter({ supplier_id: undefined }),
-    enabled: !!trip.id,
-    // We fetch all services and filter by supplier_id that appear in trip services
-  });
 
   // Build supplier service rows from SupplierService entity (actual vs budgeted)
   // Also incorporate trip.services array for selling prices
@@ -32,7 +21,7 @@ export default function TripCostSummary({ trip }) {
     const qty = parseInt(svc.quantity) || 1;
     if (svc.unit === 'per_night' || svc.unit === 'per_day') {
       if (svc.start_date && svc.end_date) {
-        const days = Math.max(1, Math.round((new Date(svc.end_date) - new Date(svc.start_date)) / 86400000));
+        const days = Math.max(1, Math.round((+(new Date(svc.end_date)) - +(new Date(svc.start_date))) / 86400000));
         return qty * days;
       }
       return qty;

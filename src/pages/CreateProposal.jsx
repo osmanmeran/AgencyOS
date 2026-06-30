@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  ArrowLeft, Plus, Trash2, DollarSign, TrendingUp, Building2,
+  ArrowLeft, Plus, Trash2, TrendingUp, Building2,
   RefreshCw, ArrowRightLeft, BookOpen, Users
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -70,40 +70,40 @@ export default function CreateProposal() {
   const [addProviderForIndex, setAddProviderForIndex] = useState(null);
   const [newProvider, setNewProvider] = useState({ name: '', email: '', phone: '', city: '' });
 
-  const { data: suppliers = [], refetch: refetchSuppliers } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]), refetch: refetchSuppliers } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list(),
-  });
-  const { data: categories = [] } = useQuery({
+  }));
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'],
     queryFn: () => db.entities.SupplierCategory.list(),
-  });
-  const { data: trips = [] } = useQuery({
+  }));
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['trips'],
     queryFn: () => db.entities.Trip.list(),
-  });
-  const { data: clients = [] } = useQuery({
+  }));
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list(),
-  });
-  const { data: proposalTemplates = [] } = useQuery({
+  }));
+  const { data: proposalTemplates = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['proposalTemplates'],
     queryFn: () => db.entities.ProposalTemplate.list('-created_date'),
-  });
+  }));
 
-  const createProposalMutation = useMutation({
-    mutationFn: (data) => db.entities.Proposal.create(data),
-    onSuccess: (newProposal) => {
+  const createProposalMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Proposal.create(data),
+    onSuccess: (/** @type {any} */ newProposal) => {
       showSuccess('Proposal created');
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       navigate(createPageUrl(`ProposalDetails?id=${newProposal.id}`));
     },
     onError: (error) => showError('Failed to create proposal', error.message)
-  });
+  }));
 
-  const createSupplierMutation = useMutation({
-    mutationFn: (data) => db.entities.Supplier.create(data),
-    onSuccess: async (created) => {
+  const createSupplierMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
+    onSuccess: async (/** @type {any} */ created) => {
       showSuccess('Supplier created');
       await refetchSuppliers();
       if (addProviderForIndex !== null) updateService(addProviderForIndex, 'supplier_id', created.id);
@@ -112,7 +112,7 @@ export default function CreateProposal() {
       setAddProviderForIndex(null);
     },
     onError: (error) => showError('Failed to create supplier', error.message)
-  });
+  }));
 
   // ── Exchange rate ──────────────────────────────────────────────────────────
   const fetchExchangeRate = async () => {
@@ -121,7 +121,7 @@ export default function CreateProposal() {
     try {
       const res = await db.integrations.Core.GetExchangeRate(acquiringCurrency, sellingCurrency);
       setExchangeRate(res.rate || 1);
-    } catch (err) {
+    } catch {
       setExchangeRate(1);
     }
     setLoadingRate(false);
@@ -170,13 +170,13 @@ export default function CreateProposal() {
 
   const acquiringByCurrency = services.reduce((acc, s) => {
     const cur = s.supplier_currency || acquiringCurrency;
-    acc[cur] = (acc[cur] || 0) + (parseFloat(s.acquiring_price) || 0) * (parseInt(s.quantity) || 1);
+    acc[cur] = (acc[cur] || 0) + (parseFloat(s.acquiring_price) || 0) * (parseInt(String(s.quantity)) || 1);
     return acc;
   }, {});
   const sellingByCurrency = services.reduce((acc, s) => {
     const cur = s.client_currency || 'USD';
     const basePrice = parseFloat(s.base_selling_price ?? s.selling_price) || 0;
-    acc[cur] = (acc[cur] || 0) + withMarkup(basePrice) * (parseInt(s.quantity) || 1);
+    acc[cur] = (acc[cur] || 0) + withMarkup(basePrice) * (parseInt(String(s.quantity)) || 1);
     return acc;
   }, {});
   const totalSellingAll = Object.values(sellingByCurrency).reduce((s, v) => s + v, 0);
@@ -226,7 +226,7 @@ export default function CreateProposal() {
       location: s.location || '',
       base_selling_price: parseFloat(s.base_selling_price ?? s.selling_price) || 0,
       cost: withMarkup(parseFloat(s.base_selling_price ?? s.selling_price) || 0),
-      quantity: parseInt(s.quantity) || 1,
+      quantity: parseInt(String(s.quantity)) || 1,
       acquiring_price: s.acquiring_price ? parseFloat(s.acquiring_price) : 0,
       supplier_currency: s.supplier_currency || acquiringCurrency,
       client_currency: s.client_currency || sellingCurrency,
@@ -265,7 +265,7 @@ export default function CreateProposal() {
             <ServiceLibraryPanel
               numTravelers={formData.num_travelers}
               acquiringCurrency={acquiringCurrency}
-              sellingCurrency={sellingCurrency}
+              _sellingCurrency={sellingCurrency}
               onAddService={addServiceFromLibrary}
             />
           </div>
@@ -446,7 +446,7 @@ export default function CreateProposal() {
 
               <div className="space-y-4">
                 {services.map((service, index) => {
-                  const pax = parseInt(service.quantity) || 1;
+                  const pax = parseInt(String(service.quantity)) || 1;
                   const sCur = service.supplier_currency || acquiringCurrency;
                   const cCur = service.client_currency || sellingCurrency;
                   const acqUnit = parseFloat(service.acquiring_price) || 0;

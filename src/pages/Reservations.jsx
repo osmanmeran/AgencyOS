@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useExport } from '@/hooks/useExport';
@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CalendarCheck, Clock, CheckCircle, XCircle, Send, Search, MapPin, Calendar, Users, DollarSign, Trash2, Download, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
+import { Plus, CalendarCheck, Clock, CheckCircle, XCircle, Send, Search, MapPin, Calendar, Users, Trash2, Download, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
@@ -94,10 +94,10 @@ export default function Reservations() {
   const queryClient = useQueryClient();
   const { exportCSV } = useExport();
 
-  const { data: trips = [], isLoading } = useQuery({
+  const { data: trips = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['trips'],
     queryFn: () => db.entities.Trip.list('start_date')
-  });
+  }));
 
   const currentTrips = trips.filter(t => {
     if (!t.end_date) return true;
@@ -114,7 +114,7 @@ export default function Reservations() {
 
   const isCancelled = (t) => t.proposal_status === 'rejected' || t.status === 'cancelled';
 
-  const deleteCancelledMutation = useMutation({
+  const deleteCancelledMutation = /** @type {any} */ (useMutation({
     mutationFn: async () => {
       const cancelled = trips.filter(t => isCancelled(t));
       for (const trip of cancelled) {
@@ -126,7 +126,7 @@ export default function Reservations() {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
     },
     onError: (error) => showError('Failed to delete cancelled reservations', error.message)
-  });
+  }));
 
   const cancelledCount = trips.filter(t => isCancelled(t)).length;
 
@@ -309,10 +309,10 @@ export default function Reservations() {
                             deleteCancelledMutation.mutate();
                           }
                         }}
-                        disabled={deleteCancelledMutation.isLoading}
+                        disabled={deleteCancelledMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
-                        {deleteCancelledMutation.isLoading ? 'Erasing...' : `Erase All Cancelled (${cancelledCount})`}
+                        {deleteCancelledMutation.isPending ? 'Erasing...' : `Erase All Cancelled (${cancelledCount})`}
                       </Button>
                     </div>
                   )}

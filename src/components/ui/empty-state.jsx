@@ -8,7 +8,7 @@ export default function EmptyState({
   description = '',
   actionLabel,
   onAction,
-  className,
+  className = '',
 }) {
   return (
     <div className={cn('flex flex-col items-center justify-center py-16 px-4', className)}>

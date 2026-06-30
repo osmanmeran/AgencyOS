@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
 import { Input } from '@/components/ui/input';
@@ -34,10 +34,10 @@ export default function NewClientForm({ onCreated, onCancel }) {
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.Client.create(data),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Client.create(data),
     onSuccess: (newClient) => onCreated(newClient)
-  });
+  }));
 
   const handleSubmit = (e) => {
     e.preventDefault();

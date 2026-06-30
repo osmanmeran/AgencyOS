@@ -12,7 +12,7 @@ export default function MockLogin() {
   const db = useDb();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
+//   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const msConfigured = isMicrosoftSsoConfigured();
@@ -37,11 +37,10 @@ export default function MockLogin() {
 
         setLoading(true);
         setError('');
-        let user;
         if (typeof db.auth.microsoftLogin === 'function') {
-          user = await db.auth.microsoftLogin(idToken);
+          await db.auth.microsoftLogin(idToken);
         } else {
-          user = await exchangeIdToken(idToken);
+          await exchangeIdToken(idToken);
         }
         if (cancelled) return;
         const returnUrl = getMicrosoftReturnUrl();

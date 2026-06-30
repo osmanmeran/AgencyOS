@@ -1,9 +1,8 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
-import { usePermissions } from '@/components/permissions/PermissionContext';
 import { PERMISSION_GROUPS, DEFAULT_TIER_PERMISSIONS } from '@/lib/permissions';
 import { showSuccess, showError } from '@/lib/toast';
 import { Card } from '@/components/ui/card';
@@ -27,7 +26,7 @@ const PERMISSION_TIERS = [
   { key: 'accounting', label: 'Accounting', color: 'bg-green-100 text-green-800', desc: 'Finance & reports' },
 ];
 
-const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.permissions);
+// const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.permissions);
 
 const DEPARTMENT_COLORS = [
   'bg-amber-100 text-amber-800',
@@ -44,7 +43,7 @@ const DEPARTMENT_COLORS = [
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
-  const { hasPermission } = usePermissions();
+//   const { hasPermission } = usePermissions();
   const [tab, setTab] = useState('users');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +68,7 @@ export default function UserManagement() {
   const [showPassword, setShowPassword] = useState(false);
   const [departmentsList, setDepartmentsList] = useState([]);
   const queryClient = useQueryClient();
-  const [tierPerms, setTierPerms] = useState({});
+  const [tierPerms, setTierPerms] = useState(/** @type {any} */ ({}));
   const [expandedGroups, setExpandedGroups] = useState(new Set(PERMISSION_GROUPS.map(g => g.key)));
   const [dirty, setDirty] = useState(false);
   const [selectedTier, setSelectedTier] = useState('agent');
@@ -86,7 +85,7 @@ export default function UserManagement() {
       if (settings && settings.departments) {
         setDepartmentsList(settings.departments);
       }
-    } catch (e) {
+    } catch {
       // fallback to default list
       setDepartmentsList(['Luxury', 'Adventure', 'Corporate', 'Cruise']);
     }
@@ -216,14 +215,14 @@ export default function UserManagement() {
     } catch (err) { setError(err.message); }
   };
 
-  const { data: settingsData, isLoading: settingsLoading } = useQuery({
+  const { data: settingsData } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0];
     },
     enabled: tab === 'permissions',
-  });
+  }));
 
   useEffect(() => {
     if (tab !== 'permissions') return;
@@ -234,8 +233,8 @@ export default function UserManagement() {
     }
   }, [settingsData, tab]);
 
-  const saveMutation = useMutation({
-    mutationFn: async (data) => {
+  const saveMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const cleanData = { ...settingsData, tier_permissions: data };
       if (settingsData?.id) {
         return db.entities.AppSettings.update(settingsData.id, cleanData);
@@ -251,7 +250,7 @@ export default function UserManagement() {
     onError: (err) => {
       showError('Failed to save', err.message);
     },
-  });
+  }));
 
   const toggleGroup = (key) => {
     const next = new Set(expandedGroups);
@@ -555,7 +554,7 @@ export default function UserManagement() {
               </tr>
             ))}
             {users.filter(u => u.is_active || u.id === currentUser?.id).length === 0 && (
-              <tr><td colSpan="6" className="px-4 py-8 text-center text-slate-400">No users found</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No users found</td></tr>
             )}
           </tbody>
         </table>
@@ -711,7 +710,7 @@ export default function UserManagement() {
             {PERMISSION_GROUPS.map(group => {
               const isExpanded = expandedGroups.has(group.key);
               const allChecked = hasAllInGroup(selectedTier, group);
-              const someChecked = group.permissions.some(p => (tierPerms[selectedTier] || []).includes(p.key));
+//               const someChecked = group.permissions.some(p => (tierPerms[selectedTier] || []).includes(p.key));
 
               return (
                 <Card key={group.key} className="overflow-hidden">

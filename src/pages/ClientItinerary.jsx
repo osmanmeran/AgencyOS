@@ -1,15 +1,15 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   Calendar, MapPin, Building, ArrowRightLeft, User, Coffee, Plane,
-  Map, Zap, Clock, Menu, X, ChevronLeft, Sun, Share2, Check
+  Map, Zap, Sun, Share2, Check
 } from 'lucide-react';
 
-const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || (cur || '$'));
+// const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || (cur || '$'));
 
 const CATEGORY_MAP = {
   lodging:        { label: 'Lodging',        icon: Building,       color: 'bg-blue-500',      bg: 'bg-blue-50',    text: 'text-blue-700',   border: 'border-blue-200' },
@@ -30,17 +30,7 @@ const detectCategory = (cat) => {
   return CATEGORY_MAP[key] || { label: cat || 'Service', icon: Sun, color: 'bg-slate-500', bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' };
 };
 
-const effQty = (s) => {
-  const qty = parseInt(s.quantity) || 1;
-  if (s.unit === 'per_night' || s.unit === 'per_day') {
-    if (s.start_date && s.end_date) {
-      const days = Math.max(1, Math.round((new Date(s.end_date) - new Date(s.start_date)) / 86400000));
-      return qty * days;
-    }
-    return qty;
-  }
-  return qty;
-};
+/* effQty removed (unused) */
 
 function ServiceCard({ service }) {
   const cfg = detectCategory(service.category);
@@ -141,11 +131,11 @@ export default function ClientItinerary() {
   const tripId = searchParams.get('id');
   const [shareCopied, setShareCopied] = useState(false);
 
-  const { data: trip, isLoading } = useQuery({
+  const { data: trip, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['trip', tripId],
     queryFn: () => db.entities.Trip.get(tripId),
     enabled: !!tripId
-  });
+  }));
 
   if (isLoading) {
     return (
@@ -272,7 +262,7 @@ export default function ClientItinerary() {
           src={trip.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&auto=format&fit=crop'}
           alt={trip.name}
           className="w-full h-full object-cover"
-          onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&auto=format&fit=crop'; }}
+          onError={(e) => { const t = /** @type {any} */ (e.target); t.onerror = null; t.src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&auto=format&fit=crop'; }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">

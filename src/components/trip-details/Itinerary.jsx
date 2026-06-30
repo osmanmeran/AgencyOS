@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -32,46 +32,46 @@ export default function Itinerary({ tripId, trip, events }) {
   });
   const queryClient = useQueryClient();
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list()
-  });
+  }));
 
-  const { data: allServices = [] } = useQuery({
+  const { data: allServices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierServices'],
     queryFn: () => db.entities.SupplierService.list()
-  });
+  }));
 
-  const { data: allPricings = [] } = useQuery({
+  const { data: allPricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierPricings'],
     queryFn: () => db.entities.SupplierPricing.list()
-  });
+  }));
 
-  const { data: subcategories = [] } = useQuery({
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierSubcategories'],
     queryFn: () => db.entities.SupplierSubcategory.list()
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.ItineraryEvent.create({ ...data, trip_id: tripId }),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ItineraryEvent.create({ ...data, trip_id: tripId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] });
       closeModal();
     }
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.ItineraryEvent.update(id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ItineraryEvent.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] });
       closeModal();
     }
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.ItineraryEvent.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.ItineraryEvent.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] })
-  });
+  }));
 
   const openModal = (event = null) => {
     if (event) {
@@ -124,8 +124,8 @@ export default function Itinerary({ tripId, trip, events }) {
         pricing_id: pricingId,
         supplier_id: pricing.supplier_id,
         subcategory_id: pricing.subcategory_id || '',
-        supplier_cost: pricing.base_price * (formData.quantity || 1),
-        cost: cp * (formData.quantity || 1)
+        supplier_cost: String(pricing.base_price * (formData.quantity || 1)),
+        cost: String(cp * (formData.quantity || 1))
       });
     } else {
       setFormData({ ...formData, pricing_id: '', supplier_cost: '' });
@@ -144,8 +144,8 @@ export default function Itinerary({ tripId, trip, events }) {
       setFormData({
         ...formData,
         quantity: qty,
-        supplier_cost: pricing.base_price * qty,
-        cost: cp * qty
+        supplier_cost: String(pricing.base_price * qty),
+        cost: String(cp * qty)
       });
     } else {
       setFormData({ ...formData, quantity: qty });

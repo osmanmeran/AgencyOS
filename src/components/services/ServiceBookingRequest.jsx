@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Send, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
 
 export default function ServiceBookingRequest({ open, onClose, service, tripId, supplierId }) {
   const queryClient = useQueryClient();
@@ -23,18 +22,18 @@ export default function ServiceBookingRequest({ open, onClose, service, tripId, 
   });
   const [sending, setSending] = useState(false);
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list()
-  });
+  }));
 
-  const { data: settings } = useQuery({
+  const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
       return all[0] || {};
     }
-  });
+  }));
 
   // Get supplier contacts from service template
   const serviceSuppliers = service?.supplier_ids?.map(id => suppliers.find(s => s.id === id)).filter(Boolean) || [];
@@ -64,7 +63,7 @@ export default function ServiceBookingRequest({ open, onClose, service, tripId, 
     return `${prefix}-${year}${String(month).padStart(2, '0')}-${String(counter).padStart(4, '0')}`;
   };
 
-  const createBookingMutation = useMutation({
+  const createBookingMutation = /** @type {any} */ (useMutation({
     mutationFn: async () => {
       setSending(true);
       const referenceNumber = await generateReferenceNumber();
@@ -76,7 +75,7 @@ export default function ServiceBookingRequest({ open, onClose, service, tripId, 
         service_id: service?.id,
         service_date: formData.service_date,
         service_details: `${service?.name}\n\n${formData.service_details}`,
-        num_guests: parseInt(formData.num_guests),
+        num_guests: parseInt(String(formData.num_guests)),
         total_cost: parseFloat(formData.total_cost),
         status: 'pending'
       });
@@ -115,7 +114,7 @@ TravelPro Team
       onClose();
     },
     onError: () => setSending(false)
-  });
+  }));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

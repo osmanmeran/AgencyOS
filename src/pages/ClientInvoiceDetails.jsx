@@ -1,6 +1,5 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -16,25 +15,25 @@ export default function ClientInvoiceDetails() {
   const [searchParams] = useSearchParams();
   const invoiceId = searchParams.get('id');
 
-  const { data: user } = useQuery({
+  const { data: user } = /** @type {any} */ (useQuery({
     queryKey: ['currentUser'],
     queryFn: () => db.auth.me()
-  });
+  }));
 
-  const { data: client } = useQuery({
+  const { data: client } = /** @type {any} */ (useQuery({
     queryKey: ['myClient', user?.email],
     queryFn: async () => {
       const clients = await db.entities.Client.filter({ email: user.email });
       return clients[0];
     },
     enabled: !!user?.email
-  });
+  }));
 
-  const { data: invoice, isLoading } = useQuery({
+  const { data: invoice, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['clientInvoice', invoiceId],
     queryFn: () => db.entities.Invoice.get(invoiceId),
     enabled: !!invoiceId
-  });
+  }));
 
   if (isLoading) {
     return <SkeletonCard />;

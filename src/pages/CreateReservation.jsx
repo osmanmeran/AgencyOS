@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -15,9 +15,9 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
 import {
-  ArrowLeft, Plus, Trash2, TrendingUp, Building2,
-  RefreshCw, ArrowRightLeft, BookOpen, Users, Star, BedDouble, Hash, X,
-  Building, Navigation, User, Coffee, Plane, Map, Zap, Loader2, Check, Search
+  ArrowLeft, Plus, Trash2, TrendingUp,
+  RefreshCw, ArrowRightLeft, BookOpen, Users, Star, Hash,
+  Building, User, Coffee, Plane, Map, Zap, Loader2, Check, Search
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { showSuccess, showError } from '@/lib/toast';
@@ -108,50 +108,50 @@ export default function CreateReservation() {
   const [templateName, setTemplateName] = useState('');
   const [templateDesc, setTemplateDesc] = useState('');
 
-  const { data: templates = [] } = useQuery({
+  const { data: templates = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['serviceTemplates'],
     queryFn: () => db.entities.ServiceTemplate.list()
-  });
+  }));
 
-  const createTemplateMutation = useMutation({
-    mutationFn: (data) => db.entities.ServiceTemplate.create(data),
+  const createTemplateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
     onSuccess: () => { showSuccess('Template created'); queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] }); },
     onError: (error) => showError('Failed to create template', error.message)
-  });
+  }));
 
-  const deleteTemplateMutation = useMutation({
-    mutationFn: (id) => db.entities.ServiceTemplate.delete(id),
+  const deleteTemplateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.ServiceTemplate.delete(id),
     onSuccess: () => { showSuccess('Template deleted'); queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] }); },
     onError: (error) => showError('Failed to delete template', error.message)
-  });
+  }));
   const [acquiringCurrency, setAcquiringCurrency] = useState('USD');
   const [sellingCurrency, setSellingCurrency] = useState('USD');
   const [exchangeRate, setExchangeRate] = useState(1);
   const [loadingRate, setLoadingRate] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [addProviderOpen, setAddProviderOpen] = useState(false);
-  const [addProviderForIndex, setAddProviderForIndex] = useState(null);
+  const [_addProviderForIndex, setAddProviderForIndex] = useState(null);
   const [newProvider, setNewProvider] = useState({ name: '', email: '', phone: '', city: '' });
 
-  const { data: settings } = useQuery({
+  const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => { const all = await db.entities.AppSettings.list(); return all[0] || { departments: [] }; }
-  });
-  const { data: suppliers = [], refetch: refetchSuppliers } = useQuery({
+  }));
+  const { refetch: refetchSuppliers } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list()
-  });
-  const { data: categories = [] } = useQuery({
+  }));
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list()
-  });
-  const { data: clients = [] } = useQuery({
+  }));
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'], queryFn: () => db.entities.Client.list()
-  });
+  }));
   const filteredClients = useMemo(() => {
     if (!clientSearch) return clients;
     const q = clientSearch.toLowerCase();
     return clients.filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.company?.toLowerCase().includes(q));
   }, [clients, clientSearch]);
-  const { data: currentUser } = useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() });
+  const { data: currentUser } = /** @type {any} */ (useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() }));
 
   useEffect(() => {
     if (currentUser?.default_currency && !isEditing) {
@@ -160,11 +160,11 @@ export default function CreateReservation() {
     }
   }, [currentUser, isEditing]);
 
-  const { data: editTrip, isLoading: editingLoading } = useQuery({
+  const { data: editTrip, isLoading: editingLoading } = /** @type {any} */ (useQuery({
     queryKey: ['trip', editId],
     queryFn: () => db.entities.Trip.get(editId),
     enabled: isEditing
-  });
+  }));
 
   const departments = settings?.departments || [];
 
@@ -185,18 +185,18 @@ export default function CreateReservation() {
     return `${prefix}-${deptCode}-${String(year).slice(-2)}${String(month).padStart(2, '0')}-${String(counter).padStart(4, '0')}`;
   };
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.Trip.create(data),
-    onSuccess: (created) => {
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Trip.create(data),
+    onSuccess: (/** @type {any} */ created) => {
       showSuccess('Reservation created');
       queryClient.invalidateQueries({ queryKey: ['trips'] });
       navigate(createPageUrl(`ReservationDetails?id=${created.id}`));
     },
     onError: (error) => showError('Failed to create reservation', error.message)
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: (data) => db.entities.Trip.update(editId, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Trip.update(editId, data),
     onSuccess: () => {
       showSuccess('Reservation updated');
       queryClient.invalidateQueries({ queryKey: ['trips'] });
@@ -204,11 +204,11 @@ export default function CreateReservation() {
       navigate(createPageUrl(`ReservationDetails?id=${editId}`));
     },
     onError: (error) => showError('Failed to update reservation', error.message)
-  });
+  }));
 
-  const createSupplierMutation = useMutation({
-    mutationFn: (data) => db.entities.Supplier.create(data),
-    onSuccess: async (created) => {
+  const createSupplierMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
+    onSuccess: async (_created) => {
       showSuccess('Supplier created');
       await refetchSuppliers();
       setAddProviderOpen(false);
@@ -216,7 +216,7 @@ export default function CreateReservation() {
       setAddProviderForIndex(null);
     },
     onError: (error) => showError('Failed to create supplier', error.message)
-  });
+  }));
 
   // Exchange rate
   const fetchExchangeRate = async () => {
@@ -225,7 +225,7 @@ export default function CreateReservation() {
     try {
       const res = await db.integrations.Core.GetExchangeRate(acquiringCurrency, sellingCurrency);
       setExchangeRate(res.rate || 1);
-    } catch (err) {
+    } catch {
       setExchangeRate(1);
     }
     setLoadingRate(false);
@@ -252,7 +252,7 @@ export default function CreateReservation() {
       return result.sort(sortByDate);
     });
   };
-  const acqToSell = (price) => { const p = parseFloat(price) || 0; return acquiringCurrency === sellingCurrency ? p : p * exchangeRate; };
+//   const acqToSell = (price) => { const p = parseFloat(price) || 0; return acquiringCurrency === sellingCurrency ? p : p * exchangeRate; };
 
   const passengersToRooms = (passengers) => {
     if (!passengers?.length) return [newRoom()];
@@ -305,7 +305,7 @@ export default function CreateReservation() {
     const qty = s.quantity || 1;
     if (s.unit === 'per_night' || s.unit === 'per_day') {
       if (s.start_date && s.end_date) {
-        const days = Math.max(1, Math.round((new Date(s.end_date) - new Date(s.start_date)) / 86400000));
+        const days = Math.max(1, Math.round((+(new Date(s.end_date)) - +(new Date(s.start_date))) / 86400000));
         return qty * days;
       }
       return qty;
@@ -481,7 +481,7 @@ export default function CreateReservation() {
       <div className="flex gap-6">
         {showLibrary && (
           <div className="w-72 flex-shrink-0">
-            <ServiceLibraryPanel numTravelers={passengerCount} acquiringCurrency={acquiringCurrency} sellingCurrency={sellingCurrency} onAddService={addServiceFromLibrary} />
+            <ServiceLibraryPanel numTravelers={passengerCount} acquiringCurrency={acquiringCurrency} _sellingCurrency={sellingCurrency} onAddService={addServiceFromLibrary} />
           </div>
         )}
 
@@ -788,7 +788,7 @@ export default function CreateReservation() {
                       service={service}
                       services={services}
                       categories={categories}
-                      passengerCount={passengerCount}
+                      _passengerCount={passengerCount}
                       onUpdate={mergeSvc}
                       onChange={mergeSvc}
                       onRemove={() => removeService(service._key)}
@@ -892,7 +892,7 @@ export default function CreateReservation() {
                   disabled={!templateName || services.every(s => !s.name) || createTemplateMutation.isPending}
                   onClick={() => {
                     const svcs = services.map(s => {
-                      const { _key, start_date, end_date, ...rest } = s;
+                      const { _key, ...rest } = s;
                       return rest;
                     });
                     createTemplateMutation.mutate({

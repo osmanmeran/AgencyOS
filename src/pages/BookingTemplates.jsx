@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sanitizeForInnerHtml } from '@/lib/sanitize';
 import { showSuccess, showError } from '@/lib/toast';
@@ -30,39 +30,39 @@ export default function BookingTemplates() {
     is_default: false
   });
 
-  const { data: templates = [] } = useQuery({
+  const { data: templates = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['bookingTemplates'],
     queryFn: () => db.entities.BookingTemplate.list()
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.BookingTemplate.create(data),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.BookingTemplate.create(data),
     onSuccess: () => {
       showSuccess('Template created');
       queryClient.invalidateQueries({ queryKey: ['bookingTemplates'] });
       closeModal();
     },
     onError: (error) => showError('Failed to create template', error.message)
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.BookingTemplate.update(id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.BookingTemplate.update(id, data),
     onSuccess: () => {
       showSuccess('Template updated');
       queryClient.invalidateQueries({ queryKey: ['bookingTemplates'] });
       closeModal();
     },
     onError: (error) => showError('Failed to update template', error.message)
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.BookingTemplate.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.BookingTemplate.delete(id),
     onSuccess: () => {
       showSuccess('Template deleted');
       queryClient.invalidateQueries({ queryKey: ['bookingTemplates'] });
     },
     onError: (error) => showError('Failed to delete template', error.message)
-  });
+  }));
 
   const openModal = (template = null) => {
     if (template) {

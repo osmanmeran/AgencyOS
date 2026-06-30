@@ -1,14 +1,13 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+// const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/lib/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Phone, Globe, Lock, Save, Loader2, CheckCircle2, AlertCircle, CreditCard } from 'lucide-react';
+import { User, Mail, Phone, Globe, Lock, Save, Loader2, CreditCard } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
 
@@ -27,7 +26,7 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const { language, setLanguage } = useT();
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['auth', 'me'],
     queryFn: async () => {
       const res = await fetch('/api/auth/me');
@@ -35,7 +34,7 @@ export default function Profile() {
       if (!data.success) throw new Error(data.error || 'Failed to load profile');
       return data.user;
     },
-  });
+  }));
 
   const [form, setForm] = useState({ name: '', phone: '', language: 'en', default_currency: 'USD' });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
@@ -51,8 +50,8 @@ export default function Profile() {
     }
   }, [user]);
 
-  const updateProfile = useMutation({
-    mutationFn: async (data) => {
+  const updateProfile = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const res = await fetch('/api/auth/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -70,10 +69,10 @@ export default function Profile() {
       }
     },
     onError: (err) => showError(err.message),
-  });
+  }));
 
-  const updatePassword = useMutation({
-    mutationFn: async (data) => {
+  const updatePassword = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const res = await fetch('/api/auth/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +87,7 @@ export default function Profile() {
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
     },
     onError: (err) => showError(err.message),
-  });
+  }));
 
   const handleProfileSave = () => {
     updateProfile.mutate({

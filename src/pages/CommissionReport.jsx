@@ -1,29 +1,24 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], list:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { DollarSign, TrendingUp, Users, Download } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { DollarSign, TrendingUp, Download } from 'lucide-react';
 import { useExport } from '@/hooks/useExport';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function CommissionReport() {
-  const [period, setPeriod] = useState('all');
+//   const [period, setPeriod] = useState('all');
   const { exportCSV } = useExport();
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['trips'],
     queryFn: () => db.entities.Trip.list(),
-  });
+  }));
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => db.auth.users ? db.auth.users() : [],
-  });
 
   const commissions = useMemo(() => {
     return trips
@@ -57,17 +52,7 @@ export default function CommissionReport() {
     return Object.values(map).sort((a, b) => b.commission - a.commission);
   }, [commissions]);
 
-  const monthlyData = useMemo(() => {
-    const map = {};
-    commissions.forEach(t => {
-      if (!t.start_date) return;
-      const month = t.start_date.slice(0, 7);
-      if (!map[month]) map[month] = { month, commission: 0, revenue: 0 };
-      map[month].commission += t.commission;
-      map[month].revenue += t.final_price || 0;
-    });
-    return Object.values(map).sort((a, b) => a.month.localeCompare(b.month));
-  }, [commissions]);
+  /* monthlyData removed (unused) */
 
   const handleExport = () => {
     exportCSV(commissions.map(t => ({

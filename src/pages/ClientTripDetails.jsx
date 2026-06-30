@@ -29,23 +29,23 @@ export default function ClientTripDetails() {
     });
   }, []);
 
-  const { data: trip, isLoading } = useQuery({
+  const { data: trip, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['trip', tripId],
     queryFn: () => db.entities.Trip.get(tripId),
     enabled: !!tripId
-  });
+  }));
 
-  const { data: packingItems = [] } = useQuery({
+  const { data: packingItems = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['packingItems', tripId],
     queryFn: () => db.entities.PackingItem.filter({ trip_id: tripId }),
     enabled: !!tripId
-  });
+  }));
 
-  const { data: itineraryEvents = [] } = useQuery({
+  const { data: itineraryEvents = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['itineraryEvents', tripId],
     queryFn: () => db.entities.ItineraryEvent.filter({ trip_id: tripId }, 'date'),
     enabled: !!tripId
-  });
+  }));
 
   if (isLoading || !client) {
     return (

@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Upload, Truck, CheckCircle, XCircle, AlertTriangle,
-  Loader2, Download, Wand2, TrendingUp, Edit2, ChevronRight, ChevronLeft, DollarSign
+  Loader2, Download, Wand2, TrendingUp, ChevronRight, ChevronLeft, DollarSign
 } from 'lucide-react';
 
 import { parseCsv } from '@/lib/csv';
@@ -24,21 +24,21 @@ const STEPS = ['upload', 'mapping', 'prices', 'results'];
 export default function SupplierBulkImporter() {
   const [step, setStep] = useState('upload');   // upload → mapping → prices → results
   const [parsed, setParsed] = useState(null);
-  const [mapping, setMapping] = useState({});
+  const [mapping, setMapping] = useState(/** @type {any} */ ({}));
   const [defaultCategory, setDefaultCategory] = useState('');
   const [aiMappingLoading, setAiMappingLoading] = useState(false);
   const [priceAnalysisLoading, setPriceAnalysisLoading] = useState(false);
   const [analyzedPrices, setAnalyzedPrices] = useState([]);  // [{supplierName, serviceName, basePrice, clientPrice, currency, unit, notes}]
-  const [selectedPrices, setSelectedPrices] = useState({});  // idx → bool
+  const [selectedPrices, setSelectedPrices] = useState(/** @type {any} */ ({}));  // idx → bool
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState(null);
-  const fileRef = useRef();
+  const fileRef = useRef(null);
   const queryClient = useQueryClient();
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'],
     queryFn: () => db.entities.SupplierCategory.list()
-  });
+  }));
 
   // ── File Upload ──────────────────────────────────────────────────────────────
   const handleFile = (f) => {
@@ -103,7 +103,7 @@ Example: {"Company Name": "name", "Contact": "contact_person", "E-mail": "email"
     setPriceAnalysisLoading(true);
     try {
       // Build a concise representation of all rows for the AI
-      const nameField = Object.keys(mapping).find(k => mapping[k] === 'name');
+//       const nameField = Object.keys(mapping).find(k => mapping[k] === 'name');
       const rows = parsed.rows.map(row => {
         const entry = {};
         parsed.headers.forEach(h => { if (row[h]) entry[h] = row[h]; });
@@ -281,7 +281,7 @@ Return JSON:
       {step === 'upload' && (
         <Card
           className="p-14 border-2 border-dashed border-slate-300 bg-white hover:border-orange-400 transition-colors cursor-pointer text-center"
-          onClick={() => fileRef.current.click()}
+          onClick={() => fileRef.current?.click()}
           onDragOver={e => e.preventDefault()}
           onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
         >

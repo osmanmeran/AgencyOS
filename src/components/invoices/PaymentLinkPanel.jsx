@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Link2, Copy, CheckCircle, ExternalLink, CreditCard } from 'lucide-react';
+import { Link2, Copy, CheckCircle, CreditCard } from 'lucide-react';
 
 function signPaymentPayload(payload) {
   const data = JSON.stringify(payload);

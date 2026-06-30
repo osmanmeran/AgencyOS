@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Plus, Trash2, DollarSign, TrendingUp, Building2,
+  Plus, Trash2, TrendingUp, Building2,
   RefreshCw, ArrowRightLeft, Users, X, Save
 } from 'lucide-react';
 
@@ -63,25 +63,25 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
   const [addProviderForIndex, setAddProviderForIndex] = useState(null);
   const [newProvider, setNewProvider] = useState({ name: '', email: '', phone: '', city: '' });
 
-  const { data: suppliers = [], refetch: refetchSuppliers } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]), refetch: refetchSuppliers } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list(),
-  });
+  }));
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'],
     queryFn: () => db.entities.SupplierCategory.list(),
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list(),
-  });
+  }));
 
-  const { data: user } = useQuery({
+  const { data: user } = /** @type {any} */ (useQuery({
     queryKey: ['currentUser'],
     queryFn: () => db.auth.me(),
-  });
+  }));
 
   useEffect(() => {
     if (proposal && open) {
@@ -124,25 +124,25 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
     }
   }, [proposal, open]);
 
-  const updateProposalMutation = useMutation({
-    mutationFn: (data) => db.entities.Proposal.update(proposal.id, data),
+  const updateProposalMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Proposal.update(proposal.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposal', proposal.id] });
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       onClose();
     },
-  });
+  }));
 
-  const createSupplierMutation = useMutation({
-    mutationFn: (data) => db.entities.Supplier.create(data),
-    onSuccess: async (created) => {
+  const createSupplierMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
+    onSuccess: async (/** @type {any} */ created) => {
       await refetchSuppliers();
       if (addProviderForIndex !== null) updateService(addProviderForIndex, 'supplier_id', created.id);
       setAddProviderOpen(false);
       setNewProvider({ name: '', email: '', phone: '', city: '' });
       setAddProviderForIndex(null);
     },
-  });
+  }));
 
   const fetchExchangeRate = async () => {
     if (acquiringCurrency === sellingCurrency) { setExchangeRate(1); return; }
@@ -178,13 +178,13 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
 
   const acquiringByCurrency = services.reduce((acc, s) => {
     const cur = s.supplier_currency || acquiringCurrency;
-    acc[cur] = (acc[cur] || 0) + (parseFloat(s.acquiring_price) || 0) * (parseInt(s.quantity) || 1);
+    acc[cur] = (acc[cur] || 0) + (parseFloat(s.acquiring_price) || 0) * (parseInt(String(s.quantity)) || 1);
     return acc;
   }, {});
   const sellingByCurrency = services.reduce((acc, s) => {
     const cur = s.client_currency || 'USD';
     const basePrice = parseFloat(s.base_selling_price ?? s.selling_price) || 0;
-    acc[cur] = (acc[cur] || 0) + withMarkup(basePrice) * (parseInt(s.quantity) || 1);
+    acc[cur] = (acc[cur] || 0) + withMarkup(basePrice) * (parseInt(String(s.quantity)) || 1);
     return acc;
   }, {});
   const totalSellingAll = Object.values(sellingByCurrency).reduce((s, v) => s + v, 0);
@@ -204,7 +204,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
       location: s.location || '',
       base_selling_price: parseFloat(s.base_selling_price ?? s.selling_price) || 0,
       cost: withMarkup(parseFloat(s.base_selling_price ?? s.selling_price) || 0),
-      quantity: parseInt(s.quantity) || 1,
+      quantity: parseInt(String(s.quantity)) || 1,
       acquiring_price: s.acquiring_price ? parseFloat(s.acquiring_price) : 0,
       pricing_id: s.pricing_id || null,
       pax_tiers: s.pax_tiers?.length ? s.pax_tiers : null,
@@ -355,7 +355,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
 
               <div className="space-y-4">
                 {services.map((service, index) => {
-                  const pax = parseInt(service.quantity) || 1;
+                  const pax = parseInt(String(service.quantity)) || 1;
                   const sCur = service.supplier_currency || acquiringCurrency;
                   const cCur = service.client_currency || sellingCurrency;
                   const acqUnit = parseFloat(service.acquiring_price) || 0;

@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,16 +18,16 @@ const ROOM_OCCUPANCIES = ['Single', 'Double', 'Triple', 'Quadruple', 'Twin', 'Tw
 const TRANSFER_TYPES = ['Airport Pickup', 'Airport Drop-off', 'Point to Point', 'Hotel to Hotel', 'Port Transfer', 'City Transfer'];
 const GUIDE_LANGUAGES = ['English', 'French', 'Spanish', 'Arabic', 'German', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Russian', 'Turkish'];
 
-export default function ServiceLineEditor({ service, categories, onUpdate, onRemove, onDuplicate, passengerCount, services, onChange }) {
+export default function ServiceLineEditor({ service, categories, onUpdate, onRemove, onDuplicate, _passengerCount, services, onChange }) {
   const [formData, setFormData] = useState(service);
   const [convertingCost, setConvertingCost] = useState(false);
   const [convertingSell, setConvertingSell] = useState(false);
   const [saveAttempted, setSaveAttempted] = useState(false);
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list(),
-  });
+  }));
 
   const categoryName = (formData.category || '').toLowerCase();
   const isLodging = categoryName.includes('hotel') || categoryName.includes('lodging') || categoryName.includes('accommodation') || categoryName.includes('resort');
@@ -44,7 +44,7 @@ export default function ServiceLineEditor({ service, categories, onUpdate, onRem
     const qty = formData.quantity || 1;
     if (formData.unit === 'per_night' || formData.unit === 'per_day') {
       if (formData.start_date && formData.end_date) {
-        const days = Math.max(1, Math.round((new Date(formData.end_date) - new Date(formData.start_date)) / 86400000));
+        const days = Math.max(1, Math.round((+(new Date(formData.end_date)) - +(new Date(formData.start_date))) / 86400000));
         return qty * days;
       }
       return qty;
@@ -104,7 +104,7 @@ export default function ServiceLineEditor({ service, categories, onUpdate, onRem
   const err = (field) => saveAttempted && (formData[field] === undefined || formData[field] === null || formData[field] === '');
 
   // Find selected supplier name for display
-  const selectedSupplier = suppliers.find(s => s.id === formData.supplier_id);
+//   const selectedSupplier = suppliers.find(s => s.id === formData.supplier_id);
 
   return (
     <Card className="p-5 bg-white border-l-4 border-l-blue-500 relative">
@@ -167,16 +167,16 @@ export default function ServiceLineEditor({ service, categories, onUpdate, onRem
             {/* Pricing Tiers — shown after supplier is selected */}
             {formData.supplier_id && (() => {
               const PricingsTierSelector = () => {
-                const { data: pricings = [] } = useQuery({
+                const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
                   queryKey: ['supplierPricings', formData.supplier_id],
                   queryFn: () => db.entities.SupplierPricing.filter({ supplier_id: formData.supplier_id }),
                   enabled: !!formData.supplier_id
-                });
-                const { data: subcategories = [] } = useQuery({
+                }));
+                const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
                   queryKey: ['supplierSubcategories', formData.supplier_id],
                   queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: formData.supplier_id }),
                   enabled: !!formData.supplier_id
-                });
+                }));
                 const activePricings = pricings.filter(p => p.is_active !== false);
                 const getSubcatName = (id) => subcategories.find(s => s.id === id)?.name || '';
 
@@ -561,9 +561,9 @@ export default function ServiceLineEditor({ service, categories, onUpdate, onRem
                 <Label className="text-xs text-slate-600 mb-1 block">Effective Qty</Label>
                 <div className="text-sm font-semibold text-slate-700 p-2 bg-slate-50 rounded border">
                   {formData.unit === 'per_night' && formData.start_date && formData.end_date
-                    ? `${formData.quantity || 1} rooms × ${Math.max(1, Math.round((new Date(formData.end_date) - new Date(formData.start_date)) / 86400000))} nights`
+                    ? `${formData.quantity || 1} rooms × ${Math.max(1, Math.round((+(new Date(formData.end_date)) - +(new Date(formData.start_date))) / 86400000))} nights`
                     : formData.unit === 'per_day' && formData.start_date && formData.end_date
-                    ? `${formData.quantity || 1} units × ${Math.max(1, Math.round((new Date(formData.end_date) - new Date(formData.start_date)) / 86400000))} days`
+                    ? `${formData.quantity || 1} units × ${Math.max(1, Math.round((+(new Date(formData.end_date)) - +(new Date(formData.start_date))) / 86400000))} days`
                     : `${calcQuantity()} ${formData.unit === 'per_hour' ? 'hrs' : formData.unit === 'per_person' ? 'pax' : 'units'}`}
                 </div>
               </div>

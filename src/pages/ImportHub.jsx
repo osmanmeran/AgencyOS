@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, TrendingUp, Truck } from 'lucide-react';
 import OutlookContactsImporter from '../components/import/OutlookContactsImporter';

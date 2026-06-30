@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -14,8 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Plus, Search, MapPin, Clock, DollarSign, Link as LinkIcon, 
-  FileText, Trash2, Edit, ExternalLink, Upload, Map, Users, Send
+  Plus, Search, MapPin, Clock, Link as LinkIcon, 
+  FileText, Trash2, Edit, ExternalLink, Map, Users, Send
 } from 'lucide-react';
 import ServiceBookingRequest from '../components/services/ServiceBookingRequest';
 import { usePermissions } from '../components/permissions/PermissionContext';
@@ -64,52 +64,52 @@ export default function ServiceLibrary() {
   const [newPoi, setNewPoi] = useState({ name: '', description: '', map_url: '' });
   const [newLink, setNewLink] = useState({ title: '', url: '' });
 
-  const { data: services = [] } = useQuery({
+  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['serviceTemplates'],
     queryFn: () => db.entities.ServiceTemplate.list()
-  });
+  }));
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['serviceCategories'],
     queryFn: () => db.entities.ServiceCategory.list()
-  });
+  }));
 
-  const { data: suppliers = [] } = useQuery({
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],
     queryFn: () => db.entities.Supplier.list()
-  });
+  }));
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.ServiceTemplate.create(data),
+  const createMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
     onSuccess: () => {
       showSuccess('Service created');
       queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
       closeModal();
     },
     onError: (error) => showError('Failed to create service', error.message)
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.ServiceTemplate.update(id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ServiceTemplate.update(id, data),
     onSuccess: () => {
       showSuccess('Service updated');
       queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
       closeModal();
     },
     onError: (error) => showError('Failed to update service', error.message)
-  });
+  }));
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.ServiceTemplate.delete(id),
+  const deleteMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ id) => db.entities.ServiceTemplate.delete(id),
     onSuccess: () => {
       showSuccess('Service deleted');
       queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
     },
     onError: (error) => showError('Failed to delete service', error.message)
-  });
+  }));
 
-  const createCategoryMutation = useMutation({
-    mutationFn: (data) => db.entities.ServiceCategory.create(data),
+  const createCategoryMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ServiceCategory.create(data),
     onSuccess: () => {
       showSuccess('Category created');
       queryClient.invalidateQueries({ queryKey: ['serviceCategories'] });
@@ -117,7 +117,7 @@ export default function ServiceLibrary() {
       setNewCategory({ name: '', description: '', color: '#3b82f6' });
     },
     onError: (error) => showError('Failed to create category', error.message)
-  });
+  }));
 
   const openModal = (service = null) => {
     if (service) {
@@ -285,7 +285,7 @@ export default function ServiceLibrary() {
     );
 
   const getCategoryName = (id) => categories.find(c => c.id === id)?.name || '';
-  const getSupplierName = (id) => suppliers.find(s => s.id === id)?.name || '';
+//   const getSupplierName = (id) => suppliers.find(s => s.id === id)?.name || '';
 
   return (
     <div className="space-y-8">
@@ -692,6 +692,8 @@ export default function ServiceLibrary() {
           open={bookingModalOpen}
           onClose={() => { setBookingModalOpen(false); setSelectedServiceForBooking(null); }}
           service={selectedServiceForBooking}
+          tripId={''}
+          supplierId={''}
         />
       )}
     </div>

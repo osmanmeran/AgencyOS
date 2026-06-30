@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -12,8 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
-  CheckCircle, XCircle, Clock, Upload, FileText, 
-  Calendar, Users, DollarSign, Download, Mail, Send
+  CheckCircle, XCircle, Clock, FileText, 
+  Calendar, Users, DollarSign, Download, Mail
 } from 'lucide-react';
 import { format } from 'date-fns';
 import BookingEmailSender from '../booking/BookingEmailSender';
@@ -35,30 +35,30 @@ export default function SupplierBookings({ supplierId }) {
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [bookingForEmail, setBookingForEmail] = useState(null);
 
-  const { data: supplier } = useQuery({
+  const { data: supplier } = /** @type {any} */ (useQuery({
     queryKey: ['supplier', supplierId],
     queryFn: () => db.entities.Supplier.get(supplierId),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: bookings = [] } = useQuery({
+  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierBookings', supplierId],
     queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }, '-created_date'),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['trips'],
     queryFn: () => db.entities.Trip.list()
-  });
+  }));
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list()
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ { id, /** @type {any} */ data }) => {
       let fileUrl = data.confirmation_file_url;
       if (confirmationFile) {
         const { file_url } = await db.integrations.Core.UploadFile({ file: confirmationFile });
@@ -73,7 +73,7 @@ export default function SupplierBookings({ supplierId }) {
       setNotes('');
       setIsConfirmed(false);
     }
-  });
+  }));
 
   const handleConfirm = () => {
     updateMutation.mutate({
@@ -157,7 +157,7 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
       ) : (
         bookings.map(booking => {
           const trip = getTrip(booking.trip_id);
-          const client = getClient(booking.client_id);
+//           const client = getClient(booking.client_id);
           return (
             <Card key={booking.id} className="p-6 bg-white">
               <div className="flex justify-between items-start mb-4">

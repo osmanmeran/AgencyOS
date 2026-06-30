@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Upload, Download, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { parseCsv } from '@/lib/csv';
 
 export default function SupplierCsvImporter({ open, onOpenChange, categories, onImported }) {
-  const fileRef = useRef();
+  const fileRef = useRef(null);
   const [results, setResults] = useState(null);
   const [importing, setImporting] = useState(false);
 

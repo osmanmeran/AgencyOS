@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Mail, Phone, MapPin, Building, CreditCard, FileText, Plane,
-  DollarSign, Star, Edit2, Check, X, ExternalLink, Clock, User, Send,
-  MessageSquare, Calendar, CheckCircle2, Circle, Plus, ChevronRight,
-  TrendingUp, TrendingDown, Globe
+  DollarSign, Star, Edit2, Check, X, ExternalLink, Clock, Send,
+  MessageSquare, CheckCircle2, Circle, Plus, ChevronRight, Globe
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
@@ -45,58 +44,58 @@ const INVOICE_STATUS_COLORS = {
 
 export default function ClientPanel({ client, onClientUpdated }) {
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({});
+  const [editForm, setEditForm] = useState(/** @type {any} */ ({}));
   const [composerState, setComposerState] = useState({ open: false, proposal: null, invoice: null });
   const queryClient = useQueryClient();
 
-  const { data: proposals = [] } = useQuery({
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientProposals', client.id],
     queryFn: () => db.entities.Proposal.filter({ client_id: client.id }, '-created_date')
-  });
+  }));
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientInvoices', client.id],
     queryFn: () => db.entities.Invoice.filter({ client_id: client.id }, '-created_date')
-  });
+  }));
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientTrips', client.id],
     queryFn: () => db.entities.Trip.filter({ client_id: client.id }, '-created_date')
-  });
+  }));
 
-  const { data: emailLogs = [] } = useQuery({
+  const { data: emailLogs = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['emailLogs', client.id],
     queryFn: () => db.entities.EmailLog.filter({ client_id: client.id }, '-created_date')
-  });
+  }));
 
-  const { data: messages = [] } = useQuery({
+  const { data: messages = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientMessages', client.id],
     queryFn: () => db.entities.Message.filter({ client_id: client.id }, '-created_date')
-  });
+  }));
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientTasks', client.id],
     queryFn: () => db.entities.ClientTask.filter({ client_id: client.id }, '-created_date')
-  });
+  }));
 
-  const updateMutation = useMutation({
-    mutationFn: (data) => db.entities.Client.update(client.id, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Client.update(client.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       onClientUpdated();
       setEditing(false);
     }
-  });
+  }));
 
-  const taskMutation = useMutation({
-    mutationFn: (data) => db.entities.ClientTask.create(data),
+  const taskMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ClientTask.create(data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clientTasks', client.id] })
-  });
+  }));
 
-  const toggleTaskMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.ClientTask.update(id, data),
+  const toggleTaskMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ClientTask.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clientTasks', client.id] })
-  });
+  }));
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
@@ -116,7 +115,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
     ...invoices.map(i => ({ type: 'invoice', date: i.created_date, item: i })),
     ...trips.map(t => ({ type: 'trip', date: t.created_date, item: t })),
     ...emailLogs.map(e => ({ type: 'email', date: e.created_date, item: e })),
-  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+  ].sort((a, b) => +(new Date(b.date)) - +(new Date(a.date)));
 
   const pendingTasks = tasks.filter(t => t.status !== 'done');
 
@@ -244,7 +243,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                   const isEmail = type === 'email';
                   const isProposal = type === 'proposal';
                   const isInvoice = type === 'invoice';
-                  const isTrip = type === 'trip';
+//                   const isTrip = type === 'trip';
                   const isMessage = type === 'message';
 
                   let Icon, color, label, sublabel, href;
@@ -501,7 +500,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
   );
 }
 
-function Info({ icon: Icon, label, value, href }) {
+function Info({ icon: Icon, label, value, href = '' }) {
   const content = (
     <div className="flex items-start gap-2.5">
       <Icon className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />

@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import ClientList from '../components/crm/ClientList';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Plus, X, Users, ArrowLeft, LayoutGrid, List, Search,
-  TrendingUp, UserCheck, Star, UserPlus, DollarSign
+  TrendingUp, UserCheck, Star, DollarSign
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -64,10 +64,10 @@ export default function ClientCRM() {
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: clients = [], isLoading } = useQuery({
+  const { data: clients = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['clients'],
     queryFn: () => db.entities.Client.list('-created_date')
-  });
+  }));
 
   const selectedClient = clients.find(c => c.id === selectedClientId) || null;
 
@@ -110,10 +110,7 @@ export default function ClientCRM() {
     setShowNewForm(false);
   };
 
-  const updateDealStage = async (clientId, stage) => {
-    await db.entities.Client.update(clientId, { deal_stage: stage });
-    queryClient.invalidateQueries({ queryKey: ['clients'] });
-  };
+  /* updateDealStage removed (unused) */
 
   if (showNewForm || selectedClient) {
     return (

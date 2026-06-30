@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -13,8 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, Calendar, Users, DollarSign, CheckCircle, XCircle,
-  Clock, Send, Printer, Trash2, Star, BedDouble, History, Edit, Plus,
-  Building, ArrowRightLeft, User, Coffee, Plane, Map, Zap, AlertCircle, FileText, BookOpen, Loader2, Share2, Link as LinkIcon, Check, Phone
+  Clock, Send, Printer, Trash2, Star, History, Edit, Plus,
+  Building, ArrowRightLeft, User, Coffee, Plane, Map, Zap, AlertCircle, FileText, BookOpen, Loader2, Share2, Check, Phone
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { showSuccess, showError } from '@/lib/toast';
@@ -64,35 +64,35 @@ export default function ReservationDetails() {
   const [shareCopied, setShareCopied] = useState(false);
   const [showItinerary, setShowItinerary] = useState(false);
 
-  const { data: trip, isLoading, error: tripError } = useQuery({
+  const { data: trip, isLoading, error: tripError } = /** @type {any} */ (useQuery({
     queryKey: ['trip', tripId],
     queryFn: () => db.entities.Trip.get(tripId),
     enabled: !!tripId
-  });
+  }));
 
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() });
-  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list() });
-  const { data: appSettings } = useQuery({ 
+  const { data: user } = /** @type {any} */ (useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() }));
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list() }));
+  const { data: appSettings } = /** @type {any} */ (useQuery({ 
     queryKey: ['appSettings'], 
     queryFn: async () => {
       const settings = await db.entities.AppSettings.list();
       return settings[0];
     }
-  });
+  }));
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['categories'],
     queryFn: () => db.entities.SupplierCategory.list()
-  });
+  }));
 
-  const { data: linkedInvoices = [] } = useQuery({
+  const { data: linkedInvoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['invoicesForTrip', tripId],
     queryFn: async () => {
       const all = await db.entities.Invoice.list();
       return all.filter(inv => inv.trip_id === tripId);
     },
     enabled: !!tripId
-  });
+  }));
 
   const changeEntry = (action, description) => ({
     date: new Date().toISOString(),
@@ -102,16 +102,16 @@ export default function ReservationDetails() {
     description
   });
 
-  const updateMutation = useMutation({
-    mutationFn: (data) => db.entities.Trip.update(tripId, data),
+  const updateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.Trip.update(tripId, data),
     onSuccess: () => {
       showSuccess('Reservation updated');
       queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
     },
     onError: (error) => showError('Failed to update reservation', error.message)
-  });
+  }));
 
-  const deleteMutation = useMutation({
+  const deleteMutation = /** @type {any} */ (useMutation({
     mutationFn: () => db.entities.Trip.delete(tripId),
     onSuccess: () => {
       showSuccess('Reservation deleted');
@@ -119,15 +119,15 @@ export default function ReservationDetails() {
       navigate(createPageUrl('Reservations'));
     },
     onError: (error) => showError('Failed to delete reservation', error.message)
-  });
+  }));
 
-  const createTemplateMutation = useMutation({
-    mutationFn: (data) => db.entities.ServiceTemplate.create(data),
+  const createTemplateMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
     onSuccess: () => { showSuccess('Template created'); setTemplateSaveOpen(false); setTemplateName(''); setTemplateDesc(''); },
     onError: (error) => showError('Failed to create template', error.message)
-  });
+  }));
 
-  const sendEmailMutation = useMutation({
+  const sendEmailMutation = /** @type {any} */ (useMutation({
     mutationFn: async () => {
       await db.integrations.Core.SendEmail({
         to: sendEmailTo,
@@ -139,7 +139,7 @@ export default function ReservationDetails() {
     },
     onSuccess: () => { showSuccess('Email sent'); queryClient.invalidateQueries({ queryKey: ['trip', tripId] }); setSendEmailOpen(false); },
     onError: (error) => showError('Failed to send email', error.message)
-  });
+  }));
 
   const changeStatus = (status) => {
     setPendingStatus(status);
@@ -210,7 +210,7 @@ export default function ReservationDetails() {
     )];
 
     if (pendingStatus === 'confirmed') {
-      const amount = trip.total_cost || 0;
+//       const amount = trip.total_cost || 0;
       const issueDate = new Date().toISOString().split('T')[0];
       const dueDate = addDays(new Date(), 14).toISOString().split('T')[0];
       const invNumber = `INV-${trip.reference_number || trip.id?.slice(0, 6)?.toUpperCase() || 'RES'}-FULL-${Date.now().toString().slice(-4)}`;
@@ -219,7 +219,7 @@ export default function ReservationDetails() {
         const qty = parseInt(s.quantity) || 1;
         if (s.unit === 'per_night' || s.unit === 'per_day') {
           if (s.start_date && s.end_date) {
-            const days = Math.max(1, Math.round((new Date(s.end_date) - new Date(s.start_date)) / 86400000));
+            const days = Math.max(1, Math.round((+(new Date(s.end_date)) - +(new Date(s.start_date))) / 86400000));
             return qty * days;
           }
           return qty;
@@ -269,7 +269,7 @@ export default function ReservationDetails() {
   const sc = currSymbol(trip.selling_currency || 'USD');
   const statusConf = PROPOSAL_STATUS_CONFIG[trip.proposal_status] || PROPOSAL_STATUS_CONFIG.pending;
   const StatusIcon = statusConf.icon;
-  const contactPassenger = trip.passengers?.find(p => p.is_contact);
+//   const contactPassenger = trip.passengers?.find(p => p.is_contact);
   const supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s.name]));
 
   return (
@@ -566,7 +566,7 @@ export default function ReservationDetails() {
                   onClick={handleShareItinerary}
                   sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}
                 >
-                  {shareCopied ? <Check sx={{ fontSize: 16, mr: 0.75, color: '#4ade80' }} /> : <Share2 sx={{ fontSize: 16, mr: 0.75 }} />}
+                  {shareCopied ? <Check size={16} style={{ marginRight: 3, color: '#4ade80' }} /> : <Share2 size={16} style={{ marginRight: 3 }} />}
                   {shareCopied ? 'Link Copied!' : 'Share'}
                 </Button>
               </div>
@@ -650,11 +650,7 @@ export default function ReservationDetails() {
                         const Icon = cfg?.icon || Map;
                         const iconBg = cfg?.color?.split(' ')[0] || 'bg-slate-100';
                         const iconColor = cfg?.color?.split(' ')[1] || 'text-slate-700';
-                        const isStartDay = s._isReturnLeg
-                          ? false
-                          : s.start_date && format(new Date(s.start_date.split('T')[0]), 'yyyy-MM-dd') === key;
-
-                        return (
+                          return (
                           <div key={idx} className="relative">
                             <div className={`absolute -left-9 top-1 w-[30px] h-[30px] rounded-full flex items-center justify-center ${iconBg} ${iconColor}`}>
                               <Icon className="w-3.5 h-3.5" />
@@ -748,9 +744,11 @@ export default function ReservationDetails() {
               service={{}}
               services={trip.services}
               categories={categories}
-              passengerCount={trip.passengers?.length || 1}
+              _passengerCount={trip.passengers?.length || 1}
               onUpdate={handleAddService}
               onRemove={() => setAddingNewService(false)}
+              onDuplicate={() => {}}
+              onChange={() => {}}
             />
             <div className="flex justify-end gap-2 mt-3">
               <Button variant="outline" onClick={() => setAddingNewService(false)}>Cancel</Button>
@@ -803,13 +801,15 @@ export default function ReservationDetails() {
                         service={service}
                         services={trip.services}
                         categories={categories}
-                        passengerCount={trip.passengers?.length || 1}
+                        _passengerCount={trip.passengers?.length || 1}
                         onUpdate={handleServiceUpdate}
                         onRemove={() => {
                           const updatedServices = trip.services.filter((_, i) => i !== originalIdx);
                           updateMutation.mutate({ services: updatedServices });
                           setEditingServiceIdx(null);
                         }}
+                        onDuplicate={() => {}}
+                        onChange={() => {}}
                       />
                       <div className="flex justify-end gap-2 mt-3">
                         <Button variant="outline" onClick={() => setEditingServiceIdx(null)}>Cancel</Button>
@@ -824,7 +824,7 @@ export default function ReservationDetails() {
                   const qty = parseInt(s.quantity) || 1;
                   if (s.unit === 'per_night' || s.unit === 'per_day') {
                     if (s.start_date && s.end_date) {
-                      const days = Math.max(1, Math.round((new Date(s.end_date) - new Date(s.start_date)) / 86400000));
+                      const days = Math.max(1, Math.round((+(new Date(s.end_date)) - +(new Date(s.start_date))) / 86400000));
                       return qty * days;
                     }
                     return qty;
@@ -909,13 +909,15 @@ export default function ReservationDetails() {
                         service={service}
                         services={trip.services}
                         categories={categories}
-                        passengerCount={trip.passengers?.length || 1}
+                        _passengerCount={trip.passengers?.length || 1}
                         onUpdate={handleServiceUpdate}
                         onRemove={() => {
                           const updatedServices = trip.services.filter((_, i) => i !== originalIdx);
                           updateMutation.mutate({ services: updatedServices });
                           setEditingServiceIdx(null);
                         }}
+                        onDuplicate={() => {}}
+                        onChange={() => {}}
                       />
                       <div className="flex justify-end gap-2 mt-3">
                         <Button variant="outline" onClick={() => setEditingServiceIdx(null)}>Cancel</Button>
@@ -1157,7 +1159,7 @@ export default function ReservationDetails() {
                 disabled={!templateName || createTemplateMutation.isPending}
                 onClick={() => {
                   const svcs = (trip.services || []).map(s => {
-                    const { _key, start_date, end_date, ...rest } = s;
+                    const { _key, ...rest } = s;
                     return rest;
                   });
                   createTemplateMutation.mutate({

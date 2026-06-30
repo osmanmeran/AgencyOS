@@ -1,9 +1,9 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+// const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronRight, Search, HelpCircle, Mail, FileText, Users, Shield, FileDown, Bell, History, Calendar, ListCheck, SendHorizontal, DollarSign, TrendingUp, Globe } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, HelpCircle, Mail, FileText, Users, Shield, FileDown, Calendar, SendHorizontal, DollarSign } from 'lucide-react';
 
 const CATEGORIES = [
   { key: 'general', label: 'General', icon: HelpCircle },
@@ -225,7 +225,7 @@ export default function FAQ() {
             <p className="text-sm text-slate-400 mt-1">Try a different search or category.</p>
           </Card>
         ) : (
-          filtered.map((faq, i) => {
+          filtered.map((faq, _i) => {
             const idx = FAQS.indexOf(faq);
             const isOpen = openItems.has(idx);
             const cat = CATEGORIES.find(c => c.key === faq.category);

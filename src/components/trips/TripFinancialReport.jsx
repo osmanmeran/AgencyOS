@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { 
-  DollarSign, TrendingUp, Receipt, Calculator, 
-  Save, Percent, ArrowRight 
+  DollarSign, Receipt, Calculator, 
+  Save, Percent 
 } from 'lucide-react';
 
 export default function TripFinancialReport({ trip, events, invoices }) {
@@ -22,14 +22,14 @@ export default function TripFinancialReport({ trip, events, invoices }) {
   const finalPrice = totalExpenses + markupAmount;
 
   const tripInvoices = invoices.filter(i => i.trip_id === trip.id);
-  const totalInvoiced = tripInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
+//   const totalInvoiced = tripInvoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
   const totalPaid = tripInvoices.reduce((sum, i) => sum + (i.amount_paid || 0), 0);
-  const totalOutstanding = tripInvoices.reduce((sum, i) => sum + (i.amount_due || 0), 0);
+//   const totalOutstanding = tripInvoices.reduce((sum, i) => sum + (i.amount_due || 0), 0);
 
   const profit = totalPaid - totalExpenses;
   const profitMargin = totalPaid > 0 ? (profit / totalPaid * 100) : 0;
 
-  const updateMutation = useMutation({
+  const updateMutation = /** @type {any} */ (useMutation({
     mutationFn: () => db.entities.Trip.update(trip.id, {
       ...trip,
       total_expenses: totalExpenses,
@@ -37,16 +37,10 @@ export default function TripFinancialReport({ trip, events, invoices }) {
       final_price: finalPrice
     }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trip', trip.id] })
-  });
+  }));
 
   // Group expenses by supplier
-  const expensesBySupplier = events.reduce((acc, event) => {
-    const key = event.supplier_id || 'unassigned';
-    if (!acc[key]) acc[key] = { total: 0, items: [] };
-    acc[key].total += event.cost || 0;
-    acc[key].items.push(event);
-    return acc;
-  }, {});
+  /* expensesBySupplier removed (unused) */
 
   return (
     <div className="space-y-6">

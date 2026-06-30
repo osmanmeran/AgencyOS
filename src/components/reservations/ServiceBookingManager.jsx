@@ -1,7 +1,7 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,16 +33,9 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
   const [newSupplierData, setNewSupplierData] = useState({ name: '', email: '', phone: '' });
 
-  const { data: supplierContacts = [] } = useQuery({
-    queryKey: ['supplierContacts'],
-    queryFn: async () => {
-      const contacts = await db.entities.SupplierContact?.list?.() || [];
-      return contacts;
-    }
-  });
 
-  const sendBookingMutation = useMutation({
-    mutationFn: async ({ serviceIdx, email, note, newSupplierName }) => {
+  const sendBookingMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ { serviceIdx, /** @type {any} */ email, /** @type {any} */ note, /** @type {any} */ newSupplierName }) => {
       const service = trip.services[serviceIdx];
       const emailBody = buildBookingEmailBody(trip, service, note);
       
@@ -74,10 +67,10 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
       setSupplierChoice('existing');
       setSelectedServiceIdx(null);
     }
-  });
+  }));
 
-  const confirmServiceMutation = useMutation({
-    mutationFn: async (serviceIdx) => {
+  const confirmServiceMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ serviceIdx) => {
       const updatedServices = [...trip.services];
       updatedServices[serviceIdx] = {
         ...updatedServices[serviceIdx],
@@ -88,10 +81,10 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
       return db.entities.Trip.update(trip.id, { services: updatedServices });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trip', trip.id] })
-  });
+  }));
 
-  const createSupplierMutation = useMutation({
-    mutationFn: async (data) => {
+  const createSupplierMutation = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const newSupplier = await db.entities.Supplier.create({
         name: data.name,
         email: data.email,
@@ -107,7 +100,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
       setNewSupplierData({ name: '', email: '', phone: '' });
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
     }
-  });
+  }));
 
   const openBookingModal = (serviceIdx) => {
     const service = trip.services[serviceIdx];

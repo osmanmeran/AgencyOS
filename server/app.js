@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { seedDatabase } from './seed.js';
@@ -41,7 +41,7 @@ app.use(helmet({
       connectSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://login.microsoftonline.com'],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: isProduction ? [] : null,
+      upgradeInsecureRequests: isProduction ? true : null,
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -78,7 +78,7 @@ const standardLimiter = rateLimit({
   message: { message: 'Too many requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req),
+  keyGenerator: (req) => req.user?.id || req.ip,
 });
 
 app.use('/api/auth/login', strictLimiter);

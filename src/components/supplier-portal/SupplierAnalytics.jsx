@@ -1,33 +1,32 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
-import { TrendingUp, DollarSign, Star, Calendar, Users, CheckCircle } from 'lucide-react';
+import { DollarSign, Star, Calendar, CheckCircle } from 'lucide-react';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+// const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function SupplierAnalytics({ supplierId }) {
-  const { data: bookings = [] } = useQuery({
+  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierBookings', supplierId],
     queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: reviews = [] } = useQuery({
+  const { data: reviews = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierReviews', supplierId],
     queryFn: () => db.entities.SupplierReview.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierInvoices', supplierId],
     queryFn: () => db.entities.SupplierInvoice.filter({ supplier_id: supplierId }),
     enabled: !!supplierId
-  });
+  }));
 
   // Calculate monthly booking trends
   const monthlyData = [];
@@ -137,7 +136,7 @@ export default function SupplierAnalytics({ supplierId }) {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => `$${value.toFixed(0)}`} />
+              <Tooltip formatter={(value) => `$${Number(value).toFixed(0)}`} />
               <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>

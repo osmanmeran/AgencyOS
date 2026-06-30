@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-const TOKEN_KEY = 'auth_token';
+// const TOKEN_KEY = 'auth_token';
 
 function getToken() {
   const stored = localStorage.getItem('b44_user');

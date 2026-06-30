@@ -22,11 +22,11 @@ export default function ClientTrips() {
     });
   }, []);
 
-  const { data: trips = [] } = useQuery({
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myTrips', client?.id],
     queryFn: () => db.entities.Trip.filter({ client_id: client.id }),
     enabled: !!client
-  });
+  }));
 
   if (!client) {
     return <SkeletonTable />;

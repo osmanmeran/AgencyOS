@@ -1,6 +1,6 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,10 @@ export default function TripApprovalBar({ trip, clientId }) {
   const [isSending, setIsSending] = useState(false);
   const queryClient = useQueryClient();
 
-  const approveMutation = useMutation({
-    mutationFn: (status) => db.entities.Trip.update(trip.id, { proposal_status: status }),
+  const approveMutation = /** @type {any} */ (useMutation({
+    mutationFn: (/** @type {any} */ status) => db.entities.Trip.update(trip.id, { proposal_status: status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trip', trip.id] })
-  });
+  }));
 
   const sendComment = async () => {
     if (!comment.trim()) return;
