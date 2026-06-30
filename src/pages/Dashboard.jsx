@@ -342,28 +342,26 @@ export default function Dashboard() {
       </Grid>
 
       {/* Quick Links */}
-      <Grid container spacing={2}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
         {[
           { label: 'Reservations', to: 'Reservations', icon: <FlightTakeoffRounded />, color: 'primary' },
           { label: 'Proposals', to: 'Proposals', icon: <RateReviewRounded />, color: 'success' },
           { label: 'Invoices', to: 'Revenue', icon: <ReceiptLongRounded />, color: 'warning' },
         ].map(link => (
-          <Grid size={{ xs: 6, md: 4 }} key={link.to}>
-            <Card component={Link} to={createPageUrl(link.to)}
-              sx={{ p: 2, textDecoration: 'none', color: 'inherit', cursor: 'pointer', '&:hover': { boxShadow: 3, transform: 'translateY(-2px)' }, transition: 'all 0.2s' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box sx={{ bgcolor: `${link.color}.light`, p: 1, borderRadius: '8px', display: 'flex', color: `${link.color}.main` }}>
-                    {link.icon}
-                  </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{link.label}</Typography>
+          <Card key={link.to} component={Link} to={createPageUrl(link.to)}
+            sx={{ p: 2, textDecoration: 'none', color: 'inherit', cursor: 'pointer', '&:hover': { boxShadow: 3, transform: 'translateY(-2px)' }, transition: 'all 0.2s' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ bgcolor: `${link.color}.light`, p: 1, borderRadius: '8px', display: 'flex', color: `${link.color}.main` }}>
+                  {link.icon}
                 </Box>
-                <ArrowForwardRounded sx={{ color: 'text.secondary' }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>{link.label}</Typography>
               </Box>
-            </Card>
-          </Grid>
+              <ArrowForwardRounded sx={{ color: 'text.secondary' }} />
+            </Box>
+          </Card>
         ))}
-      </Grid>
+      </Box>
     </Box>
   );
 }
