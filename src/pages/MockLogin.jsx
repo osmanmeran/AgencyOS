@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useDb } from '@/lib/DbContext';
 import { isMicrosoftSsoConfigured, loginWithMicrosoft } from '@/lib/microsoft-auth';
 

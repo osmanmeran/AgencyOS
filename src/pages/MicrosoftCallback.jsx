@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { handleMicrosoftCallback, exchangeIdTokenWithServer } from '@/lib/microsoft-auth';
 
 export default function MicrosoftCallback() {
