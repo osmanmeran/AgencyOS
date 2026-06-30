@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import jwksClient from 'jwks-rsa';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { getDb, uid } from '../db.js';
 import { getJwtSecret } from '../middleware/auth.js';
 import { ForbiddenError, ConflictError, UnauthorizedError, BadRequestError } from '../middleware/errors.js';
@@ -8,12 +8,6 @@ import logger from '../lib/logger.js';
 
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
 const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
-
-const msJwksClient = jwksClient({
-  jwksUri: `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/discovery/v2.0/keys`,
-  cache: true,
-  cacheMaxAge: 86400000,
-});
 
 export const VALID_TIERS = ['admin', 'manager', 'accounting', 'agent'];
 
@@ -54,26 +48,17 @@ export async function authenticateMicrosoft(idToken) {
     throw new UnauthorizedError('Microsoft SSO non configurato sul server.');
   }
 
-  const decoded = jwt.decode(idToken, { complete: true });
-  if (!decoded?.header?.kid) {
-    throw new UnauthorizedError('Token Microsoft non valido.');
-  }
-
-  let publicKey;
-  try {
-    const key = await msJwksClient.getSigningKey(decoded.header.kid);
-    publicKey = key.getPublicKey();
-  } catch (err) {
-    logger.error({ err: err.message }, 'Impossibile ottenere la chiave pubblica Microsoft');
-    throw new UnauthorizedError('Verifica del token Microsoft fallita.');
-  }
+  const JWKS = createRemoteJWKSet(
+    new URL(`https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/discovery/v2.0/keys`)
+  );
 
   let payload;
   try {
-    payload = jwt.verify(idToken, publicKey, {
-      algorithms: ['RS256'],
+    const result = await jwtVerify(idToken, JWKS, {
       audience: MICROSOFT_CLIENT_ID,
+      issuer: `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/v2.0`,
     });
+    payload = result.payload;
   } catch (err) {
     logger.error({ err: err.message }, 'Verifica token Microsoft fallita');
     throw new UnauthorizedError('Token Microsoft non valido o scaduto.');
