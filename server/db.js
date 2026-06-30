@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { migrate } from './migrations/runner.js';
 
@@ -109,9 +110,10 @@ migrate(db, { quiet: false });
 if (isVercel) {
   loadDbFromBlob().then(restored => {
     if (restored) {
-      db.close();
+      const oldDb = db;
       db = new Database(DB_PATH);
       db.pragma('journal_mode = WAL');
+      oldDb.close();
       console.log('[DB] Re-initialized from Blob');
     }
     startBlobPersistence(db);
@@ -131,10 +133,7 @@ export function getEntities() {
 }
 
 export function uid() {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let id = '';
-  for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
-  return id;
+  return crypto.randomBytes(8).toString('hex');
 }
 
 function rebuildFts(db) {

@@ -38,7 +38,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
       fontSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://login.microsoftonline.com'],
+      connectSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://login.microsoftonline.com', 'https://oauth2.googleapis.com', 'https://www.googleapis.com'],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: isProduction ? true : null,
