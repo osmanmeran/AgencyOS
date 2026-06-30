@@ -57,6 +57,19 @@ router.post('/invoice', catchAsync(async (req, res) => {
   res.json({ success: true, filename, url: `/api/pdf/download/${filename}` });
 }));
 
+router.post('/test', catchAsync(async (req, res) => {
+  const { filename } = await generateProposal({
+    clientName: 'Test Client',
+    destination: 'Rome, Italy',
+    startDate: new Date().toISOString().slice(0, 10),
+    endDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    totalPrice: 2500,
+    currency: 'EUR',
+    items: [{ name: 'Test Service', price: 2500, quantity: 1 }],
+  });
+  res.json({ success: true, filename, url: `/api/pdf/download/${filename}` });
+}));
+
 router.get('/download/:filename', (req, res) => {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const filePath = path.join(__dirname, '..', '..', 'data', 'pdfs', req.params.filename);
