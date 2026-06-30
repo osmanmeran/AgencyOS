@@ -14,7 +14,7 @@ export const VALID_TIERS = ['admin', 'manager', 'accounting', 'agent'];
 export function safeUser(u) {
   return {
     id: u.id, name: u.name, email: u.email, phone: u.phone || '', user_tier: u.user_tier, role: u.role,
-    language: u.language, default_currency: u.default_currency || 'USD',
+    language: u.language, default_currency: u.default_currency || 'USD', avatar_url: u.avatar_url || null,
     custom_permissions: JSON.parse(u.custom_permissions || '[]'),
     departments: JSON.parse(u.departments || '[]'),
     client_id: u.client_id, linked_supplier_id: u.linked_supplier_id,
@@ -123,7 +123,7 @@ export function updateUser(id, fields) {
 
   const fieldMap = {
     name: 'name', email: 'email', phone: 'phone', user_tier: 'user_tier', language: 'language',
-    is_active: 'is_active', default_currency: 'default_currency',
+    is_active: 'is_active', default_currency: 'default_currency', avatar_url: 'avatar_url',
   };
 
   for (const [key, col] of Object.entries(fieldMap)) {

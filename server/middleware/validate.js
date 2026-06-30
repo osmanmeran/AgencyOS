@@ -70,6 +70,7 @@ export const schemas = {
     phone: z.string().optional(),
     language: z.string().optional(),
     default_currency: z.string().optional(),
+    avatar_url: z.string().url().optional().or(z.literal('')),
     current_password: z.string().optional(),
     new_password: z
       .string()

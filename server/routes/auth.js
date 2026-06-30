@@ -27,11 +27,11 @@ router.post('/login', validate(schemas.login), catchAsync(async (req, res) => {
 router.get('/me', authMiddleware, (req, res) => {
   const user = getUserById(req.user.id);
   if (!user) throw new NotFoundError('User not found');
-  res.json(safeUser(user));
+  res.json({ success: true, user: safeUser(user) });
 });
 
 router.put('/me', authMiddleware, validate(schemas.updateMe), catchAsync(async (req, res) => {
-  const { name, phone, language, default_currency, current_password, new_password } = req.body;
+  const { name, phone, language, default_currency, avatar_url, current_password, new_password } = req.body;
   const updates = {};
 
   if (new_password) {
@@ -47,10 +47,11 @@ router.put('/me', authMiddleware, validate(schemas.updateMe), catchAsync(async (
   if (phone !== undefined) updates.phone = phone;
   if (language !== undefined) updates.language = language;
   if (default_currency !== undefined) updates.default_currency = default_currency;
+  if (avatar_url !== undefined) updates.avatar_url = avatar_url;
 
   const updated = updateUser(req.user.id, updates);
   if (!updated) throw new BadRequestError('No fields to update');
-  res.json(safeUser(updated));
+  res.json({ success: true, user: safeUser(updated) });
 }));
 
 router.get('/users', authMiddleware, requireTier('admin'), (req, res) => {
