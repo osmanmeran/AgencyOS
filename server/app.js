@@ -100,6 +100,10 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/testing', testingRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
 // On Vercel, static files + SPA fallback are handled by vercel.json
 // Only serve static files + SPA on non-Vercel environments
 if (!process.env.VERCEL) {
@@ -115,10 +119,6 @@ if (!process.env.VERCEL) {
     });
   }
 }
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
-});
 
 app.use(notFoundHandler);
 app.use(errorHandler);
