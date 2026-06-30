@@ -1,9 +1,9 @@
 import './App.css'
-import { Suspense, lazy } from 'react';
-import { ThemeProvider } from 'next-themes'
+import { Suspense, lazy, useMemo } from 'react';
+import { ThemeProvider, useTheme as useNextTheme } from 'next-themes'
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import muiTheme from './theme'
+import { buildMuiTheme } from './theme'
 import { Toaster } from "@/components/ui/sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -112,13 +112,18 @@ const AuthenticatedApp = () => {
   );
 };
 
+function MuiThemeSync({ children }) {
+  const { resolvedTheme } = useNextTheme();
+  const muiTheme = useMemo(() => buildMuiTheme(resolvedTheme === 'dark' ? 'dark' : 'light'), [resolvedTheme]);
+  return <MuiThemeProvider theme={muiTheme}><CssBaseline />{children}</MuiThemeProvider>;
+}
+
 function App() {
 
   return (
     <ErrorBoundary>
-    <MuiThemeProvider theme={muiTheme}>
-    <CssBaseline />
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <MuiThemeSync>
     <I18nProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
@@ -131,8 +136,8 @@ function App() {
       </QueryClientProvider>
     </AuthProvider>
     </I18nProvider>
+    </MuiThemeSync>
     </ThemeProvider>
-    </MuiThemeProvider>
     </ErrorBoundary>
   )
 }
