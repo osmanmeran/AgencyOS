@@ -10,6 +10,13 @@ const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || process.env.VITE_
 const MICROSOFT_TENANT = process.env.MICROSOFT_TENANT || process.env.VITE_MICROSOFT_TENANT || 'common';
 const MICROSOFT_JWKS_URI = `https://login.microsoftonline.com/${MICROSOFT_TENANT}/discovery/v2.0/keys`;
 
+// Log configuration on startup for debugging
+if (!MICROSOFT_CLIENT_ID) {
+  logger.warn('Microsoft OAuth not configured: MICROSOFT_CLIENT_ID or VITE_MICROSOFT_CLIENT_ID is not set');
+} else {
+  logger.info({ clientId: MICROSOFT_CLIENT_ID.substring(0, 8) + '...', tenant: MICROSOFT_TENANT }, 'Microsoft OAuth configured');
+}
+
 const msJwksClient = jwksClient({
   jwksUri: MICROSOFT_JWKS_URI,
   cache: true,
@@ -52,15 +59,21 @@ export function authenticateLocal(email, password) {
 
 export async function authenticateMicrosoft(idToken) {
   if (!MICROSOFT_CLIENT_ID) {
+    logger.error('Microsoft OAuth attempted but MICROSOFT_CLIENT_ID is not configured');
     throw new UnauthorizedError('Microsoft login not configured', 'MICROSOFT_NOT_CONFIGURED');
   }
 
   const payload = await verifyMicrosoftToken(idToken);
-  if (!payload) throw new UnauthorizedError('Invalid or expired Microsoft token');
+  if (!payload) {
+    logger.error('Microsoft token verification failed - payload is null');
+    throw new UnauthorizedError('Invalid or expired Microsoft token');
+  }
 
   const microsoftId = payload.oid || payload.sub;
   const email = payload.preferred_username || payload.email || payload.unique_name || `${microsoftId}@microsoft.local`;
   const name = payload.name || email.split('@')[0];
+
+  logger.info({ email, microsoftId: microsoftId.substring(0, 8) + '...' }, 'Microsoft token verified, authenticating user');
 
   const db = getDb();
   const txn = db.transaction(() => {
@@ -68,10 +81,12 @@ export async function authenticateMicrosoft(idToken) {
     if (!user) {
       const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
       if (existingUser) {
+        logger.info({ email, userId: existingUser.id }, 'Linking Microsoft ID to existing user');
         db.prepare('UPDATE users SET microsoft_id = ?, updated_date = ? WHERE id = ?')
           .run(microsoftId, new Date().toISOString(), existingUser.id);
         user = existingUser;
       } else {
+        logger.info({ email }, 'Creating new user from Microsoft SSO');
         const now = new Date().toISOString();
         const id = uid();
         const hashed = bcrypt.hashSync(microsoftId, 10);
@@ -84,49 +99,59 @@ export async function authenticateMicrosoft(idToken) {
   });
 
   const user = txn();
-  if (!user.is_active) throw new ForbiddenError('Account pending approval. Contact an administrator.', 'ACCOUNT_PENDING');
+  if (!user.is_active) {
+    logger.warn({ email }, 'Microsoft login attempted but account is inactive');
+    throw new ForbiddenError('Account pending approval. Contact an administrator.', 'ACCOUNT_PENDING');
+  }
 
+  logger.info({ email, userId: user.id }, 'Microsoft SSO authentication successful');
   return safeUser(user);
 }
 
 async function verifyMicrosoftToken(idToken) {
-  const decoded = jwt.decode(idToken, { complete: true });
-  if (!decoded || !decoded.header || !decoded.header.kid) {
-    logger.error({ header: decoded?.header }, 'Microsoft token missing kid in header');
-    return null;
-  }
-
-  logger.info({ kid: decoded.header.kid, alg: decoded.header.alg, claims: decoded.payload }, 'Microsoft token decoded');
-
-  let publicKey;
   try {
-    const key = await msJwksClient.getSigningKey(decoded.header.kid);
-    publicKey = key.getPublicKey();
-    logger.info('Microsoft signing key obtained successfully');
-  } catch (err) {
-    logger.error({ err: err.message, kid: decoded.header.kid }, 'Failed to get Microsoft signing key');
-    return null;
-  }
-
-  try {
-    const payload = jwt.verify(idToken, publicKey, {
-      algorithms: ['RS256'],
-      audience: MICROSOFT_CLIENT_ID,
-    });
-
-    const iss = payload.iss;
-    const validIssuer =
-      /^https:\/\/login\.microsoftonline\.com\/[^/]+\/v2\.0$/.test(iss) ||
-      /^https:\/\/sts\.windows\.net\/[^/]+\/$/.test(iss);
-    if (!validIssuer) {
-      logger.error({ iss, MICROSOFT_CLIENT_ID }, 'Microsoft token rejected: invalid issuer');
+    const decoded = jwt.decode(idToken, { complete: true });
+    if (!decoded || !decoded.header || !decoded.header.kid) {
+      logger.error({ header: decoded?.header }, 'Microsoft token missing kid in header');
       return null;
     }
 
-    logger.info({ iss, aud: payload.aud, oid: payload.oid }, 'Microsoft token verified successfully');
-    return payload;
+    logger.debug({ kid: decoded.header.kid, alg: decoded.header.alg }, 'Microsoft token decoded');
+
+    let publicKey;
+    try {
+      const key = await msJwksClient.getSigningKey(decoded.header.kid);
+      publicKey = key.getPublicKey();
+      logger.debug('Microsoft signing key obtained successfully');
+    } catch (err) {
+      logger.error({ err: err.message, kid: decoded.header.kid, jwksUri: MICROSOFT_JWKS_URI }, 'Failed to get Microsoft signing key');
+      return null;
+    }
+
+    try {
+      const payload = jwt.verify(idToken, publicKey, {
+        algorithms: ['RS256'],
+        audience: MICROSOFT_CLIENT_ID,
+      });
+
+      const iss = payload.iss;
+      const validIssuer =
+        /^https:\/\/login\.microsoftonline\.com\/[^/]+\/v2\.0$/.test(iss) ||
+        /^https:\/\/sts\.windows\.net\/[^/]+\/$/.test(iss);
+      
+      if (!validIssuer) {
+        logger.error({ iss, MICROSOFT_CLIENT_ID, expectedIssuer: `https://login.microsoftonline.com/*/v2.0` }, 'Microsoft token rejected: invalid issuer');
+        return null;
+      }
+
+      logger.debug({ iss, aud: payload.aud, oid: payload.oid }, 'Microsoft token verified successfully');
+      return payload;
+    } catch (err) {
+      logger.error({ err: err.message, errName: err.name, MICROSOFT_CLIENT_ID, audience: MICROSOFT_CLIENT_ID }, 'Microsoft token verification failed');
+      return null;
+    }
   } catch (err) {
-    logger.error({ err: err.message, errName: err.name, MICROSOFT_CLIENT_ID }, 'Microsoft token verification failed');
+    logger.error({ err: err.message, stack: err.stack }, 'Unexpected error during token verification');
     return null;
   }
 }

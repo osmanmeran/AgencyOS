@@ -23,17 +23,25 @@ function getCodeChallengeMethod() {
 }
 
 export function isMicrosoftSsoConfigured() {
-  return !!import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+  const configured = !!import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+  if (!configured) {
+    console.warn('Microsoft SSO not configured. VITE_MICROSOFT_CLIENT_ID is missing in .env');
+  }
+  return configured;
 }
 
 export async function loginWithMicrosoft(returnUrl) {
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
   const tenant = import.meta.env.VITE_MICROSOFT_TENANT || 'common';
-  const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || (window.location.origin + '/mock-login/');
+  const redirectUri = import.meta.env.VITE_MICROSOFT_REDIRECT_URI || (window.location.origin + '/mock-login');
 
   if (!clientId) {
-    throw new Error('Microsoft SSO is not configured. Set VITE_MICROSOFT_CLIENT_ID in .env');
+    const errorMsg = 'Microsoft SSO is not configured. Set VITE_MICROSOFT_CLIENT_ID in .env';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
+
+  console.info('Starting Microsoft OAuth flow', { clientId: clientId.substring(0, 8) + '...', tenant, redirectUri });
 
   const state = generateRandomString(32);
   const codeVerifier = generateRandomString(64);
@@ -45,7 +53,9 @@ export async function loginWithMicrosoft(returnUrl) {
     try {
       sessionStorage.setItem('msal_' + key, val);
       localStorage.setItem('msal_' + key, val);
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Failed to persist OAuth state', { key, error: e.message });
+    }
   }
 
   const params = new URLSearchParams({
@@ -59,7 +69,9 @@ export async function loginWithMicrosoft(returnUrl) {
     response_mode: 'query',
   });
 
-  window.location.href = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?${params}`;
+  const authUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?${params}`;
+  console.info('Redirecting to Microsoft auth', { url: authUrl.substring(0, 100) + '...' });
+  window.location.href = authUrl;
 }
 
 function getPersisted(key) {
@@ -85,6 +97,7 @@ export async function handleMicrosoftRedirect() {
   if (!code && !error) return null;
 
   if (error) {
+    console.error('Microsoft OAuth error', { error, errorDescription });
     clearPersisted();
     throw new Error(errorDescription || error || 'Microsoft login failed');
   }
@@ -97,15 +110,24 @@ export async function handleMicrosoftRedirect() {
 
   // Coarse null check before clearing — state mismatch check comes after
   if (!savedState || !codeVerifier || !redirectUri || !clientId) {
+    console.error('Microsoft OAuth session expired or missing state', {
+      hasSavedState: !!savedState,
+      hasCodeVerifier: !!codeVerifier,
+      hasRedirectUri: !!redirectUri,
+      hasClientId: !!clientId,
+    });
     clearPersisted();
     throw new Error('Microsoft login session expired. Please try again.');
   }
 
   if (state !== savedState) {
+    console.error('Microsoft OAuth state mismatch (CSRF detected)', { state, savedState });
     clearPersisted();
     window.location.href = '/mock-login';
     return null;
   }
+
+  console.info('Microsoft authorization code received, exchanging for tokens');
 
   // Exchange authorization code for tokens
   const tokenEndpoint = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
@@ -118,21 +140,34 @@ export async function handleMicrosoftRedirect() {
     scope: 'openid profile email offline_access',
   });
 
-  const tokenRes = await fetch(tokenEndpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
+  try {
+    const tokenRes = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
 
-  const tokenData = await tokenRes.json();
-  if (!tokenRes.ok || !tokenData.id_token) {
+    const tokenData = await tokenRes.json();
+    
+    if (!tokenRes.ok || !tokenData.id_token) {
+      console.error('Token exchange failed', { 
+        status: tokenRes.status, 
+        error: tokenData.error, 
+        errorDescription: tokenData.error_description 
+      });
+      clearPersisted();
+      throw new Error(tokenData.error_description || 'Failed to exchange authorization code');
+    }
+
+    console.info('Token exchange successful');
+    // Don't clear persisted data yet — MockLogin still needs returnUrl
+    // It will call clearPersisted after consuming it
+    return tokenData.id_token;
+  } catch (err) {
+    console.error('Token exchange network error', { message: err.message });
     clearPersisted();
-    throw new Error(tokenData.error_description || 'Failed to exchange authorization code');
+    throw err;
   }
-
-  // Don't clear persisted data yet — MockLogin still needs returnUrl
-  // It will call clearPersisted after consuming it
-  return tokenData.id_token;
 }
 
 export function getMicrosoftReturnUrl() {
@@ -143,24 +178,36 @@ export function getMicrosoftReturnUrl() {
 
 // Direct API call — works independently of the global api-client.js
 export async function exchangeIdToken(idToken) {
-  const res = await fetch('/api/auth/microsoft', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idToken }),
-    credentials: 'include',
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    const msg = data?.error?.message || data?.message || 'Microsoft login failed';
-    throw new Error(msg);
-  }
-
+  console.info('Exchanging Microsoft ID token for app token');
+  
   try {
-    localStorage.setItem('marvelops_token', data.token);
-    localStorage.setItem('marvelops_current_user', JSON.stringify(data.user));
-  } catch (e) {}
+    const res = await fetch('/api/auth/microsoft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+      credentials: 'include',
+    });
 
-  return data.user;
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = data?.error?.message || data?.message || 'Microsoft login failed';
+      console.error('Microsoft token exchange failed', { status: res.status, message: msg });
+      throw new Error(msg);
+    }
+
+    console.info('Microsoft authentication successful');
+
+    try {
+      localStorage.setItem('marvelops_token', data.token);
+      localStorage.setItem('marvelops_current_user', JSON.stringify(data.user));
+    } catch (e) {
+      console.warn('Failed to store token in localStorage', { error: e.message });
+    }
+
+    return data.user;
+  } catch (err) {
+    console.error('Token exchange error', { message: err.message, stack: err.stack });
+    throw err;
+  }
 }
