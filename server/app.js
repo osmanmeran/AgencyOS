@@ -112,12 +112,13 @@ if (process.env.DB_RESTORE_SECRET) {
       return res.status(403).json({ error: 'forbidden' });
     }
     try {
-      const { getDbPath, reloadDb } = await import('./db.js');
+      const { getDbPath, closeDb, reopenDb } = await import('./db.js');
       const dbPath = getDbPath();
-      fs.writeFileSync(dbPath, req.body);
+      closeDb();
       try { fs.unlinkSync(dbPath + '-wal'); } catch (e) {}
       try { fs.unlinkSync(dbPath + '-shm'); } catch (e) {}
-      reloadDb();
+      fs.writeFileSync(dbPath, req.body);
+      reopenDb();
       res.json({ status: 'restored', bytes: req.body.length });
     } catch (err) {
       res.status(500).json({ error: err.message });

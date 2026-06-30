@@ -128,12 +128,18 @@ export function getDb() {
   return db;
 }
 
-export function reloadDb() {
-  const oldDb = db;
+export function closeDb() {
+  if (db) {
+    try { db.pragma('wal_checkpoint(TRUNCATE)'); } catch (e) {}
+    db.close();
+    db = null;
+  }
+}
+
+export function reopenDb() {
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
   migrate(db, { quiet: false });
-  oldDb.close();
 }
 
 export function getDbPath() {
