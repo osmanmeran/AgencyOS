@@ -69,9 +69,13 @@ export async function handleMicrosoftCallback() {
     throw new Error('Codice di autorizzazione mancante.');
   }
 
-  const savedState = sessionStorage.getItem('ms_state') || localStorage.getItem('ms_state');
+  const ssState = sessionStorage.getItem('ms_state');
+  const lsState = localStorage.getItem('ms_state');
+  const savedState = ssState || lsState;
   const codeVerifier = sessionStorage.getItem('ms_code_verifier') || localStorage.getItem('ms_code_verifier');
   const returnUrl = sessionStorage.getItem('ms_return_url') || localStorage.getItem('ms_return_url') || '/';
+
+  console.log('[MSAuth] url_state:', state, '| ss_state:', ssState, '| ls_state:', lsState);
 
   for (const k of ['ms_state', 'ms_code_verifier', 'ms_return_url']) {
     try { sessionStorage.removeItem(k); } catch (e) {}
@@ -79,7 +83,7 @@ export async function handleMicrosoftCallback() {
   }
 
   if (!savedState || state !== savedState) {
-    throw new Error('State non valido. Riprova il login.');
+    throw new Error(`State non valido. url=${state?.slice(0,8)} ss=${ssState?.slice(0,8)} ls=${lsState?.slice(0,8)}`);
   }
 
   if (!codeVerifier) {
