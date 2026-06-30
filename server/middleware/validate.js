@@ -30,9 +30,6 @@ export const schemas = {
     idToken: z.string().min(1, 'idToken is required'),
   }),
 
-  googleAuth: z.object({
-    idToken: z.string().min(1, 'idToken is required'),
-  }),
 
   createUser: z.object({
     email: z.string().email('Invalid email format'),
