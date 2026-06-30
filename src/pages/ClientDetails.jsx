@@ -171,6 +171,8 @@ export default function ClientDetails() {
       name: client.name || '',
       email: client.email || '',
       phone: client.phone || '',
+      phone_secondary: client.phone_secondary || '',
+      age_category: client.age_category || 'adult',
       company: client.company || '',
       address: client.address || '',
       city: client.city || '',
@@ -262,9 +264,23 @@ export default function ClientDetails() {
             {client.phone && (
               <div className="flex items-center gap-2 text-slate-700">
                 <Phone className="w-4 h-4 text-slate-500" />
-                <a href={`tel:${client.phone}`} className="hover:text-blue-600">
-                  {client.phone}
-                </a>
+                <div>
+                  <a href={`tel:${client.phone}`} className="hover:text-blue-600">{client.phone}</a>
+                  <span className="ml-1 text-xs text-slate-400">(principale)</span>
+                </div>
+              </div>
+            )}
+            {client.phone_secondary && (
+              <div className="flex items-center gap-2 text-slate-700">
+                <Phone className="w-4 h-4 text-slate-400" />
+                <a href={`tel:${client.phone_secondary}`} className="hover:text-blue-600">{client.phone_secondary}</a>
+              </div>
+            )}
+            {client.age_category && (
+              <div className="flex items-center gap-2 text-slate-700">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
+                  {{ adult: 'Adult', children: 'Children (3–11.99 anni)', infant: 'Infant (0–2.99 anni)' }[client.age_category] || client.age_category}
+                </span>
               </div>
             )}
           </div>
@@ -529,12 +545,27 @@ export default function ClientDetails() {
                 <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label>Email *</Label>
-                <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} required />
+                <Label>Age Category</Label>
+                <Select value={editForm.age_category} onValueChange={(v) => setEditForm({ ...editForm, age_category: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="adult">Adult</SelectItem>
+                    <SelectItem value="children">Children (3–11.99 anni)</SelectItem>
+                    <SelectItem value="infant">Infant (0–2.99 anni)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                <Label>Contatto Principale *</Label>
+                <Input type="tel" placeholder="+39 000 000 0000" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Contatto Secondario</Label>
+                <Input type="tel" placeholder="+39 000 000 0000" value={editForm.phone_secondary || ''} onChange={(e) => setEditForm({ ...editForm, phone_secondary: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Company</Label>
