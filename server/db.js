@@ -128,6 +128,18 @@ export function getDb() {
   return db;
 }
 
+export function reloadDb() {
+  const oldDb = db;
+  db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
+  migrate(db, { quiet: false });
+  oldDb.close();
+}
+
+export function getDbPath() {
+  return DB_PATH;
+}
+
 export function getEntities() {
   return ENTITIES;
 }

@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { seedDatabase } from './seed.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
@@ -103,6 +104,26 @@ app.use('/api/suggestions', suggestionRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
+
+// TEMPORARY one-time DB restore endpoint — remove after use
+if (process.env.DB_RESTORE_SECRET) {
+  app.post('/api/admin/restore-db', express.raw({ type: '*/*', limit: '50mb' }), async (req, res) => {
+    if (req.headers['x-restore-secret'] !== process.env.DB_RESTORE_SECRET) {
+      return res.status(403).json({ error: 'forbidden' });
+    }
+    try {
+      const { getDbPath, reloadDb } = await import('./db.js');
+      const dbPath = getDbPath();
+      fs.writeFileSync(dbPath, req.body);
+      try { fs.unlinkSync(dbPath + '-wal'); } catch (e) {}
+      try { fs.unlinkSync(dbPath + '-shm'); } catch (e) {}
+      reloadDb();
+      res.json({ status: 'restored', bytes: req.body.length });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
 
 // On Vercel, static files + SPA fallback are handled by vercel.json
 // Only serve static files + SPA on non-Vercel environments
