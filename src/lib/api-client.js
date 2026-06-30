@@ -192,14 +192,19 @@
           return api('/integrations/upload', { method: 'POST', body: JSON.stringify(data || {}) });
         },
         SendEmail: function (opts) {
-          // Try Outlook first if user has it connected
           return api('/integrations/outlook/status').then(function (status) {
             if (status.connected) {
+              // Outlook connected — send directly, let errors propagate
               return api('/integrations/outlook/send', { method: 'POST', body: JSON.stringify(opts || {}) });
             }
+            // No Outlook — fall back to SMTP
             return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
-          }).catch(function () {
-            return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
+          }).catch(function (statusErr) {
+            // Only fall back if the STATUS CHECK itself failed (not a send failure)
+            if (statusErr && statusErr._isStatusCheck) {
+              return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
+            }
+            throw statusErr;
           });
         },
         SendSMS: function (opts) {

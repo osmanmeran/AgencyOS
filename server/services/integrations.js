@@ -199,12 +199,18 @@ export async function sendOutlookEmail(userId, { to, subject, body, cc, bcc }) {
   });
 
   if (!sendResp.ok) {
+    const errText = await sendResp.text();
+    logger.error({ status: sendResp.status, body: errText }, 'Graph API sendMail failed');
     if (sendResp.status === 401) {
       disconnectOutlook(userId);
       throw new UnauthorizedError('Outlook authorization expired — please reconnect your account');
     }
-    const errText = await sendResp.text();
-    throw new BadRequestError(`Failed to send email: ${errText}`);
+    if (sendResp.status === 403) {
+      throw new BadRequestError('Outlook permission denied: ensure Mail.Send is granted in Azure AD (API permissions → Grant admin consent)');
+    }
+    let errMsg = errText;
+    try { errMsg = JSON.parse(errText)?.error?.message || errText; } catch {}
+    throw new BadRequestError(`Outlook send failed: ${errMsg}`);
   }
 
   logEmail(to, subject, body);
