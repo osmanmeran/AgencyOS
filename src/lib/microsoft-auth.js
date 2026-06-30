@@ -17,10 +17,14 @@ export function isMicrosoftSsoConfigured() {
   return !!import.meta.env.VITE_MICROSOFT_CLIENT_ID;
 }
 
+function getRedirectUri() {
+  return import.meta.env.VITE_MICROSOFT_REDIRECT_URI || (window.location.origin + '/auth/microsoft/callback');
+}
+
 export async function loginWithMicrosoft(returnUrl) {
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
   const tenant = import.meta.env.VITE_MICROSOFT_TENANT_ID;
-  const redirectUri = window.location.origin + '/auth/microsoft/callback';
+  const redirectUri = getRedirectUri();
 
   if (!clientId || !tenant) {
     throw new Error('Microsoft SSO non configurato.');
@@ -81,7 +85,7 @@ export async function handleMicrosoftCallback() {
 
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
   const tenant = import.meta.env.VITE_MICROSOFT_TENANT_ID;
-  const redirectUri = window.location.origin + '/auth/microsoft/callback';
+  const redirectUri = getRedirectUri();
 
   const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
     method: 'POST',
