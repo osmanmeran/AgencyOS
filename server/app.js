@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { seedDatabase } from './seed.js';
@@ -78,7 +78,7 @@ const standardLimiter = rateLimit({
   message: { message: 'Too many requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || req.ip,
+  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
 });
 
 app.use('/api/auth/login', strictLimiter);
