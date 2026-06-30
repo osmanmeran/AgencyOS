@@ -42,7 +42,7 @@ export default function NavigationTracker() {
         }
 
         if (isAuthenticated && pageName) {
-            db.appLogs.logUserInApp(pageName).catch(() => {
+            db.appLogs?.logUserInApp(pageName).catch(() => {
                 // Silently fail - logging shouldn't break the app
             });
         }
