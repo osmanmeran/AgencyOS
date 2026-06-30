@@ -97,21 +97,25 @@ function startBlobPersistence(db) {
   process.on('SIGINT', cleanup);
 }
 
-// --- Eager initialization with top-level await ---
+// --- Synchronous initialization (no top-level await) ---
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
-// On Vercel, try to restore from Blob before opening DB
-if (isVercel) {
-  await loadDbFromBlob();
-}
 
 db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 migrate(db, { quiet: false });
 
+// Fire-and-forget Blob restore on Vercel (don't block module load)
 if (isVercel) {
-  startBlobPersistence(db);
+  loadDbFromBlob().then(restored => {
+    if (restored) {
+      db.close();
+      db = new Database(DB_PATH);
+      db.pragma('journal_mode = WAL');
+      console.log('[DB] Re-initialized from Blob');
+    }
+    startBlobPersistence(db);
+  }).catch(e => console.error('[DB] Background Blob load failed:', e.message));
 }
 
 console.log(`[DB] Initialized at ${DB_PATH}`);
