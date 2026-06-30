@@ -34,9 +34,11 @@ export async function loginWithMicrosoft(returnUrl) {
   const codeVerifier = generateRandomString(64);
   const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-  sessionStorage.setItem('ms_state', state);
-  sessionStorage.setItem('ms_code_verifier', codeVerifier);
-  sessionStorage.setItem('ms_return_url', returnUrl || '/');
+  const msStore = { ms_state: state, ms_code_verifier: codeVerifier, ms_return_url: returnUrl || '/' };
+  for (const [k, v] of Object.entries(msStore)) {
+    try { sessionStorage.setItem(k, v); } catch (e) {}
+    try { localStorage.setItem(k, v); } catch (e) {}
+  }
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -67,13 +69,14 @@ export async function handleMicrosoftCallback() {
     throw new Error('Codice di autorizzazione mancante.');
   }
 
-  const savedState = sessionStorage.getItem('ms_state');
-  const codeVerifier = sessionStorage.getItem('ms_code_verifier');
-  const returnUrl = sessionStorage.getItem('ms_return_url') || '/';
+  const savedState = sessionStorage.getItem('ms_state') || localStorage.getItem('ms_state');
+  const codeVerifier = sessionStorage.getItem('ms_code_verifier') || localStorage.getItem('ms_code_verifier');
+  const returnUrl = sessionStorage.getItem('ms_return_url') || localStorage.getItem('ms_return_url') || '/';
 
-  sessionStorage.removeItem('ms_state');
-  sessionStorage.removeItem('ms_code_verifier');
-  sessionStorage.removeItem('ms_return_url');
+  for (const k of ['ms_state', 'ms_code_verifier', 'ms_return_url']) {
+    try { sessionStorage.removeItem(k); } catch (e) {}
+    try { localStorage.removeItem(k); } catch (e) {}
+  }
 
   if (!savedState || state !== savedState) {
     throw new Error('State non valido. Riprova il login.');
