@@ -163,6 +163,22 @@ app.post('/api/admin/fix-trip-agents', (req, res) => {
   }
 });
 
+app.post('/api/email/test-outlook', authMiddleware, async (req, res) => {
+  try {
+    const { sendOutlookEmail, getOutlookStatus } = await import('./services/integrations.js');
+    const status = await getOutlookStatus(req.user.id);
+    if (!status.connected) return res.status(400).json({ error: 'Outlook non connesso. Vai su Impostazioni → Integrazioni per collegarlo.' });
+    await sendOutlookEmail(req.user.id, {
+      to: req.user.email,
+      subject: 'Marvelops – Test Outlook',
+      body: '<p>Test email inviata tramite Outlook. Funziona correttamente.</p>',
+    });
+    res.json({ success: true, message: `Email inviata a ${req.user.email}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/email/test', authMiddleware, async (req, res) => {
   try {
     const { sendEmail, isSmtpConfigured } = await import('./services/email.js');
