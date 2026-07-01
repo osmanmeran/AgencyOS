@@ -14,6 +14,8 @@ import { showSuccess, showError } from '@/lib/toast';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { parseISO, isBefore } from 'date-fns';
+import { useDirtyState } from '@/hooks/useDirtyState';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 const CURRENCIES = { USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' };
 
@@ -71,6 +73,9 @@ export default function CreateInvoice() {
       }));
     }
   }, [appSettings]);
+
+  const isDirty = useDirtyState(formData, !!appSettings);
+  useUnsavedChangesGuard(isDirty);
 
   // Filter for approved/confirmed and ongoing reservations only
   const today = new Date();

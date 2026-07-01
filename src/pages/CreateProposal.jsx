@@ -20,6 +20,8 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
+import { useDirtyState } from '@/hooks/useDirtyState';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import ServiceLibraryPanel from '../components/proposals/ServiceLibraryPanel';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
@@ -69,6 +71,9 @@ export default function CreateProposal() {
   const [addProviderOpen, setAddProviderOpen] = useState(false);
   const [addProviderForIndex, setAddProviderForIndex] = useState(null);
   const [newProvider, setNewProvider] = useState({ name: '', email: '', phone: '', city: '' });
+
+  const isDirty = useDirtyState({ formData, services, markupPct, acquiringCurrency, sellingCurrency, exchangeRate });
+  useUnsavedChangesGuard(isDirty);
 
   const { data: suppliers = /** @type {any} */ ([]), refetch: refetchSuppliers } = /** @type {any} */ (useQuery({
     queryKey: ['suppliers'],

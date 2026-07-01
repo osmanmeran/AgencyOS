@@ -24,6 +24,8 @@ import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import ServiceLibraryPanel from '../components/proposals/ServiceLibraryPanel';
 import ServiceLineEditor from '../components/services/ServiceLineEditor';
+import { useDirtyState } from '@/hooks/useDirtyState';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || cur);
@@ -165,6 +167,12 @@ export default function CreateReservation() {
     queryFn: () => db.entities.Trip.get(editId),
     enabled: isEditing
   }));
+
+  const isDirty = useDirtyState(
+    { formData, serviceTypes, passengerCount, rooms, services, markupPct, acquiringCurrency, sellingCurrency, exchangeRate },
+    editTrip?.id
+  );
+  useUnsavedChangesGuard(isDirty);
 
   const departments = settings?.departments || [];
 

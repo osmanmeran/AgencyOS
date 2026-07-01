@@ -1,5 +1,6 @@
 import './App.css'
-import { Suspense, lazy, useMemo } from 'react';
+import { Suspense, lazy, useMemo, useEffect } from 'react';
+import { installGlobalNavigationGuard } from '@/lib/navigationGuard';
 import { ThemeProvider, useTheme as useNextTheme } from 'next-themes'
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -125,6 +126,7 @@ function MuiThemeSync({ children }) {
 }
 
 function App() {
+  useEffect(() => { installGlobalNavigationGuard(); }, []);
 
   return (
     <ErrorBoundary>
