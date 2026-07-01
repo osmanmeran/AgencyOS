@@ -502,7 +502,7 @@ export default function ClientDetails() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {trips.map(trip => (
-                <Link key={trip.id} to={createPageUrl(`TripDetails?id=${trip.id}`)}>
+                <Link key={trip.id} to={createPageUrl(`ReservationDetails?id=${trip.id}`)}>
                   <Card className="p-6 bg-white hover:shadow-xl transition-shadow cursor-pointer">
                     <div className="flex items-center gap-3 mb-3">
                       <Plane className="w-5 h-5 text-blue-600" />

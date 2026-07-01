@@ -181,7 +181,7 @@ export default function PastReservationsSearch() {
                       </div>
                     </div>
                   </div>
-                  <Link to={createPageUrl(`TripDetails?id=${trip.id}`)}>
+                  <Link to={createPageUrl(`ReservationDetails?id=${trip.id}`)}>
                     <Button variant="ghost" size="sm">
                       <ArrowRight className="w-4 h-4" />
                     </Button>

@@ -92,7 +92,7 @@ export default function TripCard({ trip }) {
           </DropdownMenu>
         </div>
 
-        <Link to={createPageUrl(`TripDetails?id=${trip.id}`)}>
+        <Link to={createPageUrl(`ReservationDetails?id=${trip.id}`)}>
           <div className="relative h-48 overflow-hidden">
             <img
               src={trip.image_url || `https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop`}

@@ -377,7 +377,7 @@ export default function Reservations() {
               {calSelectedEvents.length === 0 && <p className="text-sm text-slate-400 py-8 text-center">No trips on this date</p>}
               <div className="space-y-2">
                 {calSelectedEvents.map(trip => (
-                  <a key={trip.id} href={createPageUrl(`TripDetails?id=${trip.id}`)} className="block p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                  <a key={trip.id} href={createPageUrl(`ReservationDetails?id=${trip.id}`)} className="block p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-2">
                       <Plane className="w-4 h-4 text-slate-400" />
                       <span className="font-medium text-sm">{trip.name}</span>

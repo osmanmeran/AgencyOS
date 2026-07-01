@@ -266,7 +266,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                   } else {
                     Icon = Plane; color = 'bg-orange-100 text-orange-600';
                     label = item.name; sublabel = item.destination || 'Trip';
-                    href = createPageUrl(`TripDetails?id=${item.id}`);
+                    href = createPageUrl(`ReservationDetails?id=${item.id}`);
                   }
 
                   const content = (
@@ -480,7 +480,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
 
           <TabsContent value="trips" className="px-6 py-4 space-y-3 flex-1 overflow-y-auto">
             {trips.length === 0 ? <EmptyState icon={Plane} label="No trips yet" /> : trips.map(t => (
-              <Link key={t.id} to={createPageUrl(`TripDetails?id=${t.id}`)}>
+              <Link key={t.id} to={createPageUrl(`ReservationDetails?id=${t.id}`)}>
                 <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-slate-50 hover:border-blue-200 transition-all">
                   <div>
                     <div className="font-medium text-slate-800 text-sm">{t.name}</div>

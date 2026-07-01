@@ -295,7 +295,7 @@ export default function Dashboard() {
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>No upcoming arrivals</Typography>
                 ) : (
                   upcomingArrivals.slice(0, 5).map(trip => (
-                    <Box key={trip.id} component={Link} to={createPageUrl(`TripDetails?id=${trip.id}`)}
+                    <Box key={trip.id} component={Link} to={createPageUrl(`ReservationDetails?id=${trip.id}`)}
                       sx={{ p: 2, borderRadius: '10px', bgcolor: 'success.light', border: '1px solid', borderColor: 'success.main', textDecoration: 'none', color: 'inherit', '&:hover': { boxShadow: 2 }, transition: 'all 0.15s' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Box>
@@ -323,7 +323,7 @@ export default function Dashboard() {
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>No upcoming departures</Typography>
                 ) : (
                   upcomingDepartures.slice(0, 5).map(trip => (
-                    <Box key={trip.id} component={Link} to={createPageUrl(`TripDetails?id=${trip.id}`)}
+                    <Box key={trip.id} component={Link} to={createPageUrl(`ReservationDetails?id=${trip.id}`)}
                       sx={{ p: 2, borderRadius: '10px', bgcolor: 'error.light', border: '1px solid', borderColor: 'error.main', textDecoration: 'none', color: 'inherit', '&:hover': { boxShadow: 2 }, transition: 'all 0.15s' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Box>
