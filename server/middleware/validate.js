@@ -119,6 +119,27 @@ export const schemas = {
     filter: z.string().optional(),
   }),
 
+  entityListQuery: z.object({
+    sort: z.string().optional(),
+    filter: z.string().optional(),
+    search: z.string().max(200).optional(),
+    limit: z.coerce.number().int().min(1).max(500).optional(),
+    offset: z.coerce.number().int().min(0).optional(),
+  }),
+
+  bulkCreateEntity: z.object({
+    records: z.array(z.record(z.unknown())).min(1, 'records must be a non-empty array'),
+  }),
+
+  bulkUpdateEntity: z.object({
+    ids: z.array(z.string().min(1)).min(1, 'ids must be a non-empty array'),
+    data: z.record(z.unknown()),
+  }),
+
+  bulkDeleteEntity: z.object({
+    ids: z.array(z.string().min(1)).min(1, 'ids must be a non-empty array'),
+  }),
+
   sendEmail: z.object({
     to: z.union([z.string().email(), z.array(z.string().email())]),
     subject: z.string().min(1, 'Subject is required'),

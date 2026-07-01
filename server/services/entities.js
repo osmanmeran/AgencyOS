@@ -120,23 +120,47 @@ export function mapRecord(r) {
   return { id: r.id, ...JSON.parse(r.data), created_date: r.created_date, updated_date: r.updated_date };
 }
 
-export function findEntities(type, { sort, filter, user } = {}) {
+function matchesSearch(record, search) {
+  const needle = search.toLowerCase();
+  return Object.values(record).some(v => typeof v === 'string' && v.toLowerCase().includes(needle));
+}
+
+export function findEntities(type, { sort, filter, search, limit, offset, user } = {}) {
   assertValidEntityType(type);
   const db = getDb();
 
+  let records;
   if (filter) {
     const parsed = parseFilter(filter);
     if (!parsed || !isFilterSafe(parsed)) {
       throw new BadRequestError('Invalid filter', 'INVALID_FILTER');
     }
-    let records = db.prepare('SELECT * FROM entities WHERE type = ?').all(type);
-    records = applyFilter(records, parsed, user, type);
-    return applySort(records.map(mapRecord), sort);
+    const raw = db.prepare('SELECT * FROM entities WHERE type = ?').all(type);
+    records = applyFilter(raw, parsed, user, type).map(mapRecord);
+  } else {
+    records = db.prepare('SELECT * FROM entities WHERE type = ?').all(type).map(mapRecord);
+    records = records.filter(r => userCanAccessEntity(user, type, r));
   }
 
-  let records = db.prepare('SELECT * FROM entities WHERE type = ?').all(type).map(mapRecord);
-  records = records.filter(r => userCanAccessEntity(user, type, r));
-  return applySort(records, sort);
+  if (search && search.trim()) {
+    records = records.filter(r => matchesSearch(r, search.trim()));
+  }
+
+  records = applySort(records, sort);
+
+  // Pagination is opt-in: callers that don't pass limit/offset keep getting
+  // the plain array they always have, so the ~90 existing call sites that
+  // just want "everything" aren't affected.
+  if (limit !== undefined || offset !== undefined) {
+    const start = offset !== undefined ? Number(offset) : 0;
+    const size = limit !== undefined ? Number(limit) : undefined;
+    if (!Number.isInteger(start) || start < 0 || (size !== undefined && (!Number.isInteger(size) || size < 0))) {
+      throw new BadRequestError('Invalid limit/offset', 'INVALID_PAGINATION');
+    }
+    const end = size !== undefined ? start + size : undefined;
+    return { data: records.slice(start, end), total: records.length };
+  }
+  return records;
 }
 
 export function findEntityById(type, id, user) {
@@ -207,4 +231,100 @@ export function deleteEntity(type, id, user) {
   deleteFts(db, id);
 
   return { id, ...existingData, created_date: existing.created_date, updated_date: existing.updated_date };
+}
+
+const MAX_BULK_SIZE = 500;
+
+export function bulkCreateEntities(type, records, userId) {
+  assertValidEntityType(type);
+  if (!Array.isArray(records) || records.length === 0) {
+    throw new BadRequestError('records must be a non-empty array');
+  }
+  if (records.length > MAX_BULK_SIZE) {
+    throw new BadRequestError(`Cannot create more than ${MAX_BULK_SIZE} records at once`);
+  }
+
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  const insert = db.transaction((items) => items.map(body => {
+    const id = uid();
+    const data = sanitizeEntityData({ ...body });
+    data.created_by = userId;
+    delete data.id;
+    db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)')
+      .run(id, type, JSON.stringify(data), now, now);
+    upsertFts(db, id, type, data);
+    return { id, ...data, created_date: now, updated_date: now };
+  }));
+
+  return insert(records);
+}
+
+// For update/delete, inaccessible or missing records are skipped rather than
+// failing the whole batch — the caller gets back exactly which ids succeeded.
+export function bulkUpdateEntities(type, ids, body, user) {
+  assertValidEntityType(type);
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new BadRequestError('ids must be a non-empty array');
+  }
+  if (ids.length > MAX_BULK_SIZE) {
+    throw new BadRequestError(`Cannot update more than ${MAX_BULK_SIZE} records at once`);
+  }
+
+  const db = getDb();
+  const now = new Date().toISOString();
+  const newFields = sanitizeEntityData({ ...body });
+  delete newFields.id;
+
+  const run = db.transaction((idList) => {
+    const updated = [];
+    const skipped = [];
+    for (const id of idList) {
+      const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
+      if (!existing) { skipped.push({ id, reason: 'not_found' }); continue; }
+
+      const existingData = JSON.parse(existing.data);
+      if (!userCanAccessEntity(user, type, existingData)) { skipped.push({ id, reason: 'forbidden' }); continue; }
+
+      const newData = { ...existingData, ...newFields };
+      db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(JSON.stringify(newData), now, id);
+      upsertFts(db, id, type, newData);
+      updated.push({ id, ...newData, created_date: existing.created_date, updated_date: now });
+    }
+    return { updated, skipped };
+  });
+
+  return run(ids);
+}
+
+export function bulkDeleteEntities(type, ids, user) {
+  assertValidEntityType(type);
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new BadRequestError('ids must be a non-empty array');
+  }
+  if (ids.length > MAX_BULK_SIZE) {
+    throw new BadRequestError(`Cannot delete more than ${MAX_BULK_SIZE} records at once`);
+  }
+
+  const db = getDb();
+
+  const run = db.transaction((idList) => {
+    const deleted = [];
+    const skipped = [];
+    for (const id of idList) {
+      const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
+      if (!existing) { skipped.push({ id, reason: 'not_found' }); continue; }
+
+      const existingData = JSON.parse(existing.data);
+      if (!userCanAccessEntity(user, type, existingData)) { skipped.push({ id, reason: 'forbidden' }); continue; }
+
+      db.prepare('DELETE FROM entities WHERE id = ?').run(id);
+      deleteFts(db, id);
+      deleted.push(id);
+    }
+    return { deleted, skipped };
+  });
+
+  return run(ids);
 }
