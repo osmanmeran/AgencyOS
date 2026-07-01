@@ -27,6 +27,45 @@ export default function Profile() {
   const { language, setLanguage } = useT();
   const fileInputRef = useRef(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [outlookStatus, setOutlookStatus] = useState(null);
+  const [outlookLoading, setOutlookLoading] = useState(false);
+
+  useEffect(() => {
+    db.integrations.Core.OutlookStatus().then(setOutlookStatus).catch(() => setOutlookStatus({ connected: false }));
+  }, []);
+
+  const connectOutlook = () => {
+    const state = crypto.randomUUID();
+    const codeVerifier = crypto.randomUUID();
+    const encoder = new TextEncoder();
+    crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier)).then(buffer => {
+      const base64Url = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const redirectUri = window.location.origin + '/auth/outlook-callback';
+      const tenantId = import.meta.env.VITE_MICROSOFT_TENANT_ID || 'common';
+      const authUrl =
+        `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize` +
+        `?client_id=${encodeURIComponent(import.meta.env.VITE_MICROSOFT_CLIENT_ID)}` +
+        `&response_type=code` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${encodeURIComponent('https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read offline_access')}` +
+        `&state=${encodeURIComponent(state)}` +
+        `&code_challenge=${encodeURIComponent(base64Url)}&code_challenge_method=S256`;
+      sessionStorage.setItem('outlook_oauth_state', state);
+      sessionStorage.setItem('outlook_oauth_verifier', codeVerifier);
+      sessionStorage.setItem('outlook_oauth_redirect', redirectUri);
+      sessionStorage.setItem('outlook_oauth_tenant', tenantId);
+      sessionStorage.setItem('outlook_oauth_client_id', import.meta.env.VITE_MICROSOFT_CLIENT_ID);
+      window.location.href = authUrl;
+    });
+  };
+
+  const disconnectOutlook = async () => {
+    setOutlookLoading(true);
+    await db.integrations.Core.OutlookDisconnect().catch(() => {});
+    setOutlookStatus({ connected: false });
+    setOutlookLoading(false);
+  };
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
@@ -286,6 +325,35 @@ export default function Profile() {
           Save Changes
         </Button>
       </div>
+
+      {/* Outlook Integration */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Mail className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-semibold">Outlook / Microsoft 365</h2>
+        </div>
+        {outlookStatus === null ? (
+          <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Checking status...</div>
+        ) : outlookStatus.connected ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-green-700">✓ Connected{outlookStatus.email ? ` as ${outlookStatus.email}` : ''}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Emails are sent via your Outlook account</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={disconnectOutlook} disabled={outlookLoading} className="text-destructive border-destructive/30 hover:bg-destructive/5">
+              {outlookLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disconnect'}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Not connected</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Connect to send emails via Outlook</p>
+            </div>
+            <Button size="sm" onClick={connectOutlook}>Connect Outlook</Button>
+          </div>
+        )}
+      </Card>
 
       {/* Change Password */}
       <Card className="p-6">
