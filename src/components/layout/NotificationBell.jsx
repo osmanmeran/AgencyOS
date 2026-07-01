@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { acquireRealtime, releaseRealtime, onRealtimeMessage } from '@/lib/realtime';
 
 const TYPE_ICONS = {
   info: Info,
@@ -40,33 +41,20 @@ export default function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = React.useState(false);
-  const wsRef = React.useRef(null);
 
   React.useEffect(() => {
-    let closedByUnmount = false;
     loadNotifications();
-    connectWebSocket();
+    acquireRealtime();
+    const unsubscribe = onRealtimeMessage((data) => {
+      if (data.type === 'notification') {
+        setNotifications(prev => [data.notification, ...prev]);
+        setUnread(prev => prev + 1);
+      }
+    });
     return () => {
-      closedByUnmount = true;
-      if (wsRef.current) wsRef.current.close();
+      unsubscribe();
+      releaseRealtime();
     };
-
-    function connectWebSocket() {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-      try {
-        const ws = new WebSocket(wsUrl);
-        ws.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          if (data.type === 'notification') {
-            setNotifications(prev => [data.notification, ...prev]);
-            setUnread(prev => prev + 1);
-          }
-        };
-        ws.onclose = () => { if (!closedByUnmount) setTimeout(connectWebSocket, 3000); };
-        wsRef.current = ws;
-      } catch { /* will retry */ }
-    }
   }, []);
 
   async function loadNotifications() {

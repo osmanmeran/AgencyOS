@@ -53,6 +53,17 @@ export function sendToUser(userId, data) {
   return true;
 }
 
+// Sends to every connected user except (optionally) the one who triggered the change.
+export function broadcast(data, { excludeUserId } = {}) {
+  const message = JSON.stringify(data);
+  for (const [userId, conns] of clients.entries()) {
+    if (excludeUserId && userId === excludeUserId) continue;
+    for (const ws of conns) {
+      if (ws.readyState === 1) ws.send(message);
+    }
+  }
+}
+
 export function getConnectedUserIds() {
   return Array.from(clients.keys());
 }

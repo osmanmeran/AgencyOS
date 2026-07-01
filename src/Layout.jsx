@@ -3,6 +3,7 @@ import { db } from '@/lib/DbContext';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
+import { useEntitySync } from '@/hooks/useEntitySync';
 
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -223,6 +224,8 @@ export default function Layout({ children, currentPageName }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const { t, setLanguage: setI18nLanguage } = useT();
+
+  useEntitySync();
 
   useEffect(() => {
     db.auth.me().then(setUser).catch(() => setUser(null));
