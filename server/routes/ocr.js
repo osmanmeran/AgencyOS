@@ -9,14 +9,11 @@ import logger from '../lib/logger.js';
 import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const isVercel = !!process.env.VERCEL;
 const router = Router();
 
 router.use(authMiddleware);
 
-const UPLOAD_DIR = isVercel
-  ? path.join('/tmp', 'ocr_uploads')
-  : path.join(__dirname, '..', 'ocr_uploads');
+const UPLOAD_DIR = path.join(__dirname, '..', 'ocr_uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({

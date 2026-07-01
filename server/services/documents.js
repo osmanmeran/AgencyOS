@@ -7,10 +7,7 @@ import logger from '../lib/logger.js';
 import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const isVercel = !!process.env.VERCEL;
-const UPLOAD_DIR = isVercel
-  ? path.join('/tmp', 'uploads')
-  : path.join(__dirname, '..', 'uploads');
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 

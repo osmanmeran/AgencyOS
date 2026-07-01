@@ -208,22 +208,18 @@ app.post('/api/app-logs', authMiddleware, (req, res) => {
   res.json({ ok: true });
 });
 
-// On Vercel, static files + SPA fallback are handled by vercel.json
-// Only serve static files + SPA on non-Vercel environments
-if (!process.env.VERCEL) {
-  const distPath = path.join(__dirname, '..', 'dist');
-  app.use(express.static(distPath));
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
 
-  const uploadsPath = process.env.DATA_DIR
-    ? path.join(process.env.DATA_DIR, 'uploads')
-    : path.join(__dirname, '..', 'data', 'uploads');
-  app.use('/uploads', express.static(uploadsPath));
+const uploadsPath = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'uploads')
+  : path.join(__dirname, '..', 'data', 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
-  if (isProduction) {
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
+if (isProduction) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
 }
 
 app.use(notFoundHandler);

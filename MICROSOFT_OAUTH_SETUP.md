@@ -28,7 +28,6 @@ This guide walks you through setting up Microsoft OAuth for Marvelops.
      ```
      http://localhost:5173/mock-login
      https://yourdomain.com/mock-login
-     https://yourdomain.vercel.app/mock-login
      ```
    - Click "Configure"
 
@@ -60,17 +59,16 @@ CORS_ORIGIN=http://localhost:5173
 JWT_SECRET=your-secret-key
 ```
 
-### Production (Vercel)
+### Production (Railway)
 
-1. **Go to Vercel project settings**
-2. **Environment Variables** section
-3. **Add these variables**:
+1. **Go to your Railway project → Variables**
+2. **Add these variables**:
    ```
    VITE_MICROSOFT_CLIENT_ID=your-app-id
    MICROSOFT_CLIENT_ID=your-app-id
    VITE_MICROSOFT_TENANT=your-tenant-id
    MICROSOFT_TENANT=your-tenant-id
-   VITE_MICROSOFT_REDIRECT_URI=https://yourdomain.vercel.app/mock-login
+   VITE_MICROSOFT_REDIRECT_URI=https://yourdomain.com/mock-login
    ```
 
 ## Step 5: Test the Integration
