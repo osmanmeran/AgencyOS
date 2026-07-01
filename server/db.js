@@ -1,13 +1,19 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { migrate } from './migrations/runner.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
+// Tests get a throwaway DB in a fresh temp dir instead of the real dev
+// database — otherwise every test run permanently writes real rows (users,
+// entities) into data/marvelops.db with no cleanup.
+const DATA_DIR = process.env.NODE_ENV === 'test'
+  ? fs.mkdtempSync(path.join(os.tmpdir(), 'marvelops-test-'))
+  : path.join(__dirname, '..', 'data');
 const DB_PATH = path.join(DATA_DIR, 'marvelops.db');
 
 const ENTITIES = [
