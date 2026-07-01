@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 export function escapeHtml(str) {
   if (str == null) return '';
   return String(str)
@@ -8,23 +10,14 @@ export function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-const EVENT_HANDLER_PATTERN = /^\s*on\w+\s*=\s*/i;
-const PROTOCOL_PATTERN = /javascript:|data:|vbscript:/gi;
-const SCRIPT_TAG_PATTERN = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
-const EVENT_ATTR_PATTERN = /<[^>]+?\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)[^>]*>/gi;
-
+// Email HTML needs layout tags/attrs (tables, inline styles) that DOMPurify's
+// default profile also allows, so the default config is used for both cases.
 export function sanitizeEmailHtml(html) {
   if (!html) return '';
-  return html
-    .replace(SCRIPT_TAG_PATTERN, '')
-    .replace(EVENT_ATTR_PATTERN, (match) => match.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, ''))
-    .replace(PROTOCOL_PATTERN, '');
+  return DOMPurify.sanitize(html);
 }
 
 export function sanitizeForInnerHtml(dirty) {
   if (!dirty) return '';
-  const noScript = dirty.replace(SCRIPT_TAG_PATTERN, '');
-  const noEvents = noScript.replace(EVENT_ATTR_PATTERN, (match) => match.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, ''));
-  const noProtocols = noEvents.replace(PROTOCOL_PATTERN, '');
-  return noProtocols;
+  return DOMPurify.sanitize(dirty);
 }
