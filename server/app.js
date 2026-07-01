@@ -106,6 +106,14 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+app.get('/api/admin/list-users', (req, res) => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || req.headers['x-admin-secret'] !== secret) return res.status(403).json({ error: 'Forbidden' });
+  const db = getDb();
+  const users = db.prepare('SELECT id, email, name, user_tier, role, is_active, microsoft_id FROM users ORDER BY created_date').all();
+  res.json(users);
+});
+
 // Emergency user fix endpoint — protected by ADMIN_SECRET env var
 app.post('/api/admin/fix-user', (req, res) => {
   const secret = process.env.ADMIN_SECRET;
