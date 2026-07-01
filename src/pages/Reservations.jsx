@@ -1,20 +1,26 @@
 import { db } from '@/lib/DbContext';
 
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useExport } from '@/hooks/useExport';
+import { usePaginatedEntities } from '@/hooks/usePaginatedEntities';
+import { useSelection } from '@/hooks/useSelection';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CalendarCheck, Clock, CheckCircle, XCircle, Send, Search, MapPin, Calendar, Users, Trash2, Download, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
+import { Plus, CalendarCheck, Clock, CheckCircle, XCircle, Send, Search, MapPin, Calendar, Users, Trash2, Download, ChevronLeft, ChevronRight, Plane, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import CurrencyConverter from '../components/currency/CurrencyConverter';
 import PastReservationsSearch from '../components/reservations/PastReservationsSearch';
+import BulkActionsBar from '@/components/shared/BulkActionsBar';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
 
@@ -27,7 +33,7 @@ const PROPOSAL_STATUS_CONFIG = {
   rejected:  { color: 'bg-red-100 text-red-800',      icon: XCircle },
 };
 
-function ReservationCard({ trip }) {
+function ReservationCard({ trip, selected, onToggleSelect }) {
   const { t } = useT();
   const sc = currSymbol(trip.selling_currency || 'USD');
   const statusConf = PROPOSAL_STATUS_CONFIG[trip.proposal_status] || PROPOSAL_STATUS_CONFIG.pending;
@@ -35,45 +41,55 @@ function ReservationCard({ trip }) {
   const paxCount = trip.passengers?.length || 0;
 
   return (
-    <Link to={createPageUrl(`ReservationDetails?id=${trip.id}`)}>
-      <Card className="p-5 bg-white hover:shadow-xl transition-all cursor-pointer group border-l-4 border-l-transparent hover:border-l-blue-500">
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-slate-900 text-lg truncate group-hover:text-blue-600 transition-colors">{trip.name}</h3>
-            {trip.reference_number && <span className="text-xs font-mono text-slate-400">{trip.reference_number}</span>}
-          </div>
-          <Badge className={`${statusConf.color} flex items-center gap-1 ml-2 flex-shrink-0`}>
-            <StatusIcon className="w-3 h-3" />{t(`common.${trip.proposal_status || 'pending'}`)}
-          </Badge>
+    <div className="relative">
+      {onToggleSelect && (
+        <div
+          className="absolute top-4 left-4 z-10"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect(trip.id); }}
+        >
+          <Checkbox checked={selected} />
         </div>
-
-        <div className="space-y-1.5 text-sm text-slate-600">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="truncate">{trip.destination}</span>
+      )}
+      <Link to={createPageUrl(`ReservationDetails?id=${trip.id}`)}>
+        <Card className={`p-5 bg-white hover:shadow-xl transition-all cursor-pointer group border-l-4 border-l-transparent hover:border-l-blue-500 ${selected ? 'ring-2 ring-blue-500' : ''}`}>
+          <div className="flex justify-between items-start mb-3">
+            <div className={`flex-1 min-w-0 ${onToggleSelect ? 'pl-7' : ''}`}>
+              <h3 className="font-bold text-slate-900 text-lg truncate group-hover:text-blue-600 transition-colors">{trip.name}</h3>
+              {trip.reference_number && <span className="text-xs font-mono text-slate-400">{trip.reference_number}</span>}
+            </div>
+            <Badge className={`${statusConf.color} flex items-center gap-1 ml-2 flex-shrink-0`}>
+              <StatusIcon className="w-3 h-3" />{t(`common.${trip.proposal_status || 'pending'}`)}
+            </Badge>
           </div>
-          {trip.start_date && trip.end_date && (
+
+          <div className="space-y-1.5 text-sm text-slate-600">
             <div className="flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>{format(new Date(trip.start_date), 'MMM d')} – {format(new Date(trip.end_date), 'MMM d, yyyy')}</span>
+              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{trip.destination}</span>
+            </div>
+            {trip.start_date && trip.end_date && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{format(new Date(trip.start_date), 'MMM d')} – {format(new Date(trip.end_date), 'MMM d, yyyy')}</span>
+              </div>
+            )}
+            {trip.client_name && (
+              <div className="flex items-center gap-2">
+                <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{trip.client_name}{paxCount > 0 ? ` · ${paxCount} pax` : ''}</span>
+              </div>
+            )}
+          </div>
+
+          {trip.total_cost > 0 && (
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-slate-400">Total</span>
+              <span className="font-bold text-green-700">{sc}{trip.total_cost.toFixed(2)}</span>
             </div>
           )}
-          {trip.client_name && (
-            <div className="flex items-center gap-2">
-              <Users className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>{trip.client_name}{paxCount > 0 ? ` · ${paxCount} pax` : ''}</span>
-            </div>
-          )}
-        </div>
-
-        {trip.total_cost > 0 && (
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-xs text-slate-400">Total</span>
-            <span className="font-bold text-green-700">{sc}{trip.total_cost.toFixed(2)}</span>
-          </div>
-        )}
-      </Card>
-    </Link>
+        </Card>
+      </Link>
+    </div>
   );
 }
 
@@ -87,48 +103,103 @@ const CAL_STATUS_COLORS = {
 
 export default function Reservations() {
   const { t } = useT();
-  const [search, setSearch] = useState('');
   const [calMonth, setCalMonth] = useState(new Date());
   const [calSelectedDate, setCalSelectedDate] = useState(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const today = new Date();
   const queryClient = useQueryClient();
   const { exportCSV } = useExport();
 
-  const { data: trips = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['trips'],
-    queryFn: () => db.entities.Trip.list('start_date')
-  }));
+  // Tab counts and the calendar view both need to see every trip at once —
+  // pagination controls aren't shown here (unlike Clients/Suppliers) since
+  // slicing into pages would fragment tab counts and break the calendar,
+  // which needs the full set to place events on the right day regardless of
+  // what "page" they'd fall on. Search still runs server-side; a generous
+  // page size keeps today's real trip volume on one fetch.
+  const {
+    items: trips, total, search, setSearch, isLoading, isFetching,
+  } = usePaginatedEntities('Trip', { pageSize: 200, sort: 'start_date' });
 
   const currentTrips = trips.filter(t => {
     if (!t.end_date) return true;
     return !isBefore(parseISO(t.end_date), today);
   });
 
-  const filtered = currentTrips.filter(t => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return t.name?.toLowerCase().includes(q) || t.destination?.toLowerCase().includes(q) || t.client_name?.toLowerCase().includes(q) || t.reference_number?.toLowerCase().includes(q);
-  });
+  const filtered = currentTrips;
 
   const byStatus = (status) => filtered.filter(t => (t.proposal_status || 'pending') === status);
 
   const isCancelled = (t) => t.proposal_status === 'rejected' || t.status === 'cancelled';
 
+  const cancelledTrips = trips.filter(t => isCancelled(t));
+  const cancelledCount = cancelledTrips.length;
+
+  const { selectedIds, toggle, toggleAll, clear, allSelected, count: selectedCount } = useSelection(filtered);
+
   const deleteCancelledMutation = /** @type {any} */ (useMutation({
-    mutationFn: async () => {
-      const cancelled = trips.filter(t => isCancelled(t));
-      for (const trip of cancelled) {
-        await db.entities.Trip.delete(trip.id);
-      }
-    },
+    mutationFn: () => db.entities.Trip.bulkDelete(cancelledTrips.map(t => t.id)),
     onSuccess: () => {
       showSuccess('Cancelled reservations deleted');
-      queryClient.invalidateQueries({ queryKey: ['trips'] });
+      queryClient.invalidateQueries({ queryKey: ['Trip'] });
     },
     onError: (error) => showError('Failed to delete cancelled reservations', error.message)
   }));
 
-  const cancelledCount = trips.filter(t => isCancelled(t)).length;
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const result = await db.entities.Trip.bulkDelete([...selectedIds]);
+      if (result.skipped.length > 0) {
+        showError(`${result.skipped.length} reservation(s) could not be deleted`, 'You may not have permission for some of the selected reservations.');
+      } else {
+        showSuccess('Reservations deleted');
+      }
+      clear();
+      setBulkDeleteOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['Trip'] });
+    } catch (error) {
+      showError('Failed to delete reservations', error.message);
+    }
+    setIsBulkDeleting(false);
+  };
+
+  const handleBulkStatusChange = async (proposal_status) => {
+    setIsBulkUpdating(true);
+    try {
+      const ids = [...selectedIds];
+      await db.entities.Trip.bulkUpdate(ids, { proposal_status });
+      showSuccess(`Updated ${ids.length} reservation${ids.length > 1 ? 's' : ''} to "${proposal_status}"`);
+      clear();
+      queryClient.invalidateQueries({ queryKey: ['Trip'] });
+    } catch (error) {
+      showError('Failed to update reservations', error.message);
+    }
+    setIsBulkUpdating(false);
+  };
+
+  const handleExportAll = async () => {
+    setIsExporting(true);
+    try {
+      const all = search
+        ? (await db.entities.Trip.page({ search, sort: 'start_date', limit: 500 })).data
+        : await db.entities.Trip.list('start_date');
+      exportCSV(all, 'reservations', [
+        { label: 'Name', accessor: (t) => t.name },
+        { label: 'Client Name', accessor: (t) => t.client_name },
+        { label: 'Destination', accessor: (t) => t.destination },
+        { label: 'Start Date', accessor: (t) => t.start_date },
+        { label: 'End Date', accessor: (t) => t.end_date },
+        { label: 'Status', accessor: (t) => t.proposal_status || 'pending' },
+        { label: 'Total Cost', accessor: (t) => t.total_cost }
+      ]);
+    } catch (error) {
+      showError('Failed to export reservations', error.message);
+    }
+    setIsExporting(false);
+  };
 
   // Calendar logic
   const calMonthStart = startOfMonth(calMonth);
@@ -213,21 +284,32 @@ export default function Reservations() {
           </TabsList>
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('reservations.searchPlaceholder')} className="pl-9" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('reservations.searchPlaceholder')} className="pl-9 pr-9" />
+            {isFetching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin" />}
           </div>
-          <Button variant="outline" onClick={() => exportCSV(currentTrips, 'reservations', [
-            { label: 'Name', accessor: (t) => t.name },
-            { label: 'Client Name', accessor: (t) => t.client_name },
-            { label: 'Destination', accessor: (t) => t.destination },
-            { label: 'Start Date', accessor: (t) => t.start_date },
-            { label: 'End Date', accessor: (t) => t.end_date },
-            { label: 'Status', accessor: (t) => t.proposal_status || 'pending' },
-            { label: 'Total Cost', accessor: (t) => t.total_cost }
-          ])}>
-            <Download className="w-4 h-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={toggleAll}>
+            {allSelected ? 'Deselect All' : 'Select All'}
+          </Button>
+          <Button variant="outline" onClick={handleExportAll} disabled={isExporting}>
+            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
             Export CSV
           </Button>
         </div>
+
+        <BulkActionsBar count={selectedCount} label="reservation" onDeselectAll={clear}>
+          <Select onValueChange={handleBulkStatusChange} disabled={isBulkUpdating}>
+            <SelectTrigger className="w-44 h-9 bg-white">
+              <SelectValue placeholder="Change status" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(PROPOSAL_STATUS_CONFIG).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setBulkDeleteOpen(true)}>
+            <XCircle className="w-4 h-4 mr-2" />
+            Delete {selectedCount}
+          </Button>
+        </BulkActionsBar>
 
         {['all', 'pending', 'sent', 'confirmed', 'rejected'].map(tab => {
           const list = tab === 'all' ? filtered : tab === 'rejected' ? trips.filter(t => isCancelled(t)) : byStatus(tab);
@@ -279,7 +361,7 @@ export default function Reservations() {
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                {grouped[key].map(trip => <ReservationCard key={trip.id} trip={trip} />)}
+                                {grouped[key].map(trip => <ReservationCard key={trip.id} trip={trip} selected={selectedIds.has(trip.id)} onToggleSelect={toggle} />)}
                               </div>
                             </div>
                           );
@@ -293,7 +375,7 @@ export default function Reservations() {
                               <div className="font-bold text-slate-500">Unscheduled</div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                              {grouped['__unscheduled'].map(trip => <ReservationCard key={trip.id} trip={trip} />)}
+                              {grouped['__unscheduled'].map(trip => <ReservationCard key={trip.id} trip={trip} selected={selectedIds.has(trip.id)} onToggleSelect={toggle} />)}
                             </div>
                           </div>
                         )}
@@ -403,6 +485,27 @@ export default function Reservations() {
       </Tabs>
 
       <CurrencyConverter />
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently Delete {selectedCount} Reservation{selectedCount > 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will <strong>permanently delete</strong> all selected reservations from the database. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Keep Reservations</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isBulkDeleting ? 'Deleting...' : `Yes, Delete ${selectedCount} Reservation${selectedCount > 1 ? 's' : ''}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
