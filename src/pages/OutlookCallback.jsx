@@ -8,6 +8,7 @@ export default function OutlookCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('connecting');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -50,9 +51,21 @@ export default function OutlookCallback() {
       credentials: 'include',
       body: JSON.stringify({ code, code_verifier: codeVerifier, redirect_uri: redirectUri }),
     })
-      .then(r => r.json())
-      .then(() => setStatus('success'))
-      .catch(() => setStatus('error'));
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok || data?.error) {
+          const msg = data?.error?.message || data?.message || 'Connection failed';
+          console.error('[OutlookCallback] connect error:', msg);
+          setErrorMsg(msg);
+          setStatus('error');
+        } else {
+          setStatus('success');
+        }
+      })
+      .catch((err) => {
+        console.error('[OutlookCallback] fetch error:', err);
+        setStatus('error');
+      });
   }, [searchParams]);
 
   return (
@@ -82,7 +95,7 @@ export default function OutlookCallback() {
           <>
             <XCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
             <h2 className="text-xl font-semibold text-slate-900">Connection Failed</h2>
-            <p className="text-slate-500 mt-2">Could not connect your Outlook account. Please try again.</p>
+            <p className="text-slate-500 mt-2">{errorMsg || 'Could not connect your Outlook account. Please try again.'}</p>
             <button
               onClick={() => navigate('/AppSettings')}
               className="mt-6 px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
