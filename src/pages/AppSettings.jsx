@@ -152,6 +152,8 @@ export default function AppSettings() {
       sessionStorage.setItem('outlook_oauth_state', state);
       sessionStorage.setItem('outlook_oauth_verifier', codeVerifier);
       sessionStorage.setItem('outlook_oauth_redirect', redirectUri);
+      sessionStorage.setItem('outlook_oauth_tenant', import.meta.env.VITE_MICROSOFT_TENANT_ID || 'common');
+      sessionStorage.setItem('outlook_oauth_client_id', import.meta.env.VITE_MICROSOFT_CLIENT_ID);
       window.location.href = authUrl;
     });
   };

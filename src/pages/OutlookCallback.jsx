@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
-// const db = globalThis.__B44_DB__;
-
 export default function OutlookCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -16,6 +14,7 @@ export default function OutlookCallback() {
     const error = searchParams.get('error');
 
     if (error) {
+      setErrorMsg(searchParams.get('error_description') || error);
       setStatus('error');
       return;
     }
@@ -25,45 +24,73 @@ export default function OutlookCallback() {
       return;
     }
 
-    // Verify state matches (CSRF protection)
     const savedState = sessionStorage.getItem('outlook_oauth_state');
     if (state && savedState && state !== savedState) {
+      setErrorMsg('State mismatch — possible CSRF attack');
       setStatus('error');
       return;
     }
 
     const codeVerifier = sessionStorage.getItem('outlook_oauth_verifier');
     const redirectUri = sessionStorage.getItem('outlook_oauth_redirect');
+    const tenantId = sessionStorage.getItem('outlook_oauth_tenant') || 'common';
+    const clientId = sessionStorage.getItem('outlook_oauth_client_id') || import.meta.env.VITE_MICROSOFT_CLIENT_ID;
 
     sessionStorage.removeItem('outlook_oauth_state');
     sessionStorage.removeItem('outlook_oauth_verifier');
     sessionStorage.removeItem('outlook_oauth_redirect');
+    sessionStorage.removeItem('outlook_oauth_tenant');
+    sessionStorage.removeItem('outlook_oauth_client_id');
 
     if (!codeVerifier || !redirectUri) {
+      setErrorMsg('Missing PKCE verifier — please try again');
       setStatus('error');
       return;
     }
 
-    const token = localStorage.getItem('marvelops_token');
-    fetch('/api/integrations/outlook/connect', {
+    // Exchange the code in the browser (required for SPA app type in Azure)
+    const tokenBody = new URLSearchParams({
+      client_id: clientId,
+      code,
+      code_verifier: codeVerifier,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+      scope: 'https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read offline_access',
+    });
+
+    fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
-      credentials: 'include',
-      body: JSON.stringify({ code, code_verifier: codeVerifier, redirect_uri: redirectUri }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: tokenBody,
     })
       .then(async (r) => {
         const data = await r.json();
-        if (!r.ok || data?.error) {
-          const msg = data?.error?.message || data?.message || 'Connection failed';
-          console.error('[OutlookCallback] connect error:', msg);
-          setErrorMsg(msg);
-          setStatus('error');
-        } else {
-          setStatus('success');
+        if (!r.ok || data.error) {
+          throw new Error(data.error_description || data.error || 'Token exchange failed');
         }
+        return data;
+      })
+      .then(async (tokenData) => {
+        // Send tokens to server for storage
+        const appToken = localStorage.getItem('marvelops_token');
+        const r = await fetch('/api/integrations/outlook/connect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(appToken ? { 'Authorization': 'Bearer ' + appToken } : {}),
+          },
+          credentials: 'include',
+          body: JSON.stringify({ token_data: tokenData }),
+        });
+        const data = await r.json();
+        if (!r.ok || data?.error) {
+          throw new Error(data?.message || data?.error || 'Failed to save connection');
+        }
+        setStatus('success');
       })
       .catch((err) => {
-        console.error('[OutlookCallback] fetch error:', err);
+        console.error('[OutlookCallback] error:', err);
+        setErrorMsg(err.message || 'Connection failed');
         setStatus('error');
       });
   }, [searchParams]);

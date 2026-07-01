@@ -49,33 +49,12 @@ export function getOutlookStatus(userId) {
   return { connected: true, email: token.user_email, name: token.user_name };
 }
 
-export async function connectOutlook(userId, { code, code_verifier, redirect_uri }) {
+export async function connectOutlook(userId, { token_data }) {
   const db = getDb();
 
-  const body = new URLSearchParams({
-    client_id: MICROSOFT_CLIENT_ID,
-    code,
-    code_verifier,
-    redirect_uri,
-    grant_type: 'authorization_code',
-    scope: SCOPES,
-  });
-
-  const tokenResp = await fetch(`${GRAPH_AUTH}/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
-
-  if (!tokenResp.ok) {
-    const errText = await tokenResp.text();
-    logger.error({ status: tokenResp.status, body: errText }, 'Outlook token exchange failed');
-    let errMsg = 'Failed to exchange authorization code';
-    try { errMsg = JSON.parse(errText)?.error_description || JSON.parse(errText)?.error || errMsg; } catch {}
-    throw new BadRequestError(errMsg);
-  }
-
-  const tokenData = await tokenResp.json();
+  // Token exchange is done client-side (SPA type in Azure requires cross-origin requests)
+  const tokenData = token_data;
+  if (!tokenData?.access_token) throw new BadRequestError('Missing access token');
 
   let userEmail = '';
   let userName = '';
