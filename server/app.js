@@ -137,6 +137,32 @@ app.post('/api/admin/fix-user', (req, res) => {
   }
 });
 
+// Fix existing trips where created_by_name = 'Unknown' by looking up the user via created_by email
+app.post('/api/admin/fix-trip-agents', (req, res) => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || req.headers['x-admin-secret'] !== secret) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const db = getDb();
+    const trips = db.prepare("SELECT id, data FROM entities WHERE type = 'Trip'").all();
+    let fixed = 0;
+    for (const row of trips) {
+      const data = JSON.parse(row.data);
+      if (data.created_by_name === 'Unknown' && data.created_by) {
+        const user = db.prepare('SELECT name, phone FROM users WHERE LOWER(email) = LOWER(?)').get(data.created_by);
+        if (user && user.name) {
+          data.created_by_name = user.name;
+          if (user.phone) data.created_by_phone = user.phone;
+          db.prepare("UPDATE entities SET data = ? WHERE id = ?").run(JSON.stringify(data), row.id);
+          fixed++;
+        }
+      }
+    }
+    res.json({ success: true, fixed });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/email/test', authMiddleware, async (req, res) => {
   try {
     const { sendEmail, isSmtpConfigured } = await import('./services/email.js');
