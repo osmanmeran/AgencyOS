@@ -1,4 +1,4 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+import { db } from '@/lib/DbContext';
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
@@ -55,7 +55,7 @@ const NAV_SECTIONS = {
     { label: t('nav.dashboard'), icon: <DashboardRounded />, page: 'Dashboard' },
     { label: t('nav.reservations'), icon: <FlightTakeoffRounded />, page: 'Reservations', children: [
       { label: t('nav.newReservation'), page: 'CreateReservation' },
-      { label: 'Calendar', page: 'Reservations', query: '?tab=calendar' },
+      { label: 'Calendar', page: 'CalendarView' },
     ]},
     { label: t('nav.suppliers'), icon: <BusinessRounded />, page: 'Suppliers', children: [
       { label: t('nav.categories'), page: 'Categories' },
@@ -222,7 +222,7 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
 export default function Layout({ children, currentPageName }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const { t } = useT();
+  const { t, setLanguage: setI18nLanguage } = useT();
 
   useEffect(() => {
     db.auth.me().then(setUser).catch(() => setUser(null));
@@ -236,8 +236,8 @@ export default function Layout({ children, currentPageName }) {
   const isSupplierPortal = currentPageName === 'SupplierPortal';
 
   const handleLanguageChange = async (lang) => {
+    setI18nLanguage(lang);
     await db.auth.updateMe({ language: lang });
-    window.location.reload();
   };
 
   if (isSupplierPortal) {

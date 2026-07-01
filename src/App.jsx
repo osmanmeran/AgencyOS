@@ -15,6 +15,7 @@ import PageNotFound from './lib/PageNotFound';
 const ItineraryBuilder = lazy(() => import('./pages/ItineraryBuilder'));
 const SupplierBookings = lazy(() => import('./pages/SupplierBookings'));
 const ImportHub = lazy(() => import('./pages/ImportHub'));
+const CalendarView = lazy(() => import('./pages/CalendarView'));
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { I18nProvider } from '@/lib/i18n/I18nContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -98,6 +99,11 @@ const AuthenticatedApp = () => {
       <Route path="/ImportHub" element={
         <LayoutWrapper currentPageName="ImportHub">
           <ImportHub />
+        </LayoutWrapper>
+      } />
+      <Route path="/CalendarView" element={
+        <LayoutWrapper currentPageName="CalendarView">
+          <CalendarView />
         </LayoutWrapper>
       } />
       <Route path="/mock-login" element={<MockLogin />} />
