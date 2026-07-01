@@ -4,14 +4,19 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useExport } from '@/hooks/useExport';
+import { usePaginatedEntities } from '@/hooks/usePaginatedEntities';
+import { useSelection } from '@/hooks/useSelection';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { SkeletonTable } from '@/components/ui/skeletons';
-import { Plus, UserCircle, Search, Mail, Phone, Building, ArrowRight, Star, XCircle, CheckSquare, Download } from 'lucide-react';
+import BulkActionsBar from '@/components/shared/BulkActionsBar';
+import PaginationControls from '@/components/shared/PaginationControls';
+import { Plus, UserCircle, Search, Mail, Phone, Building, ArrowRight, Star, XCircle, Download, Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -22,57 +27,80 @@ const STATUS_COLORS = {
   vip: 'bg-purple-100 text-purple-800'
 };
 
+const STATUS_OPTIONS = ['active', 'inactive', 'vip'];
+
 export default function Clients() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [bulkCancelOpen, setBulkCancelOpen] = useState(false);
-  const [isBulkCancelling, setIsBulkCancelling] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const queryClient = useQueryClient();
   const { exportCSV } = useExport();
 
-  const { data: clients = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['clients'],
-    queryFn: () => db.entities.Client.list('-created_date')
-  }));
+  const {
+    items: clients, total, page, pageCount, pageSize,
+    setPage, search, setSearch, isLoading, isFetching,
+  } = usePaginatedEntities('Client', { pageSize: 24, sort: '-created_date' });
 
-  const filteredClients = clients.filter(client =>
-    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.company?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { data: vipTotal = 0 } = useQuery({
+    queryKey: ['Client', 'vipCount'],
+    queryFn: async () => (await db.entities.Client.page({ filter: { status: 'vip' }, limit: 1 })).total,
+  });
 
-  const toggleSelect = (id, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
+  const { selectedIds, toggle, toggleAll, clear, allSelected, count: selectedCount } = useSelection(clients);
 
-  const toggleSelectAll = () => {
-    if (selectedIds.size === filteredClients.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredClients.map(c => c.id)));
-    }
-  };
-
-  const handleBulkCancel = async () => {
-    setIsBulkCancelling(true);
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
     try {
-      await Promise.all(
-        [...selectedIds].map(id => db.entities.Client.delete(id))
-      );
-      showSuccess('Clients deleted');
-      setSelectedIds(new Set());
-      setBulkCancelOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      const result = await db.entities.Client.bulkDelete([...selectedIds]);
+      if (result.skipped.length > 0) {
+        showError(`${result.skipped.length} client(s) could not be deleted`, 'You may not have permission for some of the selected clients.');
+      } else {
+        showSuccess('Clients deleted');
+      }
+      clear();
+      setBulkDeleteOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['Client'] });
     } catch (error) {
       showError('Failed to delete clients', error.message);
     }
-    setIsBulkCancelling(false);
+    setIsBulkDeleting(false);
+  };
+
+  const handleBulkStatusChange = async (status) => {
+    setIsBulkUpdating(true);
+    try {
+      const ids = [...selectedIds];
+      await db.entities.Client.bulkUpdate(ids, { status });
+      showSuccess(`Updated ${ids.length} client${ids.length > 1 ? 's' : ''} to "${status}"`);
+      clear();
+      queryClient.invalidateQueries({ queryKey: ['Client'] });
+    } catch (error) {
+      showError('Failed to update clients', error.message);
+    }
+    setIsBulkUpdating(false);
+  };
+
+  const handleExportAll = async () => {
+    setIsExporting(true);
+    try {
+      const all = search
+        ? (await db.entities.Client.page({ search, limit: 500 })).data
+        : await db.entities.Client.list('-created_date');
+      exportCSV(all, 'clients', [
+        { label: 'Name', accessor: (c) => c.name },
+        { label: 'Email', accessor: (c) => c.email },
+        { label: 'Phone', accessor: (c) => c.phone },
+        { label: 'Company', accessor: (c) => c.company },
+        { label: 'City', accessor: (c) => c.city },
+        { label: 'Status', accessor: (c) => c.status },
+        { label: 'Total Paid', accessor: (c) => c.total_paid },
+        { label: 'Total Owed', accessor: (c) => c.total_owed },
+      ]);
+    } catch (error) {
+      showError('Failed to export clients', error.message);
+    }
+    setIsExporting(false);
   };
 
   if (isLoading) {
@@ -86,17 +114,8 @@ export default function Clients() {
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Clients</h1>
           <p className="text-slate-600">Manage your client database and relationships</p>
         </div>
-        <Button variant="outline" onClick={() => exportCSV(filteredClients, 'clients', [
-          { label: 'Name', accessor: (c) => c.name },
-          { label: 'Email', accessor: (c) => c.email },
-          { label: 'Phone', accessor: (c) => c.phone },
-          { label: 'Company', accessor: (c) => c.company },
-          { label: 'City', accessor: (c) => c.city },
-          { label: 'Status', accessor: (c) => c.status },
-          { label: 'Total Paid', accessor: (c) => c.total_paid },
-          { label: 'Total Owed', accessor: (c) => c.total_owed }
-        ])}>
-          <Download className="w-4 h-4 mr-2" />
+        <Button variant="outline" onClick={handleExportAll} disabled={isExporting}>
+          {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
           Export CSV
         </Button>
         <Link to={createPageUrl('CreateClient')}>
@@ -107,24 +126,20 @@ export default function Clients() {
         </Link>
       </div>
 
-      {/* Bulk Action Toolbar */}
-      {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-5 py-3">
-          <div className="flex items-center gap-3">
-            <CheckSquare className="w-5 h-5 text-blue-600" />
-            <span className="font-medium text-blue-800">{selectedIds.size} client{selectedIds.size > 1 ? 's' : ''} selected</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>
-              Deselect All
-            </Button>
-            <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setBulkCancelOpen(true)}>
-              <XCircle className="w-4 h-4 mr-2" />
-              Cancel {selectedIds.size} Client{selectedIds.size > 1 ? 's' : ''}
-            </Button>
-          </div>
-        </div>
-      )}
+      <BulkActionsBar count={selectedCount} label="client" onDeselectAll={clear}>
+        <Select onValueChange={handleBulkStatusChange} disabled={isBulkUpdating}>
+          <SelectTrigger className="w-44 h-9 bg-white">
+            <SelectValue placeholder="Change status" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setBulkDeleteOpen(true)}>
+          <XCircle className="w-4 h-4 mr-2" />
+          Delete {selectedCount}
+        </Button>
+      </BulkActionsBar>
 
       {/* Search and Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -133,37 +148,38 @@ export default function Clients() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
             <Input
               placeholder="Search clients by name, email, or company..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 pr-10"
             />
+            {isFetching && <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 animate-spin" />}
           </div>
         </Card>
-        
+
         <Card className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <div className="text-sm opacity-90 mb-1">Total Clients</div>
-          <div className="text-3xl font-bold">{clients.length}</div>
+          <div className="text-3xl font-bold">{total}</div>
         </Card>
 
         <Card className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
           <div className="text-sm opacity-90 mb-1">VIP Clients</div>
-          <div className="text-3xl font-bold">{clients.filter(c => c.status === 'vip').length}</div>
+          <div className="text-3xl font-bold">{vipTotal}</div>
         </Card>
       </div>
 
       {/* Clients Grid */}
-      {filteredClients.length === 0 ? (
+      {clients.length === 0 ? (
         <Card className="p-12 text-center bg-white shadow-md">
           <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <UserCircle className="w-8 h-8 text-blue-600" />
           </div>
           <h3 className="text-xl font-bold text-slate-900 mb-2">
-            {searchTerm ? 'No clients found' : 'No clients yet'}
+            {search ? 'No clients found' : 'No clients yet'}
           </h3>
           <p className="text-slate-600 mb-6">
-            {searchTerm ? 'Try adjusting your search' : 'Start building your client database'}
+            {search ? 'Try adjusting your search' : 'Start building your client database'}
           </p>
-          {!searchTerm && (
+          {!search && (
             <Link to={createPageUrl('CreateClient')}>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
@@ -175,17 +191,17 @@ export default function Clients() {
       ) : (
         <>
         <div className="flex items-center gap-2 mb-2">
-          <Button variant="outline" size="sm" onClick={toggleSelectAll}>
-            {selectedIds.size === filteredClients.length && filteredClients.length > 0 ? 'Deselect All' : 'Select All'}
+          <Button variant="outline" size="sm" onClick={toggleAll}>
+            {allSelected ? 'Deselect All' : 'Select All on This Page'}
           </Button>
-          <span className="text-sm text-slate-500">{filteredClients.length} clients</span>
+          <span className="text-sm text-slate-500">{clients.length} of {total} clients</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClients.map(client => (
+          {clients.map(client => (
             <div key={client.id} className="relative">
               <div
                 className="absolute top-4 left-4 z-10"
-                onClick={(e) => toggleSelect(client.id, e)}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(client.id); }}
               >
                 <Checkbox checked={selectedIds.has(client.id)} />
               </div>
@@ -254,25 +270,26 @@ export default function Clients() {
             </div>
           ))}
         </div>
+        <PaginationControls page={page} pageCount={pageCount} total={total} pageSize={pageSize} onPageChange={setPage} />
         </>
       )}
 
-      <AlertDialog open={bulkCancelOpen} onOpenChange={setBulkCancelOpen}>
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Permanently Delete {selectedIds.size} Client{selectedIds.size > 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogTitle>Permanently Delete {selectedCount} Client{selectedCount > 1 ? 's' : ''}?</AlertDialogTitle>
             <AlertDialogDescription>
               This will <strong>permanently delete</strong> all selected clients from the database. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkCancelling}>Keep Clients</AlertDialogCancel>
+            <AlertDialogCancel disabled={isBulkDeleting}>Keep Clients</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleBulkCancel}
-              disabled={isBulkCancelling}
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isBulkCancelling ? 'Cancelling...' : `Yes, Cancel ${selectedIds.size} Client${selectedIds.size > 1 ? 's' : ''}`}
+              {isBulkDeleting ? 'Deleting...' : `Yes, Delete ${selectedCount} Client${selectedCount > 1 ? 's' : ''}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
