@@ -11,9 +11,12 @@ import { sendEmail, isSmtpConfigured, renderTemplate } from '../services/email.j
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isVercel = !!process.env.VERCEL;
+// On Railway, /app/data is the persistent volume (same as the DB). On Vercel use /tmp.
 const uploadDir = isVercel
   ? path.join('/tmp', 'uploads')
-  : path.join(__dirname, '..', 'uploads');
+  : (process.env.DATA_DIR
+      ? path.join(process.env.DATA_DIR, 'uploads')
+      : path.join(__dirname, '..', '..', 'data', 'uploads'));
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 function sanitizeFilename(original) {

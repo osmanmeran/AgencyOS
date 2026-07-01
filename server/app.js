@@ -198,7 +198,9 @@ if (!process.env.VERCEL) {
   const distPath = path.join(__dirname, '..', 'dist');
   app.use(express.static(distPath));
 
-  const uploadsPath = path.join(__dirname, 'uploads');
+  const uploadsPath = process.env.DATA_DIR
+    ? path.join(process.env.DATA_DIR, 'uploads')
+    : path.join(__dirname, '..', 'data', 'uploads');
   app.use('/uploads', express.static(uploadsPath));
 
   if (isProduction) {
