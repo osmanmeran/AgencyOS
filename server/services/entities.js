@@ -29,13 +29,22 @@ export function userCanAccessEntity(user, entityType, entityData) {
     return entityData.user_id === user.id || entityData.created_by === user.id;
   }
 
-  if (CLIENT_SCOPED_TYPES.includes(entityType)) {
-    return !!(user.client_id && entityData.client_id === user.client_id);
+  // Client portal users (linked to a client) can only see their own client's data
+  if (user.client_id) {
+    if (CLIENT_SCOPED_TYPES.includes(entityType)) {
+      return entityData.client_id === user.client_id;
+    }
   }
 
-  if (entityType === 'SupplierBooking' || entityType === 'SupplierInvoice') {
-    return !!(user.linked_supplier_id && entityData.supplier_id === user.linked_supplier_id);
+  // Supplier portal users can only see their own supplier's data
+  if (user.linked_supplier_id) {
+    if (entityType === 'SupplierBooking' || entityType === 'SupplierInvoice') {
+      return entityData.supplier_id === user.linked_supplier_id;
+    }
   }
+
+  // Staff agents/accounting: can see all records (view_all_trips is a client-side permission check)
+  if (tier === 'agent' || tier === 'accounting') return true;
 
   return entityData.created_by === user.id || entityData.user_id === user.id;
 }

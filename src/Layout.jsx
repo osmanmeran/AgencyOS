@@ -171,10 +171,11 @@ function NavItem({ item, currentPageName, depth = 0 }) {
   );
 }
 
-function SidebarContent({ currentPageName, t, isClientPortal }) {
+function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
   const navSections = isClientPortal
     ? { main: () => CLIENT_NAV(t) }
     : NAV_SECTIONS;
+  const isAdmin = userTier === 'admin' || userTier === 'manager';
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -201,12 +202,16 @@ function SidebarContent({ currentPageName, t, isClientPortal }) {
                 <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
               ))}
             </List>
-            <Divider sx={{ my: 1.5, mx: 2 }} />
-            <List disablePadding>
-              {navSections.admin(t).map(item => (
-                <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
-              ))}
-            </List>
+            {isAdmin && (
+              <>
+                <Divider sx={{ my: 1.5, mx: 2 }} />
+                <List disablePadding>
+                  {navSections.admin(t).map(item => (
+                    <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
+                  ))}
+                </List>
+              </>
+            )}
           </>
         )}
       </Box>
@@ -290,7 +295,7 @@ export default function Layout({ children, currentPageName }) {
               },
             }}
           >
-            <SidebarContent currentPageName={currentPageName} t={t} isClientPortal={isClientPortal} />
+            <SidebarContent currentPageName={currentPageName} t={t} isClientPortal={isClientPortal} userTier={user?.user_tier} />
           </Drawer>
         </Box>
 
