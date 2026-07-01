@@ -67,7 +67,13 @@ export async function connectOutlook(userId, { code, code_verifier, redirect_uri
     body,
   });
 
-  if (!tokenResp.ok) throw new BadRequestError('Failed to exchange authorization code');
+  if (!tokenResp.ok) {
+    const errText = await tokenResp.text();
+    logger.error({ status: tokenResp.status, body: errText }, 'Outlook token exchange failed');
+    let errMsg = 'Failed to exchange authorization code';
+    try { errMsg = JSON.parse(errText)?.error_description || JSON.parse(errText)?.error || errMsg; } catch {}
+    throw new BadRequestError(errMsg);
+  }
 
   const tokenData = await tokenResp.json();
 
