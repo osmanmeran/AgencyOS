@@ -9,7 +9,9 @@ async function fetchRates() {
   if (rateCache.rates && Date.now() - rateCache.timestamp < CACHE_TTL) {
     return rateCache.rates;
   }
-  const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
+  const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json', {
+    signal: AbortSignal.timeout(5000),
+  });
   const data = await res.json();
   rateCache = { rates: data.usd, timestamp: Date.now() };
   return data.usd;
