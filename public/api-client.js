@@ -118,9 +118,6 @@
           return result.user;
         });
       },
-      login: function (email) {
-        return this.loginViaEmailPassword(email, 'password123');
-      },
       microsoftLogin: function (idToken) {
         return api('/auth/microsoft', { method: 'POST', body: JSON.stringify({ idToken: idToken }) }).then(function (result) {
           setToken(result.token);
@@ -203,13 +200,20 @@
         },
         SendEmail: function (opts) {
           // Try Outlook first if user has it connected
-          return api('/integrations/outlook/status').then(function (status) {
+          return api('/integrations/outlook/status').catch(function (err) {
+            err._isStatusCheck = true;
+            throw err;
+          }).then(function (status) {
             if (status.connected) {
               return api('/integrations/outlook/send', { method: 'POST', body: JSON.stringify(opts || {}) });
             }
             return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
-          }).catch(function () {
-            return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
+          }).catch(function (statusErr) {
+            // Only fall back if the STATUS CHECK itself failed (not a send failure)
+            if (statusErr && statusErr._isStatusCheck) {
+              return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
+            }
+            throw statusErr;
           });
         },
         SendSMS: function (opts) {
@@ -224,8 +228,8 @@
         OutlookStatus: function () {
           return api('/integrations/outlook/status');
         },
-        OutlookConnect: function (code, codeVerifier, redirectUri) {
-          return api('/integrations/outlook/connect', { method: 'POST', body: JSON.stringify({ code: code, code_verifier: codeVerifier, redirect_uri: redirectUri }) });
+        OutlookConnect: function (tokenData) {
+          return api('/integrations/outlook/connect', { method: 'POST', body: JSON.stringify({ token_data: tokenData }) });
         },
         OutlookSend: function (opts) {
           return api('/integrations/outlook/send', { method: 'POST', body: JSON.stringify(opts || {}) });

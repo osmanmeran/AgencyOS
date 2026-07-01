@@ -144,18 +144,14 @@ describe('Validation Schemas', () => {
   describe('outlookConnect', () => {
     it('should accept valid data', () => {
       const result = schemas.outlookConnect.safeParse({
-        code: 'authcode123',
-        code_verifier: 'verifier123',
-        redirect_uri: 'https://app.com/callback',
+        token_data: { access_token: 'token123', refresh_token: 'refresh123', expires_in: 3600 },
       });
       expect(result.success).toBe(true);
     });
 
-    it('should reject invalid redirect_uri', () => {
+    it('should reject missing access_token', () => {
       const result = schemas.outlookConnect.safeParse({
-        code: 'authcode123',
-        code_verifier: 'verifier123',
-        redirect_uri: 'not-a-url',
+        token_data: { refresh_token: 'refresh123' },
       });
       expect(result.success).toBe(false);
     });
