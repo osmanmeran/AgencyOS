@@ -147,9 +147,11 @@ export const schemas = {
   }),
 
   outlookConnect: z.object({
-    code: z.string().min(1, 'Authorization code is required'),
-    code_verifier: z.string().min(1, 'Code verifier is required'),
-    redirect_uri: z.string().url('Valid redirect URI is required'),
+    token_data: z.object({
+      access_token: z.string().min(1),
+      refresh_token: z.string().optional(),
+      expires_in: z.number().optional(),
+    }),
   }),
 
   supplierWebSearch: z.object({
