@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { getDb, uid } from './db.js';
 import logger from './lib/logger.js';
 
@@ -11,18 +12,13 @@ export function seedDatabase() {
     return;
   }
 
-  logger.info('Creating default users...');
+  const email = 'admin@travelpro.com';
+  const password = crypto.randomBytes(12).toString('base64url');
+  const hash = bcrypt.hashSync(password, 10);
   const nowISO = new Date().toISOString();
-  const hash = bcrypt.hashSync('password123', 10);
 
-  const users = [
-    { id: uid(), email: 'admin@travelpro.com', password: hash, name: 'Admin User', user_tier: 'admin', role: 'admin' },
-  ];
+  db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, client_id, linked_supplier_id, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
+    .run(uid(), email, hash, 'Admin User', 'admin', 'admin', 'en', '[]', null, null, nowISO, nowISO);
 
-  const insertUser = db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, client_id, linked_supplier_id, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)');
-  for (const u of users) {
-    insertUser.run(u.id, u.email, u.password, u.name, u.user_tier, u.role, 'en', '[]', null, null, nowISO, nowISO);
-  }
-
-  logger.info({ users: users.map(u => u.email) }, 'Default users created');
+  logger.warn({ email, password }, 'No users found — created initial admin account. Log in and change this password immediately; this message will not repeat.');
 }

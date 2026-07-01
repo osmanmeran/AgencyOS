@@ -72,9 +72,12 @@ router.post('/test', catchAsync(async (req, res) => {
 
 router.get('/download/:filename', (req, res) => {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const filePath = path.join(__dirname, '..', '..', 'data', 'pdfs', req.params.filename);
+  const pdfDir = path.join(__dirname, '..', '..', 'data', 'pdfs');
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(pdfDir, filename);
+  if (!filePath.startsWith(pdfDir + path.sep)) return res.status(400).json({ error: 'Invalid filename' });
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
-  res.setHeader('Content-Disposition', `attachment; filename="${req.params.filename}"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.setHeader('Content-Type', 'application/pdf');
   fs.createReadStream(filePath).pipe(res);
 });

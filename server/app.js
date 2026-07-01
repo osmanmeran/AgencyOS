@@ -88,6 +88,7 @@ app.use('/api/auth/microsoft', strictLimiter);
 app.use('/api/notifications', mutationLimiter);
 app.use('/api/documents', mutationLimiter);
 app.use('/api/pdf', mutationLimiter);
+app.use('/api/testing', mutationLimiter);
 app.use('/api', standardLimiter);
 
 app.use('/api/auth', authRoutes);
@@ -106,20 +107,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-app.get('/api/admin/list-users', (req, res) => {
-  const secret = process.env.ADMIN_SECRET;
-  if (!secret || req.headers['x-admin-secret'] !== secret) return res.status(403).json({ error: 'Forbidden' });
+function requireAdmin(req, res, next) {
+  if (req.user?.user_tier !== 'admin' && req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  next();
+}
+
+app.get('/api/admin/list-users', authMiddleware, requireAdmin, (req, res) => {
   const db = getDb();
   const users = db.prepare('SELECT id, email, name, user_tier, role, is_active, microsoft_id FROM users ORDER BY created_date').all();
   res.json(users);
 });
 
-// Emergency user fix endpoint — protected by ADMIN_SECRET env var
-app.post('/api/admin/fix-user', (req, res) => {
-  const secret = process.env.ADMIN_SECRET;
-  if (!secret || req.headers['x-admin-secret'] !== secret) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
+// Emergency user fix endpoint — admin only
+app.post('/api/admin/fix-user', authMiddleware, requireAdmin, (req, res) => {
   try {
     const { email, user_tier, role } = req.body;
     if (!email) return res.status(400).json({ error: 'email required' });
@@ -138,9 +140,7 @@ app.post('/api/admin/fix-user', (req, res) => {
 });
 
 // Fix existing trips where created_by_name = 'Unknown' by looking up the user via created_by email
-app.post('/api/admin/fix-trip-agents', (req, res) => {
-  const secret = process.env.ADMIN_SECRET;
-  if (!secret || req.headers['x-admin-secret'] !== secret) return res.status(403).json({ error: 'Forbidden' });
+app.post('/api/admin/fix-trip-agents', authMiddleware, requireAdmin, (req, res) => {
   try {
     const db = getDb();
     const trips = db.prepare("SELECT id, data FROM entities WHERE type = 'Trip'").all();
