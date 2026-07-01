@@ -178,6 +178,16 @@
       deleteUser: function (id) {
         return api('/auth/users/' + id, { method: 'DELETE' });
       },
+      invite: function (data) {
+        return api('/auth/invite', { method: 'POST', body: JSON.stringify(data || {}) });
+      },
+      acceptInvite: function (data) {
+        return api('/auth/accept-invite', { method: 'POST', body: JSON.stringify(data || {}) }).then(function (result) {
+          setToken(result.token);
+          setCurrentUser(result.user);
+          return result.user;
+        });
+      },
     },
     entities: entityApis,
     integrations: {
