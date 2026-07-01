@@ -80,17 +80,21 @@ export async function authenticateMicrosoft(idToken) {
 
   const db = getDb();
   const user = db.transaction(() => {
+    // 1. Try by microsoft_id (fast path, exact match)
     let u = db.prepare('SELECT * FROM users WHERE microsoft_id = ?').get(microsoftId);
     if (!u) {
-      u = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+      // 2. Case-insensitive email fallback (Microsoft may return different casing)
+      u = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(email);
       if (u) {
+        // Link microsoft_id so future logins hit the fast path
         db.prepare('UPDATE users SET microsoft_id = ?, updated_date = ? WHERE id = ?')
           .run(microsoftId, new Date().toISOString(), u.id);
       } else {
+        // New user — create with agent tier
         const now = new Date().toISOString();
         const id = uid();
         db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, microsoft_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
-          .run(id, email, bcrypt.hashSync(microsoftId, 10), name, 'agent', 'agent', 'en', '[]', microsoftId, '[]', now, now);
+          .run(id, email.toLowerCase(), bcrypt.hashSync(microsoftId, 10), name, 'agent', 'agent', 'en', '[]', microsoftId, '[]', now, now);
         u = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
       }
     }

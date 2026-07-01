@@ -106,6 +106,29 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+// Emergency user fix endpoint — protected by ADMIN_SECRET env var
+app.post('/api/admin/fix-user', (req, res) => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || req.headers['x-admin-secret'] !== secret) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const { email, user_tier, role } = req.body;
+    if (!email) return res.status(400).json({ error: 'email required' });
+    const db = getDb();
+    const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+    if (!user) return res.status(404).json({ error: `User not found: ${email}` });
+    const tier = user_tier || 'admin';
+    const r = role || tier;
+    db.prepare('UPDATE users SET user_tier = ?, role = ?, updated_date = ? WHERE id = ?')
+      .run(tier, r, new Date().toISOString(), user.id);
+    const updated = db.prepare('SELECT id, email, name, user_tier, role, is_active FROM users WHERE id = ?').get(user.id);
+    res.json({ success: true, user: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/email/test', authMiddleware, async (req, res) => {
   try {
     const { sendEmail, isSmtpConfigured } = await import('./services/email.js');
