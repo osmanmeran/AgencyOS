@@ -3,20 +3,6 @@
 
   var API_BASE = '/api';
 
-  function getToken() {
-    try { return localStorage.getItem('marvelops_token'); } catch (e) { return null; }
-  }
-
-  function setToken(token) {
-    try {
-      if (token) {
-        localStorage.setItem('marvelops_token', token);
-      } else {
-        localStorage.removeItem('marvelops_token');
-      }
-    } catch (e) {}
-  }
-
   function setCurrentUser(user) {
     // Only store non-sensitive fields
     try {
@@ -41,12 +27,10 @@
 
   async function api(path, options) {
     options = options || {};
-    var token = getToken();
     var headers = { 'Content-Type': 'application/json' };
     if (options.headers) {
       for (var k in options.headers) headers[k] = options.headers[k];
     }
-    if (token) headers['Authorization'] = 'Bearer ' + token;
 
     var res = await fetch(API_BASE + path, {
       method: options.method || 'GET',
@@ -104,7 +88,7 @@
   var db = {
     auth: {
       isAuthenticated: function () {
-        return Promise.resolve(!!getToken());
+        return api('/auth/me').then(function () { return true; }).catch(function () { return false; });
       },
       me: function () {
         return api('/auth/me').then(function (data) {
@@ -113,14 +97,12 @@
       },
       loginViaEmailPassword: function (email, password) {
         return api('/auth/login', { method: 'POST', body: JSON.stringify({ email: email, password: password }) }).then(function (result) {
-          setToken(result.token);
           setCurrentUser(result.user);
           return result.user;
         });
       },
       microsoftLogin: function (idToken) {
         return api('/auth/microsoft', { method: 'POST', body: JSON.stringify({ idToken: idToken }) }).then(function (result) {
-          setToken(result.token);
           setCurrentUser(result.user);
           return result.user;
         });
@@ -135,7 +117,6 @@
       logout: function (redirectUrl) {
         // Call server to clear httpOnly cookie
         fetch(API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
-        setToken(null);
         setCurrentUser(null);
         if (redirectUrl) {
           // Prevent nested returnUrl loops
@@ -180,7 +161,6 @@
       },
       acceptInvite: function (data) {
         return api('/auth/accept-invite', { method: 'POST', body: JSON.stringify(data || {}) }).then(function (result) {
-          setToken(result.token);
           setCurrentUser(result.user);
           return result.user;
         });
@@ -191,10 +171,9 @@
       Core: {
         UploadFile: function (data) {
           if (data?.file instanceof File || data?.file instanceof Blob) {
-            var token = getToken();
             var formData = new FormData();
             formData.append('file', data.file);
-            return fetch(API_BASE + '/integrations/upload', { method: 'POST', body: formData, headers: token ? { 'Authorization': 'Bearer ' + token } : {}, credentials: 'include' }).then(function(r) { return r.json(); });
+            return fetch(API_BASE + '/integrations/upload', { method: 'POST', body: formData, credentials: 'include' }).then(function(r) { return r.json(); });
           }
           return api('/integrations/upload', { method: 'POST', body: JSON.stringify(data || {}) });
         },

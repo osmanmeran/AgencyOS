@@ -23,14 +23,10 @@ const TYPE_ICONS = {
   other: Lightbulb,
 };
 
-function getToken() {
-  try { const s = localStorage.getItem('b44_user'); return s ? JSON.parse(s).token : null; } catch { return null; }
-}
-
 async function api(path, opts = {}) {
-  const token = getToken();
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...opts.headers },
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    credentials: 'include',
     ...opts,
   });
   return res.json();

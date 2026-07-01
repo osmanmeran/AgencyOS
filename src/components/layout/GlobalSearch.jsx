@@ -51,9 +51,7 @@ export default function GlobalSearch() {
     setLoading(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const token = localStorage.getItem('marvelops_token');
         const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
           credentials: 'include',
         });
         if (res.ok) {

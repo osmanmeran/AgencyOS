@@ -72,13 +72,9 @@ export default function OutlookCallback() {
         return data;
       })
       .then(async (tokenData) => {
-        const appToken = localStorage.getItem('marvelops_token');
         const r = await fetch('/api/integrations/outlook/connect', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(appToken ? { 'Authorization': 'Bearer ' + appToken } : {}),
-          },
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ token_data: tokenData }),
         });

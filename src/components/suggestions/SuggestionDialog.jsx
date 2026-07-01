@@ -38,7 +38,8 @@ export default function SuggestionDialog({ open, onOpenChange }) {
       try {
         await fetch('/api/suggestions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${JSON.parse(localStorage.getItem('b44_user') || '{}').token || ''}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ type, title: title.trim(), description: description.trim() }),
         });
         setSubmitted(true);

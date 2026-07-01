@@ -116,9 +116,7 @@ export default function AppSettings() {
   }, [settings]);
 
   const apiFetch = async (path, opts = {}) => {
-    const token = localStorage.getItem('marvelops_token');
     const headers = { 'Content-Type': 'application/json', ...opts.headers };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
     const res = await fetch('/api' + path, { ...opts, headers, credentials: 'include' });
     return res.json();
   };

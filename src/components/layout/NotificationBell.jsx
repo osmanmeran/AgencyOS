@@ -11,14 +11,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// const TOKEN_KEY = 'auth_token';
-
-function getToken() {
-  const stored = localStorage.getItem('b44_user');
-  if (!stored) return null;
-  try { return JSON.parse(stored).token; } catch { return null; }
-}
-
 const TYPE_ICONS = {
   info: Info,
   success: CheckCircle,
@@ -34,9 +26,9 @@ const TYPE_COLORS = {
 };
 
 async function api(path, opts = {}) {
-  const token = getToken();
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...opts.headers },
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    credentials: 'include',
     ...opts,
   });
   if (!res.ok) throw new Error(await res.text());
@@ -51,29 +43,31 @@ export default function NotificationBell() {
   const wsRef = React.useRef(null);
 
   React.useEffect(() => {
+    let closedByUnmount = false;
     loadNotifications();
     connectWebSocket();
-    return () => { if (wsRef.current) wsRef.current.close(); };
-  }, []);
+    return () => {
+      closedByUnmount = true;
+      if (wsRef.current) wsRef.current.close();
+    };
 
-  function connectWebSocket() {
-    const token = getToken();
-    if (!token) return;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws?token=${token}`;
-    try {
-      const ws = new WebSocket(wsUrl);
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'notification') {
-          setNotifications(prev => [data.notification, ...prev]);
-          setUnread(prev => prev + 1);
-        }
-      };
-      ws.onclose = () => { setTimeout(connectWebSocket, 3000); };
-      wsRef.current = ws;
-    } catch { /* will retry */ }
-  }
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      try {
+        const ws = new WebSocket(wsUrl);
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.type === 'notification') {
+            setNotifications(prev => [data.notification, ...prev]);
+            setUnread(prev => prev + 1);
+          }
+        };
+        ws.onclose = () => { if (!closedByUnmount) setTimeout(connectWebSocket, 3000); };
+        wsRef.current = ws;
+      } catch { /* will retry */ }
+    }
+  }, []);
 
   async function loadNotifications() {
     try {

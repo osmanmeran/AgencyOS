@@ -5,14 +5,10 @@ import { useAuth } from '@/lib/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle2, Loader2, Mail, FileText, Bell, Upload, Shield, RefreshCw, Database, Plus, Trash2 } from 'lucide-react';
 
-function getToken() {
-  try { const s = localStorage.getItem('b44_user'); return s ? JSON.parse(s).token : null; } catch { return null; }
-}
-
 async function api(path, opts = {}) {
-  const token = getToken();
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...opts.headers },
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    credentials: 'include',
     ...opts,
   });
   return res.json();
@@ -156,10 +152,9 @@ export default function TestingArea() {
                 formData.append('file', blob, 'test.txt');
                 formData.append('entity_type', 'test');
                 formData.append('entity_id', 'test');
-                const token = getToken();
                 const res = await fetch('/api/documents/upload', {
                   method: 'POST',
-                  headers: token ? { Authorization: `Bearer ${token}` } : {},
+                  credentials: 'include',
                   body: formData,
                 });
                 const data = await res.json();
@@ -269,7 +264,7 @@ export default function TestingArea() {
                 const endpoints = ['/api/entities', '/api/search?q=', '/api/notifications', '/api/audit/logs'];
                 const results = await Promise.all(endpoints.map(async ep => {
                   try {
-                    const res = await fetch(ep, { headers: { Authorization: `Bearer ${getToken()}` } });
+                    const res = await fetch(ep, { credentials: 'include' });
                     return { endpoint: ep, status: res.status, ok: res.ok };
                   } catch (e) {
                     return { endpoint: ep, status: 'error', error: e.message };

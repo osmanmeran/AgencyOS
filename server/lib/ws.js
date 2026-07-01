@@ -1,5 +1,6 @@
 import { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
+import { parse as parseCookie } from 'cookie';
 import { getJwtSecret } from '../middleware/auth.js';
 import logger from './logger.js';
 
@@ -10,8 +11,9 @@ export function createWebSocketServer(server) {
   const wss = new WebSocketServer({ server, path: '/ws' });
 
   wss.on('connection', (ws, req) => {
+    const cookies = req.headers.cookie ? parseCookie(req.headers.cookie) : {};
     const url = new URL(req.url, 'http://localhost');
-    const token = url.searchParams.get('token');
+    const token = cookies.token || url.searchParams.get('token');
 
     if (!token) { ws.close(4001, 'Authentication required'); return; }
 

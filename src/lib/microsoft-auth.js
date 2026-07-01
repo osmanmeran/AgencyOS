@@ -142,7 +142,6 @@ export async function exchangeIdTokenWithServer(idToken) {
   }
 
   try {
-    localStorage.setItem('marvelops_token', data.token);
     localStorage.setItem('marvelops_current_user', JSON.stringify(data.user));
   } catch (e) {}
 
