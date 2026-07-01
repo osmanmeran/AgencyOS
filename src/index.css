@@ -359,3 +359,28 @@
     opacity: 0.12;
   }
 }
+
+@media print {
+  /* margin: 0 removes the browser header/footer zone (date, title, URL, page number) */
+  @page {
+    margin: 0;
+    size: A4;
+  }
+
+  html, body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Add padding to compensate for removed @page margin */
+  body {
+    padding: 1.5cm !important;
+  }
+
+  /* Hide UI elements that shouldn't appear in print */
+  .no-print,
+  nav,
+  [data-print="hide"] {
+    display: none !important;
+  }
+}

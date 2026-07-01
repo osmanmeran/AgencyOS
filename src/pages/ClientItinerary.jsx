@@ -241,15 +241,15 @@ export default function ClientItinerary() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Nav bar */}
-      <nav className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200">
+      <nav className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 no-print">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <span className="font-bold text-slate-800 text-sm tracking-wide">ITINERARY</span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 no-print">
             <button onClick={handleShare} className="text-xs text-slate-600 hover:text-slate-800 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1.5">
               {shareCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Share2 className="w-3.5 h-3.5" />}
               {shareCopied ? 'Copied!' : 'Share'}
             </button>
-            <button onClick={() => window.print()} className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+            <button onClick={() => { const prev = document.title; document.title = trip?.name || 'Itinerary'; window.print(); document.title = prev; }} className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
               Print / PDF
             </button>
           </div>
