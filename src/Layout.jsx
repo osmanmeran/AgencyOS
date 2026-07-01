@@ -317,7 +317,7 @@ export default function Layout({ children, currentPageName }) {
             },
           }}
         >
-          <SidebarContent currentPageName={currentPageName} t={t} isClientPortal={isClientPortal} />
+          <SidebarContent currentPageName={currentPageName} t={t} isClientPortal={isClientPortal} userTier={user?.user_tier} />
         </Drawer>
 
         {/* Main Content Area */}
