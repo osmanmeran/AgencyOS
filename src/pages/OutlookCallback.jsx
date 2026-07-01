@@ -66,12 +66,12 @@ export default function OutlookCallback() {
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok || data.error) {
-          throw new Error(data.error_description || data.error || 'Token exchange failed');
+          const msg = data.error_description || (typeof data.error === 'string' ? data.error : data.error?.message) || 'Token exchange failed';
+          throw new Error(msg);
         }
         return data;
       })
       .then(async (tokenData) => {
-        // Send tokens to server for storage
         const appToken = localStorage.getItem('marvelops_token');
         const r = await fetch('/api/integrations/outlook/connect', {
           method: 'POST',
@@ -84,7 +84,8 @@ export default function OutlookCallback() {
         });
         const data = await r.json();
         if (!r.ok || data?.error) {
-          throw new Error(data?.message || data?.error || 'Failed to save connection');
+          const msg = data?.message || (typeof data?.error === 'string' ? data.error : data?.error?.message) || 'Failed to save connection';
+          throw new Error(msg);
         }
         setStatus('success');
       })
