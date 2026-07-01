@@ -6,21 +6,36 @@ import { catchAsync, BadRequestError, NotFoundError, ForbiddenError } from '../m
 import { validate, schemas } from '../middleware/validate.js';
 import { authenticateLocal, authenticateMicrosoft, safeUser, setTokenCookie, getUserById, getUserPassword, updateUser, deleteUser, getAllUsers, createUser, inviteUser, acceptInvite } from '../services/auth.js';
 import { sendEmail } from '../services/email.js';
+import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
 import logger from '../lib/logger.js';
 
 const router = Router();
 
 router.post('/microsoft', validate(schemas.microsoftAuth), catchAsync(async (req, res) => {
-  const user = await authenticateMicrosoft(req.body.idToken);
+  let user;
+  try {
+    user = await authenticateMicrosoft(req.body.idToken);
+  } catch (err) {
+    logAudit({ action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
+    throw err;
+  }
   const token = generateToken(user);
   setTokenCookie(res, token);
+  logAudit({ userId: user.id, userName: user.email, action: AUDIT_ACTIONS.LOGIN, entityType: 'auth', entityId: user.id, ip: req.ip });
   res.json({ token, user });
 }));
 
 router.post('/login', validate(schemas.login), catchAsync(async (req, res) => {
-  const user = authenticateLocal(req.body.email, req.body.password);
+  let user;
+  try {
+    user = authenticateLocal(req.body.email, req.body.password);
+  } catch (err) {
+    logAudit({ userName: req.body.email, action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
+    throw err;
+  }
   const token = generateToken(user);
   setTokenCookie(res, token);
+  logAudit({ userId: user.id, userName: user.email, action: AUDIT_ACTIONS.LOGIN, entityType: 'auth', entityId: user.id, ip: req.ip });
   res.json({ token, user });
 }));
 

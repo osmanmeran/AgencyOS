@@ -5,6 +5,7 @@ export const AUDIT_ACTIONS = {
   UPDATE: 'update',
   DELETE: 'delete',
   LOGIN: 'login',
+  LOGIN_FAILED: 'login_failed',
   LOGOUT: 'logout',
   EMAIL_SENT: 'email_sent',
   PDF_GENERATED: 'pdf_generated',

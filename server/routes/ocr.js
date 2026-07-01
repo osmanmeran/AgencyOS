@@ -6,6 +6,7 @@ import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from '../middleware/auth.js';
 import logger from '../lib/logger.js';
+import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isVercel = !!process.env.VERCEL;
@@ -17,11 +18,6 @@ const UPLOAD_DIR = isVercel
   ? path.join('/tmp', 'ocr_uploads')
   : path.join(__dirname, '..', 'ocr_uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-function sanitizeFilename(original) {
-  const safe = original.replace(/\.\./g, '').replace(/[/\\]/g, '_').replace(/[^a-zA-Z0-9._-]/g, '_');
-  return safe.slice(0, 100);
-}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),

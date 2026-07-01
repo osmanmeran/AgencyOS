@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { getDb, uid } from '../db.js';
 import logger from '../lib/logger.js';
+import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isVercel = !!process.env.VERCEL;
@@ -23,10 +24,6 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/json',
 ];
-
-function sanitizeFilename(original) {
-  return original.replace(/\.\./g, '').replace(/[/\\]/g, '_').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
-}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),

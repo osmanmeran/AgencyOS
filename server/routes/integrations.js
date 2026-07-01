@@ -8,6 +8,7 @@ import { catchAsync } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
 import { getExchangeRate, logEmail, getOutlookStatus, connectOutlook, disconnectOutlook, sendOutlookEmail, searchSupplier } from '../services/integrations.js';
 import { sendEmail, isSmtpConfigured, renderTemplate } from '../services/email.js';
+import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isVercel = !!process.env.VERCEL;
@@ -18,11 +19,6 @@ const uploadDir = isVercel
       ? path.join(process.env.DATA_DIR, 'uploads')
       : path.join(__dirname, '..', '..', 'data', 'uploads'));
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-function sanitizeFilename(original) {
-  const safe = original.replace(/\.\./g, '').replace(/[/\\]/g, '_').replace(/[^a-zA-Z0-9._-]/g, '_');
-  return safe.slice(0, 100);
-}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
