@@ -24,6 +24,9 @@ const db = globalThis.__B44_DB__ || {
       bulkCreate: async () => ([]),
       update: async () => ({}),
       delete: async () => ({}),
+      page: async () => ({ data: [], total: 0 }),
+      bulkUpdate: async () => ({ updated: [], skipped: [] }),
+      bulkDelete: async () => ({ deleted: [], skipped: [] }),
     }),
   }),
   integrations: {

@@ -77,6 +77,27 @@
       'delete': function (id) {
         return api('/entities/' + name + '/' + id, { method: 'DELETE' });
       },
+      // Paginated variant — returns { data, total } instead of a plain array.
+      // Opt-in: existing list()/filter() callers are unaffected.
+      page: function (opts) {
+        opts = opts || {};
+        var params = [];
+        if (opts.filter) params.push('filter=' + encodeURIComponent(JSON.stringify(opts.filter)));
+        if (opts.sort) params.push('sort=' + encodeURIComponent(opts.sort));
+        if (opts.search) params.push('search=' + encodeURIComponent(opts.search));
+        params.push('limit=' + encodeURIComponent(opts.limit != null ? opts.limit : 50));
+        params.push('offset=' + encodeURIComponent(opts.offset || 0));
+        return api('/entities/' + name + '?' + params.join('&'));
+      },
+      bulkCreate: function (records) {
+        return api('/entities/' + name + '/bulk-create', { method: 'POST', body: JSON.stringify({ records: records || [] }) });
+      },
+      bulkUpdate: function (ids, data) {
+        return api('/entities/' + name + '/bulk-update', { method: 'POST', body: JSON.stringify({ ids: ids || [], data: data || {} }) });
+      },
+      bulkDelete: function (ids) {
+        return api('/entities/' + name + '/bulk-delete', { method: 'POST', body: JSON.stringify({ ids: ids || [] }) });
+      },
     };
   }
 
