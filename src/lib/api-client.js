@@ -107,7 +107,9 @@
         return Promise.resolve(!!getToken());
       },
       me: function () {
-        return api('/auth/me');
+        return api('/auth/me').then(function (data) {
+          return data.user || data;
+        });
       },
       loginViaEmailPassword: function (email, password) {
         return api('/auth/login', { method: 'POST', body: JSON.stringify({ email: email, password: password }) }).then(function (result) {
@@ -120,7 +122,8 @@
         return this.loginViaEmailPassword(email, 'password123');
       },
       updateMe: function (data) {
-        return api('/auth/me', { method: 'PUT', body: JSON.stringify(data || {}) }).then(function (user) {
+        return api('/auth/me', { method: 'PUT', body: JSON.stringify(data || {}) }).then(function (res) {
+          var user = res.user || res;
           setCurrentUser(user);
           return user;
         });
