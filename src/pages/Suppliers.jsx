@@ -4,20 +4,26 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useExport } from '@/hooks/useExport';
+import { usePaginatedEntities } from '@/hooks/usePaginatedEntities';
+import { useSelection } from '@/hooks/useSelection';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Star, Search, Settings, X, ArrowUpDown, Upload, Filter, FilterX, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Star, Search, Settings, X, ArrowUpDown, Upload, Filter, FilterX, Download, XCircle, Loader2 } from 'lucide-react';
 import SupplierCsvImporter from '../components/suppliers/SupplierCsvImporter';
 import SupplierCategorySummary from '../components/suppliers/SupplierCategorySummary';
 import { SupplierTextFilter, SupplierCategoryFilter, SupplierRatingFilter, SupplierFilterButton } from '../components/suppliers/SupplierFilters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SkeletonTable } from '@/components/ui/skeletons';
+import BulkActionsBar from '@/components/shared/BulkActionsBar';
+import PaginationControls from '@/components/shared/PaginationControls';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { usePermissions } from '../components/permissions/PermissionContext';
@@ -40,7 +46,6 @@ const SortHeader = ({ field, label, filter, filterActive, sortField, handleSort 
 export default function Suppliers() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [columnManagerOpen, setColumnManagerOpen] = useState(false);
   const [csvImporterOpen, setCsvImporterOpen] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
@@ -50,6 +55,9 @@ export default function Suppliers() {
   const [sortField, setSortField] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
   const [filters, setFilters] = useState({ name: '', category: [], city: '', area: '', rating: null });
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const activeFilterCount = [filters.name, filters.city, filters.area, filters.rating !== null, filters.category.length > 0].filter(Boolean).length;
 
@@ -65,33 +73,94 @@ export default function Suppliers() {
   const { hasPermission } = usePermissions();
   const isAdmin = hasPermission('manage_users');
 
-  const { data: suppliers = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['suppliers'],
-    queryFn: () => db.entities.Supplier.list()
-  }));
+  // Page size is generous because the existing rich per-column sort/filter
+  // below (including deriving sort by category name) runs client-side over
+  // whatever's fetched — with a small supplier count today, one page covers
+  // everything, same as before. As supplier counts grow past the page size,
+  // the search box (server-side) becomes the way to narrow the working set.
+  const {
+    items: suppliers, total, page, pageCount, pageSize,
+    setPage, search: searchTerm, setSearch: setSearchTerm, isLoading, isFetching,
+  } = usePaginatedEntities('Supplier', { pageSize: 100, sort: 'name' });
 
   const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierCategories'],
     queryFn: () => db.entities.SupplierCategory.list()
   }));
 
+  const { selectedIds, toggle, toggleAll, clear, allSelected, count: selectedCount } = useSelection(suppliers);
+
   const createMutation = /** @type {any} */ (useMutation({
     mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
-    onSuccess: () => { showSuccess('Supplier created'); queryClient.invalidateQueries({ queryKey: ['suppliers'] }); closeModal(); },
+    onSuccess: () => { showSuccess('Supplier created'); queryClient.invalidateQueries({ queryKey: ['Supplier'] }); closeModal(); },
     onError: (error) => showError('Failed to create supplier', error.message)
   }));
 
   const updateMutation = /** @type {any} */ (useMutation({
     mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.Supplier.update(id, data),
-    onSuccess: () => { showSuccess('Supplier updated'); queryClient.invalidateQueries({ queryKey: ['suppliers'] }); closeModal(); },
+    onSuccess: () => { showSuccess('Supplier updated'); queryClient.invalidateQueries({ queryKey: ['Supplier'] }); closeModal(); },
     onError: (error) => showError('Failed to update supplier', error.message)
   }));
 
   const deleteMutation = /** @type {any} */ (useMutation({
     mutationFn: (/** @type {any} */ id) => db.entities.Supplier.delete(id),
-    onSuccess: () => { showSuccess('Supplier deleted'); queryClient.invalidateQueries({ queryKey: ['suppliers'] }); },
+    onSuccess: () => { showSuccess('Supplier deleted'); queryClient.invalidateQueries({ queryKey: ['Supplier'] }); },
     onError: (error) => showError('Failed to delete supplier', error.message)
   }));
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const result = await db.entities.Supplier.bulkDelete([...selectedIds]);
+      if (result.skipped.length > 0) {
+        showError(`${result.skipped.length} supplier(s) could not be deleted`, 'You may not have permission for some of the selected suppliers.');
+      } else {
+        showSuccess('Suppliers deleted');
+      }
+      clear();
+      setBulkDeleteOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['Supplier'] });
+    } catch (error) {
+      showError('Failed to delete suppliers', error.message);
+    }
+    setIsBulkDeleting(false);
+  };
+
+  const handleExportSelected = () => {
+    const selected = suppliers.filter(s => selectedIds.has(s.id));
+    exportCSV(selected, 'suppliers-selected', [
+      { label: 'Name', accessor: (s) => s.name },
+      { label: 'Category', accessor: (s) => getCategoryName(s.category_id) },
+      { label: 'Contact Person', accessor: (s) => s.contact_person },
+      { label: 'Email', accessor: (s) => s.email },
+      { label: 'Phone', accessor: (s) => s.phone },
+      { label: 'City', accessor: (s) => s.city },
+      { label: 'Area', accessor: (s) => s.area },
+      { label: 'Rating', accessor: (s) => s.rating }
+    ]);
+  };
+
+  const handleExportAll = async () => {
+    setIsExporting(true);
+    try {
+      const all = searchTerm
+        ? (await db.entities.Supplier.page({ search: searchTerm, limit: 500 })).data
+        : await db.entities.Supplier.list();
+      exportCSV(all, 'suppliers', [
+        { label: 'Name', accessor: (s) => s.name },
+        { label: 'Category', accessor: (s) => getCategoryName(s.category_id) },
+        { label: 'Contact Person', accessor: (s) => s.contact_person },
+        { label: 'Email', accessor: (s) => s.email },
+        { label: 'Phone', accessor: (s) => s.phone },
+        { label: 'City', accessor: (s) => s.city },
+        { label: 'Area', accessor: (s) => s.area },
+        { label: 'Rating', accessor: (s) => s.rating }
+      ]);
+    } catch (error) {
+      showError('Failed to export suppliers', error.message);
+    }
+    setIsExporting(false);
+  };
 
   const openModal = (supplier = null) => {
     if (supplier) {
@@ -158,19 +227,15 @@ export default function Suppliers() {
 
   const filtered = suppliers
     .filter(s => {
-      const searchMatch = searchTerm === '' ||
-        s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.area?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getCategoryName(s.category_id).toLowerCase().includes(searchTerm.toLowerCase());
-
+      // Free-text search already happened server-side (usePaginatedEntities);
+      // these are the per-column refinement filters on top of that page.
       const nameMatch = !filters.name || s.name?.toLowerCase().includes(filters.name.toLowerCase());
       const categoryMatch = !filters.category?.length || filters.category.includes(s.category_id);
       const cityMatch = !filters.city || s.city?.toLowerCase().includes(filters.city.toLowerCase());
       const areaMatch = !filters.area || s.area?.toLowerCase().includes(filters.area.toLowerCase());
       const ratingMatch = !filters.rating?.length || filters.rating.includes(s.rating);
 
-      return searchMatch && nameMatch && categoryMatch && cityMatch && areaMatch && ratingMatch;
+      return nameMatch && categoryMatch && cityMatch && areaMatch && ratingMatch;
     })
     .sort((a, b) => {
       let av = '', bv = '';
@@ -193,17 +258,8 @@ export default function Suppliers() {
           <p className="text-slate-600">Manage your travel supplier database</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => exportCSV(filtered, 'suppliers', [
-            { label: 'Name', accessor: (s) => s.name },
-            { label: 'Category', accessor: (s) => getCategoryName(s.category_id) },
-            { label: 'Contact Person', accessor: (s) => s.contact_person },
-            { label: 'Email', accessor: (s) => s.email },
-            { label: 'Phone', accessor: (s) => s.phone },
-            { label: 'City', accessor: (s) => s.city },
-            { label: 'Area', accessor: (s) => s.area },
-            { label: 'Rating', accessor: (s) => s.rating }
-          ])}>
-            <Download className="w-4 h-4 mr-2" />
+          <Button variant="outline" onClick={handleExportAll} disabled={isExporting}>
+            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
             Export CSV
           </Button>
           {isAdmin && (
@@ -240,6 +296,17 @@ export default function Suppliers() {
           </TabsList>
 
           <TabsContent value="list" className="space-y-4">
+            <BulkActionsBar count={selectedCount} label="supplier" onDeselectAll={clear}>
+              <Button variant="outline" size="sm" onClick={handleExportSelected}>
+                <Download className="w-4 h-4 mr-2" />
+                Export {selectedCount}
+              </Button>
+              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setBulkDeleteOpen(true)}>
+                <XCircle className="w-4 h-4 mr-2" />
+                Delete {selectedCount}
+              </Button>
+            </BulkActionsBar>
+
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -247,8 +314,9 @@ export default function Suppliers() {
                 placeholder="Search by name, city, area or category..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white"
+                className="pl-10 pr-10 bg-white"
               />
+              {isFetching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 animate-spin" />}
             </div>
 
             {/* Active filters indicator */}
@@ -270,6 +338,9 @@ export default function Suppliers() {
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
+                      <th className="px-4 py-3 w-10">
+                        <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+                      </th>
                       <SortHeader
                         field="name"
                         label="Name"
@@ -321,7 +392,7 @@ export default function Suppliers() {
                   <tbody className="divide-y divide-slate-100">
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={6 + extraColumns.length} className="text-center py-16 text-slate-500">
+                        <td colSpan={7 + extraColumns.length} className="text-center py-16 text-slate-500">
                           {searchTerm ? 'No suppliers match your search.' : 'No suppliers yet. Add your first supplier!'}
                         </td>
                       </tr>
@@ -331,9 +402,12 @@ export default function Suppliers() {
                         return (
                           <tr
                             key={supplier.id}
-                            className="hover:bg-slate-50 transition-colors cursor-pointer"
+                            className={`hover:bg-slate-50 transition-colors cursor-pointer ${selectedIds.has(supplier.id) ? 'bg-blue-50/50' : ''}`}
                             onClick={() => window.location.href = createPageUrl(`SupplierDetails?id=${supplier.id}`)}
                           >
+                            <td className="px-4 py-3" onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(supplier.id); }}>
+                              <Checkbox checked={selectedIds.has(supplier.id)} />
+                            </td>
                             <td className="px-4 py-3">
                               <div className="font-semibold text-slate-900">{supplier.name}</div>
                               {supplier.contact_person && (
@@ -383,9 +457,11 @@ export default function Suppliers() {
                 </table>
               </div>
               <div className="px-4 py-2 border-t border-slate-100 bg-slate-50 text-xs text-slate-500">
-                {filtered.length} supplier{filtered.length !== 1 ? 's' : ''}
+                {filtered.length} of {total} supplier{total !== 1 ? 's' : ''}
               </div>
             </Card>
+
+            <PaginationControls page={page} pageCount={pageCount} total={total} pageSize={pageSize} onPageChange={setPage} />
           </TabsContent>
 
           <TabsContent value="summary">
@@ -495,7 +571,7 @@ export default function Suppliers() {
         open={csvImporterOpen}
         onOpenChange={setCsvImporterOpen}
         categories={categories}
-        onImported={() => queryClient.invalidateQueries({ queryKey: ['suppliers'] })}
+        onImported={() => queryClient.invalidateQueries({ queryKey: ['Supplier'] })}
       />
 
       {/* Column Manager Modal (Admin only) */}
@@ -533,6 +609,27 @@ export default function Suppliers() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently Delete {selectedCount} Supplier{selectedCount > 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will <strong>permanently delete</strong> all selected suppliers from the database. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Keep Suppliers</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isBulkDeleting ? 'Deleting...' : `Yes, Delete ${selectedCount} Supplier${selectedCount > 1 ? 's' : ''}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
