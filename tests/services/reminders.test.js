@@ -24,6 +24,15 @@ function notificationsFor(entityId) {
   return db.prepare(`SELECT * FROM notifications WHERE json_extract(data, '$.entityId') = ?`).all(entityId);
 }
 
+function insertUser({ email, emailNotifications }) {
+  const id = uid();
+  const now = new Date().toISOString();
+  db.prepare(
+    'INSERT INTO users (id, email, password, name, user_tier, role, is_active, email_notifications, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)'
+  ).run(id, email, 'hashed', 'Test User', 'agent', 'agent', emailNotifications ? 1 : 0, now, now);
+  return id;
+}
+
 describe('Reminder Service', () => {
   beforeEach(() => {
     db.prepare(`DELETE FROM entities WHERE type IN ('Invoice', 'Trip')`).run();
@@ -128,6 +137,40 @@ describe('Reminder Service', () => {
     expect(notes).toHaveLength(1);
     expect(notes[0].type).toBe('trip_starting_soon');
     expect(notes[0].message).toContain('Safari Adventure');
+  });
+
+  it('also emails a user who opted into email notifications', () => {
+    const userId = insertUser({ email: 'reminder-opt-in@example.com', emailNotifications: true });
+    const invoiceId = insertEntity('Invoice', {
+      invoice_number: 'INV-700',
+      status: 'sent',
+      due_date: daysFromNow(1),
+      created_by: userId,
+    });
+
+    startReminderService();
+    stopReminderService();
+
+    expect(notificationsFor(invoiceId)).toHaveLength(1);
+    const emailed = db.prepare('SELECT * FROM email_logs WHERE to_email = ?').all('reminder-opt-in@example.com');
+    expect(emailed).toHaveLength(1);
+    expect(emailed[0].subject).toContain('INV-700');
+  });
+
+  it('does not email a user who has not opted in', () => {
+    const userId = insertUser({ email: 'reminder-opt-out@example.com', emailNotifications: false });
+    insertEntity('Invoice', {
+      invoice_number: 'INV-800',
+      status: 'sent',
+      due_date: daysFromNow(1),
+      created_by: userId,
+    });
+
+    startReminderService();
+    stopReminderService();
+
+    const emailed = db.prepare('SELECT * FROM email_logs WHERE to_email = ?').all('reminder-opt-out@example.com');
+    expect(emailed).toHaveLength(0);
   });
 
   it('does not duplicate a notification already created within the last 24 hours', () => {

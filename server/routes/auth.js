@@ -46,7 +46,7 @@ router.get('/me', authMiddleware, (req, res) => {
 });
 
 router.put('/me', authMiddleware, validate(schemas.updateMe), catchAsync(async (req, res) => {
-  const { name, phone, language, default_currency, avatar_url, current_password, new_password } = req.body;
+  const { name, phone, language, default_currency, avatar_url, email_notifications, current_password, new_password } = req.body;
   const updates = {};
 
   if (new_password) {
@@ -63,6 +63,7 @@ router.put('/me', authMiddleware, validate(schemas.updateMe), catchAsync(async (
   if (language !== undefined) updates.language = language;
   if (default_currency !== undefined) updates.default_currency = default_currency;
   if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+  if (email_notifications !== undefined) updates.email_notifications = email_notifications;
 
   const updated = updateUser(req.user.id, updates);
   if (!updated) throw new BadRequestError('No fields to update');

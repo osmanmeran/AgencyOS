@@ -1,6 +1,6 @@
-import { randomUUID } from 'crypto';
 import { getDb } from '../db.js';
 import logger from '../lib/logger.js';
+import { createNotification } from './notifications.js';
 
 let intervalHandle = null;
 
@@ -80,7 +80,6 @@ function checkUpcomingTrips() {
 }
 
 function createNotificationForEntity(db, entityId, type, message) {
-  const now = new Date().toISOString();
   const entity = db.prepare('SELECT data FROM entities WHERE id = ?').get(entityId);
   if (!entity) return;
 
@@ -88,26 +87,22 @@ function createNotificationForEntity(db, entityId, type, message) {
   const userId = JSON.parse(entity.data).created_by;
   if (!userId) return;
 
-  // The notifications table has no reference_id/is_read columns — the actual
-  // schema is (id, user_id, type, title, message, data, read, created_date),
-  // same as server/services/notifications.js. Store the entity link in `data`.
+  // The notifications table has no reference_id column — the actual schema
+  // is (id, user_id, type, title, message, data, read, created_date), same
+  // as server/services/notifications.js. Store the entity link in `data`.
   const existing = db.prepare(
     `SELECT id FROM notifications WHERE user_id = ? AND type = ? AND json_extract(data, '$.entityId') = ? AND created_date > ?`
   ).get(userId, type, entityId, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
   if (existing) return;
 
-  db.prepare(
-    'INSERT INTO notifications (id, user_id, type, title, message, data, read, created_date) VALUES (?, ?, ?, ?, ?, ?, 0, ?)'
-  ).run(
-    randomUUID(),
-    userId,
-    type,
-    message,
-    message,
-    JSON.stringify({ entityId }),
-    now
-  );
+  // Also emails the user if they've opted into email notifications
+  // (services/notifications.js checks the preference and no-ops otherwise).
+  createNotification({
+    userId, type, title: message, message,
+    data: { entityId },
+    email: { subject: message, body: message },
+  });
 
   logger.info({ userId, type, entityId }, 'Auto-reminder notification created');
 }

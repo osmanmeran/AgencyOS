@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { User, Mail, Phone, Globe, Lock, Save, Loader2, CreditCard, Camera, X } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
@@ -77,7 +78,7 @@ export default function Profile() {
     },
   });
 
-  const [form, setForm] = useState({ name: '', phone: '', language: 'en', default_currency: 'USD', avatar_url: '' });
+  const [form, setForm] = useState({ name: '', phone: '', language: 'en', default_currency: 'USD', avatar_url: '', email_notifications: false });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function Profile() {
         language: user.language || 'en',
         default_currency: user.default_currency || 'USD',
         avatar_url: user.avatar_url || '',
+        email_notifications: !!user.email_notifications,
       });
     }
   }, [user]);
@@ -175,6 +177,7 @@ export default function Profile() {
       phone: form.phone,
       language: form.language,
       default_currency: form.default_currency,
+      email_notifications: form.email_notifications,
     });
   };
 
@@ -315,6 +318,16 @@ export default function Profile() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <div>
+              <Label>Email notifications</Label>
+              <p className="text-sm text-muted-foreground">Also email me for invoice and trip reminders, not just in-app</p>
+            </div>
+            <Switch
+              checked={form.email_notifications}
+              onCheckedChange={(checked) => setForm(prev => ({ ...prev, email_notifications: checked }))}
+            />
           </div>
         </div>
       </Card>
