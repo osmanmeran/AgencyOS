@@ -213,6 +213,17 @@
 
 /* ── M3 Typography Scale Utility Classes ──────────────────── */
 @layer utilities {
+  /* Lets a row scroll horizontally on narrow viewports (tab bars, filter
+     chips) without showing a scrollbar, instead of wrapping or overflowing
+     the page. */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Display */
   .m3-display-large {
     font-size: 57px;

@@ -461,7 +461,7 @@ export default function CreateReservation() {
         <Button variant="ghost" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Reservations</Button>
       </Link>
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">{isEditing ? 'Edit Reservation' : 'New Reservation'}</h1>
           <p className="text-slate-500 mt-1">{isEditing ? 'Update reservation details, services, and pricing' : 'Fill in details, add services, then send to client or confirm directly'}</p>
@@ -623,7 +623,7 @@ export default function CreateReservation() {
                   <Users className="w-4 h-4 text-blue-600" />
                   Rooms & Passengers
                 </h2>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center flex-wrap gap-4">
                   <div className="flex items-center gap-2">
                     <Label className="text-sm text-slate-600 whitespace-nowrap">Rooms</Label>
                     <div className="flex items-center gap-1">
@@ -750,12 +750,12 @@ export default function CreateReservation() {
 
             {/* Services */}
             <Card className="p-6 bg-white shadow-md">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">Services & Pricing</h2>
                   <p className="text-sm text-slate-500">Acq. in <strong>{acquiringCurrency}</strong> · Sell in <strong>{sellingCurrency}</strong></p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button type="button" onClick={() => setTemplateOpen(true)} variant="outline" className="gap-2">
                     <BookOpen className="w-4 h-4" />Templates
                   </Button>
@@ -816,7 +816,7 @@ export default function CreateReservation() {
                             <span className={`font-semibold ${margin >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{margin.toFixed(1)}%</span>
                           </div>
                           <Separator />
-                          <div className="flex justify-between items-center">
+                          <div className="flex justify-between items-center flex-wrap gap-2">
                             <div>
                               <div className="text-lg font-bold text-slate-900">Total</div>
                               <div className="text-xs text-slate-400">Client price ({sellingCurrency})</div>

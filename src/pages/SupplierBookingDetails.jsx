@@ -49,7 +49,7 @@ export default function SupplierBookingDetails() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-4">
           <Link to={createPageUrl('SupplierBookings')}>
             <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>

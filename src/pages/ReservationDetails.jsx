@@ -555,7 +555,7 @@ export default function ReservationDetails() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-5">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-3">
                   <Map className="w-6 h-6 text-white" />
                   <h2 className="text-xl font-bold text-white">Itinerary Recap</h2>
@@ -993,7 +993,7 @@ export default function ReservationDetails() {
                   )}
 
                   <div className="pt-6 mt-4 border-t-2 border-slate-300">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center flex-wrap gap-2">
                       <span className="text-2xl font-bold text-slate-900">Total</span>
                       <div className="text-4xl font-bold text-green-700">{sc}{(trip.total_cost || 0).toFixed(2)}</div>
                     </div>

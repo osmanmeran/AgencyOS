@@ -219,7 +219,7 @@ export default function UserManagement() {
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
-      return all[0];
+      return all[0] || {};
     },
     enabled: tab === 'permissions',
   }));
@@ -336,12 +336,12 @@ export default function UserManagement() {
 
       {tab === 'users' && (
       <>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-4xl font-bold text-slate-900 mb-2">User Management</h1>
           <p className="text-slate-600">Manage user roles, permissions, and credentials</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={() => setShowPassword(!showPassword)} className="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
             {showPassword ? 'Cancel' : 'Change My Password'}
           </button>
@@ -648,7 +648,7 @@ export default function UserManagement() {
       </>)}
       {tab === 'permissions' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/20">
                 <Shield className="w-6 h-6 text-white" />
@@ -658,7 +658,7 @@ export default function UserManagement() {
                 <p className="text-sm text-slate-500">Configure what each user tier can do</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={resetToDefaults}>
                 <RotateCcw className="w-4 h-4 mr-1" /> Reset Defaults
               </Button>
@@ -697,11 +697,11 @@ export default function UserManagement() {
 
           {/* Permission groups for selected tier */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-lg font-semibold text-slate-800">
                 {PERMISSION_TIERS.find(t => t.key === selectedTier)?.label || selectedTier}
               </h2>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setAllForTier(selectedTier, true)}>Select All</Button>
                 <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setAllForTier(selectedTier, false)}>Deselect All</Button>
               </div>

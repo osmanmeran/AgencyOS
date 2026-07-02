@@ -335,7 +335,7 @@ export default function Profile() {
         {outlookStatus === null ? (
           <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Checking status...</div>
         ) : outlookStatus.connected ? (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <p className="text-sm font-medium text-green-700">✓ Connected{outlookStatus.email ? ` as ${outlookStatus.email}` : ''}</p>
               <p className="text-xs text-muted-foreground mt-0.5">Emails are sent via your Outlook account</p>
@@ -345,7 +345,7 @@ export default function Profile() {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <p className="text-sm text-muted-foreground">Not connected</p>
               <p className="text-xs text-muted-foreground mt-0.5">Connect to send emails via Outlook</p>

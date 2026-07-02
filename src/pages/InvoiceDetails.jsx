@@ -50,7 +50,7 @@ export default function InvoiceDetails() {
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
-      return all[0];
+      return all[0] || {};
     }
   }));
 
@@ -159,7 +159,7 @@ export default function InvoiceDetails() {
               Back to Revenue
             </Button>
           </Link>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {invoice.status === 'draft' && (
               <Button onClick={() => updateStatusMutation.mutate('sent')} variant="outline">
                 <Send className="w-4 h-4 mr-2" />

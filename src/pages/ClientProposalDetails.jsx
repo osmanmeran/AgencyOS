@@ -146,7 +146,7 @@ export default function ClientProposalDetails() {
             })}
 
             <div className="pt-6 mt-6 border-t-2 border-slate-300">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-2">
                 <span className="text-2xl font-bold text-slate-900">Total</span>
                 <div className="text-4xl font-bold text-green-700 flex items-center gap-2">
                   {(() => {

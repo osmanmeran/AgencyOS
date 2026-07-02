@@ -59,7 +59,7 @@ export default function CreateInvoice() {
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
-      return all[0];
+      return all[0] || {};
     }
   }));
 
@@ -392,7 +392,7 @@ export default function CreateInvoice() {
                 <span className="font-semibold">{cs}{subtotal.toFixed(2)}</span>
               </div>
               
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-2">
                 <span className="text-slate-600">Tax Rate (%):</span>
                 <Input
                   type="number"

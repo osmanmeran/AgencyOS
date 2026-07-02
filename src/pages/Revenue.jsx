@@ -228,7 +228,7 @@ function InvoicesTab() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {overdueCount > 0 && (
             <Button
               onClick={sendBulkReminders}

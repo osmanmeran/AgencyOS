@@ -234,7 +234,7 @@ export default function ClientDetails() {
             </div>
           </div>
           {hasPermission('modify_clients') && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button onClick={openEditModal} variant="outline">
                 <Edit className="w-4 h-4 mr-2" /> Edit Client
               </Button>
@@ -480,7 +480,7 @@ export default function ClientDetails() {
                     <div className="text-sm text-slate-600 mb-3">
                       {proposal.destination && <div>Destination: {proposal.destination}</div>}
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center flex-wrap gap-2">
                       <Badge className={proposal.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
                         {proposal.status}
                       </Badge>

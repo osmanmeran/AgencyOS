@@ -208,7 +208,7 @@ export default function RFPManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <div className="bg-teal-100 p-2.5 rounded-xl">
             <SendHorizontal className="w-6 h-6 text-teal-700" />
@@ -229,7 +229,7 @@ export default function RFPManager() {
         </Dialog>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {['all', 'pending', 'quoted', 'confirmed', 'rejected', 'cancelled'].map(s => (
           <Button key={s} variant={filter === s ? 'default' : 'outline'} size="sm" onClick={() => setFilter(s)}
             className={filter === s ? 'bg-teal-600' : ''}

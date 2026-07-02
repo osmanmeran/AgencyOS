@@ -141,7 +141,7 @@ export default function ClientCRM() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-xl shadow-md">
             <Users className="w-5 h-5 text-white" />
@@ -239,7 +239,7 @@ export default function ClientCRM() {
               return (
                 <div key={stage.key} className="flex-1 min-w-[140px]">
                   <div className={`rounded-lg border-2 ${stage.color} p-3 mb-3`}>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">{stage.label}</span>
                       <span className="text-xs font-bold text-slate-400 bg-white rounded-full w-5 h-5 flex items-center justify-center">{cards.length}</span>
                     </div>

@@ -77,7 +77,7 @@ export default function ProposalBuilder() {
 
   const { data: appSettings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
-    queryFn: async () => { const all = await db.entities.AppSettings.list(); return all[0]; }
+    queryFn: async () => { const all = await db.entities.AppSettings.list(); return all[0] || {}; }
   }));
 
   const getCategoryName = (id) => categories.find(c => c.id === id)?.name || 'Uncategorized';
@@ -153,7 +153,7 @@ export default function ProposalBuilder() {
             <p className="text-slate-500 text-sm">Drag services from the library to build a proposal</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setIsPreviewing(!isPreviewing)}>
             <Eye className="w-4 h-4 mr-2" />
             {isPreviewing ? 'Edit' : 'Preview'}

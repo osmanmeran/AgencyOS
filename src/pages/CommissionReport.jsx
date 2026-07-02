@@ -50,7 +50,7 @@ export default function CommissionReport() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <div className="bg-green-100 p-2.5 rounded-xl">
             <DollarSign className="w-6 h-6 text-green-700" />

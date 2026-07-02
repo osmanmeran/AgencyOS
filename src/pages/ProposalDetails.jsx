@@ -73,7 +73,7 @@ export default function ProposalDetails() {
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
-      return all[0];
+      return all[0] || {};
     }
   }));
 
@@ -208,7 +208,7 @@ export default function ProposalDetails() {
             Back to Proposals
           </Button>
         </Link>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {proposal.status === 'delivered' && (
             <>
               <Button onClick={() => handleStatusChange('approved')} className="bg-green-600 hover:bg-green-700">
@@ -355,11 +355,11 @@ export default function ProposalDetails() {
                   {/* Booking actions — only shown when approved */}
                   {proposal.status === 'approved' && (
                     <div className="border-t border-slate-200 pt-4 mt-4 space-y-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <Badge className={`${bsConfig.color} flex items-center gap-1`}>
                           <BsIcon className="w-3 h-3" />{bsConfig.label}
                         </Badge>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           {service.booking_status !== 'requested' && service.booking_status !== 'confirmed' && (
                             <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => openBookingModal(index)}>
                               <Send className="w-3.5 h-3.5 mr-1" />Send Booking Request
@@ -390,7 +390,7 @@ export default function ProposalDetails() {
             })}
 
             <div className="pt-6 mt-6 border-t-2 border-slate-300">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-2">
                 <span className="text-2xl font-bold text-slate-900">Total</span>
                 <div className="text-4xl font-bold text-green-700 flex items-center gap-2">
                   {proposalCurrencySymbol}{(proposal.total_cost || 0).toFixed(2)}
@@ -603,7 +603,7 @@ function ResponseEditor({ service, _serviceIdx, onSave, loading }) {
           <Textarea value={responseNotes} onChange={(e) => setResponseNotes(e.target.value)}
             placeholder={`Paste supplier reply or confirmation details here...\n\nExample:\n**Confirmed**\n- Room: Deluxe Double\n- Rate: $150/night\n- Confirmation: CNF-2024-00123`}
             rows={4} />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button size="sm" className="bg-green-600 hover:bg-green-700"
               onClick={() => { onSave(responseNotes, responseStatus); setEditing(false); }}
               disabled={loading}
