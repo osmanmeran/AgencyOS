@@ -48,6 +48,15 @@ const db = globalThis.__B44_DB__ || {
   appLogs: {
     logUserInApp: async () => {},
   },
+  reports: {
+    revenueOverview: async () => ({
+      totalRevenue: 0, totalOutstanding: 0, monthlyConfirmedRevenue: 0, monthlyConfirmedCount: 0,
+      pendingProposals: 0, acceptedProposals: 0, proposalAcceptRate: 0, upcomingPaymentDues: [],
+    }),
+    commissions: async () => ({
+      totalCommission: 0, totalProfit: 0, totalRevenue: 0, avgCommissionRate: 0, byAgent: [], trips: [],
+    }),
+  },
 };
 
 const DbContext = createContext(null);

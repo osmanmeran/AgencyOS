@@ -24,6 +24,7 @@ import pdfRoutes from './routes/pdf.js';
 import auditRoutes from './routes/audit.js';
 import testingRoutes from './routes/testing.js';
 import suggestionRoutes from './routes/suggestions.js';
+import reportRoutes from './routes/reports.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -103,6 +104,7 @@ app.use('/api/pdf', auditMiddleware, pdfRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/testing', testingRoutes);
 app.use('/api/suggestions', suggestionRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });

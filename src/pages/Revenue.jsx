@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SkeletonStats } from '@/components/ui/skeletons';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { format, addDays, isWithinInterval, isBefore, parseISO, startOfMonth, endOfMonth, isPast } from 'date-fns';
+import { format, parseISO, isPast } from 'date-fns';
 import { DollarSign, AlertCircle, FileText, TrendingUp, ArrowRight, Plus, Search, Calendar, Bell, Loader2, Trash2, Download } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import ReportsSection from '../components/reports/ReportsSection';
@@ -28,56 +28,20 @@ const INVOICE_STATUS_COLORS = {
 };
 
 function OverviewTab() {
-  const today = new Date();
-
-  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['allTrips'],
-    queryFn: () => db.entities.Trip.list('-start_date')
+  const { data: overview = /** @type {any} */ ({}) } = /** @type {any} */ (useQuery({
+    queryKey: ['revenueOverview'],
+    queryFn: () => db.reports.revenueOverview(),
   }));
 
-  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['allInvoices'],
-    queryFn: () => db.entities.Invoice.list('-due_date')
-  }));
-
-  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['allProposals'],
-    queryFn: () => db.entities.Proposal.list('-created_date')
-  }));
-
-  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['allClients'],
-    queryFn: () => db.entities.Client.list()
-  }));
-
-  const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['allPayments'],
-    queryFn: () => db.entities.ClientPayment.list('-payment_date')
-  }));
-
-  const monthStart = startOfMonth(today);
-  const monthEnd = endOfMonth(today);
-  const confirmedThisMonth = trips.filter(t => {
-    if (t.proposal_status !== 'confirmed') return false;
-    const created = t.created_date ? new Date(t.created_date) : null;
-    return created && created >= monthStart && created <= monthEnd;
-  });
-  const monthlyConfirmedRevenue = confirmedThisMonth.reduce((sum, t) => sum + (t.total_cost || 0), 0);
-
-  const totalRevenue = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
-  const totalOutstanding = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled').reduce((sum, i) => sum + (i.amount_due || 0), 0);
-  const pendingProposals = proposals.filter(p => p.status === 'sent').length;
-  const acceptedProposals = proposals.filter(p => p.status === 'accepted').length;
-  const proposalAcceptRate = proposals.length > 0 ? Math.round((acceptedProposals / proposals.length) * 100) : 0;
-
-  const next30Days = addDays(today, 30);
-  const upcomingPaymentDues = invoices.filter(inv => {
-    if (inv.status === 'paid' || inv.status === 'cancelled') return false;
-    const dueDate = parseISO(inv.due_date);
-    return isWithinInterval(dueDate, { start: today, end: next30Days }) || isBefore(dueDate, today);
-  }).sort((a, b) => +(new Date(a.due_date)) - +(new Date(b.due_date)));
-
-  const getClientName = (id) => clients.find(c => c.id === id)?.name || 'Unknown';
+  const {
+    totalRevenue = 0,
+    totalOutstanding = 0,
+    monthlyConfirmedRevenue = 0,
+    monthlyConfirmedCount = 0,
+    pendingProposals = 0,
+    proposalAcceptRate = 0,
+    upcomingPaymentDues = [],
+  } = overview;
 
   return (
     <div className="space-y-8">
@@ -121,7 +85,7 @@ function OverviewTab() {
             <div className="bg-green-100 p-2 rounded-lg"><DollarSign className="w-4 h-4 text-green-600" /></div>
           </div>
           <div className="text-3xl font-bold text-green-700 mb-1">${monthlyConfirmedRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-          <p className="text-xs text-slate-400">From {confirmedThisMonth.length} confirmed reservation{confirmedThisMonth.length !== 1 ? 's' : ''} this month</p>
+          <p className="text-xs text-slate-400">From {monthlyConfirmedCount} confirmed reservation{monthlyConfirmedCount !== 1 ? 's' : ''} this month</p>
           <Link to={createPageUrl('Reservations')} className="mt-3 text-xs text-green-600 hover:underline flex items-center gap-1">
             View confirmed <ArrowRight className="w-3 h-3" />
           </Link>
@@ -135,26 +99,23 @@ function OverviewTab() {
             {upcomingPaymentDues.length === 0 ? (
               <p className="text-slate-500 text-center py-4">No upcoming payments</p>
             ) : (
-              upcomingPaymentDues.slice(0, 10).map(inv => {
-                const isOverdue = isBefore(parseISO(inv.due_date), today);
-                return (
-                  <Link key={inv.id} to={createPageUrl(`InvoiceDetails?id=${inv.id}`)}>
-                    <div className={`p-3 rounded-lg border ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} hover:shadow-md transition-shadow`}>
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-medium text-slate-900">{inv.invoice_number}</span>
-                        <Badge className={isOverdue ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'}>
-                          {isOverdue ? 'Overdue' : 'Due'}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-slate-600">{getClientName(inv.client_id)}</div>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-slate-500">{format(parseISO(inv.due_date), 'MMM d')}</span>
-                        <span className="font-bold text-green-700">${inv.amount_due?.toFixed(2)}</span>
-                      </div>
+              upcomingPaymentDues.map(inv => (
+                <Link key={inv.id} to={createPageUrl(`InvoiceDetails?id=${inv.id}`)}>
+                  <div className={`p-3 rounded-lg border ${inv.overdue ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} hover:shadow-md transition-shadow`}>
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-medium text-slate-900">{inv.invoice_number}</span>
+                      <Badge className={inv.overdue ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'}>
+                        {inv.overdue ? 'Overdue' : 'Due'}
+                      </Badge>
                     </div>
-                  </Link>
-                );
-              })
+                    <div className="text-sm text-slate-600">{inv.client_name}</div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs text-slate-500">{format(parseISO(inv.due_date), 'MMM d')}</span>
+                      <span className="font-bold text-green-700">${inv.amount_due?.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))
             )}
           </div>
         </Card>

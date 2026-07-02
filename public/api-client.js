@@ -244,6 +244,14 @@
         return api('/app-logs', { method: 'POST', body: JSON.stringify({ pageName: pageName }) });
       },
     },
+    reports: {
+      revenueOverview: function () {
+        return api('/reports/revenue-overview');
+      },
+      commissions: function () {
+        return api('/reports/commissions');
+      },
+    },
     Query: {
       query: function (sql) {
         return Promise.reject(new Error('Direct SQL queries are not supported'));
