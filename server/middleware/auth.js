@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import logger from '../lib/logger.js';
+import { sendError } from './errors.js';
 
 let JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -16,7 +17,7 @@ export function getJwtSecret() {
 
 export function generateToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, user_tier: user.user_tier, role: user.role },
+    { id: user.id, email: user.email, user_tier: user.user_tier, role: user.role, custom_permissions: user.custom_permissions || [] },
     getJwtSecret(),
     { expiresIn: '24h' }
   );
@@ -37,7 +38,7 @@ export function authMiddleware(req, res, next) {
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'Authentication required' });
+    return sendError(res, 401, 'AUTH_REQUIRED', 'Authentication required');
   }
 
   try {
@@ -45,6 +46,6 @@ export function authMiddleware(req, res, next) {
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    return sendError(res, 401, 'INVALID_TOKEN', 'Invalid or expired token');
   }
 }

@@ -12,6 +12,7 @@ export const PERMISSION_GROUPS = [
       { key: 'delete_trips', label: 'Delete Trips', description: 'Remove trip records from the system' },
       { key: 'cancel_trips', label: 'Cancel Trips', description: 'Cancel/rescind confirmed trips' },
       { key: 'view_all_trips', label: 'View All Trips', description: 'Access trips created by other users' },
+      { key: 'manage_tour_contracts', label: 'Manage Tour Contracts', description: 'Create and edit recurring serial tour contracts and their pricing tiers' },
     ],
   },
   {
@@ -108,7 +109,7 @@ for (const group of PERMISSION_GROUPS) {
 export const DEFAULT_TIER_PERMISSIONS = {
   admin: [
     'manage_users', 'manage_roles', 'manage_app_settings', 'change_app_branding',
-    'create_trips', 'modify_trips', 'delete_trips', 'cancel_trips', 'view_all_trips',
+    'create_trips', 'modify_trips', 'delete_trips', 'cancel_trips', 'view_all_trips', 'manage_tour_contracts',
     'create_invoices', 'modify_invoices', 'delete_invoices', 'cancel_invoices', 'view_invoices',
     'create_suppliers', 'modify_suppliers', 'delete_suppliers',
     'manage_categories', 'manage_pricing', 'manage_service_categories',
@@ -120,7 +121,7 @@ export const DEFAULT_TIER_PERMISSIONS = {
     'send_booking_requests', 'search_references',
   ],
   manager: [
-    'create_trips', 'modify_trips', 'cancel_trips', 'view_all_trips',
+    'create_trips', 'modify_trips', 'cancel_trips', 'view_all_trips', 'manage_tour_contracts',
     'create_invoices', 'modify_invoices', 'cancel_invoices', 'view_invoices',
     'create_suppliers', 'modify_suppliers',
     'manage_categories', 'manage_pricing', 'manage_service_categories',

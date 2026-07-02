@@ -40,6 +40,9 @@ const RFPManager = lazy(() => import('./pages/RFPManager'));
 const CommissionReport = lazy(() => import('./pages/CommissionReport'));
 const SuggestionsManager = lazy(() => import('./pages/SuggestionsManager'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
+const TourContracts = lazy(() => import('./pages/TourContracts'));
+const TourContractForm = lazy(() => import('./pages/TourContractForm'));
+const GenerateFromContract = lazy(() => import('./pages/GenerateFromContract'));
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -83,6 +86,9 @@ export const PAGES = {
     "CommissionReport": CommissionReport,
     "SuggestionsManager": SuggestionsManager,
     "UserManagement": UserManagement,
+    "TourContracts": TourContracts,
+    "TourContractForm": TourContractForm,
+    "GenerateFromContract": GenerateFromContract,
 }
 
 export const pagesConfig = {

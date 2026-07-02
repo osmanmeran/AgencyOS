@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Globe, Instagram, Linkedin, Facebook, Twitter, Building, Upload, Loader2, Edit2, Check, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Globe, Instagram, Linkedin, Facebook, Twitter, Building, Upload, Loader2, Edit2, Check, X, Plus, Trash2, Sparkles } from 'lucide-react';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+const emptyExtra = () => ({ _key: `extra-${Date.now()}-${Math.random()}`, name: '', supplier_id: '', unit: 'per_person', quantity: 1, acquiring_price: '', selling_price: '', currency: 'EUR' });
 
 export default function ClientProfile({ client, clientId }) {
   const [editing, setEditing] = useState(false);
@@ -25,6 +28,38 @@ export default function ClientProfile({ client, clientId }) {
     notes: client.notes || '',
   });
   const queryClient = useQueryClient();
+
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
+    queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list(),
+  }));
+
+  const [extrasEditing, setExtrasEditing] = useState(false);
+  const [extrasSaving, setExtrasSaving] = useState(false);
+  const [extras, setExtras] = useState(client.fixed_extras || []);
+
+  const addExtra = () => setExtras(prev => [...prev, emptyExtra()]);
+  const updateExtra = (key, field, value) => setExtras(prev => prev.map(x => x._key === key ? { ...x, [field]: value } : x));
+  const removeExtra = (key) => setExtras(prev => prev.filter(x => x._key !== key));
+
+  const handleExtrasSave = async () => {
+    setExtrasSaving(true);
+    try {
+      const clean = extras
+        .filter(x => x.name.trim())
+        .map(x => ({ ...x, acquiring_price: parseFloat(x.acquiring_price) || 0, selling_price: parseFloat(x.selling_price) || 0, quantity: parseFloat(x.quantity) || 1 }));
+      await db.entities.Client.update(clientId, { fixed_extras: clean });
+      setExtras(clean);
+      queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+      setExtrasEditing(false);
+    } finally {
+      setExtrasSaving(false);
+    }
+  };
+
+  const handleExtrasCancel = () => {
+    setExtras(client.fixed_extras || []);
+    setExtrasEditing(false);
+  };
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
@@ -162,6 +197,59 @@ export default function ClientProfile({ client, clientId }) {
           />
         ) : (
           <p className="text-slate-700 text-sm whitespace-pre-wrap">{client.notes || <span className="text-slate-400 italic">No notes yet. Click Edit to add.</span>}</p>
+        )}
+      </Card>
+
+      {/* Fixed Extras — optional add-ons offered when generating a booking from a Tour Contract for this client */}
+      <Card className="p-6 bg-white">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-500" />Fixed Extras</h3>
+          {!extrasEditing ? (
+            <Button variant="outline" size="sm" onClick={() => setExtrasEditing(true)}><Edit2 className="w-4 h-4 mr-1" />Edit</Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={handleExtrasCancel}><X className="w-4 h-4 mr-1" />Cancel</Button>
+              <Button size="sm" onClick={handleExtrasSave} disabled={extrasSaving} className="bg-blue-600 hover:bg-blue-700">
+                {extrasSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}Save
+              </Button>
+            </div>
+          )}
+        </div>
+        <p className="text-xs text-slate-400 mb-3">Optional add-ons (e.g. hamam, private transfer) offered when generating a booking from a Tour Contract for this client.</p>
+
+        {!extrasEditing ? (
+          extras.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">No fixed extras yet. Click Edit to add one.</p>
+          ) : (
+            <div className="space-y-2">
+              {extras.map(x => (
+                <div key={x._key} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg text-sm">
+                  <span className="font-medium text-slate-800">{x.name}</span>
+                  <span className="text-slate-500">{x.currency} {x.selling_price} / {x.unit?.replace('per_', '')}</span>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="space-y-3">
+            {extras.map(x => (
+              <div key={x._key} className="grid grid-cols-1 md:grid-cols-[2fr_1.5fr_1fr_1fr_1fr_auto] gap-2 items-center p-2 border border-slate-100 rounded-lg">
+                <Input value={x.name} onChange={e => updateExtra(x._key, 'name', e.target.value)} placeholder="e.g., Hamam" className="text-sm" />
+                <Select value={x.supplier_id || ''} onValueChange={v => updateExtra(x._key, 'supplier_id', v)}>
+                  <SelectTrigger className="text-sm"><SelectValue placeholder="Supplier (optional)" /></SelectTrigger>
+                  <SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                </Select>
+                <Input type="number" step="0.01" value={x.acquiring_price} onChange={e => updateExtra(x._key, 'acquiring_price', e.target.value)} placeholder="Cost" className="text-sm" title="Supplier cost (for margin tracking)" />
+                <Input type="number" step="0.01" value={x.selling_price} onChange={e => updateExtra(x._key, 'selling_price', e.target.value)} placeholder="Price" className="text-sm" title="Client price" />
+                <Select value={x.currency} onValueChange={v => updateExtra(x._key, 'currency', v)}>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>{['EUR', 'USD', 'GBP', 'TRY', 'AED'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => removeExtra(x._key)}><Trash2 className="w-4 h-4 text-red-400" /></Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addExtra}><Plus className="w-4 h-4 mr-1" />Add Extra</Button>
+          </div>
         )}
       </Card>
     </div>

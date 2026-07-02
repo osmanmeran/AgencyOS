@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDb, uid } from '../db.js';
-import { catchAsync } from '../middleware/errors.js';
+import { catchAsync, sendError } from '../middleware/errors.js';
+import { requireAdmin } from '../middleware/permissions.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -10,7 +11,7 @@ router.post('/', authMiddleware, catchAsync(async (req, res) => {
   const { type, title, description } = req.body;
 
   if (!type || !title) {
-    return res.status(400).json({ error: { message: 'Type and title are required' } });
+    return sendError(res, 400, 'VALIDATION_ERROR', 'Type and title are required');
   }
 
   const now = new Date().toISOString();
@@ -35,10 +36,7 @@ router.post('/', authMiddleware, catchAsync(async (req, res) => {
   res.status(201).json({ message: 'Suggestion submitted' });
 }));
 
-router.get('/', authMiddleware, catchAsync(async (req, res) => {
-  if (req.user?.user_tier !== 'admin' && req.user?.role !== 'admin') {
-    return res.status(403).json({ error: { message: 'Admin access required' } });
-  }
+router.get('/', authMiddleware, requireAdmin, catchAsync(async (req, res) => {
 
   const db = getDb();
   const suggestions = db.prepare(`
@@ -50,19 +48,16 @@ router.get('/', authMiddleware, catchAsync(async (req, res) => {
   res.json(suggestions.map(s => ({ id: s.id, ...JSON.parse(s.data), _created_by: s.created_by })));
 }));
 
-router.patch('/:id/status', authMiddleware, catchAsync(async (req, res) => {
-  if (req.user?.user_tier !== 'admin' && req.user?.role !== 'admin') {
-    return res.status(403).json({ error: { message: 'Admin access required' } });
-  }
+router.patch('/:id/status', authMiddleware, requireAdmin, catchAsync(async (req, res) => {
 
   const { status } = req.body;
   if (!['open', 'under_review', 'planned', 'implemented', 'declined'].includes(status)) {
-    return res.status(400).json({ error: { message: 'Invalid status' } });
+    return sendError(res, 400, 'INVALID_STATUS', 'Invalid status');
   }
 
   const db = getDb();
   const row = db.prepare('SELECT data FROM entities WHERE id = ? AND type = ?').get(req.params.id, 'Suggestion');
-  if (!row) return res.status(404).json({ error: { message: 'Suggestion not found' } });
+  if (!row) return sendError(res, 404, 'SUGGESTION_NOT_FOUND', 'Suggestion not found');
 
   const data = JSON.parse(row.data);
   data.status = status;

@@ -27,7 +27,7 @@ router.get('/:type/:id', catchAsync(async (req, res) => {
 }));
 
 router.post('/:type', catchAsync(async (req, res) => {
-  const result = createEntity(req.params.type, req.body, req.user.id);
+  const result = createEntity(req.params.type, req.body, req.user);
   // Signal only — no entity data — so clients refetch through the normal,
   // permission-checked GET endpoints instead of receiving raw data over the socket.
   broadcast({ type: 'entity_change', action: 'create', entityType: req.params.type, entityId: result.id }, { excludeUserId: req.user.id });
@@ -35,7 +35,7 @@ router.post('/:type', catchAsync(async (req, res) => {
 }));
 
 router.post('/:type/bulk-create', validate(schemas.bulkCreateEntity), catchAsync(async (req, res) => {
-  const results = bulkCreateEntities(req.params.type, req.body.records, req.user.id);
+  const results = bulkCreateEntities(req.params.type, req.body.records, req.user);
   broadcast({ type: 'entity_change', action: 'bulk', entityType: req.params.type, entityIds: results.map(r => r.id) }, { excludeUserId: req.user.id });
   res.status(201).json(results);
 }));

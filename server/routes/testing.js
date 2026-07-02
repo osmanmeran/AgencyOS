@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { getDb, uid } from '../db.js';
-import { catchAsync } from '../middleware/errors.js';
+import { catchAsync, sendError } from '../middleware/errors.js';
+import { requireAdmin } from '../middleware/permissions.js';
 import { authMiddleware } from '../middleware/auth.js';
 import logger from '../lib/logger.js';
 
@@ -13,15 +14,10 @@ const TEST_USERS = {
   accounting: { email: 'test.accounting@travelpro.com', name: 'Test Accounting', tier: 'accounting', role: 'accounting' },
 };
 
-function isAdmin(req) {
-  return req.user?.user_tier === 'admin' || req.user?.role === 'admin';
-}
-
-router.post('/create-test-user', authMiddleware, catchAsync(async (req, res) => {
-  if (!isAdmin(req)) return res.status(403).json({ error: { message: 'Admin access required' } });
+router.post('/create-test-user', authMiddleware, requireAdmin, catchAsync(async (req, res) => {
 
   const { tier } = req.body;
-  if (!TEST_USERS[tier]) return res.status(400).json({ error: { message: `Unknown tier: ${tier}` } });
+  if (!TEST_USERS[tier]) return sendError(res, 400, 'UNKNOWN_TIER', `Unknown tier: ${tier}`);
 
   const db = getDb();
   const config = TEST_USERS[tier];
@@ -40,8 +36,7 @@ router.post('/create-test-user', authMiddleware, catchAsync(async (req, res) => 
   res.json({ message: `${tier} test user created`, email: config.email, password: 'password123' });
 }));
 
-router.post('/create-test-users', authMiddleware, catchAsync(async (req, res) => {
-  if (!isAdmin(req)) return res.status(403).json({ error: { message: 'Admin access required' } });
+router.post('/create-test-users', authMiddleware, requireAdmin, catchAsync(async (req, res) => {
 
   const db = getDb();
   const hash = bcrypt.hashSync('password123', 10);
@@ -63,8 +58,7 @@ router.post('/create-test-users', authMiddleware, catchAsync(async (req, res) =>
   res.json({ users: results });
 }));
 
-router.post('/cleanup-test-users', authMiddleware, catchAsync(async (req, res) => {
-  if (!isAdmin(req)) return res.status(403).json({ error: { message: 'Admin access required' } });
+router.post('/cleanup-test-users', authMiddleware, requireAdmin, catchAsync(async (req, res) => {
 
   const db = getDb();
   const emails = Object.values(TEST_USERS).map(u => u.email);
@@ -75,8 +69,7 @@ router.post('/cleanup-test-users', authMiddleware, catchAsync(async (req, res) =
   res.json({ message: 'Test users removed', deleted: result.changes });
 }));
 
-router.get('/db-health', authMiddleware, catchAsync(async (req, res) => {
-  if (!isAdmin(req)) return res.status(403).json({ error: { message: 'Admin access required' } });
+router.get('/db-health', authMiddleware, requireAdmin, catchAsync(async (req, res) => {
 
   const db = getDb();
   const migrationCount = db.prepare('SELECT COUNT(*) as count FROM _migrations').get();

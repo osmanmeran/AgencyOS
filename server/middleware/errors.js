@@ -45,6 +45,12 @@ export function catchAsync(fn) {
   };
 }
 
+export function sendError(res, statusCode, code, message) {
+  return res.status(statusCode).json({
+    error: { code, message },
+  });
+}
+
 export function errorHandler(err, req, res, _next) {
   if (err.isOperational) {
     return res.status(err.statusCode).json({

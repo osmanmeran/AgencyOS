@@ -57,6 +57,8 @@ const NAV_SECTIONS = {
     { label: t('nav.reservations'), icon: <FlightTakeoffRounded />, page: 'Reservations', children: [
       { label: t('nav.newReservation'), page: 'CreateReservation' },
       { label: 'Calendar', page: 'CalendarView' },
+      { label: 'Tour Contracts', page: 'TourContracts' },
+      { label: 'Generate from Contract', page: 'GenerateFromContract' },
     ]},
     { label: t('nav.suppliers'), icon: <BusinessRounded />, page: 'Suppliers', children: [
       { label: t('nav.categories'), page: 'Categories' },

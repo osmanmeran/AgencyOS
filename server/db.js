@@ -22,7 +22,7 @@ const ENTITIES = [
   'Proposal', 'ProposalTemplate', 'ReferenceCounter', 'ServiceCategory',
   'ServiceTemplate', 'Supplier', 'SupplierBooking', 'SupplierCategory',
   'SupplierInvoice', 'SupplierPricing', 'SupplierReview', 'SupplierService',
-  'SupplierSubcategory', 'Trip', 'OutlookToken'
+  'SupplierSubcategory', 'Trip', 'OutlookToken', 'TourContract'
 ];
 
 let db;

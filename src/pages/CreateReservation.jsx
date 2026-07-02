@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { showSuccess, showError } from '@/lib/toast';
+import { generateReferenceNumber } from '@/lib/referenceNumber';
 import { createPageUrl } from '../utils';
 import ServiceLibraryPanel from '../components/proposals/ServiceLibraryPanel';
 import ServiceLineEditor from '../components/services/ServiceLineEditor';
@@ -175,23 +176,6 @@ export default function CreateReservation() {
   useUnsavedChangesGuard(isDirty);
 
   const departments = settings?.departments || [];
-
-  const generateReferenceNumber = async (department) => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const prefix = settings?.reference_format?.prefix || 'TRP';
-    const deptCode = department ? department.slice(0, 3).toUpperCase() : 'GEN';
-    const counters = await db.entities.ReferenceCounter.filter({ department: department || 'general', year, month });
-    let counter = 1;
-    if (counters.length > 0) {
-      counter = (counters[0].counter || 0) + 1;
-      await db.entities.ReferenceCounter.update(counters[0].id, { ...counters[0], counter });
-    } else {
-      await db.entities.ReferenceCounter.create({ department: department || 'general', year, month, counter: 1 });
-    }
-    return `${prefix}-${deptCode}-${String(year).slice(-2)}${String(month).padStart(2, '0')}-${String(counter).padStart(4, '0')}`;
-  };
 
   const createMutation = /** @type {any} */ (useMutation({
     mutationFn: (/** @type {any} */ data) => db.entities.Trip.create(data),
@@ -441,7 +425,7 @@ export default function CreateReservation() {
         }]
       });
     } else {
-      const referenceNumber = await generateReferenceNumber(formData.department);
+      const referenceNumber = await generateReferenceNumber(formData.department, settings);
       createMutation.mutate({
         ...baseData,
         reference_number: referenceNumber,

@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from '../middleware/auth.js';
-import { catchAsync } from '../middleware/errors.js';
+import { catchAsync, sendError } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
 import { getExchangeRate, logEmail, getOutlookStatus, connectOutlook, disconnectOutlook, sendOutlookEmail, searchSupplier } from '../services/integrations.js';
 import { sendEmail, isSmtpConfigured, renderTemplate } from '../services/email.js';
@@ -86,11 +86,11 @@ router.post('/upload', (req, res) => {
   upload.single('file')(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError) {
-        return res.status(400).json({ error: `Upload error: ${err.message}` });
+        return sendError(res, 400, 'UPLOAD_ERROR', `Upload error: ${err.message}`);
       }
-      return res.status(400).json({ error: err.message });
+      return sendError(res, 400, 'UPLOAD_ERROR', err.message);
     }
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    if (!req.file) return sendError(res, 400, 'NO_FILE', 'No file uploaded');
     res.json({ file_url: `/uploads/${req.file.filename}`, success: true });
   });
 });

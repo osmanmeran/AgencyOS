@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from '../middleware/auth.js';
-import { catchAsync } from '../middleware/errors.js';
+import { catchAsync, sendError } from '../middleware/errors.js';
 import { upload, saveDocument, getDocuments, getDocumentById, deleteDocument } from '../services/documents.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -17,9 +17,9 @@ router.post('/upload', (req, res) => {
   upload.single('file')(req, res, (err) => {
     if (err) {
       const message = err.name === 'MulterError' ? `Upload error: ${err.message}` : err.message;
-      return res.status(400).json({ error: message });
+      return sendError(res, 400, 'UPLOAD_ERROR', message);
     }
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    if (!req.file) return sendError(res, 400, 'NO_FILE', 'No file uploaded');
 
     const doc = saveDocument({
       file: req.file,
@@ -40,16 +40,16 @@ router.get('/', catchAsync(async (req, res) => {
 
 router.get('/:id', catchAsync(async (req, res) => {
   const doc = getDocumentById(req.params.id);
-  if (!doc) return res.status(404).json({ error: 'Document not found' });
+  if (!doc) return sendError(res, 404, 'DOCUMENT_NOT_FOUND', 'Document not found');
   res.json({ document: { ...doc, url: `/uploads/${doc.stored_name}` } });
 }));
 
 router.get('/:id/download', catchAsync(async (req, res) => {
   const doc = getDocumentById(req.params.id);
-  if (!doc) return res.status(404).json({ error: 'Document not found' });
+  if (!doc) return sendError(res, 404, 'DOCUMENT_NOT_FOUND', 'Document not found');
 
   const filePath = path.join(UPLOAD_DIR, doc.stored_name);
-  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on disk' });
+  if (!fs.existsSync(filePath)) return sendError(res, 404, 'FILE_NOT_FOUND', 'File not found on disk');
 
   res.setHeader('Content-Disposition', `attachment; filename="${doc.original_name}"`);
   res.setHeader('Content-Type', doc.mime_type);
@@ -58,7 +58,7 @@ router.get('/:id/download', catchAsync(async (req, res) => {
 
 router.delete('/:id', catchAsync(async (req, res) => {
   const doc = deleteDocument(req.params.id);
-  if (!doc) return res.status(404).json({ error: 'Document not found' });
+  if (!doc) return sendError(res, 404, 'DOCUMENT_NOT_FOUND', 'Document not found');
   res.json({ success: true });
 }));
 

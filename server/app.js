@@ -8,8 +8,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { seedDatabase } from './seed.js';
 import { getDb, uid } from './db.js';
-import { errorHandler, notFoundHandler } from './middleware/errors.js';
+import { errorHandler, notFoundHandler, sendError } from './middleware/errors.js';
 import { authMiddleware } from './middleware/auth.js';
+import { requireAdmin } from './middleware/permissions.js';
 import { auditMiddleware } from './services/audit.js';
 import logger from './lib/logger.js';
 import authRoutes from './routes/auth.js';
@@ -61,7 +62,7 @@ app.use(cookieParser());
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  message: { message: 'Too many attempts. Please try again later.' },
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many attempts. Please try again later.' } },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -69,7 +70,7 @@ const strictLimiter = rateLimit({
 const mutationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: { message: 'Too many requests. Please try again later.' },
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many requests. Please try again later.' } },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -77,7 +78,7 @@ const mutationLimiter = rateLimit({
 const standardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5000,
-  message: { message: 'Too many requests. Please try again later.' },
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many requests. Please try again later.' } },
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
@@ -107,13 +108,6 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-function requireAdmin(req, res, next) {
-  if (req.user?.user_tier !== 'admin' && req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-}
-
 app.get('/api/admin/list-users', authMiddleware, requireAdmin, (req, res) => {
   const db = getDb();
   const users = db.prepare('SELECT id, email, name, user_tier, role, is_active, microsoft_id FROM users ORDER BY created_date').all();
@@ -124,10 +118,10 @@ app.get('/api/admin/list-users', authMiddleware, requireAdmin, (req, res) => {
 app.post('/api/admin/fix-user', authMiddleware, requireAdmin, (req, res) => {
   try {
     const { email, user_tier, role } = req.body;
-    if (!email) return res.status(400).json({ error: 'email required' });
+    if (!email) return sendError(res, 400, 'VALIDATION_ERROR', 'email required');
     const db = getDb();
     const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(email);
-    if (!user) return res.status(404).json({ error: `User not found: ${email}` });
+    if (!user) return sendError(res, 404, 'USER_NOT_FOUND', `User not found: ${email}`);
     const tier = user_tier || 'admin';
     const r = role || tier;
     db.prepare('UPDATE users SET user_tier = ?, role = ?, updated_date = ? WHERE id = ?')
@@ -135,7 +129,7 @@ app.post('/api/admin/fix-user', authMiddleware, requireAdmin, (req, res) => {
     const updated = db.prepare('SELECT id, email, name, user_tier, role, is_active FROM users WHERE id = ?').get(user.id);
     res.json({ success: true, user: updated });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, 500, 'INTERNAL_ERROR', err.message);
   }
 });
 
@@ -159,7 +153,7 @@ app.post('/api/admin/fix-trip-agents', authMiddleware, requireAdmin, (req, res) 
     }
     res.json({ success: true, fixed });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, 500, 'INTERNAL_ERROR', err.message);
   }
 });
 
@@ -167,7 +161,7 @@ app.post('/api/email/test-outlook', authMiddleware, async (req, res) => {
   try {
     const { sendOutlookEmail, getOutlookStatus } = await import('./services/integrations.js');
     const status = await getOutlookStatus(req.user.id);
-    if (!status.connected) return res.status(400).json({ error: 'Outlook non connesso. Vai su Impostazioni → Integrazioni per collegarlo.' });
+    if (!status.connected) return sendError(res, 400, 'OUTLOOK_NOT_CONNECTED', 'Outlook non connesso. Vai su Impostazioni → Integrazioni per collegarlo.');
     await sendOutlookEmail(req.user.id, {
       to: req.user.email,
       subject: 'Marvelops – Test Outlook',
@@ -175,7 +169,7 @@ app.post('/api/email/test-outlook', authMiddleware, async (req, res) => {
     });
     res.json({ success: true, message: `Email inviata a ${req.user.email}` });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, 500, 'INTERNAL_ERROR', err.message);
   }
 });
 
@@ -183,7 +177,7 @@ app.post('/api/email/test', authMiddleware, async (req, res) => {
   try {
     const { sendEmail, isSmtpConfigured } = await import('./services/email.js');
     if (!isSmtpConfigured()) {
-      return res.status(400).json({ error: 'SMTP not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS environment variables.' });
+      return sendError(res, 400, 'SMTP_NOT_CONFIGURED', 'SMTP not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS environment variables.');
     }
     const result = await sendEmail({
       to: req.user.email,
@@ -192,7 +186,7 @@ app.post('/api/email/test', authMiddleware, async (req, res) => {
     });
     res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, 500, 'INTERNAL_ERROR', err.message);
   }
 });
 

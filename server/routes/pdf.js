@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from '../middleware/auth.js';
-import { catchAsync } from '../middleware/errors.js';
+import { catchAsync, sendError } from '../middleware/errors.js';
 import { generateBookingConfirmation, generateProposal, generateInvoice } from '../services/pdf.js';
 import { createNotification } from '../services/notifications.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
@@ -14,7 +14,7 @@ router.use(authMiddleware);
 
 router.post('/booking', catchAsync(async (req, res) => {
   const { clientName, reference, destination, dates, details } = req.body;
-  if (!clientName || !reference) return res.status(400).json({ error: 'clientName and reference are required' });
+  if (!clientName || !reference) return sendError(res, 400, 'VALIDATION_ERROR', 'clientName and reference are required');
   const { filename } = await generateBookingConfirmation(req.body);
 
   createNotification({
@@ -29,7 +29,7 @@ router.post('/booking', catchAsync(async (req, res) => {
 
 router.post('/proposal', catchAsync(async (req, res) => {
   const { clientName, destination } = req.body;
-  if (!clientName || !destination) return res.status(400).json({ error: 'clientName and destination are required' });
+  if (!clientName || !destination) return sendError(res, 400, 'VALIDATION_ERROR', 'clientName and destination are required');
   const { filename } = await generateProposal(req.body);
 
   createNotification({
@@ -44,7 +44,7 @@ router.post('/proposal', catchAsync(async (req, res) => {
 
 router.post('/invoice', catchAsync(async (req, res) => {
   const { invoiceNumber } = req.body;
-  if (!invoiceNumber) return res.status(400).json({ error: 'invoiceNumber is required' });
+  if (!invoiceNumber) return sendError(res, 400, 'VALIDATION_ERROR', 'invoiceNumber is required');
   const { filename } = await generateInvoice(req.body);
 
   createNotification({
@@ -75,8 +75,8 @@ router.get('/download/:filename', (req, res) => {
   const pdfDir = path.join(__dirname, '..', '..', 'data', 'pdfs');
   const filename = path.basename(req.params.filename);
   const filePath = path.join(pdfDir, filename);
-  if (!filePath.startsWith(pdfDir + path.sep)) return res.status(400).json({ error: 'Invalid filename' });
-  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+  if (!filePath.startsWith(pdfDir + path.sep)) return sendError(res, 400, 'INVALID_FILENAME', 'Invalid filename');
+  if (!fs.existsSync(filePath)) return sendError(res, 404, 'FILE_NOT_FOUND', 'File not found');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.setHeader('Content-Type', 'application/pdf');
   fs.createReadStream(filePath).pipe(res);

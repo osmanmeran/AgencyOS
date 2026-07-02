@@ -15,7 +15,11 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true,
     proxy: {
-      '/api': {
+      // Trailing slash matters: a bare '/api' prefix also matches
+      // /api-client.js (string-prefix matching), which sent that static
+      // asset to the backend's stale dist/ build instead of the live
+      // source in public/ during dev.
+      '/api/': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },

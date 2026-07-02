@@ -1,8 +1,39 @@
 import { getDb, uid, getEntities } from '../db.js';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../middleware/errors.js';
+import { hasPermission } from '../permissions.js';
 
 const USER_SCOPED_TYPES = ['Message', 'ClientTask', 'EmailLog'];
 const CLIENT_SCOPED_TYPES = ['Trip', 'Proposal', 'Invoice', 'ClientPayment'];
+
+const ENTITY_PERMISSION_MAP = {
+  Trip: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
+  Reservation: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
+  SupplierBooking: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
+  Invoice: { create: 'create_invoices', read: 'view_invoices', update: 'modify_invoices', delete: 'delete_invoices' },
+  ClientPayment: { create: 'create_invoices', read: 'view_invoices', update: 'modify_invoices', delete: 'delete_invoices' },
+  Proposal: { create: 'create_proposals', read: 'view_all_data', update: 'modify_proposals', delete: 'delete_proposals' },
+  Supplier: { create: 'create_suppliers', read: 'view_all_data', update: 'modify_suppliers', delete: 'delete_suppliers' },
+  SupplierInvoice: { create: 'create_invoices', read: 'view_invoices', update: 'modify_invoices', delete: 'delete_invoices' },
+  Client: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
+  Service: { create: 'create_services', read: 'view_all_data', update: 'modify_services', delete: 'delete_services' },
+  BookingTemplate: { create: 'manage_booking_templates', read: 'view_all_data', update: 'manage_booking_templates', delete: 'manage_booking_templates' },
+  Category: { create: 'manage_categories', read: 'view_all_data', update: 'manage_categories', delete: 'manage_categories' },
+  TourContract: { create: 'manage_tour_contracts', read: 'view_all_data', update: 'manage_tour_contracts', delete: 'manage_tour_contracts' },
+  Suggestion: { create: 'view_own_data', read: 'view_all_data', update: 'manage_app_settings', delete: 'manage_app_settings' },
+};
+
+function requireEntityPermission(user, entityType, action) {
+  const mapping = ENTITY_PERMISSION_MAP[entityType];
+  if (!mapping) return;
+  const requiredPermission = mapping[action];
+  if (!requiredPermission) return;
+  const userTier = user?.user_tier || 'agent';
+  const customPermissions = user?.custom_permissions || [];
+  const perms = Array.isArray(customPermissions) ? customPermissions : [];
+  if (!hasPermission(userTier, perms, requiredPermission)) {
+    throw new ForbiddenError(`Missing required permission: ${requiredPermission}`);
+  }
+}
 
 function hasFts(db) {
   try { db.prepare("SELECT 1 FROM entities_fts LIMIT 0").get(); return true; } catch { return false; }
@@ -176,12 +207,13 @@ export function findEntityById(type, id, user) {
   return data;
 }
 
-export function createEntity(type, body, userId) {
+export function createEntity(type, body, user) {
   assertValidEntityType(type);
+  requireEntityPermission(user, type, 'create');
   const now = new Date().toISOString();
   const id = uid();
   const data = sanitizeEntityData({ ...body });
-  data.created_by = userId;
+  data.created_by = user.id;
   delete data.id;
 
   const db = getDb();
@@ -195,6 +227,7 @@ export function createEntity(type, body, userId) {
 
 export function updateEntity(type, id, body, user) {
   assertValidEntityType(type);
+  requireEntityPermission(user, type, 'update');
   const db = getDb();
   const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
   if (!existing) throw new NotFoundError('Record not found');
@@ -218,6 +251,7 @@ export function updateEntity(type, id, body, user) {
 
 export function deleteEntity(type, id, user) {
   assertValidEntityType(type);
+  requireEntityPermission(user, type, 'delete');
   const db = getDb();
   const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
   if (!existing) throw new NotFoundError('Record not found');
@@ -235,8 +269,9 @@ export function deleteEntity(type, id, user) {
 
 const MAX_BULK_SIZE = 500;
 
-export function bulkCreateEntities(type, records, userId) {
+export function bulkCreateEntities(type, records, user) {
   assertValidEntityType(type);
+  requireEntityPermission(user, type, 'create');
   if (!Array.isArray(records) || records.length === 0) {
     throw new BadRequestError('records must be a non-empty array');
   }
@@ -250,7 +285,7 @@ export function bulkCreateEntities(type, records, userId) {
   const insert = db.transaction((items) => items.map(body => {
     const id = uid();
     const data = sanitizeEntityData({ ...body });
-    data.created_by = userId;
+    data.created_by = user.id;
     delete data.id;
     db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)')
       .run(id, type, JSON.stringify(data), now, now);
@@ -265,6 +300,7 @@ export function bulkCreateEntities(type, records, userId) {
 // failing the whole batch — the caller gets back exactly which ids succeeded.
 export function bulkUpdateEntities(type, ids, body, user) {
   assertValidEntityType(type);
+  requireEntityPermission(user, type, 'update');
   if (!Array.isArray(ids) || ids.length === 0) {
     throw new BadRequestError('ids must be a non-empty array');
   }
@@ -300,6 +336,7 @@ export function bulkUpdateEntities(type, ids, body, user) {
 
 export function bulkDeleteEntities(type, ids, user) {
   assertValidEntityType(type);
+  requireEntityPermission(user, type, 'delete');
   if (!Array.isArray(ids) || ids.length === 0) {
     throw new BadRequestError('ids must be a non-empty array');
   }
