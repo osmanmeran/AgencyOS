@@ -106,7 +106,7 @@ export default function BookingTemplates() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Booking Templates</h1>
           <p className="text-slate-600">Customize email templates for booking requests</p>

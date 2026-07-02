@@ -98,12 +98,12 @@ export default function Categories() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Categories & Services</h1>
           <p className="text-slate-600">Organize categories and manage service library</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link to={createPageUrl('ServiceLibrary')}>
             <Button variant="outline">
               <BookOpen className="w-5 h-5 mr-2" />

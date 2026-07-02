@@ -4,7 +4,8 @@ import fs from 'fs';
 import os from 'os';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import { migrate } from './migrations/runner.js';
+import { migrate, migrationStatus } from './migrations/runner.js';
+import { createBackupSync } from './services/backup.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,7 +23,7 @@ const ENTITIES = [
   'Proposal', 'ProposalTemplate', 'ReferenceCounter', 'ServiceCategory',
   'ServiceTemplate', 'Supplier', 'SupplierBooking', 'SupplierCategory',
   'SupplierInvoice', 'SupplierPricing', 'SupplierReview', 'SupplierService',
-  'SupplierSubcategory', 'Trip', 'OutlookToken', 'TourContract'
+  'SupplierSubcategory', 'Trip', 'OutlookToken', 'TourContract', 'ReportSchedule'
 ];
 
 let db;
@@ -31,6 +32,23 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
+
+// Snapshot the DB before applying any pending migration, so a bad migration
+// (or a bad deploy in general) can be undone by restoring this file instead
+// of just reverting the code — see scripts/backup-cli.mjs.
+// Skipped in test env: every test run starts from a fresh, empty temp DB,
+// so there's nothing worth snapshotting and it would just add file I/O.
+if (process.env.NODE_ENV !== 'test' && migrationStatus(db).some(m => !m.applied)) {
+  try {
+    const dest = createBackupSync(db, DATA_DIR, 'pre-migration');
+    console.log(`[DB] Pre-migration backup created at ${dest}`);
+  } catch (err) {
+    // A failed backup shouldn't block the app from starting — log loudly
+    // and proceed. Worst case, the daily scheduled backup is the safety net.
+    console.error('[DB] Pre-migration backup failed:', err.message);
+  }
+}
+
 migrate(db, { quiet: false });
 
 console.log(`[DB] Initialized at ${DB_PATH}`);
@@ -57,6 +75,10 @@ export function reopenDb() {
 
 export function getDbPath() {
   return DB_PATH;
+}
+
+export function getDataDir() {
+  return DATA_DIR;
 }
 
 export function getEntities() {

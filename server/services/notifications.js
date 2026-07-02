@@ -1,5 +1,6 @@
 import { getDb, uid } from '../db.js';
 import logger from '../lib/logger.js';
+import { sendEmail } from './email.js';
 
 // WebSocket hub — set by server.js after HTTP server starts
 let broadcast = null;
@@ -8,7 +9,20 @@ export function setBroadcastFn(fn) {
   broadcast = fn;
 }
 
-export function createNotification({ userId, type, title, message, data } = {}) {
+// Fire-and-forget: mirrors a notification to email for users who opted in.
+// Failures are logged, never thrown — a broken email send must not break
+// the in-app notification it's attached to.
+function maybeSendEmail(userId, email) {
+  if (!email) return;
+  const db = getDb();
+  const user = db.prepare('SELECT email, email_notifications FROM users WHERE id = ?').get(userId);
+  if (!user || !user.email_notifications || !user.email) return;
+
+  sendEmail({ to: user.email, subject: email.subject, body: email.body })
+    .catch(err => logger.error({ err: err.message, userId }, 'Failed to send notification email'));
+}
+
+export function createNotification({ userId, type, title, message, data, email } = {}) {
   const db = getDb();
   const id = uid();
   const now = new Date().toISOString();
@@ -23,6 +37,8 @@ export function createNotification({ userId, type, title, message, data } = {}) 
   if (broadcast) {
     try { broadcast(userId, notification); } catch (err) { logger.error({ err }, 'Broadcast failed'); }
   }
+
+  maybeSendEmail(userId, email);
 
   return notification;
 }

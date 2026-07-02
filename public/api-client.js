@@ -52,7 +52,7 @@
     return data;
   }
 
-  var ENTITIES = ['AppSettings','BookingRequest','BookingTemplate','Client','ClientPayment','ClientTask','EmailLog','Invoice','ItineraryEvent','Message','PackingItem','Proposal','ProposalTemplate','ReferenceCounter','ServiceCategory','ServiceTemplate','Suggestion','Supplier','SupplierBooking','SupplierCategory','SupplierInvoice','SupplierPricing','SupplierReview','SupplierService','SupplierSubcategory','TourContract','Trip'];
+  var ENTITIES = ['AppSettings','BookingRequest','BookingTemplate','Client','ClientPayment','ClientTask','EmailLog','Invoice','ItineraryEvent','Message','PackingItem','Proposal','ProposalTemplate','ReferenceCounter','ReportSchedule','ServiceCategory','ServiceTemplate','Suggestion','Supplier','SupplierBooking','SupplierCategory','SupplierInvoice','SupplierPricing','SupplierReview','SupplierService','SupplierSubcategory','TourContract','Trip'];
 
   function makeEntityApi(name) {
     return {
@@ -242,6 +242,14 @@
     appLogs: {
       logUserInApp: function (pageName) {
         return api('/app-logs', { method: 'POST', body: JSON.stringify({ pageName: pageName }) });
+      },
+    },
+    reports: {
+      revenueOverview: function () {
+        return api('/reports/revenue-overview');
+      },
+      commissions: function () {
+        return api('/reports/commissions');
       },
     },
     Query: {

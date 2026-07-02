@@ -15,6 +15,7 @@ export function safeUser(u) {
   return {
     id: u.id, name: u.name, email: u.email, phone: u.phone || '', user_tier: u.user_tier, role: u.role,
     language: u.language, default_currency: u.default_currency || 'USD', avatar_url: u.avatar_url || null,
+    email_notifications: !!u.email_notifications,
     custom_permissions: JSON.parse(u.custom_permissions || '[]'),
     departments: JSON.parse(u.departments || '[]'),
     client_id: u.client_id, linked_supplier_id: u.linked_supplier_id,
@@ -128,17 +129,14 @@ export function updateUser(id, fields) {
   const fieldMap = {
     name: 'name', email: 'email', phone: 'phone', user_tier: 'user_tier', language: 'language',
     is_active: 'is_active', default_currency: 'default_currency', avatar_url: 'avatar_url',
+    email_notifications: 'email_notifications',
   };
+  const booleanFields = new Set(['is_active', 'email_notifications']);
 
   for (const [key, col] of Object.entries(fieldMap)) {
     if (fields[key] !== undefined) {
-      if (key === 'is_active') {
-        updates.push(`${col} = ?`);
-        values.push(fields[key] ? 1 : 0);
-      } else {
-        updates.push(`${col} = ?`);
-        values.push(fields[key]);
-      }
+      updates.push(`${col} = ?`);
+      values.push(booleanFields.has(key) ? (fields[key] ? 1 : 0) : fields[key]);
     }
   }
 

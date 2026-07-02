@@ -148,7 +148,7 @@ export default function Proposals() {
 
                 {proposal.total_cost > 0 && (
                   <div className="pt-4 border-t border-slate-200">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <span className="text-slate-600 text-sm">Total Cost</span>
                       <div className="flex items-center gap-1 text-green-700 font-bold text-lg">
                         <DollarSign className="w-5 h-5" />

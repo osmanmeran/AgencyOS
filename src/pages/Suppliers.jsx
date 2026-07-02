@@ -257,7 +257,7 @@ export default function Suppliers() {
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Suppliers</h1>
           <p className="text-slate-600">Manage your travel supplier database</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleExportAll} disabled={isExporting}>
             {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
             Export CSV
@@ -592,7 +592,7 @@ export default function Suppliers() {
                 </div>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Input
                 placeholder="New column name..."
                 value={newColumnName}

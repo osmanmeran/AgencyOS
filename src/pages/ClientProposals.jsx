@@ -104,7 +104,7 @@ export default function ClientProposals() {
               </div>
 
               <div className="pt-4 border-t border-slate-200 mb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="text-slate-600 text-sm">Total Cost</span>
                   <div className="text-2xl font-bold text-green-700 flex items-center gap-1">
                     <DollarSign className="w-5 h-5" />
@@ -120,7 +120,7 @@ export default function ClientProposals() {
               </Link>
 
               {proposal.status === 'sent' && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     className="flex-1 bg-green-600 hover:bg-green-700"
                     onClick={() => updateProposalMutation.mutate({ id: proposal.id, status: 'accepted' })}
