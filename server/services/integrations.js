@@ -73,10 +73,16 @@ export async function connectOutlook(userId, { token_data }) {
     logger.error({ err: err.message }, 'Graph API /me failed');
   }
 
+  // Fall back to a conservative 1h lifetime if Azure omits/mangles expires_in,
+  // otherwise Date.now() + NaN produces expires_at = NaN, which the ">" check
+  // in getGraphAccessToken always treats as expired, forcing a refresh on
+  // every call — and disconnecting the user entirely if no refresh_token
+  // was granted (e.g. consent didn't include offline_access).
+  const expiresIn = Number.isFinite(tokenData.expires_in) ? tokenData.expires_in : 3600;
   const tokenRecord = {
     access_token: tokenData.access_token,
     refresh_token: tokenData.refresh_token,
-    expires_at: Date.now() + tokenData.expires_in * 1000,
+    expires_at: Date.now() + expiresIn * 1000,
     user_email: userEmail,
     user_name: userName,
   };
@@ -113,6 +119,7 @@ async function getGraphAccessToken(userId) {
   }
 
   if (!token.refresh_token) throw new Error('No refresh token available');
+  if (!MICROSOFT_CLIENT_ID) throw new Error('Outlook integration is not configured (missing MICROSOFT_CLIENT_ID)');
 
   const body = new URLSearchParams({
     client_id: MICROSOFT_CLIENT_ID,

@@ -16,8 +16,8 @@ router.post('/', authMiddleware, catchAsync(async (req, res) => {
 
   const now = new Date().toISOString();
 
-  db.prepare(`INSERT INTO entities (id, type, data, created_by, created_date, updated_date)
-    VALUES (?, 'Suggestion', ?, ?, ?, ?)`).run(
+  db.prepare(`INSERT INTO entities (id, type, data, created_date, updated_date)
+    VALUES (?, 'Suggestion', ?, ?, ?)`).run(
     uid(),
     JSON.stringify({
       type,
@@ -26,9 +26,9 @@ router.post('/', authMiddleware, catchAsync(async (req, res) => {
       status: 'open',
       user_email: req.user?.email,
       user_name: req.user?.name || req.user?.full_name || '',
+      created_by: req.user?.id || 'anonymous',
       created_date: now,
     }),
-    req.user?.id || 'anonymous',
     now,
     now,
   );
@@ -40,12 +40,15 @@ router.get('/', authMiddleware, requireAdmin, catchAsync(async (req, res) => {
 
   const db = getDb();
   const suggestions = db.prepare(`
-    SELECT id, data, created_by, created_date FROM entities
+    SELECT id, data, created_date FROM entities
     WHERE type = 'Suggestion'
     ORDER BY created_date DESC
   `).all();
 
-  res.json(suggestions.map(s => ({ id: s.id, ...JSON.parse(s.data), _created_by: s.created_by })));
+  res.json(suggestions.map(s => {
+    const data = JSON.parse(s.data);
+    return { id: s.id, ...data, _created_by: data.created_by };
+  }));
 }));
 
 router.patch('/:id/status', authMiddleware, requireAdmin, catchAsync(async (req, res) => {
