@@ -15,6 +15,7 @@ import { format, parseISO, isPast } from 'date-fns';
 import { DollarSign, AlertCircle, FileText, TrendingUp, ArrowRight, Plus, Search, Calendar, Bell, Loader2, Trash2, Download } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import ReportsSection from '../components/reports/ReportsSection';
+import ScheduledReportsCard from '../components/reports/ScheduledReportsCard';
 import PaymentReminderButton from '../components/invoices/PaymentReminderButton';
 import { useExport } from '@/hooks/useExport';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -120,6 +121,8 @@ function OverviewTab() {
           </div>
         </Card>
       </div>
+
+      <ScheduledReportsCard />
 
       {/* Reports & Analytics */}
       <div>
