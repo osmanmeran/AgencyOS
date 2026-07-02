@@ -27,7 +27,24 @@ export function findPricingTier(contract, numParticipants) {
   return tiers.find(t => Math.round(Number(t.pax)) === pax) || null;
 }
 
-export function buildTripFromContract({ contract, client, departureDate, numParticipants, selectedExtraKeys = [] }) {
+export const emptyPassenger = (i) => ({
+  id: `pax-${Date.now()}-${i}`, name: '', is_contact: i === 0,
+  client_id: '', age_category: 'adult', phone: '', email: '', date_of_birth: '', numero_pratica: '',
+});
+
+// Pads/truncates whatever passenger rows the user actually filled in
+// (fields are optional — see PassengerFieldsRow) to exactly `pax` entries,
+// since pax is the sole source of truth for pricing and never derived
+// from how many rows happen to be filled in.
+function resolvePassengers(passengers, pax) {
+  const provided = Array.isArray(passengers) ? passengers : [];
+  const result = provided.slice(0, pax);
+  for (let i = result.length; i < pax; i++) result.push(emptyPassenger(i));
+  if (!result.some(p => p.is_contact)) result[0].is_contact = true;
+  return result;
+}
+
+export function buildTripFromContract({ contract, client, departureDate, numParticipants, selectedExtraKeys = [], passengers }) {
   const pax = Math.max(1, Math.round(Number(numParticipants) || 0));
   const tier = findPricingTier(contract, pax);
 
@@ -124,7 +141,7 @@ export function buildTripFromContract({ contract, client, departureDate, numPart
     terms_and_conditions: contract.terms_and_conditions || '',
     internal_notes: '',
     service_types: [],
-    passengers: Array.from({ length: pax }, (_, i) => ({ id: `pax-${Date.now()}-${i}`, name: '', is_contact: i === 0 })),
+    passengers: resolvePassengers(passengers, pax),
     services: allServices,
     acquiring_currency: services[0]?.supplier_currency || currency,
     selling_currency: currency,

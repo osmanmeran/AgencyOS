@@ -25,22 +25,23 @@ import { generateReferenceNumber } from '@/lib/referenceNumber';
 import { createPageUrl } from '../utils';
 import ServiceLibraryPanel from '../components/proposals/ServiceLibraryPanel';
 import ServiceLineEditor from '../components/services/ServiceLineEditor';
+import PassengerFieldsRow from '../components/passengers/PassengerFieldsRow';
 import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || cur);
 
+const newPassenger = () => ({
+  id: `pax-${Date.now()}-${Math.random()}`, name: '', is_contact: false,
+  client_id: '', age_category: 'adult', phone: '', email: '', date_of_birth: '', numero_pratica: '',
+});
+
 const newRoom = () => ({
   id: `room-${Date.now()}-${Math.random()}`,
   type: 'double',
-  passengers: [
-    { id: `pax-${Date.now()}-${Math.random()}`, name: '', is_contact: false },
-    { id: `pax-${Date.now()}-${Math.random()}`, name: '', is_contact: false },
-  ]
+  passengers: [newPassenger(), newPassenger()]
 });
-
-const newPassenger = () => ({ id: `pax-${Date.now()}-${Math.random()}`, name: '', is_contact: false });
 
 const autoGenerateRooms = (count) => {
   if (count <= 0) return [newRoom()];
@@ -362,8 +363,8 @@ export default function CreateReservation() {
       return { ...r, type, passengers };
     }));
   };
-  const updatePaxName = (roomId, paxId, name) => setRooms(prev => prev.map(r => ({
-    ...r, passengers: r.passengers.map(p => p.id === paxId ? { ...p, name } : p)
+  const updatePassenger = (roomId, paxId, updated) => setRooms(prev => prev.map(r => ({
+    ...r, passengers: r.passengers.map(p => p.id === paxId ? updated : p)
   })));
   const setContactInRoom = (roomId, paxId) => setRooms(prev => prev.map(r => ({
     ...r, passengers: r.passengers.map(p => ({ ...p, is_contact: p.id === paxId }))
@@ -691,22 +692,13 @@ export default function CreateReservation() {
                       </div>
                       <div className="p-3 space-y-2">
                         {room.passengers.map((pax) => (
-                          <div key={pax.id} className="flex items-center gap-2">
-                            <Input
-                              value={pax.name}
-                              onChange={e => updatePaxName(room.id, pax.id, e.target.value)}
-                              placeholder={`Passenger name...`}
-                              className="bg-white h-9 text-sm"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setContactInRoom(room.id, pax.id)}
-                              title={pax.is_contact ? 'Contact passenger' : 'Set as contact'}
-                              className={`p-1.5 rounded-md transition-colors flex-shrink-0 ${pax.is_contact ? 'bg-amber-100 text-amber-600' : 'text-slate-300 hover:text-amber-400'}`}
-                            >
-                              <Star className="w-4 h-4" fill={pax.is_contact ? 'currentColor' : 'none'} />
-                            </button>
-                          </div>
+                          <PassengerFieldsRow
+                            key={pax.id}
+                            passenger={pax}
+                            onChange={(updated) => updatePassenger(room.id, pax.id, updated)}
+                            showContact
+                            onSetContact={() => setContactInRoom(room.id, pax.id)}
+                          />
                         ))}
                       </div>
                     </div>

@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -13,7 +13,8 @@ import { ArrowLeft, AlertTriangle, Loader2, Users, Calendar } from 'lucide-react
 import { createPageUrl } from '../utils';
 import { showSuccess, showError } from '@/lib/toast';
 import { generateReferenceNumber } from '@/lib/referenceNumber';
-import { buildTripFromContract } from '@/lib/contractBooking';
+import { buildTripFromContract, emptyPassenger } from '@/lib/contractBooking';
+import PassengerFieldsRow from '../components/passengers/PassengerFieldsRow';
 
 const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ' }[cur] || cur);
 
@@ -26,6 +27,25 @@ export default function GenerateFromContract() {
   const [departureDate, setDepartureDate] = useState('');
   const [numParticipants, setNumParticipants] = useState(2);
   const [selectedExtraKeys, setSelectedExtraKeys] = useState(/** @type {string[]} */ ([]));
+  const [passengers, setPassengers] = useState(() => [emptyPassenger(0), emptyPassenger(1)]);
+
+  // Keep passenger rows in sync with the participant count — growing adds
+  // blank rows, shrinking drops the trailing ones, existing entries are
+  // preserved either way. Fields stay optional (see PassengerFieldsRow).
+  useEffect(() => {
+    setPassengers(prev => {
+      const n = Math.max(0, numParticipants || 0);
+      if (prev.length === n) return prev;
+      if (prev.length < n) {
+        const additions = Array.from({ length: n - prev.length }, (_, i) => emptyPassenger(prev.length + i));
+        return [...prev, ...additions];
+      }
+      return prev.slice(0, n);
+    });
+  }, [numParticipants]);
+
+  const updatePassenger = (paxId, updated) => setPassengers(prev => prev.map(p => p.id === paxId ? updated : p));
+  const setContactPassenger = (paxId) => setPassengers(prev => prev.map(p => ({ ...p, is_contact: p.id === paxId })));
 
   const { data: contracts = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['TourContract'], queryFn: () => db.entities.TourContract.list(),
@@ -47,8 +67,8 @@ export default function GenerateFromContract() {
 
   const preview = useMemo(() => {
     if (!contract || !client || !departureDate || !numParticipants) return null;
-    return buildTripFromContract({ contract, client, departureDate, numParticipants, selectedExtraKeys });
-  }, [contract, client, departureDate, numParticipants, selectedExtraKeys]);
+    return buildTripFromContract({ contract, client, departureDate, numParticipants, selectedExtraKeys, passengers });
+  }, [contract, client, departureDate, numParticipants, selectedExtraKeys, passengers]);
 
   const createMutation = /** @type {any} */ (useMutation({
     mutationFn: (/** @type {any} */ data) => db.entities.Trip.create(data),
@@ -143,6 +163,24 @@ export default function GenerateFromContract() {
           </div>
         )}
       </Card>
+
+      {numParticipants > 0 && (
+        <Card className="p-6 bg-white shadow-md">
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Passeggeri</h2>
+          <p className="text-sm text-slate-500 mb-4">Facoltativo — puoi lasciare i campi vuoti e compilarli dopo</p>
+          <div className="space-y-3">
+            {passengers.map(pax => (
+              <PassengerFieldsRow
+                key={pax.id}
+                passenger={pax}
+                onChange={(updated) => updatePassenger(pax.id, updated)}
+                showContact
+                onSetContact={() => setContactPassenger(pax.id)}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
 
       {contract && departureDate && numParticipants > 0 && preview?.missingTier && (
         <Card className="p-6 bg-amber-50 border border-amber-200">
