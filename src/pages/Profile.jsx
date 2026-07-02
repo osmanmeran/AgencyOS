@@ -94,8 +94,8 @@ export default function Profile() {
     }
   }, [user]);
 
-  const updateProfile = useMutation({
-    mutationFn: async (data) => {
+  const updateProfile = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const res = await fetch('/api/auth/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -113,10 +113,10 @@ export default function Profile() {
       }
     },
     onError: (err) => showError(err.message),
-  });
+  }));
 
-  const updatePassword = useMutation({
-    mutationFn: async (data) => {
+  const updatePassword = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const res = await fetch('/api/auth/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -131,7 +131,7 @@ export default function Profile() {
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
     },
     onError: (err) => showError(err.message),
-  });
+  }));
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
