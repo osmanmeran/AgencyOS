@@ -43,8 +43,18 @@
     try { data = await res.json(); } catch (e) { data = { message: res.statusText }; }
 
     if (!res.ok) {
-      var err = new Error(data && data.message || 'API Error (' + res.status + ')');
+      // Server errors are shaped { error: { code, message, details? } } (see
+      // server/middleware/errors.js sendError/errorHandler and validate.js).
+      // Older code here only checked data.message, which is never set on
+      // that shape, so every failure surfaced as a useless "API Error (400)".
+      var apiError = data && data.error;
+      var message = (apiError && apiError.message) || (data && data.message) || 'API Error (' + res.status + ')';
+      if (apiError && Array.isArray(apiError.details) && apiError.details.length) {
+        message += ': ' + apiError.details.map(function (d) { return (d.path ? d.path + ' ' : '') + d.message; }).join(', ');
+      }
+      var err = new Error(message);
       err.status = res.status;
+      err.code = apiError && apiError.code;
       err.data = data;
       throw err;
     }
