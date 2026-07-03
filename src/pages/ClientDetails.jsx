@@ -279,7 +279,7 @@ export default function ClientDetails() {
             {client.age_category && (
               <div className="flex items-center gap-2 text-slate-700">
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
-                  {{ adult: 'Adult', children: 'Children (3–11.99 anni)', infant: 'Infant (0–2.99 anni)' }[client.age_category] || client.age_category}
+                  {{ adult: 'Adult', children: 'Children (3–11.99 years)', infant: 'Infant (0–2.99 years)' }[client.age_category] || client.age_category}
                 </span>
               </div>
             )}
@@ -550,18 +550,18 @@ export default function ClientDetails() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="adult">Adult</SelectItem>
-                    <SelectItem value="children">Children (3–11.99 anni)</SelectItem>
-                    <SelectItem value="infant">Infant (0–2.99 anni)</SelectItem>
+                    <SelectItem value="children">Children (3–11.99 years)</SelectItem>
+                    <SelectItem value="infant">Infant (0–2.99 years)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Contatto Principale *</Label>
-                <Input type="tel" placeholder="+39 000 000 0000" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} required />
+                <Label>Primary Contact *</Label>
+                <Input type="tel" placeholder="+1 555 000 0000" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label>Contatto Secondario</Label>
-                <Input type="tel" placeholder="+39 000 000 0000" value={editForm.phone_secondary || ''} onChange={(e) => setEditForm({ ...editForm, phone_secondary: e.target.value })} />
+                <Label>Secondary Contact</Label>
+                <Input type="tel" placeholder="+1 555 000 0000" value={editForm.phone_secondary || ''} onChange={(e) => setEditForm({ ...editForm, phone_secondary: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>

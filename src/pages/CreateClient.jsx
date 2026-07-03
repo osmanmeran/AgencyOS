@@ -88,28 +88,28 @@ export default function CreateClient() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="adult">Adult</SelectItem>
-                  <SelectItem value="children">Children (3 – 11.99 anni)</SelectItem>
-                  <SelectItem value="infant">Infant (0 – 2.99 anni)</SelectItem>
+                  <SelectItem value="children">Children (3 – 11.99 years)</SelectItem>
+                  <SelectItem value="infant">Infant (0 – 2.99 years)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Contatto Principale *</Label>
+              <Label htmlFor="phone">Primary Contact *</Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+39 000 000 0000"
+                placeholder="+1 555 000 0000"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone_secondary">Contatto Secondario</Label>
+              <Label htmlFor="phone_secondary">Secondary Contact</Label>
               <Input
                 id="phone_secondary"
                 type="tel"
-                placeholder="+39 000 000 0000"
+                placeholder="+1 555 000 0000"
                 value={formData.phone_secondary}
                 onChange={(e) => setFormData({ ...formData, phone_secondary: e.target.value })}
               />

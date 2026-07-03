@@ -49,15 +49,15 @@ export default function ClientLinkPicker({ clientId, clientName, onSelect, onCle
             >
               {clientId
                 ? <span className="font-medium truncate">{clientName}</span>
-                : <span className="text-slate-400">Collega cliente esistente…</span>}
+                : <span className="text-slate-400">Link existing client…</span>}
               <Search className="ml-2 h-3.5 w-3.5 shrink-0 text-slate-400" />
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
             <Command>
-              <CommandInput placeholder="Cerca per nome, email o azienda…" value={search} onValueChange={setSearch} />
+              <CommandInput placeholder="Search by name, email or company…" value={search} onValueChange={setSearch} />
               <CommandList>
-                <CommandEmpty>Nessun cliente trovato</CommandEmpty>
+                <CommandEmpty>No client found</CommandEmpty>
                 <CommandGroup>
                   {filtered.map(c => (
                     <CommandItem
@@ -75,7 +75,7 @@ export default function ClientLinkPicker({ clientId, clientName, onSelect, onCle
                 </CommandGroup>
                 <CommandGroup>
                   <CommandItem onSelect={() => { setOpen(false); setCreateOpen(true); }} className="text-blue-600">
-                    <UserPlus className="mr-2 h-4 w-4" />+ Crea nuovo cliente
+                    <UserPlus className="mr-2 h-4 w-4" />+ Create new client
                   </CommandItem>
                 </CommandGroup>
               </CommandList>
@@ -83,7 +83,7 @@ export default function ClientLinkPicker({ clientId, clientName, onSelect, onCle
           </PopoverContent>
         </Popover>
         {clientId && onClear && (
-          <button type="button" onClick={onClear} className="p-1.5 text-slate-400 hover:text-red-500" title="Scollega cliente">
+          <button type="button" onClick={onClear} className="p-1.5 text-slate-400 hover:text-red-500" title="Unlink client">
             <X className="w-3.5 h-3.5" />
           </button>
         )}
@@ -91,7 +91,7 @@ export default function ClientLinkPicker({ clientId, clientName, onSelect, onCle
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Nuovo Cliente</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>New Client</DialogTitle></DialogHeader>
           <NewClientForm onCreated={handleCreated} onCancel={() => setCreateOpen(false)} />
         </DialogContent>
       </Dialog>

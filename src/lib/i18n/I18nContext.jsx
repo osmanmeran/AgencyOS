@@ -11,7 +11,7 @@ const translations = {
       loading: 'Loading...', error: 'Error', success: 'Success', back: 'Back',
       accessDenied: 'Access Denied', search: 'Search', status: 'Status', actions: 'Actions',
       yes: 'Yes', no: 'No', name: 'Name', email: 'Email', phone: 'Phone', notes: 'Notes',
-      city: 'City', country: 'Country', address: 'Address',
+      city: 'City', country: 'Country', address: 'Address', saving: 'Saving...',
     },
     nav: {
       dashboard: 'Dashboard', reservations: 'Reservations', suppliers: 'Suppliers',
@@ -35,6 +35,12 @@ const translations = {
     crm: {
       title: 'CRM', subtitle: 'Manage your clients',
       newClient: 'New Client', searchPlaceholder: 'Search clients...',
+      personalDetails: 'Personal Details', fullName: 'Full Name',
+      dateOfBirth: 'Date of Birth', passportNumber: 'Passport Number',
+      companyAddress: 'Company & Address', company: 'Company', taxId: 'Tax ID',
+      preferences: 'Preferences', paymentMethod: 'Payment Method',
+      portalAccess: 'Grant client portal access', internalNotes: 'Internal Notes',
+      createClient: 'Create Client',
     },
     invoices: {
       title: 'Invoices', subtitle: 'Manage your invoices',
