@@ -9,7 +9,7 @@ const TabsList = React.forwardRef((/** @type {any} */ { className = "", ...props
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-full bg-m3-secondary-container/50 p-1 gap-1",
+      "inline-flex h-10 max-w-full items-center justify-start overflow-x-auto scrollbar-hide rounded-full bg-m3-secondary-container/50 p-1 gap-1",
       className
     )}
     {...props}
@@ -21,7 +21,7 @@ const TabsTrigger = React.forwardRef((/** @type {any} */ { className = "", ...pr
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-m3-surface data-[state=active]:text-m3-on-surface data-[state=active]:shadow-sm text-m3-on-surface-variant hover:text-m3-on-surface m3-state-hover",
+      "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-m3-surface data-[state=active]:text-m3-on-surface data-[state=active]:shadow-sm text-m3-on-surface-variant hover:text-m3-on-surface m3-state-hover",
       className
     )}
     {...props}

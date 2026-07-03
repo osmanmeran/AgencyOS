@@ -61,7 +61,7 @@ export default function AuditLogViewer() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-500/20">
             <History className="w-6 h-6 text-white" />
@@ -152,7 +152,7 @@ export default function AuditLogViewer() {
                         {log.changes && Object.keys(log.changes).length > 0 && (
                           <div className="mt-2 text-xs font-mono bg-slate-50 rounded p-2 border border-slate-200 overflow-x-auto">
                             {Object.entries(log.changes).map(([k, v]) => (
-                              <div key={k} className="flex gap-2">
+                              <div key={k} className="flex flex-wrap gap-2">
                                 <span className="text-slate-500 font-semibold min-w-[100px]">{k}:</span>
                                 <span className="text-slate-700">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
                               </div>

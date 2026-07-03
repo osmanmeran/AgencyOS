@@ -1,6 +1,5 @@
 import { db } from '@/lib/DbContext';
 
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,48 +10,21 @@ import { useExport } from '@/hooks/useExport';
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function CommissionReport() {
-//   const [period, setPeriod] = useState('all');
   const { exportCSV } = useExport();
 
-  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['trips'],
-    queryFn: () => db.entities.Trip.list(),
+  const { data: report = /** @type {any} */ ({}) } = /** @type {any} */ (useQuery({
+    queryKey: ['commissionReport'],
+    queryFn: () => db.reports.commissions(),
   }));
 
-
-  const commissions = useMemo(() => {
-    return trips
-      .filter(t => t.status === 'completed' || t.status === 'confirmed')
-      .map(trip => {
-        const cost = trip.total_cost || 0;
-        const price = trip.final_price || 0;
-        const profit = price - cost;
-        const commissionRate = trip.commission_rate || (trip.markup_percentage ? trip.markup_percentage / 100 : 0.1);
-        const commission = profit * commissionRate;
-        return { ...trip, profit, commission, commissionRate };
-      });
-  }, [trips]);
-
-  const totalCommission = commissions.reduce((s, t) => s + t.commission, 0);
-  const totalProfit = commissions.reduce((s, t) => s + t.profit, 0);
-  const totalRevenue = commissions.reduce((s, t) => s + (t.final_price || 0), 0);
-  const avgCommissionRate = commissions.length > 0
-    ? commissions.reduce((s, t) => s + t.commissionRate, 0) / commissions.length
-    : 0;
-
-  const byAgent = useMemo(() => {
-    const map = {};
-    commissions.forEach(t => {
-      const agent = t.created_by || 'Unassigned';
-      if (!map[agent]) map[agent] = { name: agent, commission: 0, revenue: 0, trips: 0 };
-      map[agent].commission += t.commission;
-      map[agent].revenue += t.final_price || 0;
-      map[agent].trips += 1;
-    });
-    return Object.values(map).sort((a, b) => b.commission - a.commission);
-  }, [commissions]);
-
-  /* monthlyData removed (unused) */
+  const {
+    totalCommission = 0,
+    totalProfit = 0,
+    totalRevenue = 0,
+    avgCommissionRate = 0,
+    byAgent = [],
+    trips: commissions = [],
+  } = report;
 
   const handleExport = () => {
     exportCSV(commissions.map(t => ({
@@ -63,7 +35,7 @@ export default function CommissionReport() {
       profit: t.profit,
       commissionRate: `${(t.commissionRate * 100).toFixed(1)}%`,
       commission: t.commission,
-      agent: t.created_by || '—',
+      agent: t.agent || '—',
     })), 'commission-report', [
       { label: 'Trip', accessor: d => d.trip },
       { label: 'Client', accessor: d => d.client },
@@ -78,7 +50,7 @@ export default function CommissionReport() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <div className="bg-green-100 p-2.5 rounded-xl">
             <DollarSign className="w-6 h-6 text-green-700" />

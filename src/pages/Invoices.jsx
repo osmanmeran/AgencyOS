@@ -94,7 +94,7 @@ export default function Invoices() {
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Invoices</h1>
           <p className="text-slate-600">Create and manage client invoices</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {overdueCount > 0 && (
             <Button
               onClick={sendBulkReminders}
@@ -179,7 +179,7 @@ export default function Invoices() {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {['all', 'draft', 'sent', 'paid', 'overdue'].map(status => (
               <Button
                 key={status}

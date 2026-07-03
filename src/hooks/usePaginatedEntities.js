@@ -7,6 +7,10 @@ const DEBOUNCE_MS = 350;
 // Server-side paginated + searched entity list. Query key starts with the
 // entity type string so useEntitySync's WebSocket-driven invalidation (which
 // substring-matches entity type against query keys) picks this up for free.
+/**
+ * @param {string} entityType
+ * @param {{ pageSize?: number, sort?: string, filter?: any }} [options]
+ */
 export function usePaginatedEntities(entityType, { pageSize = 24, sort, filter } = {}) {
   const [page, setPage] = useState(0);
   const [searchInput, setSearchInput] = useState('');

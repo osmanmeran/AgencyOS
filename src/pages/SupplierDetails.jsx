@@ -151,7 +151,7 @@ export default function SupplierDetails() {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-3xl font-bold text-slate-900">{supplier.name}</h1>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button onClick={() => setBookingFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
                   <CalendarDays className="w-4 h-4 mr-2" /> New Booking
                 </Button>

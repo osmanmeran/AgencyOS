@@ -91,7 +91,7 @@ export default function AppSettings() {
     queryKey: ['appSettings'],
     queryFn: async () => {
       const all = await db.entities.AppSettings.list();
-      return all[0];
+      return all[0] || {};
     }
   }));
 
@@ -473,14 +473,14 @@ export default function AppSettings() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center border-b border-slate-200 gap-0">
+      <div className="flex items-center border-b border-slate-200 gap-0 overflow-x-auto scrollbar-hide">
         {tabs.map(tab => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors shrink-0 ${
                 activeTab === tab.key
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
@@ -687,7 +687,7 @@ export default function AppSettings() {
                 </Badge>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Input placeholder={t('settings.newDepartment')} value={newDepartment}
                 onChange={(e) => setNewDepartment(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && addDepartment()} />
@@ -707,12 +707,12 @@ export default function AppSettings() {
       {/* ==================== USERS TAB ==================== */}
       {activeTab === 'users' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-1">User Management</h2>
               <p className="text-slate-600">Manage user roles, permissions, and credentials</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={() => setShowPassword(!showPassword)} className="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
                 {showPassword ? 'Cancel' : 'Change My Password'}
               </button>
@@ -961,7 +961,7 @@ export default function AppSettings() {
       {/* ==================== PERMISSIONS TAB ==================== */}
       {activeTab === 'permissions' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/20">
                 <Shield className="w-6 h-6 text-white" />
@@ -971,7 +971,7 @@ export default function AppSettings() {
                 <p className="text-sm text-slate-500">Configure what each user tier can do</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={resetToDefaults}>
                 <RotateCcw className="w-4 h-4 mr-1" /> Reset Defaults
               </Button>
@@ -1007,11 +1007,11 @@ export default function AppSettings() {
 
           {/* Permission groups for selected tier */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-lg font-semibold text-slate-800">
                 {PERMISSION_TIERS.find(t => t.key === selectedTier)?.label || selectedTier}
               </h2>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setAllForTier(selectedTier, true)}>Select All</Button>
                 <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setAllForTier(selectedTier, false)}>Deselect All</Button>
               </div>

@@ -73,7 +73,7 @@ export default function TaskBoard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <div className="bg-indigo-100 p-2.5 rounded-xl">
             <ListCheck className="w-6 h-6 text-indigo-700" />

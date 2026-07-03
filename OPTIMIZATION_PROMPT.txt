@@ -1,0 +1,154 @@
+================================================================================
+PROMPT: Optimize JavaScript Code in MarvelOps PR #3
+================================================================================
+
+OBJECTIVE
+Refactor the JavaScript code in PR #3 (marvelops repository) to improve 
+performance, reduce redundant operations, and follow best practices.
+
+================================================================================
+SCOPE
+================================================================================
+Focus on these three files:
+- server/services/reminders.js — Reminder scheduling and notification creation
+- server/services/search.js — Entity search with FTS5 fallback  
+- server/db.js — Database initialization
+
+================================================================================
+SPECIFIC ISSUES TO ADDRESS
+================================================================================
+
+1. REMINDERS SERVICE (server/services/reminders.js)
+   [ ] Eliminate duplicate Date.now() calls and consolidate date calculations
+   [ ] Avoid re-parsing JSON data already parsed in calling functions
+   [ ] Pass pre-parsed data to createNotificationForEntity() to prevent 
+       redundant parsing
+   [ ] Consider caching the getDb() query result in 
+       createNotificationForEntity()
+
+2. SEARCH SERVICE (server/services/search.js)
+   [ ] Move SEARCH_CONFIG lookup map (typeConfig) to module level (cache it)
+   [ ] Combine multiple .reduce() operations into a single field extraction pass
+   [ ] Optimize string conversion logic to avoid unnecessary String() casts
+   [ ] Ensure FTS prefix matching doesn't create unnecessary intermediate arrays
+
+3. DATABASE MODULE (server/db.js)
+   [ ] Extract database initialization logic into a reusable helper function
+   [ ] Reduce duplicate db.pragma('journal_mode = WAL') calls
+
+================================================================================
+PERFORMANCE GOALS
+================================================================================
+- Reduce JSON parsing operations (especially in loops)
+- Minimize object lookups and rebuilds per query
+- Eliminate redundant date/time calculations
+- Decrease memory allocations in search results processing
+
+================================================================================
+TESTING REQUIREMENTS
+================================================================================
+[ ] Run `npx vitest run` — all 125 tests must pass
+[ ] No new linting or type-checking warnings 
+    (`npm run lint` / `npm run typecheck`)
+[ ] Manually verify search functionality still works correctly
+[ ] Confirm reminder notifications are still created properly
+
+================================================================================
+DELIVERABLES
+================================================================================
+- Refactored code with optimizations applied
+- Updated test coverage if new helper functions are introduced
+- Brief summary of performance improvements per file
+
+================================================================================
+WHY THIS MATTERS
+================================================================================
+This PR fixes critical bugs but introduces some suboptimal patterns that will 
+hurt performance as the app scales:
+
+• Reminder service runs EVERY 60 MINUTES — redundant operations compound
+• Search is USER-FACING — latency matters for UX
+• Multiple database queries with repeated JSON parsing will slow down 
+  on large datasets
+
+================================================================================
+CONTEXT: Code Issues Identified
+================================================================================
+
+REMINDERS.JS ISSUES:
+
+Issue 1 - Redundant Date Parsing (Lines 34-35):
+  Current:
+    const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+      .toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+  
+  Problem: Two separate Date.now() calls, redundant object creation
+  Solution: Consolidate into single function call
+
+Issue 2 - Duplicate JSON Parsing (Lines 46-50, 58-62):
+  Current: Parse JSON in loop, then parse again in createNotificationForEntity()
+  Solution: Pass pre-parsed data object to avoid re-parsing
+
+Issue 3 - Database Query Inside Function (Line 84):
+  Current: getDb().prepare() called for every entity
+  Solution: Accept parsed data as parameter to reduce lookups
+
+---
+
+SEARCH.JS ISSUES:
+
+Issue 1 - Object Lookup Rebuilt Per Search (Line 110):
+  Current:
+    const typeConfig = Object.fromEntries(SEARCH_CONFIG.map(c => [c.type, c]));
+  
+  Problem: Object.fromEntries() runs on every search query
+  Solution: Create TYPE_CONFIG at module level, reuse it
+
+Issue 2 - Multiple Field Searches (Lines 118-119):
+  Current: Two separate .reduce() operations for label and subtitle
+  Solution: Single-pass loop through fields
+
+Issue 3 - Unnecessary String Conversion (Lines 123-124):
+  Current:
+    label: String(label),
+    subtitle: String(subtitle).slice(0, 100),
+  
+  Problem: Converts to string even if already string
+  Solution: Only convert when necessary
+
+---
+
+DB.JS ISSUES:
+
+Issue 1 - Repeated Database Initialization (Lines 33, 54):
+  Current: db.pragma() and migrate() duplicated in two places
+  Solution: Extract into initializeDatabase() helper function
+
+================================================================================
+QUICK REFERENCE: Performance Optimization Tips
+================================================================================
+
+1. DATE OPERATIONS
+   ✗ Don't: const now = new Date().toISOString() multiple times
+   ✓ Do: const now = new Date().toISOString(); // cache result
+
+2. JSON PARSING
+   ✗ Don't: Parse JSON in loops and nested function calls
+   ✓ Do: Parse once, pass parsed object through functions
+
+3. OBJECT LOOKUPS
+   ✗ Don't: Build lookup maps on every request
+   ✓ Do: Build once at module level, reference by key
+
+4. ARRAY OPERATIONS
+   ✗ Don't: Multiple .reduce()/.map() on same array
+   ✓ Do: Single-pass loop with early exits
+
+5. TYPE CONVERSION
+   ✗ Don't: String(value) unconditionally
+   ✓ Do: typeof value === 'string' ? value : String(value)
+
+================================================================================
+Ready to optimize? Use this prompt with your coding agent or team!
+================================================================================

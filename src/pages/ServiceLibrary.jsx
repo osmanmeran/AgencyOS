@@ -294,7 +294,7 @@ export default function ServiceLibrary() {
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Service Library</h1>
           <p className="text-slate-600">Pre-defined service templates with detailed information</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {hasPermission('manage_categories') && (
             <Button onClick={() => setCategoryModalOpen(true)} variant="outline">
               <Plus className="w-4 h-4 mr-2" />
@@ -399,7 +399,7 @@ export default function ServiceLibrary() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-200 flex justify-between items-center">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {service.files?.length > 0 && (
                     <Badge variant="secondary">{service.files.length} files</Badge>
                   )}
@@ -583,7 +583,7 @@ export default function ServiceLibrary() {
                   <div className="grid grid-cols-3 gap-2">
                     <Input value={newPoi.name} onChange={(e) => setNewPoi({ ...newPoi, name: e.target.value })} placeholder="POI Name" />
                     <Input value={newPoi.description} onChange={(e) => setNewPoi({ ...newPoi, description: e.target.value })} placeholder="Description" />
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Input value={newPoi.map_url} onChange={(e) => setNewPoi({ ...newPoi, map_url: e.target.value })} placeholder="Map URL" className="flex-1" />
                       <Button type="button" onClick={addPoi} variant="outline" size="icon">
                         <Plus className="w-4 h-4" />
@@ -626,7 +626,7 @@ export default function ServiceLibrary() {
                       </Button>
                     </div>
                   ))}
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Input value={newLink.title} onChange={(e) => setNewLink({ ...newLink, title: e.target.value })} placeholder="Link Title" />
                     <Input value={newLink.url} onChange={(e) => setNewLink({ ...newLink, url: e.target.value })} placeholder="URL" />
                     <Button type="button" onClick={addLink} variant="outline" size="icon">

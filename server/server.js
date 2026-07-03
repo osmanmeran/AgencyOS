@@ -10,6 +10,8 @@ import logger from './lib/logger.js';
 import { createWebSocketServer, sendToUser } from './lib/ws.js';
 import { setBroadcastFn } from './services/notifications.js';
 import { startReminderService } from './services/reminders.js';
+import { startReportScheduler } from './services/reportScheduler.js';
+import { startBackupScheduler } from './services/backupScheduler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
@@ -41,6 +43,8 @@ const onServerStart = () => {
   const ip = getLocalIp();
   logger.info({ port: PORT, https: hasSsl, mode: process.env.NODE_ENV || 'development', ip }, 'Server started');
   startReminderService();
+  startReportScheduler();
+  startBackupScheduler();
 };
 
 if (hasSsl) {

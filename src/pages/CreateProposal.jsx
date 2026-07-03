@@ -247,7 +247,7 @@ export default function CreateProposal() {
         <Button variant="ghost" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Proposals</Button>
       </Link>
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="text-4xl font-bold text-slate-900 mb-1">Create Proposal</h1>
           <p className="text-slate-600">Build a proposal with dual-currency cost breakdown and markup</p>
@@ -667,7 +667,7 @@ export default function CreateProposal() {
 
                       <Separator />
 
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center flex-wrap gap-2">
                         <div>
                           <div className="text-lg font-bold text-slate-900">Final Proposal Total</div>
                           <div className="text-xs text-slate-400">All currencies</div>

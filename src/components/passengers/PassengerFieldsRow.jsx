@@ -14,6 +14,9 @@ const AGE_CATEGORIES = [
 // builder (CreateReservation.jsx) and the "Generate from Contract" flow.
 // Every field is optional — linking a Client just pre-fills them as
 // editable defaults, it doesn't bind the passenger to the record live.
+/**
+ * @param {{ passenger: any, onChange: any, onRemove?: any, showContact?: any, onSetContact?: any }} props
+ */
 export default function PassengerFieldsRow({ passenger, onChange, onRemove, showContact, onSetContact }) {
   const set = (field, value) => onChange({ ...passenger, [field]: value });
 

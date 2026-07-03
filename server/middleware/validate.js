@@ -79,6 +79,7 @@ export const schemas = {
     language: z.string().optional(),
     default_currency: z.string().optional(),
     avatar_url: z.string().url().optional().or(z.literal('')),
+    email_notifications: z.boolean().optional(),
     current_password: z.string().optional(),
     new_password: z
       .string()

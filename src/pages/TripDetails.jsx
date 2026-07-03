@@ -51,7 +51,7 @@ export default function TripDetails() {
 
   const { data: appSettings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
-    queryFn: async () => { const all = await db.entities.AppSettings.list(); return all[0]; }
+    queryFn: async () => { const all = await db.entities.AppSettings.list(); return all[0] || {}; }
   }));
 
   const tripInvoices = invoices.filter(inv => inv.trip_id === tripId);
@@ -124,14 +124,14 @@ export default function TripDetails() {
   return (
     <div className="space-y-6">
       {/* Back Button */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <Link to={createPageUrl('Reservations')}>
           <Button variant="ghost" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Reservations
           </Button>
         </Link>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <SaveAsTemplateButton trip={trip} />
           {isApprovedAndOngoing && (<>
             <AutoInvoiceGenerator

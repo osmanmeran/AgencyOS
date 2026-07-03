@@ -191,7 +191,7 @@ export default function ItineraryBuilder() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <Link to={createPageUrl('Reservations')}>
             <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>

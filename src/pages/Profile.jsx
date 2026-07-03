@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { User, Mail, Phone, Globe, Lock, Save, Loader2, CreditCard, Camera, X } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
@@ -77,7 +78,7 @@ export default function Profile() {
     },
   });
 
-  const [form, setForm] = useState({ name: '', phone: '', language: 'en', default_currency: 'USD', avatar_url: '' });
+  const [form, setForm] = useState({ name: '', phone: '', language: 'en', default_currency: 'USD', avatar_url: '', email_notifications: false });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
 
   useEffect(() => {
@@ -88,12 +89,13 @@ export default function Profile() {
         language: user.language || 'en',
         default_currency: user.default_currency || 'USD',
         avatar_url: user.avatar_url || '',
+        email_notifications: !!user.email_notifications,
       });
     }
   }, [user]);
 
-  const updateProfile = useMutation({
-    mutationFn: async (data) => {
+  const updateProfile = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const res = await fetch('/api/auth/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -111,10 +113,10 @@ export default function Profile() {
       }
     },
     onError: (err) => showError(err.message),
-  });
+  }));
 
-  const updatePassword = useMutation({
-    mutationFn: async (data) => {
+  const updatePassword = /** @type {any} */ (useMutation({
+    mutationFn: async (/** @type {any} */ data) => {
       const res = await fetch('/api/auth/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -129,7 +131,7 @@ export default function Profile() {
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
     },
     onError: (err) => showError(err.message),
-  });
+  }));
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -175,6 +177,7 @@ export default function Profile() {
       phone: form.phone,
       language: form.language,
       default_currency: form.default_currency,
+      email_notifications: form.email_notifications,
     });
   };
 
@@ -316,6 +319,16 @@ export default function Profile() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <div>
+              <Label>Email notifications</Label>
+              <p className="text-sm text-muted-foreground">Also email me for invoice and trip reminders, not just in-app</p>
+            </div>
+            <Switch
+              checked={form.email_notifications}
+              onCheckedChange={(checked) => setForm(prev => ({ ...prev, email_notifications: checked }))}
+            />
+          </div>
         </div>
       </Card>
 
@@ -335,7 +348,7 @@ export default function Profile() {
         {outlookStatus === null ? (
           <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Checking status...</div>
         ) : outlookStatus.connected ? (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <p className="text-sm font-medium text-green-700">✓ Connected{outlookStatus.email ? ` as ${outlookStatus.email}` : ''}</p>
               <p className="text-xs text-muted-foreground mt-0.5">Emails are sent via your Outlook account</p>
@@ -345,7 +358,7 @@ export default function Profile() {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <p className="text-sm text-muted-foreground">Not connected</p>
               <p className="text-xs text-muted-foreground mt-0.5">Connect to send emails via Outlook</p>
