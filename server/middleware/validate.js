@@ -58,7 +58,10 @@ export const schemas = {
     custom_permissions: z.array(z.string()).optional(),
     departments: z.array(z.string()).optional(),
     is_active: z.boolean().optional(),
-    client_id: z.string().optional(),
+    // Nullable: the Edit User form always sends client_id (null when the
+    // tier isn't 'client', to clear a stale link on tier change) rather
+    // than omitting the key.
+    client_id: z.string().nullable().optional(),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
