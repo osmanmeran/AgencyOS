@@ -11,7 +11,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 const ItineraryBuilder = lazy(() => import('./pages/ItineraryBuilder'));
 const SupplierBookings = lazy(() => import('./pages/SupplierBookings'));
@@ -36,8 +36,20 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
 
+// Mirrors the isClientPortal check in Layout.jsx — pages a client-tier
+// portal account is allowed to land on without being bounced to ClientPortal.
+const CLIENT_PORTAL_PREFIXES = ['ClientPortal', 'ClientProposal', 'ClientTrip', 'ClientInvoice', 'ClientCatalog', 'ClientQuote'];
+// Standalone routes (magic-link / pre-auth pages) that aren't part of the
+// Pages registry and should never trigger the client-portal redirect.
+const NON_REDIRECT_ROUTES = ['/mock-login', '/auth/microsoft/callback', '/accept-invite', '/auth/outlook-callback', '/client-itinerary', '/request-quote'];
+
+function isClientPortalPage(pageName) {
+  return CLIENT_PORTAL_PREFIXES.some(p => pageName?.startsWith(p));
+}
+
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, user, navigateToLogin } = useAuth();
+  const location = useLocation();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -61,6 +73,17 @@ const AuthenticatedApp = () => {
         return null;
       }
     }
+  }
+
+  // Client-portal accounts (user_tier 'client') have no staff permissions and
+  // land nowhere useful on the default Dashboard — send them straight to
+  // their portal instead. Staff previewing the client portal (via the
+  // "Client Portal (Preview)" nav link) are unaffected since their own
+  // account tier is never 'client'.
+  if (isAuthenticated && user?.user_tier === 'client'
+    && !NON_REDIRECT_ROUTES.includes(location.pathname)
+    && !isClientPortalPage(location.pathname.replace(/^\//, ''))) {
+    return <Navigate to="/ClientPortal" replace />;
   }
 
   // Render the main app
