@@ -42,6 +42,8 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import LocalShippingRounded from '@mui/icons-material/LocalShippingRounded';
 import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
+import VisibilityRounded from '@mui/icons-material/VisibilityRounded';
+import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 
 import MarvelopsLogo from './components/layout/MarvelopsLogo';
 import { PermissionProvider } from './components/permissions/PermissionContext';
@@ -68,7 +70,9 @@ const NAV_SECTIONS = {
       { label: 'RFP Manager', page: 'RFPManager' },
     ]},
     { label: t('nav.crm'), icon: <PeopleRounded />, page: 'ClientCRM' },
+    { label: 'Quote Requests', icon: <RequestQuoteRounded />, page: 'QuoteRequests' },
     { label: 'Tasks', icon: <TaskAltRounded />, page: 'TaskBoard' },
+    { label: 'Client Portal (Preview)', icon: <VisibilityRounded />, page: 'ClientPortal' },
   ],
   secondary: (t) => [
     { label: t('nav.revenue'), icon: <AttachMoneyRounded />, page: 'Revenue', children: [
@@ -183,6 +187,10 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
     ? { main: () => CLIENT_NAV(t) }
     : NAV_SECTIONS;
   const isAdmin = userTier === 'admin' || userTier === 'manager';
+  // Staff previewing the client portal via the "Client Portal (Preview)" link
+  // still have userTier from their own account (never 'client') — give them
+  // an obvious way back instead of stranding them in the client-only nav.
+  const isStaffPreviewingClient = isClientPortal && userTier && userTier !== 'client';
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -196,6 +204,17 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
       </Toolbar>
       <Divider />
       <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
+        {isStaffPreviewingClient && (
+          <>
+            <List disablePadding>
+              <NavItem
+                item={{ label: 'Back to Admin', icon: <ArrowBackRounded />, page: 'Dashboard' }}
+                currentPageName={currentPageName}
+              />
+            </List>
+            <Divider sx={{ my: 1.5, mx: 2 }} />
+          </>
+        )}
         <List disablePadding>
           {navSections.main(t).map(item => (
             <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />

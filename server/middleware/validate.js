@@ -202,6 +202,11 @@ export const schemas = {
     notes: z.string().optional(),
   }),
 
+  b2bRespondToQuote: z.object({
+    status: z.enum(['reviewing', 'quoted', 'accepted', 'declined']),
+    response_notes: z.string().optional(),
+  }),
+
   entityData: z.record(z.unknown()).refine(
     data => {
       for (const key of Object.keys(data)) {

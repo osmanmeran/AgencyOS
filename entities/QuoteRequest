@@ -81,6 +81,18 @@
     "requested_by": {
       "type": "string",
       "description": "User id of the client-portal user who submitted this quote request"
+    },
+    "response_notes": {
+      "type": "string",
+      "description": "Staff notes shown back to the client when the request is reviewed"
+    },
+    "responded_by": {
+      "type": "string",
+      "description": "User id of the staff member who last changed the status"
+    },
+    "responded_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [

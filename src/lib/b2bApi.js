@@ -23,3 +23,7 @@ export function listQuotes() {
 export function getQuote(id) {
   return apiFetch(`/quotes/${id}`);
 }
+
+export function respondToQuote(id, { status, response_notes }) {
+  return apiFetch(`/quotes/${id}/respond`, { method: 'PUT', body: JSON.stringify({ status, response_notes }) });
+}

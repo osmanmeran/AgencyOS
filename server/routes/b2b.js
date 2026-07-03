@@ -4,6 +4,9 @@ import { catchAsync, BadRequestError, ForbiddenError, NotFoundError } from '../m
 import { validate, schemas } from '../middleware/validate.js';
 import { getDb, uid } from '../db.js';
 import { broadcast } from '../lib/ws.js';
+import { hasPermission } from '../permissions.js';
+import { sendEmail } from '../services/email.js';
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -61,6 +64,7 @@ router.get('/catalog', catchAsync(async (req, res) => {
       supplier_name: suppliers.get(p.supplier_id)?.name || '',
       name: p.name,
       description: p.description || '',
+      image_url: p.image_url || '',
       unit: p.unit,
       currency: p.currency || 'USD',
       unit_price: computeUnitPrice(p, markupPct),
@@ -93,6 +97,7 @@ router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, r
       supplier_id: pricing.supplier_id,
       supplier_name: supplier?.name || '',
       service_name: pricing.name,
+      image_url: pricing.image_url || '',
       unit: pricing.unit,
       currency: pricing.currency || 'USD',
       unit_price,
@@ -149,6 +154,52 @@ router.get('/quotes/:id', catchAsync(async (req, res) => {
   if (quote.client_id !== client.id) throw new ForbiddenError('Access denied');
 
   res.json(quote);
+}));
+
+// Staff-only: review a submitted quote request. Every cart must go through
+// this — clients can never move their own request past "submitted".
+router.put('/quotes/:id/respond', validate(schemas.b2bRespondToQuote), catchAsync(async (req, res) => {
+  if (!hasPermission(req.user.user_tier, req.user.custom_permissions || [], 'manage_quote_requests')) {
+    throw new ForbiddenError('Missing required permission: manage_quote_requests');
+  }
+
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM entities WHERE type = 'QuoteRequest' AND id = ?").get(req.params.id);
+  if (!row) throw new NotFoundError('Quote not found');
+  const existing = JSON.parse(row.data);
+
+  const now = new Date().toISOString();
+  const data = {
+    ...existing,
+    status: req.body.status,
+    response_notes: req.body.response_notes ?? existing.response_notes ?? '',
+    responded_by: req.user.id,
+    responded_at: now,
+  };
+
+  db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?')
+    .run(JSON.stringify(data), now, req.params.id);
+
+  broadcast({ type: 'entity_change', action: 'update', entityType: 'QuoteRequest', entityId: req.params.id }, { excludeUserId: req.user.id });
+
+  const client = getEntityById(db, 'Client', existing.client_id);
+  if (client?.email) {
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    sendEmail({
+      to: client.email,
+      subject: `Your quote request "${existing.title}" has been updated`,
+      template: 'quote_response',
+      templateData: {
+        clientName: client.name,
+        quoteTitle: existing.title,
+        status: data.status,
+        responseNotes: data.response_notes,
+        quoteUrl: `${appUrl}/ClientQuoteDetails?id=${req.params.id}`,
+      },
+    }).catch(err => logger.warn({ err: err.message, quoteId: req.params.id }, 'Failed to send quote response email'));
+  }
+
+  res.json({ id: row.id, ...data, created_date: row.created_date, updated_date: now });
 }));
 
 export default router;

@@ -12,7 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, DollarSign, Calendar, Tag, Layers, Scan, Loader2, FileUp } from 'lucide-react';
+import { Plus, Edit, Trash2, DollarSign, Calendar, Tag, Layers, Scan, Loader2, FileUp, ImageIcon, X } from 'lucide-react';
+import { showError } from '@/lib/toast';
 
 const SEASON_COLORS = {
   all_year: 'bg-gray-100 text-gray-800',
@@ -83,9 +84,23 @@ export default function SupplierPricingManager({ supplierId }) {
     season_type: 'all_year', season_start: '', season_end: '',
     min_quantity: 1, max_quantity: '', markup_percentage: 0, notes: '', is_active: true,
     occupancy: '', pricing_type: 'individual', min_group_size: 12, car_capacity: '',
+    image_url: '',
   });
 
   const [pricingForm, setPricingForm] = useState(freshPricingForm());
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      setPricingForm(f => ({ ...f, image_url: file_url }));
+    } catch (err) {
+      showError('Failed to upload photo', err.message);
+    }
+    setImageUploading(false);
+  };
 
   const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['supplierSubcategories', supplierId],
@@ -183,6 +198,7 @@ export default function SupplierPricingManager({ supplierId }) {
         pricing_type: pricing.pricing_type || 'individual',
         min_group_size: pricing.min_group_size || 12,
         car_capacity: pricing.car_capacity || '',
+        image_url: pricing.image_url || '',
       });
     } else {
       setEditingPricing(null);
@@ -398,7 +414,14 @@ export default function SupplierPricingManager({ supplierId }) {
               <div className="space-y-4">
                 {filtered.map(pricing => (
                 <Card key={pricing.id} className={`p-4 group hover:shadow-md transition-shadow ${!pricing.is_active ? 'opacity-50' : ''}`}>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start gap-4">
+                    {pricing.image_url ? (
+                      <img src={pricing.image_url} alt={pricing.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-slate-200" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 border border-slate-200">
+                        <ImageIcon className="w-6 h-6 text-slate-300" />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold text-slate-900">{pricing.name}</h3>
@@ -541,6 +564,42 @@ export default function SupplierPricingManager({ supplierId }) {
                 onChange={(e) => setPricingForm({ ...pricingForm, description: e.target.value })}
                 rows={2}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Photo (shown in the B2B client catalog)</Label>
+              {pricingForm.image_url ? (
+                <div className="relative w-32 h-32">
+                  <img src={pricingForm.image_url} alt="" className="w-32 h-32 rounded-lg object-cover border border-slate-200" />
+                  <button
+                    type="button"
+                    onClick={() => setPricingForm({ ...pricingForm, image_url: '' })}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full border border-slate-200 shadow flex items-center justify-center hover:bg-red-50"
+                  >
+                    <X className="w-3.5 h-3.5 text-red-500" />
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer inline-block">
+                  <div className="w-32 h-32 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-1 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                    {imageUploading ? (
+                      <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-6 h-6 text-slate-400" />
+                        <span className="text-xs text-slate-500">Upload photo</span>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={imageUploading}
+                    onChange={(e) => handleImageUpload(e.target.files[0])}
+                  />
+                </label>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

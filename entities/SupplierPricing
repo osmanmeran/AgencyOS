@@ -21,6 +21,10 @@
     "description": {
       "type": "string"
     },
+    "image_url": {
+      "type": "string",
+      "description": "Photo shown in the B2B client catalog"
+    },
     "base_price": {
       "type": "number",
       "description": "Supplier cost / base price"

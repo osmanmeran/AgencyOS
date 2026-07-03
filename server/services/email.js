@@ -103,6 +103,16 @@ const TEMPLATES = {
     <p style="color: #64748b; font-size: 14px;">This link expires in 7 days.</p>
   ` }),
 
+  quote_response: ({ clientName, quoteTitle, status, responseNotes, quoteUrl }) => TEMPLATES.generic({ content: `
+    <h2 style="color: #1e293b; margin-top: 0;">Your Quote Request Has Been Updated</h2>
+    <p>Dear ${clientName},</p>
+    <p>Your quote request <strong>${quoteTitle}</strong> is now marked as <strong>${status}</strong>.</p>
+    ${responseNotes ? `<p style="background:#f8fafc;border-left:3px solid #2563eb;padding:12px 16px;color:#334155;">${responseNotes}</p>` : ''}
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${quoteUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Your Quote</a>
+    </div>
+  ` }),
+
   invoice: ({ clientName, invoiceNumber, amount, dueDate, invoiceUrl }) => TEMPLATES.generic({ content: `
     <h2 style="color: #1e293b; margin-top: 0;">Invoice Ready</h2>
     <p>Dear ${clientName},</p>

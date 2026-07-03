@@ -78,8 +78,11 @@ export default function ClientQuoteDetails() {
         {quote.items && quote.items.length > 0 ? (
           <div className="space-y-4">
             {quote.items.map((item, index) => (
-              <div key={index} className="border-b border-slate-200 pb-4 last:border-0">
-                <div className="flex justify-between items-start">
+              <div key={index} className="flex items-center gap-4 border-b border-slate-200 pb-4 last:border-0">
+                {item.image_url && (
+                  <img src={item.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                )}
+                <div className="flex justify-between items-start flex-1">
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg text-slate-900">{item.service_name}</h3>
                     <p className="text-slate-500 text-sm mt-1">{item.supplier_name}</p>
