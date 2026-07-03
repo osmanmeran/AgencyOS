@@ -12,7 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, DollarSign, Calendar, Tag, Layers, Scan, Loader2, FileUp, ImageIcon, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Edit, Trash2, DollarSign, Calendar, Tag, Layers, Scan, Loader2, FileUp, ImageIcon, X, Star } from 'lucide-react';
 import { showError } from '@/lib/toast';
 
 const SEASON_COLORS = {
@@ -84,7 +85,7 @@ export default function SupplierPricingManager({ supplierId }) {
     season_type: 'all_year', season_start: '', season_end: '',
     min_quantity: 1, max_quantity: '', markup_percentage: 0, notes: '', is_active: true,
     occupancy: '', pricing_type: 'individual', min_group_size: 12, car_capacity: '',
-    image_url: '',
+    image_url: '', is_featured: false,
   });
 
   const [pricingForm, setPricingForm] = useState(freshPricingForm());
@@ -199,6 +200,7 @@ export default function SupplierPricingManager({ supplierId }) {
         min_group_size: pricing.min_group_size || 12,
         car_capacity: pricing.car_capacity || '',
         image_url: pricing.image_url || '',
+        is_featured: pricing.is_featured || false,
       });
     } else {
       setEditingPricing(null);
@@ -425,6 +427,9 @@ export default function SupplierPricingManager({ supplierId }) {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold text-slate-900">{pricing.name}</h3>
+                        {pricing.is_featured && (
+                          <Star className="w-4 h-4 text-amber-500 fill-amber-500 flex-shrink-0" />
+                        )}
                         <Badge className={SEASON_COLORS[pricing.season_type]}>
                           {pricing.season_type?.replace('_', ' ')}
                         </Badge>
@@ -601,6 +606,17 @@ export default function SupplierPricingManager({ supplierId }) {
                 </label>
               )}
             </div>
+
+            <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 cursor-pointer w-fit">
+              <Switch
+                checked={pricingForm.is_featured}
+                onCheckedChange={(v) => setPricingForm({ ...pricingForm, is_featured: v })}
+              />
+              <span className="flex items-center gap-1.5 text-sm text-slate-700">
+                <Star className={`w-4 h-4 ${pricingForm.is_featured ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
+                Feature in client portal carousel
+              </span>
+            </label>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

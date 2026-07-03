@@ -12,6 +12,10 @@ export function getCatalog() {
   return apiFetch('/catalog');
 }
 
+export function getFeatured() {
+  return apiFetch('/featured');
+}
+
 export function submitQuote({ title, items, notes }) {
   return apiFetch('/quote', { method: 'POST', body: JSON.stringify({ title, items, notes }) });
 }

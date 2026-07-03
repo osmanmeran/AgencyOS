@@ -7,10 +7,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SkeletonStats } from '@/components/ui/skeletons';
-import { FileText, Plane, DollarSign, CheckCircle, CreditCard, ArrowRight, Calendar, AlertCircle } from 'lucide-react';
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
+import { FileText, Plane, DollarSign, CheckCircle, CreditCard, ArrowRight, Calendar, AlertCircle, ImageOff, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
+import { getFeatured } from '@/lib/b2bApi';
 
 export default function ClientPortal() {
   const [user, setUser] = React.useState(null);
@@ -57,6 +59,13 @@ export default function ClientPortal() {
     queryFn: () => db.entities.Invoice.filter({ client_id: client.id }),
     enabled: !!client
   }));
+
+  const { data: featuredData } = /** @type {any} */ (useQuery({
+    queryKey: ['b2bFeatured'],
+    queryFn: getFeatured,
+    enabled: !!client
+  }));
+  const featuredItems = featuredData?.items || [];
 
   const pendingInvoices = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled');
   const overdueInvoices = pendingInvoices.filter(i => isBefore(parseISO(i.due_date), new Date()));
@@ -123,6 +132,50 @@ export default function ClientPortal() {
           <div className="text-3xl font-bold">${(client.total_owed || 0).toFixed(2)}</div>
         </Card>
       </div>
+
+      {/* Featured Products */}
+      {featuredItems.length > 0 && (
+        <Card className="p-6 bg-white shadow-md">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              Featured Products
+            </h2>
+            <Link to={createPageUrl('ClientCatalog')}>
+              <span className="text-blue-600 hover:text-blue-700 text-sm font-medium">Browse Full Catalog</span>
+            </Link>
+          </div>
+
+          <Carousel opts={{ align: 'start' }} className="w-full">
+            <CarouselContent>
+              {featuredItems.map(item => (
+                <CarouselItem key={item.pricing_id} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
+                  <Link to={createPageUrl('ClientCatalog')}>
+                    <Card className="overflow-hidden bg-white border border-slate-200 hover:shadow-lg transition-all p-0 h-full">
+                      <div className="h-32 bg-slate-100">
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageOff className="w-7 h-7 text-slate-300" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <div className="text-sm font-medium text-slate-800 truncate" title={item.name}>{item.name}</div>
+                        <div className="text-xs text-slate-500 truncate">{item.supplier_name}</div>
+                        <div className="font-semibold text-green-700 text-sm mt-1">${item.unit_price.toFixed(2)}</div>
+                      </div>
+                    </Card>
+                  </Link>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden sm:flex" />
+            <CarouselNext className="hidden sm:flex" />
+          </Carousel>
+        </Card>
+      )}
 
       {/* Recent Proposals */}
       <Card className="p-6 bg-white shadow-md">

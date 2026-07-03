@@ -25,6 +25,11 @@
       "type": "string",
       "description": "Photo shown in the B2B client catalog"
     },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Shown in the featured products carousel on the client portal dashboard"
+    },
     "base_price": {
       "type": "number",
       "description": "Supplier cost / base price"

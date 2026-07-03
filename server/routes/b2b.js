@@ -43,19 +43,16 @@ function requireClientContext(user) {
   return client;
 }
 
-// Active, approved supplier pricing with the client's markup applied.
-// base_price / client_price are intentionally never included in the response.
-router.get('/catalog', catchAsync(async (req, res) => {
-  const client = requireClientContext(req.user);
-  const db = getDb();
-  const markupPct = client.default_markup || 0;
-
+// Active, approved supplier pricing mapped into the client-facing shape used
+// by both /catalog and /featured. base_price / client_price are
+// intentionally never included in the response.
+function getActiveCatalogItems(db, markupPct) {
   const suppliers = new Map(
     db.prepare("SELECT * FROM entities WHERE type = 'Supplier'").all()
       .map(r => [r.id, JSON.parse(r.data)])
   );
 
-  const items = db.prepare("SELECT * FROM entities WHERE type = 'SupplierPricing'").all()
+  return db.prepare("SELECT * FROM entities WHERE type = 'SupplierPricing'").all()
     .map(r => ({ id: r.id, ...JSON.parse(r.data) }))
     .filter(p => p.is_active !== false && p.approval_status === 'approved')
     .map(p => ({
@@ -65,6 +62,7 @@ router.get('/catalog', catchAsync(async (req, res) => {
       name: p.name,
       description: p.description || '',
       image_url: p.image_url || '',
+      is_featured: !!p.is_featured,
       unit: p.unit,
       currency: p.currency || 'USD',
       unit_price: computeUnitPrice(p, markupPct),
@@ -73,8 +71,28 @@ router.get('/catalog', catchAsync(async (req, res) => {
       occupancy: p.occupancy || null,
       season_type: p.season_type || 'all_year',
     }));
+}
+
+router.get('/catalog', catchAsync(async (req, res) => {
+  const client = requireClientContext(req.user);
+  const db = getDb();
+  const markupPct = client.default_markup || 0;
+
+  const items = getActiveCatalogItems(db, markupPct);
 
   res.json({ markup_percentage: markupPct, items });
+}));
+
+// Admin-curated subset shown in the dashboard carousel — see
+// SupplierPricing.is_featured, toggled in SupplierPricingManager.
+router.get('/featured', catchAsync(async (req, res) => {
+  const client = requireClientContext(req.user);
+  const db = getDb();
+  const markupPct = client.default_markup || 0;
+
+  const items = getActiveCatalogItems(db, markupPct).filter(i => i.is_featured);
+
+  res.json({ items });
 }));
 
 router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, res) => {
