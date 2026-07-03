@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Bell, CheckCheck, X, Info, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, CheckCheck, X, Info, AlertTriangle, CheckCircle, Loader2, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ const TYPE_ICONS = {
   success: CheckCircle,
   warning: AlertTriangle,
   error: X,
+  quote_request: ClipboardList,
 };
 
 const TYPE_COLORS = {
@@ -24,6 +26,7 @@ const TYPE_COLORS = {
   success: 'text-green-500 bg-green-100',
   warning: 'text-amber-500 bg-amber-100',
   error: 'text-red-500 bg-red-100',
+  quote_request: 'text-blue-600 bg-blue-100',
 };
 
 async function api(path, opts = {}) {
@@ -37,6 +40,7 @@ async function api(path, opts = {}) {
 }
 
 export default function NotificationBell() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -73,6 +77,16 @@ export default function NotificationBell() {
     } catch { /* ignore */ }
   }
 
+  async function handleClick(n) {
+    setOpen(false);
+    if (!n.read) {
+      setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+      setUnread(prev => Math.max(0, prev - 1));
+      try { await api(`/api/notifications/${n.id}/read`, { method: 'PATCH' }); } catch { /* ignore */ }
+    }
+    if (n.data?.url) navigate(n.data.url);
+  }
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -107,7 +121,7 @@ export default function NotificationBell() {
               const Icon = TYPE_ICONS[n.type] || Info;
               const colorClass = TYPE_COLORS[n.type] || TYPE_COLORS.info;
               return (
-                <DropdownMenuItem key={n.id} className={`flex items-start gap-3 px-4 py-3 cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                <DropdownMenuItem key={n.id} onClick={() => handleClick(n)} className={`flex items-start gap-3 px-4 py-3 cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`}>
                   <div className={`p-1.5 rounded-full ${colorClass} mt-0.5`}>
                     <Icon className="w-3.5 h-3.5" />
                   </div>

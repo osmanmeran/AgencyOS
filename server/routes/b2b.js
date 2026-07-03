@@ -7,6 +7,7 @@ import { broadcast } from '../lib/ws.js';
 import { hasPermission } from '../permissions.js';
 import { sendEmail } from '../services/email.js';
 import { getExchangeRate } from '../services/integrations.js';
+import { createNotification } from '../services/notifications.js';
 import logger from '../lib/logger.js';
 
 const router = Router();
@@ -102,6 +103,34 @@ function requireClientContext(user) {
   const client = getEntityById(db, 'Client', user.client_id);
   if (!client) throw new NotFoundError('Linked client record not found');
   return client;
+}
+
+// Notify every active staff member who can act on quote requests that a new
+// one came in. In-app + WebSocket via createNotification, plus email for those
+// who opted in. Best-effort: a notification failure must never fail the submit.
+function notifyStaffOfNewQuote(db, quoteId, quote) {
+  try {
+    const users = db.prepare('SELECT id, user_tier, custom_permissions FROM users WHERE is_active = 1').all();
+    const title = `New quote request from ${quote.client_name || 'a client'}`;
+    const count = quote.items?.length || 0;
+    const message = `"${quote.title}" · ${count} service${count === 1 ? '' : 's'}`;
+    for (const u of users) {
+      let perms = [];
+      try { perms = JSON.parse(u.custom_permissions || '[]'); } catch { perms = []; }
+      if (!Array.isArray(perms)) perms = [];
+      if (!hasPermission(u.user_tier, perms, 'manage_quote_requests')) continue;
+      createNotification({
+        userId: u.id,
+        type: 'quote_request',
+        title,
+        message,
+        data: { entityId: quoteId, url: '/QuoteRequests' },
+        email: { subject: title, body: `${message}\n\nReview it in the Quote Requests section of Marvelops.` },
+      });
+    }
+  } catch (err) {
+    logger.warn({ err: err.message, quoteId }, 'Failed to notify staff of new quote request');
+  }
 }
 
 // Active, approved supplier pricing mapped into the client-facing shape used
@@ -314,6 +343,7 @@ router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, r
     .run(id, 'QuoteRequest', JSON.stringify(data), now, now);
 
   broadcast({ type: 'entity_change', action: 'create', entityType: 'QuoteRequest', entityId: id }, { excludeUserId: req.user.id });
+  notifyStaffOfNewQuote(db, id, data);
 
   res.status(201).json({ id, ...data, created_date: now, updated_date: now });
 }));
