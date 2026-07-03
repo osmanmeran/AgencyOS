@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, DollarSign, Calendar, Tag, Layers, Scan, Loader2, FileUp, ImageIcon, X, Star } from 'lucide-react';
-import { showError } from '@/lib/toast';
+import { Plus, Edit, Trash2, DollarSign, Calendar, Tag, Layers, Scan, Loader2, FileUp, ImageIcon, X, Star, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { showError, showSuccess } from '@/lib/toast';
 
 const SEASON_COLORS = {
   all_year: 'bg-gray-100 text-gray-800',
@@ -22,6 +22,15 @@ const SEASON_COLORS = {
   low_season: 'bg-green-100 text-green-800',
   peak: 'bg-orange-100 text-orange-800',
   custom: 'bg-purple-100 text-purple-800'
+};
+
+// Gates whether a price tier shows up in the B2B client catalog — suppliers
+// can self-submit pricing via their portal (always starts 'pending'), so
+// staff need a way to review and approve it here before clients see it.
+const APPROVAL_STATUS = {
+  pending: { label: 'Pending Approval', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  approved: { label: 'Approved', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+  rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800', icon: AlertCircle }
 };
 
 const UNIT_LABELS = {
@@ -86,6 +95,9 @@ export default function SupplierPricingManager({ supplierId }) {
     min_quantity: 1, max_quantity: '', markup_percentage: 0, notes: '', is_active: true,
     occupancy: '', pricing_type: 'individual', min_group_size: 12, car_capacity: '',
     image_url: '', is_featured: false,
+    // Staff creating a price tier directly here is the review step — only
+    // pricing submitted by suppliers through their own portal starts pending.
+    approval_status: 'approved',
   });
 
   const [pricingForm, setPricingForm] = useState(freshPricingForm());
@@ -201,6 +213,7 @@ export default function SupplierPricingManager({ supplierId }) {
         car_capacity: pricing.car_capacity || '',
         image_url: pricing.image_url || '',
         is_featured: pricing.is_featured || false,
+        approval_status: pricing.approval_status || 'pending',
       });
     } else {
       setEditingPricing(null);
@@ -445,6 +458,16 @@ export default function SupplierPricingManager({ supplierId }) {
                           </Badge>
                         )}
                         {!pricing.is_active && <Badge variant="secondary">Inactive</Badge>}
+                        {(() => {
+                          const config = APPROVAL_STATUS[pricing.approval_status] || APPROVAL_STATUS.pending;
+                          const Icon = config.icon;
+                          return (
+                            <Badge className={config.color}>
+                              <Icon className="w-3 h-3 mr-1" />
+                              {config.label}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                       {pricing.description && <p className="text-sm text-slate-600 mb-2">{pricing.description}</p>}
                       <div className="flex flex-wrap gap-4 text-sm">
@@ -471,6 +494,18 @@ export default function SupplierPricingManager({ supplierId }) {
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {pricing.approval_status !== 'approved' && (
+                        <Button
+                          variant="ghost" size="icon"
+                          title="Approve for B2B catalog"
+                          onClick={() => {
+                            updatePricingMutation.mutate({ id: pricing.id, data: { approval_status: 'approved' } });
+                            showSuccess('Price tier approved', 'Now visible in the B2B client catalog');
+                          }}
+                        >
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        </Button>
+                      )}
                       <Button variant="ghost" size="icon" onClick={() => openPricingModal(pricing)}>
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -607,16 +642,30 @@ export default function SupplierPricingManager({ supplierId }) {
               )}
             </div>
 
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 cursor-pointer w-fit">
-              <Switch
-                checked={pricingForm.is_featured}
-                onCheckedChange={(v) => setPricingForm({ ...pricingForm, is_featured: v })}
-              />
-              <span className="flex items-center gap-1.5 text-sm text-slate-700">
-                <Star className={`w-4 h-4 ${pricingForm.is_featured ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
-                Feature in client portal carousel
-              </span>
-            </label>
+            <div className="grid grid-cols-2 gap-4 items-end">
+              <div className="space-y-2">
+                <Label>B2B Approval Status</Label>
+                <Select value={pricingForm.approval_status} onValueChange={(v) => setPricingForm({ ...pricingForm, approval_status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending Approval</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500">Only "Approved" tiers are visible in the B2B client catalog.</p>
+              </div>
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 cursor-pointer h-fit">
+                <Switch
+                  checked={pricingForm.is_featured}
+                  onCheckedChange={(v) => setPricingForm({ ...pricingForm, is_featured: v })}
+                />
+                <span className="flex items-center gap-1.5 text-sm text-slate-700">
+                  <Star className={`w-4 h-4 ${pricingForm.is_featured ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
+                  Feature in carousel
+                </span>
+              </label>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
