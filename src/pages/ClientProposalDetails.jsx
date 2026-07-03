@@ -1,7 +1,7 @@
 import { db } from '@/lib/DbContext';
 
-import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMyClient } from '@/hooks/useMyClient';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,16 +26,7 @@ export default function ClientProposalDetails() {
   const [searchParams] = useSearchParams();
   const proposalId = searchParams.get('id');
   const queryClient = useQueryClient();
-  const [client, setClient] = React.useState(null);
-
-  React.useEffect(() => {
-    db.auth.me().then(async (user) => {
-      const clients = await db.entities.Client.filter({ email: user.email });
-      if (clients.length > 0) {
-        setClient(clients[0]);
-      }
-    });
-  }, []);
+  const client = useMyClient();
 
   const { data: proposal, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['proposal', proposalId],

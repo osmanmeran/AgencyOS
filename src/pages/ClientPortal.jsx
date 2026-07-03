@@ -19,10 +19,18 @@ export default function ClientPortal() {
   React.useEffect(() => {
     db.auth.me().then(async (currentUser) => {
       setUser(currentUser);
-      const clients = await db.entities.Client.filter({ email: currentUser.email });
-      if (clients.length > 0) {
-        setClient(clients[0]);
+      // Prefer the authoritative client_id from the JWT — email matching
+      // alone silently fails whenever the portal login email differs from
+      // the CRM contact's email (a completely normal setup).
+      let resolved = null;
+      if (currentUser.client_id) {
+        resolved = await db.entities.Client.get(currentUser.client_id).catch(() => null);
       }
+      if (!resolved && currentUser.email) {
+        const clients = await db.entities.Client.filter({ email: currentUser.email });
+        resolved = clients[0] || null;
+      }
+      if (resolved) setClient(resolved);
     });
   }, []);
 

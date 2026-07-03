@@ -1,7 +1,7 @@
 import { db } from '@/lib/DbContext';
 
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useMyClient } from '@/hooks/useMyClient';
 
 import { Card } from '@/components/ui/card';
 import { SkeletonTable } from '@/components/ui/skeletons';
@@ -11,16 +11,7 @@ import { createPageUrl } from '../utils';
 import { format, differenceInDays } from 'date-fns';
 
 export default function ClientTrips() {
-  const [client, setClient] = React.useState(null);
-
-  React.useEffect(() => {
-    db.auth.me().then(async (user) => {
-      const clients = await db.entities.Client.filter({ email: user.email });
-      if (clients.length > 0) {
-        setClient(clients[0]);
-      }
-    });
-  }, []);
+  const client = useMyClient();
 
   const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myTrips', client?.id],

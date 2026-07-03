@@ -1,7 +1,7 @@
 import { db } from '@/lib/DbContext';
 
-import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMyClient } from '@/hooks/useMyClient';
 
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,17 +22,8 @@ const STATUS_COLORS = {
 };
 
 export default function ClientProposals() {
-  const [client, setClient] = React.useState(null);
+  const client = useMyClient();
   const queryClient = useQueryClient();
-
-  React.useEffect(() => {
-    db.auth.me().then(async (user) => {
-      const clients = await db.entities.Client.filter({ email: user.email });
-      if (clients.length > 0) {
-        setClient(clients[0]);
-      }
-    });
-  }, []);
 
   const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myProposals', client?.id],

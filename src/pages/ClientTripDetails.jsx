@@ -1,7 +1,7 @@
 import { db } from '@/lib/DbContext';
 
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useMyClient } from '@/hooks/useMyClient';
 
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,16 +18,7 @@ import TripApprovalBar from '../components/client-trip/TripApprovalBar';
 export default function ClientTripDetails() {
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');
-  const [client, setClient] = React.useState(null);
-
-  React.useEffect(() => {
-    db.auth.me().then(async (user) => {
-      const clients = await db.entities.Client.filter({ email: user.email });
-      if (clients.length > 0) {
-        setClient(clients[0]);
-      }
-    });
-  }, []);
+  const client = useMyClient();
 
   const { data: trip, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['trip', tripId],

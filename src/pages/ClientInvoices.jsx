@@ -1,6 +1,7 @@
 import { db } from '@/lib/DbContext';
 
 import { useQuery } from '@tanstack/react-query';
+import { useMyClient } from '@/hooks/useMyClient';
 
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,19 +12,7 @@ import { format, parseISO, isBefore } from 'date-fns';
 import { FileText, Calendar, CheckCircle } from 'lucide-react';
 
 export default function ClientInvoices() {
-  const { data: user } = /** @type {any} */ (useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => db.auth.me()
-  }));
-
-  const { data: client } = /** @type {any} */ (useQuery({
-    queryKey: ['myClient', user?.email],
-    queryFn: async () => {
-      const clients = await db.entities.Client.filter({ email: user.email });
-      return clients[0];
-    },
-    enabled: !!user?.email
-  }));
+  const client = useMyClient();
 
   const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['clientInvoices', client?.id],
