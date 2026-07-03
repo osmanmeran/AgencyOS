@@ -9,7 +9,7 @@ import logger from '../lib/logger.js';
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
 const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
 
-export const VALID_TIERS = ['admin', 'manager', 'accounting', 'agent'];
+export const VALID_TIERS = ['admin', 'manager', 'accounting', 'agent', 'client'];
 
 export function safeUser(u) {
   return {
@@ -128,6 +128,7 @@ export function updateUser(id, fields) {
   const fieldMap = {
     name: 'name', email: 'email', phone: 'phone', user_tier: 'user_tier', language: 'language',
     is_active: 'is_active', default_currency: 'default_currency', avatar_url: 'avatar_url',
+    client_id: 'client_id',
   };
 
   for (const [key, col] of Object.entries(fieldMap)) {
@@ -182,12 +183,15 @@ export function getAllUsers() {
   return db.prepare('SELECT * FROM users ORDER BY created_date ASC').all();
 }
 
-export function inviteUser({ email, name, user_tier, custom_permissions, departments, invited_by }) {
+export function inviteUser({ email, name, user_tier, custom_permissions, departments, client_id, invited_by }) {
   const db = getDb();
   const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (existing) throw new ConflictError('Email already registered');
 
   const tier = VALID_TIERS.includes(user_tier) ? user_tier : 'agent';
+  if (tier === 'client' && !client_id) {
+    throw new BadRequestError('client_id is required when inviting a client-tier user');
+  }
   const perms = Array.isArray(custom_permissions) ? custom_permissions : [];
   const deps = Array.isArray(departments) ? departments : [];
   const now = new Date().toISOString();
@@ -195,8 +199,8 @@ export function inviteUser({ email, name, user_tier, custom_permissions, departm
   const token = uid() + uid();
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, invite_token, invite_expires, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(id, email, '', name || email.split('@')[0], tier, tier, 'en', JSON.stringify(perms), JSON.stringify(deps), 0, token, expires, now, now);
+  db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, invite_token, invite_expires, client_id, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, email, '', name || email.split('@')[0], tier, tier, 'en', JSON.stringify(perms), JSON.stringify(deps), 0, token, expires, tier === 'client' ? client_id : null, now, now);
 
   return { id, email, name, token, expires };
 }
@@ -217,12 +221,15 @@ export function acceptInvite({ token, name, password }) {
   return safeUser(db.prepare('SELECT * FROM users WHERE id = ?').get(user.id));
 }
 
-export function createUser({ email, password, name, user_tier, custom_permissions, departments, is_active }) {
+export function createUser({ email, password, name, user_tier, custom_permissions, departments, is_active, client_id }) {
   const db = getDb();
   const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (existing) throw new ConflictError('Email already registered');
 
   const tier = VALID_TIERS.includes(user_tier) ? user_tier : 'agent';
+  if (tier === 'client' && !client_id) {
+    throw new BadRequestError('client_id is required when creating a client-tier user');
+  }
   const perms = Array.isArray(custom_permissions) ? custom_permissions : [];
   const deps = Array.isArray(departments) ? departments : [];
   const active = is_active !== undefined ? (is_active ? 1 : 0) : 1;
@@ -230,8 +237,8 @@ export function createUser({ email, password, name, user_tier, custom_permission
   const hashed = bcrypt.hashSync(password, 10);
   const id = uid();
 
-  db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(id, email, hashed, name, tier, tier, 'en', JSON.stringify(perms), JSON.stringify(deps), active, now, now);
+  db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, client_id, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, email, hashed, name, tier, tier, 'en', JSON.stringify(perms), JSON.stringify(deps), active, tier === 'client' ? client_id : null, now, now);
 
   return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
 }

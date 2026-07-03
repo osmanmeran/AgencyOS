@@ -52,7 +52,7 @@
     return data;
   }
 
-  var ENTITIES = ['AppSettings','BookingRequest','BookingTemplate','Client','ClientPayment','ClientTask','EmailLog','Invoice','ItineraryEvent','Message','PackingItem','Proposal','ProposalTemplate','ReferenceCounter','ServiceCategory','ServiceTemplate','Suggestion','Supplier','SupplierBooking','SupplierCategory','SupplierInvoice','SupplierPricing','SupplierReview','SupplierService','SupplierSubcategory','TourContract','Trip'];
+  var ENTITIES = ['AppSettings','BookingRequest','BookingTemplate','Client','ClientPayment','ClientTask','EmailLog','Invoice','ItineraryEvent','Message','PackingItem','Proposal','ProposalTemplate','QuoteRequest','ReferenceCounter','ServiceCategory','ServiceTemplate','Suggestion','Supplier','SupplierBooking','SupplierCategory','SupplierInvoice','SupplierPricing','SupplierReview','SupplierService','SupplierSubcategory','TourContract','Trip'];
 
   function makeEntityApi(name) {
     return {

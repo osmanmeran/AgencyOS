@@ -15,6 +15,7 @@ import { auditMiddleware } from './services/audit.js';
 import logger from './lib/logger.js';
 import authRoutes from './routes/auth.js';
 import entityRoutes from './routes/entities.js';
+import b2bRoutes from './routes/b2b.js';
 import integrationRoutes from './routes/integrations.js';
 import ocrRoutes from './routes/ocr.js';
 import searchRoutes from './routes/search.js';
@@ -94,6 +95,7 @@ app.use('/api', standardLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/entities', auditMiddleware, entityRoutes);
+app.use('/api/b2b', auditMiddleware, b2bRoutes);
 app.use('/api/integrations', auditMiddleware, integrationRoutes);
 app.use('/api/integrations', ocrRoutes);
 app.use('/api/search', searchRoutes);

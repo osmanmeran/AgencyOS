@@ -38,6 +38,8 @@ export const PERMISSION_GROUPS = [
       { key: 'modify_clients', label: 'Modify Clients', description: 'Edit client details' },
       { key: 'delete_clients', label: 'Delete Clients', description: 'Remove client records' },
       { key: 'send_booking_requests', label: 'Send Booking Requests', description: 'Send booking requests to suppliers' },
+      { key: 'view_quote_requests', label: 'View Quote Requests', description: 'View B2B quote requests submitted by clients' },
+      { key: 'manage_quote_requests', label: 'Manage Quote Requests', description: 'Review and update the status of B2B quote requests' },
     ],
   },
   {
@@ -97,6 +99,7 @@ const DEFAULT_TIER_PERMISSIONS = {
     'manage_booking_templates', 'manage_integrations', 'manage_billing',
     'delete_data', 'view_all_data', 'export_data', 'view_reports',
     'send_booking_requests', 'search_references',
+    'view_quote_requests', 'manage_quote_requests',
   ],
   manager: [
     'create_trips', 'modify_trips', 'cancel_trips', 'view_all_trips', 'manage_tour_contracts',
@@ -109,6 +112,7 @@ const DEFAULT_TIER_PERMISSIONS = {
     'manage_booking_templates',
     'view_all_data', 'export_data', 'view_reports',
     'send_booking_requests', 'search_references',
+    'view_quote_requests', 'manage_quote_requests',
   ],
   agent: [
     'create_trips', 'view_all_trips',
@@ -118,11 +122,15 @@ const DEFAULT_TIER_PERMISSIONS = {
     'create_services',
     'view_own_data', 'search_references',
     'send_booking_requests',
+    'view_quote_requests', 'manage_quote_requests',
   ],
   accounting: [
     'view_all_trips', 'view_invoices',
     'search_references', 'export_data', 'view_reports',
   ],
+  // Client-portal accounts: no staff permissions. Access is instead scoped to
+  // their own client_id (see userCanAccessEntity) and the dedicated /api/b2b routes.
+  client: [],
 };
 
 export function getUserPermissions(userTier, customPermissions) {

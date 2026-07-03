@@ -121,6 +121,11 @@
       "type": "boolean",
       "default": false
     },
+    "default_markup": {
+      "type": "number",
+      "default": 0,
+      "description": "Default markup % applied to supplier pricing when this client requests a B2B quote"
+    },
     "potential_deal": {
       "type": "boolean",
       "default": false,

@@ -21,6 +21,9 @@ const ClientProposals = lazy(() => import('./pages/ClientProposals'));
 const ClientProposalDetails = lazy(() => import('./pages/ClientProposalDetails'));
 const ClientTrips = lazy(() => import('./pages/ClientTrips'));
 const ClientTripDetails = lazy(() => import('./pages/ClientTripDetails'));
+const ClientCatalog = lazy(() => import('./pages/ClientCatalog'));
+const ClientQuotes = lazy(() => import('./pages/ClientQuotes'));
+const ClientQuoteDetails = lazy(() => import('./pages/ClientQuoteDetails'));
 const CreateInvoice = lazy(() => import('./pages/CreateInvoice'));
 const InvoiceDetails = lazy(() => import('./pages/InvoiceDetails'));
 const ClientInvoices = lazy(() => import('./pages/ClientInvoices'));
@@ -61,6 +64,9 @@ export const PAGES = {
     "ClientProposalDetails": ClientProposalDetails,
     "ClientTrips": ClientTrips,
     "ClientTripDetails": ClientTripDetails,
+    "ClientCatalog": ClientCatalog,
+    "ClientQuotes": ClientQuotes,
+    "ClientQuoteDetails": ClientQuoteDetails,
     "CreateInvoice": CreateInvoice,
     "InvoiceDetails": InvoiceDetails,
     "Dashboard": Dashboard,

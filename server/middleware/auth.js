@@ -17,7 +17,11 @@ export function getJwtSecret() {
 
 export function generateToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, user_tier: user.user_tier, role: user.role, custom_permissions: user.custom_permissions || [] },
+    {
+      id: user.id, email: user.email, user_tier: user.user_tier, role: user.role,
+      custom_permissions: user.custom_permissions || [],
+      client_id: user.client_id || null, linked_supplier_id: user.linked_supplier_id || null,
+    },
     getJwtSecret(),
     { expiresIn: '24h' }
   );

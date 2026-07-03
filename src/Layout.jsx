@@ -36,6 +36,8 @@ import AttachMoneyRounded from '@mui/icons-material/AttachMoneyRounded';
 import InventoryRounded from '@mui/icons-material/InventoryRounded';
 import RateReviewRounded from '@mui/icons-material/RateReviewRounded';
 import AddRounded from '@mui/icons-material/AddRounded';
+import ShoppingCartRounded from '@mui/icons-material/ShoppingCartRounded';
+import RequestQuoteRounded from '@mui/icons-material/RequestQuoteRounded';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import LocalShippingRounded from '@mui/icons-material/LocalShippingRounded';
@@ -89,6 +91,8 @@ const NAV_SECTIONS = {
 
 const CLIENT_NAV = (_t) => [
   { label: 'Dashboard', icon: <DashboardRounded />, page: 'ClientPortal' },
+  { label: 'Request a Quote', icon: <ShoppingCartRounded />, page: 'ClientCatalog' },
+  { label: 'My Quote Requests', icon: <RequestQuoteRounded />, page: 'ClientQuotes' },
   { label: 'My Proposals', icon: <RateReviewRounded />, page: 'ClientProposals' },
   { label: 'My Trips', icon: <FlightTakeoffRounded />, page: 'ClientTrips' },
   { label: 'My Invoices', icon: <AssignmentRounded />, page: 'ClientInvoices' },
@@ -236,7 +240,9 @@ export default function Layout({ children, currentPageName }) {
   const isClientPortal = currentPageName?.startsWith('ClientPortal') ||
                           currentPageName?.startsWith('ClientProposal') ||
                           currentPageName?.startsWith('ClientTrip') ||
-                          currentPageName?.startsWith('ClientInvoice');
+                          currentPageName?.startsWith('ClientInvoice') ||
+                          currentPageName?.startsWith('ClientCatalog') ||
+                          currentPageName?.startsWith('ClientQuote');
 
   const isSupplierPortal = currentPageName === 'SupplierPortal';
 

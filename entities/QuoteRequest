@@ -1,0 +1,150 @@
+{
+  "name": "QuoteRequest",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Client this quote was requested by"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "description": "Quote / package title"
+    },
+    "items": {
+      "type": "array",
+      "description": "Selected supplier pricing lines with computed client sell price",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pricing_id": {
+            "type": "string"
+          },
+          "supplier_id": {
+            "type": "string"
+          },
+          "supplier_name": {
+            "type": "string"
+          },
+          "service_name": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "unit_price": {
+            "type": "number",
+            "description": "Client sell price per unit, markup already applied"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "line_total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "markup_percentage": {
+      "type": "number",
+      "description": "Client's default markup % applied when this quote was computed"
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "total": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "reviewing",
+        "quoted",
+        "accepted",
+        "declined"
+      ],
+      "default": "submitted"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "User id of the client-portal user who submitted this quote request"
+    }
+  },
+  "required": [
+    "client_id",
+    "title",
+    "items"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.client_id": "{{user.client_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "data.user_tier": {
+              "$in": [
+                "admin",
+                "manager",
+                "agent"
+              ]
+            }
+          }
+        },
+        {
+          "data.client_id": "{{user.client_id}}"
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    }
+  }
+}

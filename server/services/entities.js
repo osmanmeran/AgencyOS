@@ -3,7 +3,7 @@ import { BadRequestError, NotFoundError, ForbiddenError } from '../middleware/er
 import { hasPermission } from '../permissions.js';
 
 const USER_SCOPED_TYPES = ['Message', 'ClientTask', 'EmailLog'];
-const CLIENT_SCOPED_TYPES = ['Trip', 'Proposal', 'Invoice', 'ClientPayment'];
+const CLIENT_SCOPED_TYPES = ['Trip', 'Proposal', 'Invoice', 'ClientPayment', 'QuoteRequest'];
 
 const ENTITY_PERMISSION_MAP = {
   Trip: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
@@ -20,6 +20,10 @@ const ENTITY_PERMISSION_MAP = {
   Category: { create: 'manage_categories', read: 'view_all_data', update: 'manage_categories', delete: 'manage_categories' },
   TourContract: { create: 'manage_tour_contracts', read: 'view_all_data', update: 'manage_tour_contracts', delete: 'manage_tour_contracts' },
   Suggestion: { create: 'view_own_data', read: 'view_all_data', update: 'manage_app_settings', delete: 'manage_app_settings' },
+  // Client-portal users submit quote requests through the dedicated /api/b2b routes
+  // (which write directly to the DB), not this generic entity API — so the create/update/delete
+  // permissions here only need to cover staff review workflows.
+  QuoteRequest: { create: 'manage_quote_requests', read: 'view_quote_requests', update: 'manage_quote_requests', delete: 'manage_quote_requests' },
 };
 
 function requireEntityPermission(user, entityType, action) {
@@ -64,6 +68,13 @@ export function userCanAccessEntity(user, entityType, entityData) {
   if (user.client_id) {
     if (CLIENT_SCOPED_TYPES.includes(entityType)) {
       return entityData.client_id === user.client_id;
+    }
+    // They may also always read (not write — that's separately gated by
+    // ENTITY_PERMISSION_MAP, which grants the 'client' tier no modify_clients
+    // permission) their own CRM Client record, since the portal needs it to
+    // resolve "who am I" (see ClientPortal.jsx and friends).
+    if (entityType === 'Client') {
+      return entityData.id === user.client_id;
     }
   }
 
@@ -124,7 +135,9 @@ export function isFilterSafe(filter) {
 export function applyFilter(records, filter, user, type) {
   return records.filter(r => {
     const data = JSON.parse(r.data);
-    if (!userCanAccessEntity(user, type, data)) return false;
+    // id lives in the row, not the JSON body — userCanAccessEntity needs it
+    // (e.g. to match a Client record's own id against user.client_id).
+    if (!userCanAccessEntity(user, type, { ...data, id: r.id })) return false;
     return Object.entries(filter).every(([k, v]) => {
       const val = data[k];
       if (v !== null && typeof v === 'object') {

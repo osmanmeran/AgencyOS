@@ -40,20 +40,25 @@ export const schemas = {
       .regex(/[a-z]/, 'Password must contain a lowercase letter')
       .regex(/[0-9]/, 'Password must contain a number'),
     name: z.string().min(1, 'Name is required'),
-    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent']).optional().default('agent'),
+    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional().default('agent'),
     custom_permissions: z.array(z.string()).optional(),
     departments: z.array(z.string()).optional(),
     is_active: z.boolean().optional(),
+    client_id: z.string().optional(),
+  }).refine(data => data.user_tier !== 'client' || !!data.client_id, {
+    message: 'client_id is required when user_tier is "client"',
+    path: ['client_id'],
   }),
 
   updateUser: z.object({
     name: z.string().optional(),
     email: z.string().email('Invalid email format').optional(),
-    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent']).optional(),
+    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional(),
     language: z.string().optional(),
     custom_permissions: z.array(z.string()).optional(),
     departments: z.array(z.string()).optional(),
     is_active: z.boolean().optional(),
+    client_id: z.string().optional(),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -63,6 +68,9 @@ export const schemas = {
       .optional(),
   }).refine(data => Object.keys(data).length > 0, {
     message: 'At least one field must be provided for update',
+  }).refine(data => data.user_tier !== 'client' || !!data.client_id, {
+    message: 'client_id is required when setting user_tier to "client"',
+    path: ['client_id'],
   }),
 
   updateMe: z.object({
@@ -84,9 +92,13 @@ export const schemas = {
   inviteUser: z.object({
     email: z.string().email('Invalid email format'),
     name: z.string().optional(),
-    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent']).optional().default('agent'),
+    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional().default('agent'),
     custom_permissions: z.array(z.string()).optional(),
     departments: z.array(z.string()).optional(),
+    client_id: z.string().optional(),
+  }).refine(data => data.user_tier !== 'client' || !!data.client_id, {
+    message: 'client_id is required when inviting a client-tier user',
+    path: ['client_id'],
   }),
 
   acceptInvite: z.object({
@@ -178,6 +190,15 @@ export const schemas = {
   supplierWebSearch: z.object({
     name: z.string().min(1, 'Supplier name is required'),
     city: z.string().optional(),
+  }),
+
+  b2bSubmitQuote: z.object({
+    title: z.string().min(1, 'Title is required'),
+    items: z.array(z.object({
+      pricing_id: z.string().min(1, 'pricing_id is required'),
+      quantity: z.number().positive().optional().default(1),
+    })).min(1, 'At least one item is required'),
+    notes: z.string().optional(),
   }),
 
   entityData: z.record(z.unknown()).refine(
