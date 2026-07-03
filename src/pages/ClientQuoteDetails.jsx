@@ -9,6 +9,8 @@ import { ArrowLeft } from 'lucide-react';
 import { createPageUrl } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { getQuote } from '@/lib/b2bApi';
+import { formatCurrency } from '@/lib/formatters';
+import { QuoteTripInfo, QuoteLineExtras } from '@/components/b2b/QuoteRichDetails';
 
 const STATUS_COLORS = {
   submitted: 'bg-blue-100 text-blue-800',
@@ -73,6 +75,13 @@ export default function ClientQuoteDetails() {
         )}
       </Card>
 
+      {(quote.destination || quote.start_date || (quote.passengers?.length > 0)) && (
+        <Card className="p-8 bg-white shadow-lg">
+          <h2 className="text-xl font-bold text-slate-900 mb-4">Trip & Travellers</h2>
+          <QuoteTripInfo quote={quote} />
+        </Card>
+      )}
+
       <Card className="p-8 bg-white shadow-lg">
         <h2 className="text-2xl font-bold text-slate-900 mb-6">Requested Services</h2>
         {quote.items && quote.items.length > 0 ? (
@@ -86,13 +95,14 @@ export default function ClientQuoteDetails() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg text-slate-900">{item.service_name}</h3>
                     <p className="text-slate-500 text-sm mt-1">{item.supplier_name}</p>
+                    <QuoteLineExtras item={item} />
                   </div>
                   <div className="text-right ml-4">
                     <div className="text-sm text-slate-600">
-                      ${item.unit_price?.toFixed(2)} × {item.quantity}
+                      {formatCurrency(item.unit_price, quote.currency)} × {item.quantity}
                     </div>
                     <div className="font-bold text-lg text-slate-900">
-                      ${item.line_total?.toFixed(2)}
+                      {formatCurrency(item.line_total, quote.currency)}
                     </div>
                   </div>
                 </div>
@@ -102,7 +112,7 @@ export default function ClientQuoteDetails() {
             <div className="pt-6 mt-6 border-t-2 border-slate-300">
               <div className="flex justify-between items-center">
                 <span className="text-2xl font-bold text-slate-900">Total</span>
-                <span className="text-4xl font-bold text-green-700">${(quote.total || 0).toFixed(2)}</span>
+                <span className="text-4xl font-bold text-green-700">{formatCurrency(quote.total || 0, quote.currency)}</span>
               </div>
             </div>
           </div>

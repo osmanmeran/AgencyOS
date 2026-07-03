@@ -15,6 +15,8 @@ import { ClipboardList } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { format, parseISO } from 'date-fns';
 import { respondToQuote } from '@/lib/b2bApi';
+import { formatCurrency } from '@/lib/formatters';
+import { QuoteTripInfo, QuoteLineExtras } from '@/components/b2b/QuoteRichDetails';
 
 const STATUS_COLORS = {
   submitted: 'bg-blue-100 text-blue-800',
@@ -106,7 +108,7 @@ export default function QuoteRequests() {
                     {quote.client_name} · {quote.items?.length || 0} item{quote.items?.length === 1 ? '' : 's'} · Requested {format(parseISO(quote.created_date), 'MMM d, yyyy')}
                   </p>
                 </div>
-                <div className="font-bold text-green-700 ml-4">${(quote.total || 0).toFixed(2)}</div>
+                <div className="font-bold text-green-700 ml-4">{formatCurrency(quote.total || 0, quote.currency)}</div>
               </div>
             </Card>
           ))}
@@ -129,26 +131,33 @@ export default function QuoteRequests() {
                   <span className="font-medium text-slate-900">{selected.client_name}</span> · Requested {format(parseISO(selected.created_date), 'MMM d, yyyy')}
                 </div>
 
+                {(selected.destination || selected.start_date || (selected.passengers?.length > 0)) && (
+                  <div className="pb-2 border-b">
+                    <QuoteTripInfo quote={selected} />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   {(selected.items || []).map((item, i) => (
-                    <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/50">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div key={i} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/50">
+                      <div className="flex items-start gap-3 min-w-0">
                         {item.image_url && (
                           <img src={item.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
                         )}
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-slate-800 truncate">{item.service_name}</div>
-                          <div className="text-xs text-slate-500">{item.supplier_name} · ${item.unit_price?.toFixed(2)} × {item.quantity}</div>
+                          <div className="text-xs text-slate-500">{item.supplier_name} · {formatCurrency(item.unit_price, selected.currency)} × {item.quantity}</div>
+                          <QuoteLineExtras item={item} />
                         </div>
                       </div>
-                      <div className="font-semibold text-green-700 text-sm flex-shrink-0">${item.line_total?.toFixed(2)}</div>
+                      <div className="font-semibold text-green-700 text-sm flex-shrink-0">{formatCurrency(item.line_total, selected.currency)}</div>
                     </div>
                   ))}
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="font-bold text-slate-900">Total</span>
-                  <span className="font-bold text-green-700 text-lg">${(selected.total || 0).toFixed(2)}</span>
+                  <span className="font-bold text-green-700 text-lg">{formatCurrency(selected.total || 0, selected.currency)}</span>
                 </div>
 
                 {selected.notes && (

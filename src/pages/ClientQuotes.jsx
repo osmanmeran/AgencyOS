@@ -9,6 +9,7 @@ import { FileText, Plus } from 'lucide-react';
 import { createPageUrl } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { listQuotes } from '@/lib/b2bApi';
+import { formatCurrency } from '@/lib/formatters';
 
 const STATUS_COLORS = {
   submitted: 'bg-blue-100 text-blue-800',
@@ -67,7 +68,7 @@ export default function ClientQuotes() {
                     </p>
                   </div>
                   <div className="text-right ml-4">
-                    <div className="font-bold text-green-700 mb-1">${(quote.total || 0).toFixed(2)}</div>
+                    <div className="font-bold text-green-700 mb-1">{formatCurrency(quote.total || 0, quote.currency)}</div>
                     <Badge className={STATUS_COLORS[quote.status] || 'bg-gray-100 text-gray-800'}>
                       {quote.status}
                     </Badge>
