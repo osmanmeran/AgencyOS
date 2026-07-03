@@ -23,6 +23,7 @@ import { format, addDays } from 'date-fns';
 import ServiceBookingManager from '../components/reservations/ServiceBookingManager';
 import ServiceLineEditor from '../components/services/ServiceLineEditor';
 import TripCostSummary from '../components/reservations/TripCostSummary';
+import { applyMarkup } from '@/lib/pricing';
 
 const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || cur);
 
@@ -184,7 +185,7 @@ export default function ReservationDetails() {
     const markupPct = targetMarginPct / (100 - targetMarginPct) * 100;
     const updatedServices = (trip.services || []).map(s => {
       const base = parseFloat(s.acquiring_price) || 0;
-      const newSelling = Math.ceil(base * (1 + markupPct / 100) * 10) / 10;
+      const newSelling = applyMarkup(base, markupPct);
       return { ...s, base_selling_price: base, selling_price: newSelling };
     });
     updateMutation.mutate({

@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { ArrowLeft, Mail, Phone, Globe, MapPin, Star, Edit, Send, CalendarDays, Search, ExternalLink, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Globe, MapPin, Star, Edit, Send, CalendarDays, Search, ExternalLink, Check, Loader2, Store } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import SupplierServices from '../components/suppliers/SupplierServices';
@@ -65,6 +66,7 @@ export default function SupplierDetails() {
       pricing_info: data.pricing_info || '',
       notes: data.notes || '',
       rating: data.rating || supplier.rating,
+      show_in_portal: !!data.show_in_portal,
       custom_fields: data.custom_fields || supplier.custom_fields || {},
     }),
     onSuccess: () => {
@@ -88,6 +90,7 @@ export default function SupplierDetails() {
       pricing_info: supplier.pricing_info || '',
       notes: supplier.notes || '',
       rating: supplier.rating || 5,
+      show_in_portal: !!supplier.show_in_portal,
     });
     setEditModalOpen(true);
   };
@@ -124,6 +127,7 @@ export default function SupplierDetails() {
       pricing_info: editForm.pricing_info || supplier.pricing_info || '',
       notes: result.description ? `[From web] ${result.description}\n\n${editForm.notes || supplier.notes || ''}` : (editForm.notes || supplier.notes || ''),
       rating: result.rating || editForm.rating || supplier.rating || 5,
+      show_in_portal: editForm.show_in_portal ?? !!supplier.show_in_portal,
     });
     setEditModalOpen(true);
     setWebSearchOpen(false);
@@ -170,17 +174,24 @@ export default function SupplierDetails() {
                 </Button>
               </div>
             </div>
-            {category && (
-              <span
-                className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-4"
-                style={{
-                  backgroundColor: `${category.color}20`,
-                  color: category.color
-                }}
-              >
-                {category.name}
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {category && (
+                <span
+                  className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold"
+                  style={{
+                    backgroundColor: `${category.color}20`,
+                    color: category.color
+                  }}
+                >
+                  {category.name}
+                </span>
+              )}
+              {supplier.show_in_portal && (
+                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
+                  <Store className="w-3.5 h-3.5" /> In client portal
+                </span>
+              )}
+            </div>
             
             {supplier.rating && (
               <div className="flex items-center gap-1 mb-4">
@@ -312,6 +323,16 @@ export default function SupplierDetails() {
                   {[5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{r} Stars</option>)}
                 </select>
               </div>
+            </div>
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 p-3">
+              <div>
+                <Label className="flex items-center gap-2"><Store className="w-4 h-4 text-blue-600" /> Show in client portal</Label>
+                <p className="text-xs text-slate-500 mt-1">When on, this supplier appears in the client travel shop (only its approved services are shown).</p>
+              </div>
+              <Switch
+                checked={!!editForm.show_in_portal}
+                onCheckedChange={(v) => setEditForm({ ...editForm, show_in_portal: v })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Pricing Information</Label>

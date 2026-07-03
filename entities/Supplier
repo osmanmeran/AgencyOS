@@ -45,6 +45,11 @@
       "minimum": 1,
       "maximum": 5
     },
+    "show_in_portal": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, the supplier is published to the client travel shop (only its approved SupplierPricing services are shown)"
+    },
     "custom_fields": {
       "type": "object",
       "description": "Extra admin-defined fields as key-value pairs"

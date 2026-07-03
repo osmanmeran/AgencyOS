@@ -28,6 +28,7 @@ import ServiceLineEditor from '../components/services/ServiceLineEditor';
 import PassengerFieldsRow from '../components/passengers/PassengerFieldsRow';
 import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { applyMarkup } from '@/lib/pricing';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || cur);
@@ -305,7 +306,7 @@ export default function CreateReservation() {
     }
     return qty;
   };
-  const withMarkup = (price) => Math.ceil(((parseFloat(price) || 0) * (1 + markupPct / 100)) * 10) / 10;
+  const withMarkup = (price) => applyMarkup(price, markupPct);
 
   // Per-currency totals
   const acquiringByCurrency = services.reduce((acc, s) => {

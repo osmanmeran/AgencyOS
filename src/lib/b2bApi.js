@@ -16,6 +16,14 @@ export function getFeatured() {
   return apiFetch('/featured');
 }
 
+export function getStorefront() {
+  return apiFetch('/storefront');
+}
+
+export function getSupplierCatalog(id) {
+  return apiFetch(`/suppliers/${id}`);
+}
+
 export function submitQuote({ title, items, notes }) {
   return apiFetch('/quote', { method: 'POST', body: JSON.stringify({ title, items, notes }) });
 }

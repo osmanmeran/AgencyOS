@@ -8,15 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SkeletonStats } from '@/components/ui/skeletons';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
-import { FileText, Plane, DollarSign, CheckCircle, CreditCard, ArrowRight, Calendar, AlertCircle, ImageOff, Sparkles } from 'lucide-react';
+import { FileText, Plane, DollarSign, CheckCircle, CreditCard, ArrowRight, Calendar, AlertCircle, ImageOff, Sparkles, Store, MapPin, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
-import { getFeatured } from '@/lib/b2bApi';
+import { getFeatured, getStorefront } from '@/lib/b2bApi';
 
 export default function ClientPortal() {
   const [user, setUser] = React.useState(null);
   const [client, setClient] = React.useState(null);
+  const [selectedCategory, setSelectedCategory] = React.useState(/** @type {string|null} */ (null));
 
   React.useEffect(() => {
     db.auth.me().then(async (currentUser) => {
@@ -67,6 +68,17 @@ export default function ClientPortal() {
   }));
   const featuredItems = featuredData?.items || [];
 
+  const { data: storefront } = /** @type {any} */ (useQuery({
+    queryKey: ['b2bStorefront'],
+    queryFn: getStorefront,
+    enabled: !!client
+  }));
+  const storeCategories = storefront?.categories || [];
+  const storeSuppliers = storefront?.suppliers || [];
+  const visibleSuppliers = selectedCategory
+    ? storeSuppliers.filter(s => s.category_id === selectedCategory)
+    : storeSuppliers;
+
   const pendingInvoices = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled');
   const overdueInvoices = pendingInvoices.filter(i => isBefore(parseISO(i.due_date), new Date()));
 
@@ -95,8 +107,96 @@ export default function ClientPortal() {
     <div className="space-y-8">
       <div>
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Welcome, {client.name}!</h1>
-        <p className="text-slate-600">Manage your travel bookings and proposals</p>
+        <p className="text-slate-600">Explore our travel partners and build your next trip</p>
       </div>
+
+      {/* Storefront — curated suppliers, browsable by category */}
+      {storeSuppliers.length > 0 && (
+        <Card className="p-6 bg-white shadow-md">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <Store className="w-5 h-5 text-blue-600" />
+              Browse Our Travel Shop
+            </h2>
+            <Link to={createPageUrl('ClientCatalog')}>
+              <span className="text-blue-600 hover:text-blue-700 text-sm font-medium">Full Catalog</span>
+            </Link>
+          </div>
+
+          {storeCategories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === null ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                All
+              </button>
+              {storeCategories.map(cat => {
+                const active = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(active ? null : cat.id)}
+                    className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+                    style={active
+                      ? { backgroundColor: cat.color || '#2563eb', color: '#fff' }
+                      : { backgroundColor: `${cat.color || '#64748b'}18`, color: cat.color || '#475569' }}
+                  >
+                    {cat.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {visibleSuppliers.length === 0 ? (
+            <p className="text-slate-500 text-center py-8">No suppliers in this category yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {visibleSuppliers.map(supplier => (
+                <Link key={supplier.id} to={createPageUrl(`ClientSupplier?id=${supplier.id}`)}>
+                  <Card className="overflow-hidden bg-white border border-slate-200 hover:shadow-lg hover:border-blue-300 transition-all p-0 h-full">
+                    <div className="h-36 bg-slate-100">
+                      {supplier.image_url ? (
+                        <img src={supplier.image_url} alt={supplier.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Store className="w-8 h-8 text-slate-300" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-slate-900 truncate" title={supplier.name}>{supplier.name}</div>
+                        {supplier.rating ? (
+                          <span className="flex items-center gap-0.5 text-xs text-slate-500 flex-shrink-0">
+                            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />{supplier.rating}
+                          </span>
+                        ) : null}
+                      </div>
+                      {supplier.category_name && (
+                        <div className="text-xs text-slate-500 mt-0.5">{supplier.category_name}</div>
+                      )}
+                      <div className="flex items-center justify-between mt-3">
+                        {supplier.city ? (
+                          <span className="flex items-center gap-1 text-xs text-slate-500 truncate">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400" />{supplier.city}
+                          </span>
+                        ) : <span />}
+                        <span className="text-xs font-medium text-blue-600">
+                          {supplier.service_count} service{supplier.service_count === 1 ? '' : 's'}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

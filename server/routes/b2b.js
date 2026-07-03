@@ -12,6 +12,15 @@ const router = Router();
 
 router.use(authMiddleware);
 
+// Round a selling price UP to the nearest 0.10. Scale to tenths and strip
+// floating-point noise with Math.round BEFORE the ceil, otherwise artifacts
+// like 100 * 1.1 === 110.00000000000001 (or 111.1 * 10 === 1111.0000000000002)
+// spuriously bump the result up 0.1. Mirrors applyMarkup in src/lib/pricing.js
+// — keep the two in sync.
+function roundSellPrice(value) {
+  return Math.ceil(Math.round(value * 10 * 1e6) / 1e6) / 10;
+}
+
 // Client sell price for a pricing tier: an explicit client_price always wins
 // (it's a manual staff override); otherwise apply the client's markup to base_price.
 // Same rounding convention as ProposalBuilder's calcLineTotal.
@@ -20,7 +29,7 @@ function computeUnitPrice(pricing, markupPct) {
     return Math.round(parseFloat(pricing.client_price) * 10) / 10;
   }
   const base = parseFloat(pricing.base_price) || 0;
-  return Math.ceil(base * (1 + (markupPct || 0) / 100) * 10) / 10;
+  return roundSellPrice(base * (1 + (markupPct || 0) / 100));
 }
 
 function computeLineTotal(unitPrice, quantity, unit) {
@@ -93,6 +102,86 @@ router.get('/featured', catchAsync(async (req, res) => {
   const items = getActiveCatalogItems(db, markupPct).filter(i => i.is_featured);
 
   res.json({ items });
+}));
+
+// Storefront shown on the client portal home: only suppliers the staff have
+// explicitly published (Supplier.show_in_portal) AND that have at least one
+// active/approved pricing tier, plus the categories those suppliers belong to.
+// Individual services are NOT listed here — the client drills into a supplier
+// via /suppliers/:id.
+router.get('/storefront', catchAsync(async (req, res) => {
+  const client = requireClientContext(req.user);
+  const db = getDb();
+  const markupPct = client.default_markup || 0;
+
+  const items = getActiveCatalogItems(db, markupPct);
+  const serviceCount = {};
+  const supplierImage = {};
+  for (const item of items) {
+    serviceCount[item.supplier_id] = (serviceCount[item.supplier_id] || 0) + 1;
+    if (item.image_url && !supplierImage[item.supplier_id]) supplierImage[item.supplier_id] = item.image_url;
+  }
+
+  const categories = new Map(
+    db.prepare("SELECT * FROM entities WHERE type = 'SupplierCategory'").all()
+      .map(r => [r.id, JSON.parse(r.data)])
+  );
+
+  const suppliers = db.prepare("SELECT * FROM entities WHERE type = 'Supplier'").all()
+    .map(r => ({ id: r.id, ...JSON.parse(r.data) }))
+    .filter(s => s.show_in_portal === true && (serviceCount[s.id] || 0) > 0)
+    .map(s => ({
+      id: s.id,
+      name: s.name,
+      category_id: s.category_id || null,
+      category_name: categories.get(s.category_id)?.name || '',
+      city: s.city || '',
+      area: s.area || '',
+      rating: s.rating || null,
+      image_url: supplierImage[s.id] || '',
+      service_count: serviceCount[s.id] || 0,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const usedCategoryIds = new Set(suppliers.map(s => s.category_id).filter(Boolean));
+  const cats = [...usedCategoryIds]
+    .map(id => {
+      const c = categories.get(id);
+      return c ? { id, name: c.name, icon: c.icon || '', color: c.color || '' } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  res.json({ categories: cats, suppliers });
+}));
+
+// A single published supplier and its active/approved services. Enforces the
+// same show_in_portal gate as /storefront so a client can't reach an
+// unpublished supplier by guessing its id.
+router.get('/suppliers/:id', catchAsync(async (req, res) => {
+  const client = requireClientContext(req.user);
+  const db = getDb();
+  const markupPct = client.default_markup || 0;
+
+  const supplier = getEntityById(db, 'Supplier', req.params.id);
+  if (!supplier || supplier.show_in_portal !== true) throw new NotFoundError('Supplier not found');
+
+  const category = supplier.category_id ? getEntityById(db, 'SupplierCategory', supplier.category_id) : null;
+  const items = getActiveCatalogItems(db, markupPct).filter(i => i.supplier_id === req.params.id);
+
+  res.json({
+    supplier: {
+      id: req.params.id,
+      name: supplier.name,
+      city: supplier.city || '',
+      area: supplier.area || '',
+      rating: supplier.rating || null,
+      website: supplier.website || '',
+      category_name: category?.name || '',
+      category_color: category?.color || '',
+    },
+    items,
+  });
 }));
 
 router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, res) => {

@@ -23,6 +23,7 @@ import { createPageUrl } from '../utils';
 import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import ServiceLibraryPanel from '../components/proposals/ServiceLibraryPanel';
+import { applyMarkup } from '@/lib/pricing';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 
@@ -171,7 +172,7 @@ export default function CreateProposal() {
 
   // ── Cost calculations ──────────────────────────────────────────────────────
   // Markup is baked into each service line. Totals grouped by per-service currencies.
-  const withMarkup = (price) => Math.ceil(((parseFloat(price) || 0) * (1 + markupPct / 100)) * 10) / 10;
+  const withMarkup = (price) => applyMarkup(price, markupPct);
 
   const acquiringByCurrency = services.reduce((acc, s) => {
     const cur = s.supplier_currency || acquiringCurrency;

@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { applyMarkup } from '@/lib/pricing';
 import {
   Plus, Trash2, TrendingUp, Building2,
   RefreshCw, ArrowRightLeft, Users, X, Save
@@ -174,7 +175,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
 
   const removeService = (index) => setServices(prev => prev.filter((_, i) => i !== index));
 
-  const withMarkup = (price) => Math.ceil(((parseFloat(price) || 0) * (1 + markupPct / 100)) * 10) / 10;
+  const withMarkup = (price) => applyMarkup(price, markupPct);
 
   const acquiringByCurrency = services.reduce((acc, s) => {
     const cur = s.supplier_currency || acquiringCurrency;

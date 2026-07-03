@@ -19,6 +19,7 @@ import {
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
+import { applyMarkup } from '@/lib/pricing';
 
 const UNIT_LABELS = {
   per_person: 'Per Person',
@@ -37,7 +38,7 @@ const UNIT_ICONS = {
 };
 
 function calcLineTotal(item, markupPct = 0) {
-  const price = Math.ceil(((parseFloat(item.unit_price) || 0) * (1 + markupPct / 100)) * 10) / 10;
+  const price = applyMarkup(item.unit_price, markupPct);
   const qty = parseFloat(item.quantity) || 1;
   switch (item.price_unit) {
     case 'per_person': return price * qty;
