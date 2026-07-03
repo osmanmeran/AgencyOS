@@ -45,6 +45,16 @@ const PERMISSION_TIERS = [
   { key: 'accounting', label: 'Accounting', color: 'bg-green-100 text-green-800', desc: 'Finance & reports' },
 ];
 
+const PASSWORD_HINT = 'At least 8 characters, with an uppercase letter, a lowercase letter, and a number.';
+
+function passwordError(pw) {
+  if (pw.length < 8) return 'Password must be at least 8 characters';
+  if (!/[A-Z]/.test(pw)) return 'Password must contain an uppercase letter';
+  if (!/[a-z]/.test(pw)) return 'Password must contain a lowercase letter';
+  if (!/[0-9]/.test(pw)) return 'Password must contain a number';
+  return null;
+}
+
 const DEPARTMENT_COLORS = [
   'bg-amber-100 text-amber-800',
   'bg-emerald-100 text-emerald-800',
@@ -348,6 +358,8 @@ export default function AppSettings() {
     e.preventDefault();
     clearUserMsg();
     if (!addForm.name || !addForm.email || !addForm.password) { setUserError('All fields required'); return; }
+    const addPwErr = passwordError(addForm.password);
+    if (addPwErr) { setUserError(addPwErr); return; }
     try {
       const created = await db.auth.createUser({ ...addForm, custom_permissions: addPermissions, departments: addDepartments });
       setUsers([...users, created]);
@@ -363,7 +375,8 @@ export default function AppSettings() {
     e.preventDefault();
     clearUserMsg();
     if (passwordForm.new_password !== passwordForm.confirm) { setUserError('Passwords do not match'); return; }
-    if (passwordForm.new_password.length < 6) { setUserError('Password must be at least 6 characters'); return; }
+    const changePwErr = passwordError(passwordForm.new_password);
+    if (changePwErr) { setUserError(changePwErr); return; }
     try {
       await db.auth.updateMe({ current_password: passwordForm.current_password, new_password: passwordForm.new_password });
       setPasswordForm({ current_password: '', new_password: '', confirm: '' });
@@ -730,9 +743,10 @@ export default function AppSettings() {
               <h3 className="font-semibold text-slate-700 mb-3">Change Your Password</h3>
               <div className="grid grid-cols-3 gap-3">
                 <input type="password" placeholder="Current password" value={passwordForm.current_password} onChange={e => setPasswordForm({ ...passwordForm, current_password: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                <input type="password" placeholder="New password (6+ chars)" value={passwordForm.new_password} onChange={e => setPasswordForm({ ...passwordForm, new_password: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                <input type="password" placeholder="New password" value={passwordForm.new_password} onChange={e => setPasswordForm({ ...passwordForm, new_password: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
                 <input type="password" placeholder="Confirm new password" value={passwordForm.confirm} onChange={e => setPasswordForm({ ...passwordForm, confirm: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
               </div>
+              <p className="text-xs text-slate-400 mt-1.5">{PASSWORD_HINT}</p>
               <button type="submit" className="mt-3 px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700">Update Password</button>
             </form>
           )}
@@ -748,6 +762,7 @@ export default function AppSettings() {
                   {TIERS.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                 </select>
               </div>
+              <p className="text-xs text-slate-400 mt-1.5">Password: {PASSWORD_HINT}</p>
               <div className="mt-3">
                 <p className="text-sm font-medium text-slate-700 mb-2">Custom Permissions <span className="text-xs text-slate-400 font-normal">(optional additions)</span></p>
                 <div className="max-h-48 overflow-y-auto space-y-2">

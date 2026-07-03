@@ -30,6 +30,16 @@ const PERMISSION_TIERS = [
 
 // const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.permissions);
 
+const PASSWORD_HINT = 'At least 8 characters, with an uppercase letter, a lowercase letter, and a number.';
+
+function passwordError(pw) {
+  if (pw.length < 8) return 'Password must be at least 8 characters';
+  if (!/[A-Z]/.test(pw)) return 'Password must contain an uppercase letter';
+  if (!/[a-z]/.test(pw)) return 'Password must contain a lowercase letter';
+  if (!/[0-9]/.test(pw)) return 'Password must contain a number';
+  return null;
+}
+
 const DEPARTMENT_COLORS = [
   'bg-amber-100 text-amber-800',
   'bg-emerald-100 text-emerald-800',
@@ -190,6 +200,8 @@ export default function UserManagement() {
     e.preventDefault();
     clearMsg();
     if (!addForm.name || !addForm.email || !addForm.password) { setError('All fields required'); return; }
+    const pwErr = passwordError(addForm.password);
+    if (pwErr) { setError(pwErr); return; }
     if (addForm.user_tier === 'client' && !addForm.client_id) { setError('Select a client to link this portal account to'); return; }
     try {
       const { client_name: _client_name, ...payload } = addForm;
@@ -226,7 +238,8 @@ export default function UserManagement() {
     e.preventDefault();
     clearMsg();
     if (passwordForm.new_password !== passwordForm.confirm) { setError('Passwords do not match'); return; }
-    if (passwordForm.new_password.length < 6) { setError('Password must be at least 6 characters'); return; }
+    const pwErr = passwordError(passwordForm.new_password);
+    if (pwErr) { setError(pwErr); return; }
     try {
       await db.auth.updateMe({ current_password: passwordForm.current_password, new_password: passwordForm.new_password });
       setPasswordForm({ current_password: '', new_password: '', confirm: '' });
@@ -384,9 +397,10 @@ export default function UserManagement() {
           <h3 className="font-semibold text-slate-700 mb-3">Change Your Password</h3>
           <div className="grid grid-cols-3 gap-3">
             <input type="password" placeholder="Current password" value={passwordForm.current_password} onChange={e => setPasswordForm({ ...passwordForm, current_password: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-            <input type="password" placeholder="New password (6+ chars)" value={passwordForm.new_password} onChange={e => setPasswordForm({ ...passwordForm, new_password: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+            <input type="password" placeholder="New password" value={passwordForm.new_password} onChange={e => setPasswordForm({ ...passwordForm, new_password: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
             <input type="password" placeholder="Confirm new password" value={passwordForm.confirm} onChange={e => setPasswordForm({ ...passwordForm, confirm: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
           </div>
+          <p className="text-xs text-slate-400 mt-1.5">{PASSWORD_HINT}</p>
           <button type="submit" className="mt-3 px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700">Update Password</button>
         </form>
       )}
@@ -466,6 +480,7 @@ export default function UserManagement() {
               {TIERS.map(t => <option key={t} value={t}>{TIER_LABELS[t]?.label || (t.charAt(0).toUpperCase() + t.slice(1))}</option>)}
             </select>
           </div>
+          <p className="text-xs text-slate-400 mt-1.5">Password: {PASSWORD_HINT}</p>
           {addForm.user_tier === 'client' && (
             <div className="mt-3 max-w-sm">
               <label className="block text-sm font-medium text-slate-700 mb-1">Linked Client *</label>
