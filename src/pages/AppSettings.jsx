@@ -17,6 +17,7 @@ import { Settings, Globe, Hash, Plus, X, Save, FileText, Mail, Loader2, CheckCir
 import { Textarea } from '@/components/ui/textarea';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
+import ClientLinkPicker from '@/components/passengers/ClientLinkPicker';
 
 const LANGUAGES = [
   { code: 'en', name: 'English' },
@@ -30,12 +31,13 @@ const LANGUAGES = [
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 
-const TIERS = ['admin', 'manager', 'accounting', 'agent'];
+const TIERS = ['admin', 'manager', 'accounting', 'agent', 'client'];
 const TIER_LABELS = {
   admin: { label: 'Tier 1 - Administrator', color: 'bg-red-100 text-red-800', description: 'Full control: manage users, permissions, app branding, all data' },
   manager: { label: 'Tier 2 - Manager', color: 'bg-purple-100 text-purple-800', description: 'Modify/cancel trips & invoices, create suppliers/clients, manage categories' },
   agent: { label: 'Tier 3 - Agent', color: 'bg-blue-100 text-blue-800', description: 'Create trips/invoices/proposals, add pricing, modify basic supplier info' },
-  accounting: { label: 'Tier 4 - Accounting', color: 'bg-green-100 text-green-800', description: 'Search by reference, review invoices, view reports' }
+  accounting: { label: 'Tier 4 - Accounting', color: 'bg-green-100 text-green-800', description: 'Search by reference, review invoices, view reports' },
+  client: { label: 'Client Portal', color: 'bg-slate-100 text-slate-700', description: 'B2B client portal login — no staff access, scoped to one linked Client (CRM) record' }
 };
 
 const PERMISSION_TIERS = [
@@ -264,14 +266,21 @@ export default function AppSettings() {
   const [editActive, setEditActive] = useState(true);
   const [editPermissions, setEditPermissions] = useState([]);
   const [editDepartments, setEditDepartments] = useState([]);
+  const [editClientId, setEditClientId] = useState('');
+  const [editClientName, setEditClientName] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', email: '', password: '', user_tier: 'agent' });
+  const [addForm, setAddForm] = useState({ name: '', email: '', password: '', user_tier: 'agent', client_id: '', client_name: '' });
   const [addPermissions, setAddPermissions] = useState([]);
   const [addDepartments, setAddDepartments] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [departmentsList, setDepartmentsList] = useState([]);
+
+  const { data: allClients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
+    queryKey: ['clients'],
+    queryFn: () => db.entities.Client.list(),
+  }));
 
   const deptColor = (name) => {
     const idx = departmentsList.indexOf(name);
@@ -307,6 +316,8 @@ export default function AppSettings() {
     setEditActive(u.is_active);
     setEditPermissions(u.custom_permissions || []);
     setEditDepartments(u.departments || []);
+    setEditClientId(u.client_id || '');
+    setEditClientName(allClients.find(c => c.id === u.client_id)?.name || '');
   };
 
   const toggleEditPermission = (key) => setEditPermissions(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
@@ -315,8 +326,13 @@ export default function AppSettings() {
   const handleSaveUser = async () => {
     if (!selectedUser) return;
     clearUserMsg();
+    if (editTier === 'client' && !editClientId) { setUserError('Select a client to link this portal account to'); return; }
     try {
-      const updated = await db.auth.updateUser(selectedUser.id, { name: editName, user_tier: editTier, is_active: editActive, custom_permissions: editPermissions, departments: editDepartments });
+      const updated = await db.auth.updateUser(selectedUser.id, {
+        name: editName, user_tier: editTier, is_active: editActive,
+        custom_permissions: editPermissions, departments: editDepartments,
+        client_id: editTier === 'client' ? editClientId : null,
+      });
       setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...updated } : u));
       setSelectedUser(null);
       setUserUserSuccess('User updated');
@@ -360,11 +376,13 @@ export default function AppSettings() {
     if (!addForm.name || !addForm.email || !addForm.password) { setUserError('All fields required'); return; }
     const addPwErr = passwordError(addForm.password);
     if (addPwErr) { setUserError(addPwErr); return; }
+    if (addForm.user_tier === 'client' && !addForm.client_id) { setUserError('Select a client to link this portal account to'); return; }
     try {
-      const created = await db.auth.createUser({ ...addForm, custom_permissions: addPermissions, departments: addDepartments });
+      const { client_name: _client_name, ...payload } = addForm;
+      const created = await db.auth.createUser({ ...payload, custom_permissions: addPermissions, departments: addDepartments });
       setUsers([...users, created]);
       setShowAddForm(false);
-      setAddForm({ name: '', email: '', password: '', user_tier: 'agent' });
+      setAddForm({ name: '', email: '', password: '', user_tier: 'agent', client_id: '', client_name: '' });
       setAddPermissions([]);
       setAddDepartments([]);
       setUserUserSuccess(`User "${created.name}" created`);
@@ -758,11 +776,27 @@ export default function AppSettings() {
                 <input type="text" placeholder="Full name" value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
                 <input type="email" placeholder="Email" value={addForm.email} onChange={e => setAddForm({ ...addForm, email: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
                 <input type="password" placeholder="Password" value={addForm.password} onChange={e => setAddForm({ ...addForm, password: e.target.value })} required className="px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                <select value={addForm.user_tier} onChange={e => setAddForm({ ...addForm, user_tier: e.target.value })} className="px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                  {TIERS.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                <select
+                  value={addForm.user_tier}
+                  onChange={e => setAddForm({ ...addForm, user_tier: e.target.value, client_id: '', client_name: '' })}
+                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                >
+                  {TIERS.map(t => <option key={t} value={t}>{TIER_LABELS[t]?.label || (t.charAt(0).toUpperCase() + t.slice(1))}</option>)}
                 </select>
               </div>
               <p className="text-xs text-slate-400 mt-1.5">Password: {PASSWORD_HINT}</p>
+              {addForm.user_tier === 'client' && (
+                <div className="mt-3 max-w-sm">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Linked Client *</label>
+                  <ClientLinkPicker
+                    clientId={addForm.client_id}
+                    clientName={addForm.client_name}
+                    onSelect={(c) => setAddForm({ ...addForm, client_id: c.id, client_name: c.name })}
+                    onClear={() => setAddForm({ ...addForm, client_id: '', client_name: '' })}
+                  />
+                  <p className="text-xs text-slate-400 mt-1">This account will only see this client's data in the B2B portal.</p>
+                </div>
+              )}
               <div className="mt-3">
                 <p className="text-sm font-medium text-slate-700 mb-2">Custom Permissions <span className="text-xs text-slate-400 font-normal">(optional additions)</span></p>
                 <div className="max-h-48 overflow-y-auto space-y-2">
@@ -868,6 +902,11 @@ export default function AppSettings() {
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TIER_LABELS[u.user_tier]?.color || 'bg-slate-100 text-slate-600'}`}>
                         {u.user_tier}
                       </span>
+                      {u.user_tier === 'client' && (
+                        <div className="text-xs text-slate-400 mt-1">
+                          {allClients.find(c => c.id === u.client_id)?.name || 'unlinked'}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
@@ -907,11 +946,28 @@ export default function AppSettings() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">User Tier / Role</label>
-                    <select value={editTier} onChange={e => setEditTier(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" disabled={selectedUser.user_tier === 'admin' && selectedUser.id !== currentUser?.id}>
+                    <select
+                      value={editTier}
+                      onChange={e => { setEditTier(e.target.value); setEditClientId(''); setEditClientName(''); }}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      disabled={selectedUser.user_tier === 'admin' && selectedUser.id !== currentUser?.id}
+                    >
                       {TIERS.map(t => <option key={t} value={t}>{TIER_LABELS[t]?.label || t}</option>)}
                     </select>
                     {selectedUser.user_tier === 'admin' && selectedUser.id !== currentUser?.id && <p className="text-xs text-amber-600 mt-1">Cannot change another admin's tier</p>}
                   </div>
+                  {editTier === 'client' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Linked Client *</label>
+                      <ClientLinkPicker
+                        clientId={editClientId}
+                        clientName={editClientName}
+                        onSelect={(c) => { setEditClientId(c.id); setEditClientName(c.name); }}
+                        onClear={() => { setEditClientId(''); setEditClientName(''); }}
+                      />
+                      <p className="text-xs text-slate-400 mt-1">This account only sees this client's data in the B2B portal.</p>
+                    </div>
+                  )}
                   <div>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={editActive} onChange={e => setEditActive(e.target.checked)} className="rounded" />
