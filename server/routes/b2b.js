@@ -6,6 +6,7 @@ import { getDb, uid } from '../db.js';
 import { broadcast } from '../lib/ws.js';
 import { hasPermission } from '../permissions.js';
 import { sendEmail } from '../services/email.js';
+import { getExchangeRate } from '../services/integrations.js';
 import logger from '../lib/logger.js';
 
 const router = Router();
@@ -32,9 +33,60 @@ function computeUnitPrice(pricing, markupPct) {
   return roundSellPrice(base * (1 + (markupPct || 0) / 100));
 }
 
-function computeLineTotal(unitPrice, quantity, unit) {
-  if (unit === 'per_group' || unit === 'flat_rate') return unitPrice;
-  return unitPrice * quantity;
+// Nights derived from a date range, used to scale per_night / per_day lines.
+function nightsBetween(start, end) {
+  if (!start || !end) return 0;
+  const ms = new Date(end).getTime() - new Date(start).getTime();
+  if (!Number.isFinite(ms) || ms <= 0) return 0;
+  return Math.round(ms / 86400000);
+}
+
+// Effective billable quantity: per_night/per_day multiply the quantity by the
+// number of nights in the line's date range (falls back to raw quantity).
+function effectiveQuantity(item) {
+  const qty = Math.max(1, item.quantity || 1);
+  if (item.unit === 'per_night' || item.unit === 'per_day') {
+    const nights = nightsBetween(item.start_date, item.end_date);
+    if (nights > 0) return qty * nights;
+  }
+  return qty;
+}
+
+function computeLineTotal(unitPrice, item) {
+  if (item.unit === 'per_group' || item.unit === 'flat_rate') return unitPrice;
+  return unitPrice * effectiveQuantity(item);
+}
+
+// Convert catalog items' prices from their supplier currency into the client's
+// preferred display currency at the live rate. Rates are fetched once per
+// distinct source currency. If a rate can't be resolved the item is left in
+// its original currency rather than dropped. Returns { items, rates }.
+async function convertItemsToCurrency(items, displayCurrency) {
+  const sources = [...new Set(items.map(i => i.currency || 'USD'))];
+  const rates = {};
+  for (const src of sources) {
+    if (src === displayCurrency) { rates[src] = 1; continue; }
+    try {
+      rates[src] = (await getExchangeRate(src, displayCurrency)).rate;
+    } catch (err) {
+      logger.warn({ err: err.message, src, displayCurrency }, 'B2B currency conversion failed; leaving price in source currency');
+      rates[src] = null;
+    }
+  }
+  const converted = items.map(item => {
+    const src = item.currency || 'USD';
+    const rate = rates[src];
+    if (rate == null || src === displayCurrency) return item;
+    return {
+      ...item,
+      original_currency: src,
+      original_unit_price: item.unit_price,
+      currency: displayCurrency,
+      exchange_rate: rate,
+      unit_price: Math.round(item.unit_price * rate * 100) / 100,
+    };
+  });
+  return { items: converted, rates };
 }
 
 function getEntityById(db, type, id) {
@@ -86,10 +138,12 @@ router.get('/catalog', catchAsync(async (req, res) => {
   const client = requireClientContext(req.user);
   const db = getDb();
   const markupPct = client.default_markup || 0;
+  const displayCurrency = client.preferred_currency || null;
 
-  const items = getActiveCatalogItems(db, markupPct);
+  let items = getActiveCatalogItems(db, markupPct);
+  if (displayCurrency) ({ items } = await convertItemsToCurrency(items, displayCurrency));
 
-  res.json({ markup_percentage: markupPct, items });
+  res.json({ markup_percentage: markupPct, currency: displayCurrency, items });
 }));
 
 // Admin-curated subset shown in the dashboard carousel — see
@@ -167,9 +221,12 @@ router.get('/suppliers/:id', catchAsync(async (req, res) => {
   if (!supplier || supplier.show_in_portal !== true) throw new NotFoundError('Supplier not found');
 
   const category = supplier.category_id ? getEntityById(db, 'SupplierCategory', supplier.category_id) : null;
-  const items = getActiveCatalogItems(db, markupPct).filter(i => i.supplier_id === req.params.id);
+  const displayCurrency = client.preferred_currency || null;
+  let items = getActiveCatalogItems(db, markupPct).filter(i => i.supplier_id === req.params.id);
+  if (displayCurrency) ({ items } = await convertItemsToCurrency(items, displayCurrency));
 
   res.json({
+    currency: displayCurrency,
     supplier: {
       id: req.params.id,
       name: supplier.name,
@@ -188,8 +245,12 @@ router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, r
   const client = requireClientContext(req.user);
   const db = getDb();
   const markupPct = client.default_markup || 0;
+  const displayCurrency = client.preferred_currency || null;
 
-  const items = req.body.items.map(reqItem => {
+  // Build each line authoritatively from the DB in its supplier currency —
+  // never trust a client-sent price. Trip-specific details (dates, transfer
+  // logistics) are carried through as-is.
+  const rawItems = req.body.items.map(reqItem => {
     const pricing = getEntityById(db, 'SupplierPricing', reqItem.pricing_id);
     if (!pricing) throw new BadRequestError(`Unknown pricing_id: ${reqItem.pricing_id}`);
     if (pricing.is_active === false || pricing.approval_status !== 'approved') {
@@ -197,7 +258,7 @@ router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, r
     }
     const supplier = getEntityById(db, 'Supplier', pricing.supplier_id);
     const quantity = Math.max(1, reqItem.quantity || 1);
-    const unit_price = computeUnitPrice(pricing, markupPct);
+    const nights = nightsBetween(reqItem.start_date, reqItem.end_date);
 
     return {
       pricing_id: pricing.id,
@@ -207,11 +268,25 @@ router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, r
       image_url: pricing.image_url || '',
       unit: pricing.unit,
       currency: pricing.currency || 'USD',
-      unit_price,
+      unit_price: computeUnitPrice(pricing, markupPct),
       quantity,
-      line_total: computeLineTotal(unit_price, quantity, pricing.unit),
+      start_date: reqItem.start_date || '',
+      end_date: reqItem.end_date || '',
+      nights: nights || null,
+      room_type: reqItem.room_type || '',
+      pickup_location: reqItem.pickup_location || '',
+      dropoff_location: reqItem.dropoff_location || '',
+      flight_number: reqItem.flight_number || '',
+      service_time: reqItem.service_time || '',
+      details: reqItem.details || '',
     };
   });
+
+  // Convert to the client's display currency (freezing the rate on each line),
+  // then compute line totals — per_night/per_day lines scale by nights.
+  let items = rawItems;
+  if (displayCurrency) ({ items } = await convertItemsToCurrency(rawItems, displayCurrency));
+  items = items.map(i => ({ ...i, line_total: computeLineTotal(i.unit_price, i) }));
 
   const subtotal = items.reduce((sum, i) => sum + i.line_total, 0);
   const now = new Date().toISOString();
@@ -220,11 +295,15 @@ router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, r
     client_id: client.id,
     client_name: client.name,
     title: req.body.title,
+    destination: req.body.destination || '',
+    start_date: req.body.start_date || '',
+    end_date: req.body.end_date || '',
+    passengers: Array.isArray(req.body.passengers) ? req.body.passengers : [],
     items,
     markup_percentage: markupPct,
     subtotal,
     total: subtotal,
-    currency: items[0]?.currency || 'USD',
+    currency: displayCurrency || items[0]?.currency || 'USD',
     status: 'submitted',
     notes: req.body.notes || '',
     requested_by: req.user.id,

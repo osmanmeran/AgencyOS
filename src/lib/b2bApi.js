@@ -24,8 +24,11 @@ export function getSupplierCatalog(id) {
   return apiFetch(`/suppliers/${id}`);
 }
 
-export function submitQuote({ title, items, notes }) {
-  return apiFetch('/quote', { method: 'POST', body: JSON.stringify({ title, items, notes }) });
+// Accepts the simple cart shape ({ title, items, notes }) as well as the
+// richer reservation-style builder payload (destination, dates, passengers,
+// and per-item trip details). The server ignores unknown fields.
+export function submitQuote(payload) {
+  return apiFetch('/quote', { method: 'POST', body: JSON.stringify(payload) });
 }
 
 export function listQuotes() {

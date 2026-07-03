@@ -198,9 +198,23 @@ export const schemas = {
 
   b2bSubmitQuote: z.object({
     title: z.string().min(1, 'Title is required'),
+    // Optional reservation-style trip context from the client quote builder.
+    destination: z.string().optional(),
+    start_date: z.string().optional(),
+    end_date: z.string().optional(),
+    passengers: z.array(z.record(z.unknown())).optional(),
     items: z.array(z.object({
       pricing_id: z.string().min(1, 'pricing_id is required'),
       quantity: z.number().positive().optional().default(1),
+      // Optional per-line trip details (lodging nights, transfer logistics).
+      start_date: z.string().optional(),
+      end_date: z.string().optional(),
+      room_type: z.string().optional(),
+      pickup_location: z.string().optional(),
+      dropoff_location: z.string().optional(),
+      flight_number: z.string().optional(),
+      service_time: z.string().optional(),
+      details: z.string().optional(),
     })).min(1, 'At least one item is required'),
     notes: z.string().optional(),
   }),

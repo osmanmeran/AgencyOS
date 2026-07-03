@@ -39,7 +39,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
 
 // Mirrors the isClientPortal check in Layout.jsx — pages a client-tier
 // portal account is allowed to land on without being bounced to ClientPortal.
-const CLIENT_PORTAL_PREFIXES = ['ClientPortal', 'ClientProposal', 'ClientTrip', 'ClientInvoice', 'ClientCatalog', 'ClientSupplier', 'ClientQuote'];
+const CLIENT_PORTAL_PREFIXES = ['ClientPortal', 'ClientProposal', 'ClientTrip', 'ClientInvoice', 'ClientCatalog', 'ClientSupplier', 'ClientQuoteBuilder', 'ClientQuote'];
 // Standalone routes (magic-link / pre-auth pages) that aren't part of the
 // Pages registry and should never trigger the client-portal redirect.
 const NON_REDIRECT_ROUTES = ['/mock-login', '/auth/microsoft/callback', '/accept-invite', '/auth/outlook-callback', '/client-itinerary', '/request-quote'];

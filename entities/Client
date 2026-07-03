@@ -126,6 +126,11 @@
       "default": 0,
       "description": "Default markup % applied to supplier pricing when this client requests a B2B quote"
     },
+    "preferred_currency": {
+      "type": "string",
+      "default": "USD",
+      "description": "Currency the client sees B2B catalog and quote prices in; catalog prices are converted from the supplier currency at the live exchange rate"
+    },
     "potential_deal": {
       "type": "boolean",
       "default": false,

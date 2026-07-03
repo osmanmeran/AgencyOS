@@ -182,6 +182,8 @@ export default function ClientDetails() {
       invoice_address: client.invoice_address || '',
       tax_id: client.tax_id || '',
       payment_method: client.payment_method || 'credit_card',
+      preferred_currency: client.preferred_currency || 'USD',
+      default_markup: client.default_markup ?? 0,
       status: client.status || 'active',
       notes: client.notes || '',
       website: client.website || '',
@@ -620,6 +622,24 @@ export default function ClientDetails() {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Portal Currency</Label>
+                <Select value={editForm.preferred_currency || 'USD'} onValueChange={(v) => setEditForm({ ...editForm, preferred_currency: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'].map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-400">Currency the client sees B2B prices in (auto-converted).</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Default Markup %</Label>
+                <Input type="number" min="0" max="200" step="0.5" value={editForm.default_markup ?? 0}
+                  onChange={(e) => setEditForm({ ...editForm, default_markup: parseFloat(e.target.value) || 0 })} />
+                <p className="text-xs text-slate-400">Applied to supplier pricing for this client's quotes.</p>
               </div>
             </div>
             <div className="space-y-2">

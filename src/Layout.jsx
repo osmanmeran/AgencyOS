@@ -94,8 +94,8 @@ const NAV_SECTIONS = {
 };
 
 const CLIENT_NAV = (_t) => [
-  { label: 'Dashboard', icon: <DashboardRounded />, page: 'ClientPortal' },
-  { label: 'Request a Quote', icon: <ShoppingCartRounded />, page: 'ClientCatalog' },
+  { label: 'Home', icon: <DashboardRounded />, page: 'ClientPortal' },
+  { label: 'Request a Quote', icon: <ShoppingCartRounded />, page: 'ClientQuoteBuilder' },
   { label: 'My Quote Requests', icon: <RequestQuoteRounded />, page: 'ClientQuotes' },
   { label: 'My Proposals', icon: <RateReviewRounded />, page: 'ClientProposals' },
   { label: 'My Trips', icon: <FlightTakeoffRounded />, page: 'ClientTrips' },
