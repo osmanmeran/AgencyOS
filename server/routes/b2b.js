@@ -163,14 +163,22 @@ function getActiveCatalogItems(db, markupPct) {
     db.prepare("SELECT * FROM entities WHERE type = 'Supplier'").all()
       .map(r => [r.id, JSON.parse(r.data)])
   );
+  const categories = new Map(
+    db.prepare("SELECT * FROM entities WHERE type = 'SupplierCategory'").all()
+      .map(r => [r.id, JSON.parse(r.data)])
+  );
 
   return db.prepare("SELECT * FROM entities WHERE type = 'SupplierPricing'").all()
     .map(r => ({ id: r.id, ...JSON.parse(r.data) }))
     .filter(p => p.is_active !== false && p.approval_status === 'approved')
-    .map(p => ({
+    .map(p => {
+      const supplier = suppliers.get(p.supplier_id);
+      return {
       pricing_id: p.id,
       supplier_id: p.supplier_id,
-      supplier_name: suppliers.get(p.supplier_id)?.name || '',
+      supplier_name: supplier?.name || '',
+      category_id: supplier?.category_id || null,
+      category_name: categories.get(supplier?.category_id)?.name || '',
       name: p.name,
       description: p.description || '',
       image_url: p.image_url || '',
@@ -182,7 +190,8 @@ function getActiveCatalogItems(db, markupPct) {
       max_quantity: p.max_quantity ?? null,
       occupancy: p.occupancy || null,
       season_type: p.season_type || 'all_year',
-    }));
+      };
+    });
 }
 
 router.get('/catalog', catchAsync(async (req, res) => {
