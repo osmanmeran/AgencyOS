@@ -12,9 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  ArrowLeft, Mail, Phone, MapPin, CreditCard, FileText, 
-  DollarSign, Plus, Upload, Download, Plane, Star, Edit, Globe, XCircle, RotateCcw
+import {
+  ArrowLeft, Mail, Phone, MapPin, CreditCard, FileText,
+  DollarSign, Plus, Upload, Download, Plane, Star, Edit, Globe, XCircle, RotateCcw, Eye
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -24,8 +24,9 @@ import {
 import { SkeletonCard } from '@/components/ui/skeletons';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { showSuccess, showError } from '@/lib/toast';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { setActAsClientId } from '@/lib/actAsClient';
 import { format } from 'date-fns';
 import ClientProfile from '../components/clients/ClientProfile';
 import ClientTasksPanel from '../components/clients/ClientTasksPanel';
@@ -48,6 +49,15 @@ export default function ClientDetails() {
   const [searchParams] = useSearchParams();
   const clientId = searchParams.get('id');
   const { hasPermission } = usePermissions();
+  const navigate = useNavigate();
+
+  // Open the client portal scoped to this client so staff can see exactly what
+  // the client sees (read-only). The selection is remembered by actAsClient.js
+  // and surfaced as a banner in the portal, with an Exit back to admin.
+  const viewPortalAsClient = () => {
+    setActAsClientId(clientId);
+    navigate(createPageUrl('ClientPortal'));
+  };
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -235,22 +245,27 @@ export default function ClientDetails() {
               </Badge>
             </div>
           </div>
-          {hasPermission('modify_clients') && (
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={openEditModal} variant="outline">
-                <Edit className="w-4 h-4 mr-2" /> Edit Client
-              </Button>
-              {client.status === 'cancelled' ? (
-                <Button onClick={() => reactivateClientMutation.mutate()} variant="outline" className="border-green-300 text-green-700 hover:bg-green-50">
-                  <RotateCcw className="w-4 h-4 mr-2" /> Reactivate
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={viewPortalAsClient} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+              <Eye className="w-4 h-4 mr-2" /> View portal as client
+            </Button>
+            {hasPermission('modify_clients') && (
+              <>
+                <Button onClick={openEditModal} variant="outline">
+                  <Edit className="w-4 h-4 mr-2" /> Edit Client
                 </Button>
-              ) : (
-                <Button onClick={() => setCancelDialogOpen(true)} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
-                  <XCircle className="w-4 h-4 mr-2" /> Cancel Client
-                </Button>
-              )}
-            </div>
-          )}
+                {client.status === 'cancelled' ? (
+                  <Button onClick={() => reactivateClientMutation.mutate()} variant="outline" className="border-green-300 text-green-700 hover:bg-green-50">
+                    <RotateCcw className="w-4 h-4 mr-2" /> Reactivate
+                  </Button>
+                ) : (
+                  <Button onClick={() => setCancelDialogOpen(true)} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+                    <XCircle className="w-4 h-4 mr-2" /> Cancel Client
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

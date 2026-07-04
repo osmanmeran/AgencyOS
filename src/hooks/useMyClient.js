@@ -1,5 +1,6 @@
 import { db } from '@/lib/DbContext';
 import { useEffect, useState } from 'react';
+import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 
 // Resolves the logged-in client-portal user's linked Client (CRM) record.
 // Prefers the authoritative client_id carried in the JWT; falls back to
@@ -8,24 +9,35 @@ import { useEffect, useState } from 'react';
 // fragile — it silently fails (client stays null, pages hang on a loading
 // skeleton forever) whenever the portal login email differs from the CRM
 // contact's email, which is a completely normal setup.
+//
+// Staff have no client_id of their own; when they choose to "view portal as"
+// a client (see actAsClient.js), that selection takes precedence so the same
+// portal pages render that client's data. Real client accounts never set the
+// override, so their resolution is unchanged.
 export function useMyClient() {
   const [client, setClient] = useState(null);
+  const actAsClientId = useActAsClientId();
 
   useEffect(() => {
     let cancelled = false;
     db.auth.me().then(async (user) => {
       let resolved = null;
-      if (user.client_id) {
-        resolved = await db.entities.Client.get(user.client_id).catch(() => null);
-      }
-      if (!resolved && user.email) {
-        const clients = await db.entities.Client.filter({ email: user.email });
-        resolved = clients[0] || null;
+      const asClientId = getActAsClientId();
+      if (asClientId && user.user_tier !== 'client') {
+        resolved = await db.entities.Client.get(asClientId).catch(() => null);
+      } else {
+        if (user.client_id) {
+          resolved = await db.entities.Client.get(user.client_id).catch(() => null);
+        }
+        if (!resolved && user.email) {
+          const clients = await db.entities.Client.filter({ email: user.email });
+          resolved = clients[0] || null;
+        }
       }
       if (!cancelled) setClient(resolved);
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [actAsClientId]);
 
   return client;
 }

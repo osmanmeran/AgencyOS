@@ -1,4 +1,13 @@
+import { getActAsClientId } from '@/lib/actAsClient';
+
 async function apiFetch(path, opts = {}) {
+  // When a staff user is viewing the portal "as" a client, forward the chosen
+  // client id so the server can scope read routes to that client. Write routes
+  // ignore it and still reject staff, keeping the staff view read-only.
+  const asClientId = getActAsClientId();
+  if (asClientId) {
+    path += (path.includes('?') ? '&' : '?') + 'clientId=' + encodeURIComponent(asClientId);
+  }
   const headers = { 'Content-Type': 'application/json', ...opts.headers };
   const res = await fetch('/api/b2b' + path, { ...opts, headers, credentials: 'include' });
   const data = await res.json().catch(() => ({}));

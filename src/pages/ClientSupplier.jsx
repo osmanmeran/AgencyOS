@@ -7,15 +7,17 @@ import { SkeletonTable } from '@/components/ui/skeletons';
 import { ArrowLeft, MapPin, Star, Globe } from 'lucide-react';
 import { createPageUrl } from '../utils';
 import { getSupplierCatalog } from '@/lib/b2bApi';
+import { useActAsClientId } from '@/lib/actAsClient';
 import ServiceCard from '@/components/b2b/ServiceCard';
 import QuoteCart from '@/components/b2b/QuoteCart';
 
 export default function ClientSupplier() {
   const [searchParams] = useSearchParams();
   const supplierId = searchParams.get('id');
+  const actAsClientId = useActAsClientId();
 
   const { data, isLoading, isError } = /** @type {any} */ (useQuery({
-    queryKey: ['b2bSupplier', supplierId],
+    queryKey: ['b2bSupplier', supplierId, actAsClientId],
     queryFn: () => getSupplierCatalog(supplierId),
     enabled: !!supplierId,
   }));

@@ -1,9 +1,10 @@
 import { db } from '@/lib/DbContext';
 
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { useEntitySync } from '@/hooks/useEntitySync';
+import { useActAsClientId, clearActAsClient } from '@/lib/actAsClient';
 
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -22,6 +23,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
+import Button from '@mui/material/Button';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardRounded from '@mui/icons-material/DashboardRounded';
@@ -72,7 +74,9 @@ const NAV_SECTIONS = {
     { label: t('nav.crm'), icon: <PeopleRounded />, page: 'ClientCRM' },
     { label: 'Quote Requests', icon: <RequestQuoteRounded />, page: 'QuoteRequests' },
     { label: 'Tasks', icon: <TaskAltRounded />, page: 'TaskBoard' },
-    { label: 'Client Portal (Preview)', icon: <VisibilityRounded />, page: 'ClientPortal' },
+    // The client portal is entered per-client via "View portal as client" on a
+    // CRM client record (see ClientDetails.jsx) — there is no generic staff
+    // portal link, since the portal is meaningless without a client context.
   ],
   secondary: (t) => [
     { label: t('nav.revenue'), icon: <AttachMoneyRounded />, page: 'Revenue', children: [
@@ -183,14 +187,16 @@ function NavItem({ item, currentPageName, depth = 0 }) {
 }
 
 function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
-  const navSections = isClientPortal
-    ? { main: () => CLIENT_NAV(t) }
-    : NAV_SECTIONS;
   const isAdmin = userTier === 'admin' || userTier === 'manager';
-  // Staff previewing the client portal via the "Client Portal (Preview)" link
-  // still have userTier from their own account (never 'client') — give them
-  // an obvious way back instead of stranding them in the client-only nav.
+  // Staff viewing the portal "as" a client (via "View portal as client" on a
+  // CRM record) still carry their own userTier (never 'client') — give them an
+  // obvious way back instead of stranding them in the client-only nav.
   const isStaffPreviewingClient = isClientPortal && userTier && userTier !== 'client';
+  // Staff "view as" is read-only: hide the quote builder (a client-only write
+  // action the server rejects for staff). Real clients keep it.
+  const navSections = isClientPortal
+    ? { main: () => CLIENT_NAV(t).filter(i => !(isStaffPreviewingClient && i.page === 'ClientQuoteBuilder')) }
+    : NAV_SECTIONS;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -207,10 +213,20 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
         {isStaffPreviewingClient && (
           <>
             <List disablePadding>
-              <NavItem
-                item={{ label: 'Back to Admin', icon: <ArrowBackRounded />, page: 'Dashboard' }}
-                currentPageName={currentPageName}
-              />
+              <ListItemButton
+                component={Link}
+                to={createPageUrl('Dashboard')}
+                onClick={clearActAsClient}
+                sx={{ pl: 2, pr: 1.5, py: 1, mx: 1, mb: 0.25, borderRadius: '10px', minHeight: 42 }}
+              >
+                <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                  <ArrowBackRounded />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Back to Admin"
+                  slotProps={{ primary: { sx: { fontSize: '0.8125rem', fontWeight: 500 } } }}
+                />
+              </ListItemButton>
             </List>
             <Divider sx={{ my: 1.5, mx: 2 }} />
           </>
@@ -249,12 +265,32 @@ export default function Layout({ children, currentPageName }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const { t, setLanguage: setI18nLanguage } = useT();
+  const navigate = useNavigate();
+
+  // Staff "view portal as a client": resolve the impersonated client's name so
+  // the banner can show whose portal they're looking at.
+  const actAsClientId = useActAsClientId();
+  const [actAsClient, setActAsClient] = useState(null);
 
   useEntitySync();
 
   useEffect(() => {
     db.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
+
+  useEffect(() => {
+    if (!actAsClientId) { setActAsClient(null); return; }
+    let cancelled = false;
+    db.entities.Client.get(actAsClientId)
+      .then((c) => { if (!cancelled) setActAsClient(c); })
+      .catch(() => { if (!cancelled) setActAsClient(null); });
+    return () => { cancelled = true; };
+  }, [actAsClientId]);
+
+  const exitActAsClient = () => {
+    clearActAsClient();
+    navigate(createPageUrl('Dashboard'));
+  };
 
   const isClientPortal = currentPageName?.startsWith('ClientPortal') ||
                           currentPageName?.startsWith('ClientProposal') ||
@@ -414,6 +450,31 @@ export default function Layout({ children, currentPageName }) {
               <UserMenu />
             </Toolbar>
           </AppBar>
+
+          {/* Staff "view portal as a client" banner */}
+          {actAsClientId && isClientPortal && user && user.user_tier !== 'client' && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                px: { xs: 2, sm: 3, lg: 4 },
+                py: 1,
+                bgcolor: 'warning.light',
+                color: 'warning.contrastText',
+                borderBottom: '1px solid',
+                borderColor: 'warning.main',
+              }}
+            >
+              <VisibilityRounded fontSize="small" />
+              <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
+                Viewing the client portal as {actAsClient?.name || 'this client'} — this is a read-only staff preview.
+              </Typography>
+              <Button size="small" color="inherit" variant="outlined" startIcon={<ArrowBackRounded fontSize="small" />} onClick={exitActAsClient}>
+                Exit
+              </Button>
+            </Box>
+          )}
 
           {/* Page Content */}
           <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, py: 3, maxWidth: 1400, width: '100%', mx: 'auto' }}>

@@ -6,14 +6,16 @@ import { Input } from '@/components/ui/input';
 import { SkeletonTable } from '@/components/ui/skeletons';
 import { Search } from 'lucide-react';
 import { getCatalog } from '@/lib/b2bApi';
+import { useActAsClientId } from '@/lib/actAsClient';
 import ServiceCard from '@/components/b2b/ServiceCard';
 import QuoteCart from '@/components/b2b/QuoteCart';
 
 export default function ClientCatalog() {
   const [searchTerm, setSearchTerm] = useState('');
+  const actAsClientId = useActAsClientId();
 
   const { data, isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['b2bCatalog'],
+    queryKey: ['b2bCatalog', actAsClientId],
     queryFn: getCatalog,
   }));
 

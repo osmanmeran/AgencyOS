@@ -13,29 +13,37 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
 import { getFeatured, getStorefront } from '@/lib/b2bApi';
+import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 
 export default function ClientPortal() {
   const [user, setUser] = React.useState(null);
   const [client, setClient] = React.useState(null);
   const [selectedCategory, setSelectedCategory] = React.useState(/** @type {string|null} */ (null));
+  const actAsClientId = useActAsClientId();
 
   React.useEffect(() => {
     db.auth.me().then(async (currentUser) => {
       setUser(currentUser);
-      // Prefer the authoritative client_id from the JWT — email matching
-      // alone silently fails whenever the portal login email differs from
-      // the CRM contact's email (a completely normal setup).
+      // Staff viewing the portal "as" a client resolve that client instead of
+      // their own (they have none). Prefer the authoritative client_id from
+      // the JWT otherwise — email matching alone silently fails whenever the
+      // portal login email differs from the CRM contact's email.
       let resolved = null;
-      if (currentUser.client_id) {
-        resolved = await db.entities.Client.get(currentUser.client_id).catch(() => null);
+      const asClientId = getActAsClientId();
+      if (asClientId && currentUser.user_tier !== 'client') {
+        resolved = await db.entities.Client.get(asClientId).catch(() => null);
+      } else {
+        if (currentUser.client_id) {
+          resolved = await db.entities.Client.get(currentUser.client_id).catch(() => null);
+        }
+        if (!resolved && currentUser.email) {
+          const clients = await db.entities.Client.filter({ email: currentUser.email });
+          resolved = clients[0] || null;
+        }
       }
-      if (!resolved && currentUser.email) {
-        const clients = await db.entities.Client.filter({ email: currentUser.email });
-        resolved = clients[0] || null;
-      }
-      if (resolved) setClient(resolved);
+      setClient(resolved);
     });
-  }, []);
+  }, [actAsClientId]);
 
   const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
     queryKey: ['myProposals', client?.id],
@@ -62,14 +70,14 @@ export default function ClientPortal() {
   }));
 
   const { data: featuredData } = /** @type {any} */ (useQuery({
-    queryKey: ['b2bFeatured'],
+    queryKey: ['b2bFeatured', client?.id],
     queryFn: getFeatured,
     enabled: !!client
   }));
   const featuredItems = featuredData?.items || [];
 
   const { data: storefront } = /** @type {any} */ (useQuery({
-    queryKey: ['b2bStorefront'],
+    queryKey: ['b2bStorefront', client?.id],
     queryFn: getStorefront,
     enabled: !!client
   }));

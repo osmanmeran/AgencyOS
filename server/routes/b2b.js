@@ -105,6 +105,28 @@ function requireClientContext(user) {
   return client;
 }
 
+const STAFF_TIERS = ['admin', 'manager', 'agent', 'accounting'];
+
+// Resolves the client context for READ routes. Real client-portal accounts
+// use their own linked client_id. Staff (no client_id) may "view portal as" a
+// specific client by passing ?clientId=... — this powers the staff "View
+// portal as this client" feature and is deliberately limited to GET/read
+// routes. Write routes keep calling requireClientContext, which rejects staff,
+// so the staff view stays strictly read-only.
+function resolveReadClientContext(req) {
+  const user = req.user;
+  if (user.client_id) return requireClientContext(user);
+
+  const asClientId = req.query.clientId;
+  if (asClientId && STAFF_TIERS.includes(user.user_tier)) {
+    const db = getDb();
+    const client = getEntityById(db, 'Client', asClientId);
+    if (!client) throw new NotFoundError('Client not found');
+    return client;
+  }
+  throw new ForbiddenError('This account is not linked to a client');
+}
+
 // Notify every active staff member who can act on quote requests that a new
 // one came in. In-app + WebSocket via createNotification, plus email for those
 // who opted in. Best-effort: a notification failure must never fail the submit.
@@ -164,7 +186,7 @@ function getActiveCatalogItems(db, markupPct) {
 }
 
 router.get('/catalog', catchAsync(async (req, res) => {
-  const client = requireClientContext(req.user);
+  const client = resolveReadClientContext(req);
   const db = getDb();
   const markupPct = client.default_markup || 0;
   const displayCurrency = client.preferred_currency || null;
@@ -178,7 +200,7 @@ router.get('/catalog', catchAsync(async (req, res) => {
 // Admin-curated subset shown in the dashboard carousel — see
 // SupplierPricing.is_featured, toggled in SupplierPricingManager.
 router.get('/featured', catchAsync(async (req, res) => {
-  const client = requireClientContext(req.user);
+  const client = resolveReadClientContext(req);
   const db = getDb();
   const markupPct = client.default_markup || 0;
 
@@ -193,7 +215,7 @@ router.get('/featured', catchAsync(async (req, res) => {
 // Individual services are NOT listed here — the client drills into a supplier
 // via /suppliers/:id.
 router.get('/storefront', catchAsync(async (req, res) => {
-  const client = requireClientContext(req.user);
+  const client = resolveReadClientContext(req);
   const db = getDb();
   const markupPct = client.default_markup || 0;
 
@@ -242,7 +264,7 @@ router.get('/storefront', catchAsync(async (req, res) => {
 // same show_in_portal gate as /storefront so a client can't reach an
 // unpublished supplier by guessing its id.
 router.get('/suppliers/:id', catchAsync(async (req, res) => {
-  const client = requireClientContext(req.user);
+  const client = resolveReadClientContext(req);
   const db = getDb();
   const markupPct = client.default_markup || 0;
 
@@ -349,7 +371,7 @@ router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, r
 }));
 
 router.get('/quotes', catchAsync(async (req, res) => {
-  const client = requireClientContext(req.user);
+  const client = resolveReadClientContext(req);
   const db = getDb();
 
   const quotes = db.prepare("SELECT * FROM entities WHERE type = 'QuoteRequest'").all()
@@ -361,7 +383,7 @@ router.get('/quotes', catchAsync(async (req, res) => {
 }));
 
 router.get('/quotes/:id', catchAsync(async (req, res) => {
-  const client = requireClientContext(req.user);
+  const client = resolveReadClientContext(req);
   const db = getDb();
 
   const row = db.prepare("SELECT * FROM entities WHERE type = 'QuoteRequest' AND id = ?").get(req.params.id);

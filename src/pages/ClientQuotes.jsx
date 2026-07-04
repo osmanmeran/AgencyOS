@@ -9,6 +9,7 @@ import { FileText, Plus } from 'lucide-react';
 import { createPageUrl } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { listQuotes } from '@/lib/b2bApi';
+import { useActAsClientId } from '@/lib/actAsClient';
 import { formatCurrency } from '@/lib/formatters';
 
 const STATUS_COLORS = {
@@ -20,8 +21,9 @@ const STATUS_COLORS = {
 };
 
 export default function ClientQuotes() {
+  const actAsClientId = useActAsClientId();
   const { data: quotes = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['myQuotes'],
+    queryKey: ['myQuotes', actAsClientId],
     queryFn: listQuotes,
   }));
 
