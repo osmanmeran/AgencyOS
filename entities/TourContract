@@ -1,0 +1,216 @@
+{
+  "name": "TourContract",
+  "type": "object",
+  "description": "A recurring serial tour contract: a fixed itinerary plus per-person pricing tiers that bookings are later generated from for a specific departure date.",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Contract name, e.g. 'Istanbul Classic 4D/3N'"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Client (usually a tour operator/agency) this contract is agreed with"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Denormalized client name for display"
+    },
+    "destination": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Inactive contracts are hidden from booking generation"
+    },
+    "itinerary": {
+      "type": "array",
+      "description": "The fixed suppliers and services every booking generated from this contract includes",
+      "items": {
+        "type": "object",
+        "properties": {
+          "_key": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "description": "Service category (hotel, transfer, activity, etc)"
+          },
+          "supplier_id": {
+            "type": "string"
+          },
+          "supplier_name": {
+            "type": "string",
+            "description": "Denormalized supplier name for display"
+          },
+          "name": {
+            "type": "string",
+            "description": "Line name, e.g. '5-star Hotel'"
+          },
+          "description": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "day_offset_start": {
+            "type": "number",
+            "default": 0,
+            "description": "Day this line starts, relative to the departure date (0 = departure day)"
+          },
+          "day_offset_end": {
+            "type": "number",
+            "default": 0,
+            "description": "Day this line ends, relative to the departure date"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "per_person",
+              "per_night",
+              "per_day",
+              "per_car",
+              "per_hour",
+              "flat_rate"
+            ],
+            "default": "per_person",
+            "description": "Unit of measurement for pricing"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 1
+          },
+          "acquiring_price": {
+            "type": "number",
+            "description": "Real supplier cost per unit, used for internal margin tracking (the client is billed the fixed per-person package price from pricing_tiers, not this line individually)"
+          },
+          "supplier_currency": {
+            "type": "string",
+            "enum": [
+              "EUR",
+              "USD",
+              "GBP",
+              "TRY",
+              "AED"
+            ],
+            "default": "EUR"
+          },
+          "pricing_id": {
+            "type": "string",
+            "description": "Selected SupplierPricing tier ID that auto-filled this line"
+          },
+          "hotel_treatment": {
+            "type": "string",
+            "description": "For lodging: meal plan / treatment (Room Only, Bed & Breakfast, Half Board, etc)"
+          },
+          "room_occupancy": {
+            "type": "string",
+            "description": "For lodging: room occupancy (Single, Double, Triple, etc)"
+          },
+          "transfer_type": {
+            "type": "string",
+            "description": "For transfers: Airport Pickup, Point to Point, etc"
+          },
+          "car_capacity": {
+            "type": "number",
+            "description": "For transfers priced per_car: pax per car, used to auto-add cars for larger groups"
+          },
+          "pickup_location": {
+            "type": "string"
+          },
+          "dropoff_location": {
+            "type": "string"
+          },
+          "show_in_itinerary": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this line appears in the client-facing itinerary"
+          }
+        }
+      }
+    },
+    "pricing_tiers": {
+      "type": "array",
+      "description": "Fixed per-person package price for each exact participant count",
+      "items": {
+        "type": "object",
+        "properties": {
+          "_key": {
+            "type": "string"
+          },
+          "pax": {
+            "type": "number",
+            "description": "Exact number of participants this tier applies to"
+          },
+          "price_per_person": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "EUR",
+              "USD",
+              "GBP",
+              "TRY",
+              "AED"
+            ],
+            "default": "EUR"
+          }
+        }
+      }
+    },
+    "terms_and_conditions": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes"
+    }
+  },
+  "required": [
+    "name",
+    "client_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    },
+    "read": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    },
+    "update": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    }
+  }
+}
