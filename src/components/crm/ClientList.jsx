@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Star, Trash2, Phone, Mail, Building, MapPin } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { filterClientsByCompany } from '@/lib/companySearch';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '../../utils';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 text-green-700 border-green-200',
@@ -223,7 +225,17 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                   {client.company ? (
                     <div className="flex items-center gap-1.5">
                       <Building className={`w-3.5 h-3.5 flex-shrink-0 ${colleagueSet.has(client.id) ? 'text-blue-500' : 'text-slate-400'}`} />
-                      <span className="text-slate-700 text-sm truncate max-w-[140px]">{client.company}</span>
+                      {client.company_id ? (
+                        <Link
+                          to={createPageUrl(`CompanyDetails?id=${client.company_id}`)}
+                          onClick={e => e.stopPropagation()}
+                          className="text-slate-700 text-sm truncate max-w-[140px] hover:text-indigo-600 hover:underline"
+                        >
+                          {client.company}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-700 text-sm truncate max-w-[140px]">{client.company}</span>
+                      )}
                       {colleagueSet.has(client.id) && (
                         <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">same company</span>
                       )}

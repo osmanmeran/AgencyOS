@@ -1,0 +1,144 @@
+{
+  "name": "Company",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Company / organization name"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "Company logo URL"
+    },
+    "website": {
+      "type": "string",
+      "description": "Company website URL"
+    },
+    "email": {
+      "type": "string",
+      "description": "Main company email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Main company phone"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Industry or business sector"
+    },
+    "business_description": {
+      "type": "string",
+      "description": "Description of the company's business"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string",
+      "description": "Region or state"
+    },
+    "country": {
+      "type": "string"
+    },
+    "instagram": {
+      "type": "string"
+    },
+    "linkedin": {
+      "type": "string"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Shared billing: Tax ID or VAT number"
+    },
+    "invoice_address": {
+      "type": "string",
+      "description": "Shared billing: address invoices are addressed to"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "credit_card",
+        "bank_transfer",
+        "paypal",
+        "check",
+        "cash",
+        "other"
+      ],
+      "default": "bank_transfer",
+      "description": "Shared billing: default payment method for the company"
+    },
+    "preferred_currency": {
+      "type": "string",
+      "default": "USD",
+      "description": "Shared billing: default currency contacts of this company are billed/quoted in"
+    },
+    "default_markup": {
+      "type": "number",
+      "default": 0,
+      "description": "Shared billing: default B2B markup % applied for this company's contacts"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes about the company"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "update": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager"
+          ]
+        }
+      }
+    }
+  }
+}

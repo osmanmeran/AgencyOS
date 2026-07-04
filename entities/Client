@@ -25,7 +25,11 @@
     },
     "company": {
       "type": "string",
-      "description": "Company name if applicable"
+      "description": "Company name (denormalized from the linked Company record for display/search; kept in sync with company_id)"
+    },
+    "company_id": {
+      "type": "string",
+      "description": "ID of the linked Company record this contact belongs to"
     },
     "website": {
       "type": "string",

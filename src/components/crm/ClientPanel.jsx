@@ -20,6 +20,7 @@ import { createPageUrl } from '../../utils';
 import { format } from 'date-fns';
 import EmailComposer from './EmailComposer';
 import { colleaguesOf } from '../../lib/companySearch';
+import CompanyPicker from './CompanyPicker';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 text-green-700 border-green-200',
@@ -157,7 +158,12 @@ export default function ClientPanel({ client, onClientUpdated }) {
               </div>
               {client.company && (
                 <div className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
-                  <Building className="w-3 h-3" />{client.company}
+                  <Building className="w-3 h-3" />
+                  {client.company_id ? (
+                    <Link to={createPageUrl(`CompanyDetails?id=${client.company_id}`)} className="hover:text-indigo-600 hover:underline">
+                      {client.company}
+                    </Link>
+                  ) : client.company}
                   {colleagues.length > 0 && (
                     <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full font-medium">
                       +{colleagues.length} {colleagues.length === 1 ? 'colleague' : 'colleagues'}
@@ -323,11 +329,18 @@ export default function ClientPanel({ client, onClientUpdated }) {
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Edit Contact</h3>
                 <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs">Company</Label>
+                    <CompanyPicker
+                      value={editForm.company_id}
+                      companyName={editForm.company}
+                      onChange={({ company_id, company }) => setEditForm(prev => ({ ...prev, company_id, company }))}
+                    />
+                  </div>
                   {[
                     ['name', 'Full Name', 'text'],
                     ['email', 'Email', 'email'],
                     ['phone', 'Phone', 'text'],
-                    ['company', 'Company', 'text'],
                     ['address', 'Address', 'text'],
                     ['city', 'City', 'text'],
                     ['region', 'Region / State', 'text'],

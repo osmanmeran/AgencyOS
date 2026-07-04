@@ -15,6 +15,18 @@ export function normalizeCompany(company) {
 }
 
 /**
+ * The key that identifies which company a contact belongs to. Prefers the real
+ * `company_id` link; falls back to the normalized free-text company name for
+ * contacts that predate / aren't linked to a Company record. Returns '' when
+ * the contact has no company at all.
+ */
+export function companyKey(client) {
+  if (client?.company_id) return `id:${client.company_id}`;
+  const name = normalizeCompany(client?.company);
+  return name ? `name:${name}` : '';
+}
+
+/**
  * Filter contacts by a query with company-aware expansion.
  *
  * @param {Array<any>} clients
@@ -42,8 +54,8 @@ export function filterClientsByCompany(clients, query) {
       c.phone?.toLowerCase().includes(q);
     if (matches) {
       directIds.add(c.id);
-      const company = normalizeCompany(c.company);
-      if (company) matchedCompanies.add(company);
+      const key = companyKey(c);
+      if (key) matchedCompanies.add(key);
     }
   }
 
@@ -51,8 +63,8 @@ export function filterClientsByCompany(clients, query) {
   const colleagueIds = new Set();
   for (const c of clients) {
     const direct = directIds.has(c.id);
-    const company = normalizeCompany(c.company);
-    const viaCompany = !direct && company && matchedCompanies.has(company);
+    const key = companyKey(c);
+    const viaCompany = !direct && key && matchedCompanies.has(key);
     if (direct || viaCompany) {
       results.push(c);
       if (viaCompany) colleagueIds.add(c.id);
@@ -67,9 +79,13 @@ export function filterClientsByCompany(clients, query) {
  * itself, and contacts without a company).
  */
 export function colleaguesOf(client, allClients) {
-  const company = normalizeCompany(client?.company);
-  if (!company) return [];
-  return allClients.filter(
-    c => c.id !== client.id && normalizeCompany(c.company) === company
-  );
+  const key = companyKey(client);
+  if (!key) return [];
+  return allClients.filter(c => c.id !== client.id && companyKey(c) === key);
+}
+
+/** All contacts linked to a given Company id. */
+export function contactsOfCompany(companyId, allClients) {
+  if (!companyId) return [];
+  return allClients.filter(c => c.company_id === companyId);
 }

@@ -71,7 +71,9 @@ const NAV_SECTIONS = {
       { label: t('nav.bookings'), page: 'SupplierBookings' },
       { label: 'RFP Manager', page: 'RFPManager' },
     ]},
-    { label: t('nav.crm'), icon: <PeopleRounded />, page: 'ClientCRM' },
+    { label: t('nav.crm'), icon: <PeopleRounded />, page: 'ClientCRM', children: [
+      { label: 'Companies', page: 'Companies' },
+    ]},
     { label: 'Quote Requests', icon: <RequestQuoteRounded />, page: 'QuoteRequests' },
     { label: 'Tasks', icon: <TaskAltRounded />, page: 'TaskBoard' },
     // The client portal is entered per-client via "View portal as client" on a

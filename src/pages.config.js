@@ -40,6 +40,8 @@ const BookingTemplates = lazy(() => import('./pages/BookingTemplates'));
 const Reservations = lazy(() => import('./pages/Reservations'));
 const ProposalBuilder = lazy(() => import('./pages/ProposalBuilder'));
 const ClientCRM = lazy(() => import('./pages/ClientCRM'));
+const Companies = lazy(() => import('./pages/Companies'));
+const CompanyDetails = lazy(() => import('./pages/CompanyDetails'));
 const TestingArea = lazy(() => import('./pages/TestingArea'));
 const TaskBoard = lazy(() => import('./pages/TaskBoard'));
 const RFPManager = lazy(() => import('./pages/RFPManager'));
@@ -87,6 +89,8 @@ export const PAGES = {
     "Reservations": Reservations,
     "ProposalBuilder": ProposalBuilder,
     "ClientCRM": ClientCRM,
+    "Companies": Companies,
+    "CompanyDetails": CompanyDetails,
     "CreateReservation": CreateReservation,
     "ReservationDetails": ReservationDetails,
     "Revenue": Revenue,

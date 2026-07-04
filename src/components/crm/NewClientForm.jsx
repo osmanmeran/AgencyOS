@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useT } from '../../lib/i18n/I18nContext';
+import CompanyPicker from './CompanyPicker';
 
 const PAYMENT_METHODS = ['credit_card', 'bank_transfer', 'paypal', 'check', 'cash', 'other'];
 
@@ -20,6 +21,7 @@ export default function NewClientForm({ onCreated, onCancel }) {
     email: '',
     phone: '',
     company: '',
+    company_id: '',
     address: '',
     city: '',
     country: '',
@@ -90,7 +92,11 @@ export default function NewClientForm({ onCreated, onCancel }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label>{t('crm.company')}</Label>
-            <Input value={form.company} onChange={e => set('company', e.target.value)} placeholder="Acme Corp" />
+            <CompanyPicker
+              value={form.company_id}
+              companyName={form.company}
+              onChange={({ company_id, company }) => setForm(prev => ({ ...prev, company_id, company }))}
+            />
           </div>
           <div className="space-y-1">
             <Label>{t('crm.taxId')}</Label>

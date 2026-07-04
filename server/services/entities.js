@@ -15,6 +15,7 @@ const ENTITY_PERMISSION_MAP = {
   Supplier: { create: 'create_suppliers', read: 'view_all_data', update: 'modify_suppliers', delete: 'delete_suppliers' },
   SupplierInvoice: { create: 'create_invoices', read: 'view_invoices', update: 'modify_invoices', delete: 'delete_invoices' },
   Client: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
+  Company: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
   Service: { create: 'create_services', read: 'view_all_data', update: 'modify_services', delete: 'delete_services' },
   BookingTemplate: { create: 'manage_booking_templates', read: 'view_all_data', update: 'manage_booking_templates', delete: 'manage_booking_templates' },
   Category: { create: 'manage_categories', read: 'view_all_data', update: 'manage_categories', delete: 'manage_categories' },

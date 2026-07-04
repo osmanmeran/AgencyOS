@@ -19,7 +19,7 @@ const DB_PATH = path.join(DATA_DIR, 'marvelops.db');
 
 const ENTITIES = [
   'AppSettings', 'BookingRequest', 'BookingTemplate', 'Client', 'ClientPayment',
-  'ClientTask', 'EmailLog', 'Invoice', 'ItineraryEvent', 'Message', 'PackingItem',
+  'ClientTask', 'Company', 'EmailLog', 'Invoice', 'ItineraryEvent', 'Message', 'PackingItem',
   'Proposal', 'ProposalTemplate', 'QuoteRequest', 'ReferenceCounter', 'ServiceCategory',
   'ServiceTemplate', 'Supplier', 'SupplierBooking', 'SupplierCategory',
   'SupplierInvoice', 'SupplierPricing', 'SupplierReview', 'SupplierService',
