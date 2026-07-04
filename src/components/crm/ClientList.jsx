@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Star, Trash2, Phone, Mail, Building, MapPin } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { filterClientsByCompany } from '@/lib/companySearch';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 text-green-700 border-green-200',
@@ -17,7 +18,7 @@ const STATUS_COLORS = {
   cancelled: 'bg-red-100 text-red-700 border-red-200'
 };
 
-export default function ClientList({ clients, isLoading, selectedId, onSelect, onClientsDeleted }) {
+export default function ClientList({ clients, colleagueIds, isLoading, selectedId, onSelect, onClientsDeleted }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -27,12 +28,12 @@ export default function ClientList({ clients, isLoading, selectedId, onSelect, o
   const [sortKey, setSortKey] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
 
-  const filtered = useMemo(() => {
-    let result = clients.filter(c => {
-      if (search) {
-        const s = search.toLowerCase();
-        if (!c.name?.toLowerCase().includes(s) && !c.email?.toLowerCase().includes(s) && !c.company?.toLowerCase().includes(s) && !c.phone?.toLowerCase().includes(s)) return false;
-      }
+  const { filtered, colleagueSet } = useMemo(() => {
+    // Company-aware search: matching a company (by name or any one of its
+    // people) pulls in every colleague at that company.
+    const { results, colleagueIds: localColleagueIds } = filterClientsByCompany(clients, search);
+    const set = new Set([...(colleagueIds || []), ...localColleagueIds]);
+    let result = results.filter(c => {
       if (statusFilter !== 'all' && c.status !== statusFilter && !(statusFilter === 'active' && c.status === 'vip')) return false;
       if (typeFilter !== 'all' && (c.type || 'client') !== typeFilter) return false;
       return true;
@@ -48,8 +49,8 @@ export default function ClientList({ clients, isLoading, selectedId, onSelect, o
       if (va > vb) return sortDir === 'asc' ? 1 : -1;
       return 0;
     });
-    return result;
-  }, [clients, search, statusFilter, typeFilter, sortKey, sortDir]);
+    return { filtered: result, colleagueSet: set };
+  }, [clients, colleagueIds, search, statusFilter, typeFilter, sortKey, sortDir]);
 
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -89,6 +90,11 @@ export default function ClientList({ clients, isLoading, selectedId, onSelect, o
             onChange={e => setSearch(e.target.value)}
             className="pl-9 text-sm h-8"
           />
+          {search && colleagueSet.size > 0 && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-blue-500 font-medium">
+              +{colleagueSet.size} via company
+            </span>
+          )}
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="h-8 text-xs w-[110px] border-slate-200">
@@ -216,8 +222,11 @@ export default function ClientList({ clients, isLoading, selectedId, onSelect, o
                 <td className="px-3 py-3">
                   {client.company ? (
                     <div className="flex items-center gap-1.5">
-                      <Building className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                      <Building className={`w-3.5 h-3.5 flex-shrink-0 ${colleagueSet.has(client.id) ? 'text-blue-500' : 'text-slate-400'}`} />
                       <span className="text-slate-700 text-sm truncate max-w-[140px]">{client.company}</span>
+                      {colleagueSet.has(client.id) && (
+                        <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">same company</span>
+                      )}
                     </div>
                   ) : <span className="text-slate-300">—</span>}
                 </td>

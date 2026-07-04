@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { filterClientsByCompany } from '../lib/companySearch';
 
 const PIPELINE_STAGES = [
   { key: 'new', label: 'New Lead', color: 'bg-slate-100 border-slate-300' },
@@ -71,16 +72,10 @@ export default function ClientCRM() {
 
   const selectedClient = clients.find(c => c.id === selectedClientId) || null;
 
-  const filtered = useMemo(() => {
-    if (!searchQuery) return clients;
-    const q = searchQuery.toLowerCase();
-    return clients.filter(c =>
-      c.name?.toLowerCase().includes(q) ||
-      c.email?.toLowerCase().includes(q) ||
-      c.company?.toLowerCase().includes(q) ||
-      c.phone?.toLowerCase().includes(q)
-    );
-  }, [clients, searchQuery]);
+  const { results: filtered, colleagueIds } = useMemo(
+    () => filterClientsByCompany(clients, searchQuery),
+    [clients, searchQuery]
+  );
 
   const stats = useMemo(() => ({
     total: clients.length,
@@ -204,7 +199,7 @@ export default function ClientCRM() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
           <Input
-            placeholder="Search contacts..."
+            placeholder="Search contacts or company..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="pl-9 text-sm h-9"
@@ -263,6 +258,7 @@ export default function ClientCRM() {
         /* Table View */
         <ClientList
           clients={filtered}
+          colleagueIds={colleagueIds}
           isLoading={isLoading}
           selectedId={selectedClientId}
           onSelect={(id) => setSelectedClientId(id)}

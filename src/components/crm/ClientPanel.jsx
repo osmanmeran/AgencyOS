@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import { format } from 'date-fns';
 import EmailComposer from './EmailComposer';
+import { colleaguesOf } from '../../lib/companySearch';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 text-green-700 border-green-200',
@@ -77,6 +78,14 @@ export default function ClientPanel({ client, onClientUpdated }) {
     queryKey: ['clientTasks', client.id],
     queryFn: () => db.entities.ClientTask.filter({ client_id: client.id }, '-created_date')
   }));
+
+  // Shares the ['clients'] cache with the CRM list, so this is usually instant.
+  const { data: allClients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
+    queryKey: ['clients'],
+    queryFn: () => db.entities.Client.list('-created_date')
+  }));
+
+  const colleagues = colleaguesOf(client, allClients);
 
   const updateMutation = /** @type {any} */ (useMutation({
     mutationFn: (/** @type {any} */ data) => db.entities.Client.update(client.id, data),
@@ -149,6 +158,11 @@ export default function ClientPanel({ client, onClientUpdated }) {
               {client.company && (
                 <div className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
                   <Building className="w-3 h-3" />{client.company}
+                  {colleagues.length > 0 && (
+                    <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full font-medium">
+                      +{colleagues.length} {colleagues.length === 1 ? 'colleague' : 'colleagues'}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -377,6 +391,34 @@ export default function ClientPanel({ client, onClientUpdated }) {
                   {client.tax_id && <Info icon={FileText} label="Tax ID" value={client.tax_id} />}
                   {client.date_of_birth && <Info icon={Clock} label="Date of Birth" value={format(new Date(client.date_of_birth), 'MMM d, yyyy')} />}
                 </div>
+                {client.company && colleagues.length > 0 && (
+                  <div className="border border-slate-100 rounded-xl p-4">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Building className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                        Also at {client.company} · {colleagues.length}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {colleagues.map(col => (
+                        <Link
+                          key={col.id}
+                          to={createPageUrl(`ClientDetails?id=${col.id}`)}
+                          className="flex items-center gap-2.5 p-1.5 -mx-1.5 rounded-lg hover:bg-slate-50 transition-colors group"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                            {(col.name || '?').split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-slate-800 truncate">{col.name}</div>
+                            {col.email && <div className="text-[11px] text-slate-400 truncate">{col.email}</div>}
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {client.address && (
                   <div className="bg-slate-50 rounded-xl p-4">
                     <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mb-1">Address</div>
