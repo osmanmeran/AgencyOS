@@ -177,6 +177,8 @@ function getActiveCatalogItems(db, markupPct) {
       pricing_id: p.id,
       supplier_id: p.supplier_id,
       supplier_name: supplier?.name || '',
+      city: supplier?.city || '',
+      area: supplier?.area || '',
       category_id: supplier?.category_id || null,
       category_name: categories.get(supplier?.category_id)?.name || '',
       name: p.name,

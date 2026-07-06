@@ -96,15 +96,62 @@ function PaxRow({ pax, onChange, onSetContact }) {
   );
 }
 
+const locationOf = (s) => s.city || s.area || 'Other';
+
 // Sequential dropdown service picker, mirroring the staff reservation
 // builder's category -> service selection (ServiceLineEditor.jsx) instead of
-// a photo card grid. Never shows the supplier behind a service — only the
-// category, name, unit and price the client is choosing.
-function ServicePickerDialog({ open, onOpenChange, groups, currency, onSelect }) {
+// a photo card grid. Category -> Location -> Supplier (each narrowing the
+// next) -> Service.
+function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect }) {
   const [category, setCategory] = useState('');
-  useEffect(() => { if (!open) setCategory(''); }, [open]);
+  const [location, setLocation] = useState('');
+  const [supplierId, setSupplierId] = useState('');
 
-  const selectedGroup = groups.find(g => g.name === category);
+  useEffect(() => {
+    if (!open) { setCategory(''); setLocation(''); setSupplierId(''); }
+  }, [open]);
+  useEffect(() => { setLocation(''); setSupplierId(''); }, [category]);
+  useEffect(() => { setSupplierId(''); }, [location]);
+
+  const categoryItems = useMemo(
+    () => category ? services.filter(s => (s.category_name || 'Other services') === category) : [],
+    [services, category]
+  );
+  const locationItems = useMemo(
+    () => location ? categoryItems.filter(s => locationOf(s) === location) : [],
+    [categoryItems, location]
+  );
+  const supplierItems = useMemo(
+    () => supplierId ? locationItems.filter(s => s.supplier_id === supplierId) : [],
+    [locationItems, supplierId]
+  );
+
+  const categoryOptions = useMemo(() => {
+    const byCat = new Map();
+    for (const s of services) {
+      const name = s.category_name || 'Other services';
+      byCat.set(name, (byCat.get(name) || 0) + 1);
+    }
+    return [...byCat.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [services]);
+
+  const locationOptions = useMemo(() => {
+    const byLoc = new Map();
+    for (const s of categoryItems) {
+      const loc = locationOf(s);
+      byLoc.set(loc, (byLoc.get(loc) || 0) + 1);
+    }
+    return [...byLoc.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [categoryItems]);
+
+  const supplierOptions = useMemo(() => {
+    const bySupplier = new Map();
+    for (const s of locationItems) {
+      if (!bySupplier.has(s.supplier_id)) bySupplier.set(s.supplier_id, { name: s.supplier_name || 'Unknown', count: 0 });
+      bySupplier.get(s.supplier_id).count += 1;
+    }
+    return [...bySupplier.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name));
+  }, [locationItems]);
 
   const pick = (pricingId) => {
     onSelect(pricingId);
@@ -121,24 +168,22 @@ function ServicePickerDialog({ open, onOpenChange, groups, currency, onSelect })
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
               <SelectContent>
-                {groups.map(g => (
-                  <SelectItem key={g.name} value={g.name}>{g.name} ({g.items.length})</SelectItem>
+                {categoryOptions.map(([name, count]) => (
+                  <SelectItem key={name} value={name}>{name} ({count})</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           {category && (
-            selectedGroup?.items.length ? (
+            locationOptions.length ? (
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">Service</Label>
-                <Select onValueChange={pick}>
-                  <SelectTrigger><SelectValue placeholder="Select a service" /></SelectTrigger>
+                <Label className="text-xs text-slate-500">Location</Label>
+                <Select value={location} onValueChange={setLocation}>
+                  <SelectTrigger><SelectValue placeholder="Select a location" /></SelectTrigger>
                   <SelectContent>
-                    {selectedGroup.items.map(s => (
-                      <SelectItem key={s.pricing_id} value={s.pricing_id}>
-                        {s.name} — {sym(currency)}{s.unit_price.toFixed(2)} {(s.unit || '').replace('per_', '/ ')}
-                      </SelectItem>
+                    {locationOptions.map(([loc, count]) => (
+                      <SelectItem key={loc} value={loc}>{loc} ({count})</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -147,20 +192,58 @@ function ServicePickerDialog({ open, onOpenChange, groups, currency, onSelect })
               <p className="text-sm text-slate-400 text-center py-4">No services in this category</p>
             )
           )}
+
+          {location && (
+            supplierOptions.length ? (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-500">Supplier</Label>
+                <Select value={supplierId} onValueChange={setSupplierId}>
+                  <SelectTrigger><SelectValue placeholder="Select a supplier" /></SelectTrigger>
+                  <SelectContent>
+                    {supplierOptions.map(([id, info]) => (
+                      <SelectItem key={id} value={id}>{info.name} ({info.count})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 text-center py-4">No suppliers in this location</p>
+            )
+          )}
+
+          {supplierId && (
+            supplierItems.length ? (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-500">Service</Label>
+                <Select onValueChange={pick}>
+                  <SelectTrigger><SelectValue placeholder="Select a service" /></SelectTrigger>
+                  <SelectContent>
+                    {supplierItems.map(s => (
+                      <SelectItem key={s.pricing_id} value={s.pricing_id}>
+                        {s.name} — {sym(currency)}{s.unit_price.toFixed(2)} {(s.unit || '').replace('per_', '/ ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 text-center py-4">No services for this supplier</p>
+            )
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-// One service line: the client picks a service visually (photo + name +
-// price, grouped by service category, never by supplier) then fills in
-// day-specific details for it — mirroring the staff reservation builder's
+// One service line: the client picks a service via the category -> location
+// -> supplier -> service dropdown chain, then fills in day-specific details
+// for it — mirroring the staff reservation builder's
 // per-category fields, minus anything cost/margin/supplier related. Prices
 // shown here are the client's own sell price: pulled from the catalog
 // (server already applied the client's markup and converted to their
 // preferred currency).
-function ServiceLineCard({ line, groups, servicesById, currency, onChange, onRemove }) {
+function ServiceLineCard({ line, services, servicesById, currency, onChange, onRemove }) {
   const svc = servicesById.get(line.pricing_id);
   const catName = (svc?.category_name || '').toLowerCase();
   const isLodging = catName.includes('hotel') || catName.includes('lodging') || catName.includes('accommodation') || catName.includes('resort');
@@ -217,7 +300,7 @@ function ServiceLineCard({ line, groups, servicesById, currency, onChange, onRem
         </Button>
       </div>
 
-      <ServicePickerDialog open={pickerOpen} onOpenChange={setPickerOpen} groups={groups} currency={currency} onSelect={pickService} />
+      <ServicePickerDialog open={pickerOpen} onOpenChange={setPickerOpen} services={services} currency={currency} onSelect={pickService} />
 
       {line.pricing_id && (
         <>
@@ -354,23 +437,11 @@ export default function ClientQuoteBuilder() {
     enabled: !!client,
   }));
 
-  // All available services, grouped by service category for the picker. The
-  // supplier behind each service is never exposed to the client here; the
-  // unit_price already has the client's markup applied and is already
-  // converted to their preferred currency (both computed server-side).
+  // All available services, filterable by category/location/supplier in the
+  // picker. unit_price already has the client's markup applied and is
+  // already converted to their preferred currency (both computed server-side).
   const services = catalog?.items || [];
   const servicesById = useMemo(() => new Map(services.map(s => [s.pricing_id, s])), [services]);
-  const groups = useMemo(() => {
-    const byCat = new Map();
-    for (const s of services) {
-      const name = s.category_name || 'Other services';
-      if (!byCat.has(name)) byCat.set(name, []);
-      byCat.get(name).push(s);
-    }
-    return [...byCat.entries()]
-      .map(([name, items]) => ({ name, items: items.sort((a, b) => a.name.localeCompare(b.name)) }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [services]);
 
   // Rooms & passengers
   const setRoomOccupancy = (roomId, count) => {
@@ -520,7 +591,7 @@ export default function ClientQuoteBuilder() {
         ) : (
           <div className="space-y-4">
             {lines.map(line => (
-              <ServiceLineCard key={line._key} line={line} groups={groups} servicesById={servicesById} currency={currency}
+              <ServiceLineCard key={line._key} line={line} services={services} servicesById={servicesById} currency={currency}
                 onChange={u => updateLine(line._key, u)} onRemove={() => removeLine(line._key)} />
             ))}
           </div>
