@@ -13,22 +13,39 @@ import { useEffect, useState } from 'react';
 const KEY = 'marvelops.actAsClientId';
 const EVT = 'marvelops:actasclient-change';
 
+/** The client id staff are currently "acting as", or null if none selected. */
 export function getActAsClientId() {
-  try { return sessionStorage.getItem(KEY) || null; } catch { return null; }
+  try {
+    return sessionStorage.getItem(KEY) || null;
+  } catch {
+    return null;
+  }
 }
 
+/** Sets the "act as" client id and notifies listeners in this tab. */
 export function setActAsClientId(id) {
-  try { sessionStorage.setItem(KEY, id); } catch { /* private mode */ }
+  try {
+    sessionStorage.setItem(KEY, id);
+  } catch {
+    /* private mode */
+  }
   window.dispatchEvent(new Event(EVT));
 }
 
+/** Clears the "act as" selection and notifies listeners in this tab. */
 export function clearActAsClient() {
-  try { sessionStorage.removeItem(KEY); } catch { /* private mode */ }
+  try {
+    sessionStorage.removeItem(KEY);
+  } catch {
+    /* private mode */
+  }
   window.dispatchEvent(new Event(EVT));
 }
 
-// Reactive read: re-renders consumers whenever the selection changes (in this
-// tab via the custom event, or another tab via the native storage event).
+/**
+ * Reactive read: re-renders consumers whenever the selection changes (in this
+ * tab via the custom event, or another tab via the native storage event).
+ */
 export function useActAsClientId() {
   const [id, setId] = useState(getActAsClientId);
   useEffect(() => {

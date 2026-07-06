@@ -10,17 +10,26 @@ async function generateCodeChallenge(verifier) {
   const data = encoder.encode(verifier);
   const digest = await crypto.subtle.digest('SHA-256', data);
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
+/** Whether Microsoft SSO is configured for this environment (client ID present). */
 export function isMicrosoftSsoConfigured() {
   return !!import.meta.env.VITE_MICROSOFT_CLIENT_ID;
 }
 
 function getRedirectUri() {
-  return import.meta.env.VITE_MICROSOFT_REDIRECT_URI || (window.location.origin + '/auth/microsoft/callback');
+  return import.meta.env.VITE_MICROSOFT_REDIRECT_URI || window.location.origin + '/auth/microsoft/callback';
 }
 
+/**
+ * Kicks off the Microsoft OAuth2 PKCE login flow: stashes state/verifier/
+ * return URL for the callback step, then redirects the browser to the
+ * Microsoft authorize endpoint.
+ * @param {string} [returnUrl] - Where to send the user after login completes.
+ */
 export async function loginWithMicrosoft(returnUrl) {
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
   const tenant = import.meta.env.VITE_MICROSOFT_TENANT_ID;
@@ -36,8 +45,12 @@ export async function loginWithMicrosoft(returnUrl) {
 
   const msStore = { ms_state: state, ms_code_verifier: codeVerifier, ms_return_url: returnUrl || '/' };
   for (const [k, v] of Object.entries(msStore)) {
-    try { sessionStorage.setItem(k, v); } catch (e) {}
-    try { localStorage.setItem(k, v); } catch (e) {}
+    try {
+      sessionStorage.setItem(k, v);
+    } catch (e) {}
+    try {
+      localStorage.setItem(k, v);
+    } catch (e) {}
   }
 
   const params = new URLSearchParams({
@@ -54,6 +67,12 @@ export async function loginWithMicrosoft(returnUrl) {
   window.location.href = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?${params}`;
 }
 
+/**
+ * Handles the redirect back from Microsoft: validates the `state` param
+ * against what was stored before redirecting, then exchanges the
+ * authorization code for an id token.
+ * @returns {Promise<{idToken: string, returnUrl: string}>}
+ */
 export async function handleMicrosoftCallback() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
@@ -76,12 +95,16 @@ export async function handleMicrosoftCallback() {
   const returnUrl = sessionStorage.getItem('ms_return_url') || localStorage.getItem('ms_return_url') || '/';
 
   for (const k of ['ms_state', 'ms_code_verifier', 'ms_return_url']) {
-    try { sessionStorage.removeItem(k); } catch (e) {}
-    try { localStorage.removeItem(k); } catch (e) {}
+    try {
+      sessionStorage.removeItem(k);
+    } catch (e) {}
+    try {
+      localStorage.removeItem(k);
+    } catch (e) {}
   }
 
   if (!savedState || state !== savedState) {
-    throw new Error(`Invalid state. url=${state?.slice(0,8)} ss=${ssState?.slice(0,8)} ls=${lsState?.slice(0,8)}`);
+    throw new Error(`Invalid state. url=${state?.slice(0, 8)} ss=${ssState?.slice(0, 8)} ls=${lsState?.slice(0, 8)}`);
   }
 
   if (!codeVerifier) {
@@ -113,6 +136,7 @@ export async function handleMicrosoftCallback() {
   return { idToken: tokenData.id_token, returnUrl };
 }
 
+/** Sends the Microsoft id token to the backend to establish a session, returning the resolved app user. */
 export async function exchangeIdTokenWithServer(idToken) {
   let res;
   try {

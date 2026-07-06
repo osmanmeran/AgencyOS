@@ -35,17 +35,21 @@ function getTransporter() {
 
   transporter = nodemailer.createTransport(config);
 
-  transporter.verify().then(() => {
-    logger.info({ host: config.host }, 'SMTP connection verified');
-  }).catch((err) => {
-    logger.error({ err: err.message }, 'SMTP connection verification failed');
-    transporter = null;
-    smtpFailed = true;
-  });
+  transporter
+    .verify()
+    .then(() => {
+      logger.info({ host: config.host }, 'SMTP connection verified');
+    })
+    .catch((err) => {
+      logger.error({ err: err.message }, 'SMTP connection verification failed');
+      transporter = null;
+      smtpFailed = true;
+    });
 
   return transporter;
 }
 
+/** @returns {boolean} True if SMTP_HOST is set, i.e. real email sending is possible. */
 export function isSmtpConfigured() {
   return !!getSmtpConfig();
 }
@@ -73,7 +77,9 @@ const TEMPLATES = {
     </html>
   `,
 
-  proposal: ({ clientName, destination, proposalUrl, agentName }) => TEMPLATES.generic({ content: `
+  proposal: ({ clientName, destination, proposalUrl, agentName }) =>
+    TEMPLATES.generic({
+      content: `
     <h2 style="color: #1e293b; margin-top: 0;">New Travel Proposal</h2>
     <p>Dear ${clientName},</p>
     <p>We are excited to present a personalized travel proposal for your trip to <strong>${destination}</strong>.</p>
@@ -82,9 +88,12 @@ const TEMPLATES = {
       <a href="${proposalUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Your Proposal</a>
     </div>
     <p style="color: #64748b; font-size: 14px;">If you have any questions, please reply to this email or contact your travel specialist ${agentName}.</p>
-  ` }),
+  `,
+    }),
 
-  booking_confirmation: ({ clientName, reference, destination, dates, details }) => TEMPLATES.generic({ content: `
+  booking_confirmation: ({ clientName, reference, destination, dates, details }) =>
+    TEMPLATES.generic({
+      content: `
     <h2 style="color: #1e293b; margin-top: 0;">Booking Confirmed!</h2>
     <p>Dear ${clientName},</p>
     <p>Your booking has been confirmed. Here are the details:</p>
@@ -94,9 +103,12 @@ const TEMPLATES = {
       <tr><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">Dates</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${dates}</td></tr>
     </table>
     ${details ? `<p>${details}</p>` : ''}
-  ` }),
+  `,
+    }),
 
-  invite_user: ({ inviteUrl, inviterName }) => TEMPLATES.generic({ content: `
+  invite_user: ({ inviteUrl, inviterName }) =>
+    TEMPLATES.generic({
+      content: `
     <h2 style="color: #1e293b; margin-top: 0;">You're Invited!</h2>
     <p>You've been invited by <strong>${inviterName}</strong> to join <strong>Marvelops TravelPro</strong>.</p>
     <p>Click the button below to set up your account and get started:</p>
@@ -104,9 +116,12 @@ const TEMPLATES = {
       <a href="${inviteUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">Accept Invitation</a>
     </div>
     <p style="color: #64748b; font-size: 14px;">This link expires in 7 days.</p>
-  ` }),
+  `,
+    }),
 
-  quote_response: ({ clientName, quoteTitle, status, responseNotes, quoteUrl }) => TEMPLATES.generic({ content: `
+  quote_response: ({ clientName, quoteTitle, status, responseNotes, quoteUrl }) =>
+    TEMPLATES.generic({
+      content: `
     <h2 style="color: #1e293b; margin-top: 0;">Your Quote Request Has Been Updated</h2>
     <p>Dear ${clientName},</p>
     <p>Your quote request <strong>${quoteTitle}</strong> is now marked as <strong>${status}</strong>.</p>
@@ -114,9 +129,12 @@ const TEMPLATES = {
     <div style="text-align: center; margin: 24px 0;">
       <a href="${quoteUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Your Quote</a>
     </div>
-  ` }),
+  `,
+    }),
 
-  invoice: ({ clientName, invoiceNumber, amount, dueDate, invoiceUrl }) => TEMPLATES.generic({ content: `
+  invoice: ({ clientName, invoiceNumber, amount, dueDate, invoiceUrl }) =>
+    TEMPLATES.generic({
+      content: `
     <h2 style="color: #1e293b; margin-top: 0;">Invoice Ready</h2>
     <p>Dear ${clientName},</p>
     <p>Invoice <strong>${invoiceNumber}</strong> for <strong>${amount}</strong> is now available.</p>
@@ -124,9 +142,15 @@ const TEMPLATES = {
     <div style="text-align: center; margin: 24px 0;">
       <a href="${invoiceUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Invoice</a>
     </div>
-  ` }),
+  `,
+    }),
 };
 
+/**
+ * Render one of the named HTML {@link TEMPLATES}, falling back to the generic
+ * wrapper with raw `data.content` if the template name isn't recognized.
+ * @returns {string} Full HTML email body.
+ */
 export function renderTemplate(templateName, data) {
   const template = TEMPLATES[templateName];
   if (!template) return TEMPLATES.generic({ content: data.content || '' });
@@ -135,6 +159,11 @@ export function renderTemplate(templateName, data) {
 
 // ── Sending ────────────────────────────────────────────────────────────
 
+/**
+ * Send an email via SMTP if configured, otherwise just log it — either way the
+ * attempt is recorded in `email_logs`.
+ * @returns {Promise<{id: string, status: string, message: string}>}
+ */
 export async function sendEmail({ to, subject, body, template, templateData, cc, bcc }) {
   const db = getDb();
   const now = new Date().toISOString();
@@ -167,9 +196,14 @@ export async function sendEmail({ to, subject, body, template, templateData, cc,
   }
 
   // Always log to the database
-  db.prepare(
-    'INSERT INTO email_logs (id, to_email, subject, body, status, sent_date) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(logId, recipients.join(', '), subject, body || '', status, now);
+  db.prepare('INSERT INTO email_logs (id, to_email, subject, body, status, sent_date) VALUES (?, ?, ?, ?, ?, ?)').run(
+    logId,
+    recipients.join(', '),
+    subject,
+    body || '',
+    status,
+    now,
+  );
 
   return { id: logId, status, message: status === 'sent' ? 'Email sent' : 'Email logged locally' };
 }

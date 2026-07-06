@@ -7,6 +7,7 @@ let intervalHandle = null;
 const KEEP_BACKUPS = 14;
 const INTERVAL_MS = 24 * 60 * 60 * 1000;
 
+/** Run an immediate DB backup, then schedule one every 24 hours, pruning to {@link KEEP_BACKUPS}. */
 export function startBackupScheduler() {
   logger.info('Backup scheduler started');
 
@@ -25,6 +26,7 @@ export function startBackupScheduler() {
   logger.info('Backup scheduler scheduled (every 24 hours)');
 }
 
+/** Cancel the scheduled backup interval, if running. */
 export function stopBackupScheduler() {
   if (intervalHandle) {
     clearInterval(intervalHandle);

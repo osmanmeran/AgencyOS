@@ -14,8 +14,18 @@ function connect() {
     ws = new WebSocket(wsUrl);
     ws.onmessage = (event) => {
       let data;
-      try { data = JSON.parse(event.data); } catch { return; }
-      listeners.forEach((fn) => { try { fn(data); } catch { /* ignore listener errors */ } });
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      listeners.forEach((fn) => {
+        try {
+          fn(data);
+        } catch {
+          /* ignore listener errors */
+        }
+      });
     };
     ws.onclose = () => {
       ws = null;
@@ -26,24 +36,30 @@ function connect() {
   }
 }
 
-// Call when a consumer needs the connection open; pairs with releaseRealtime().
+/** Call when a consumer needs the connection open; pairs with {@link releaseRealtime}. */
 export function acquireRealtime() {
   refCount += 1;
   closedManually = false;
   if (!ws) connect();
 }
 
-// Call on consumer unmount. Only tears the socket down once nobody needs it.
+/** Call on consumer unmount. Only tears the socket down once nobody needs it. */
 export function releaseRealtime() {
   refCount = Math.max(0, refCount - 1);
   if (refCount === 0) {
     closedManually = true;
     if (reconnectTimer) clearTimeout(reconnectTimer);
-    if (ws) { ws.close(); ws = null; }
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
   }
 }
 
-// Subscribe to incoming messages. Returns an unsubscribe function.
+/**
+ * Subscribes to incoming messages.
+ * @returns {Function} Unsubscribe function.
+ */
 export function onRealtimeMessage(handler) {
   listeners.add(handler);
   return () => listeners.delete(handler);

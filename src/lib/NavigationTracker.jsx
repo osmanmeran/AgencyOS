@@ -6,47 +6,53 @@ import { useAuth } from './AuthContext';
 
 import { pagesConfig } from '@/pages.config';
 
+/**
+ * Headless route watcher: notifies the parent window of URL changes (for
+ * embedding contexts) and logs authenticated page visits for activity
+ * tracking. Renders nothing.
+ */
 export default function NavigationTracker() {
-    const location = useLocation();
-    const { isAuthenticated } = useAuth();
-    const { Pages, mainPage } = pagesConfig;
-    const mainPageKey = mainPage ?? Object.keys(Pages)[0];
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const { Pages, mainPage } = pagesConfig;
+  const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 
-    // Post navigation changes to parent window
-    useEffect(() => {
-        window.parent?.postMessage({
-            type: "app_changed_url",
-            url: window.location.href
-        }, window.location.origin);
-    }, [location]);
+  // Post navigation changes to parent window
+  useEffect(() => {
+    window.parent?.postMessage(
+      {
+        type: 'app_changed_url',
+        url: window.location.href,
+      },
+      window.location.origin,
+    );
+  }, [location]);
 
-    // Log user activity when navigating to a page
-    useEffect(() => {
-        // Extract page name from pathname
-        const pathname = location.pathname;
-        let pageName;
-        
-        if (pathname === '/' || pathname === '') {
-            pageName = mainPageKey;
-        } else {
-            // Remove leading slash and get the first segment
-            const pathSegment = pathname.replace(/^\//, '').split('/')[0];
-            
-            // Try case-insensitive lookup in Pages config
-            const pageKeys = Object.keys(Pages);
-            const matchedKey = pageKeys.find(
-                key => key.toLowerCase() === pathSegment.toLowerCase()
-            );
-            
-            pageName = matchedKey || null;
-        }
+  // Log user activity when navigating to a page
+  useEffect(() => {
+    // Extract page name from pathname
+    const pathname = location.pathname;
+    let pageName;
 
-        if (isAuthenticated && pageName) {
-            db.appLogs?.logUserInApp(pageName).catch(() => {
-                // Silently fail - logging shouldn't break the app
-            });
-        }
-    }, [location, isAuthenticated, Pages, mainPageKey]);
+    if (pathname === '/' || pathname === '') {
+      pageName = mainPageKey;
+    } else {
+      // Remove leading slash and get the first segment
+      const pathSegment = pathname.replace(/^\//, '').split('/')[0];
 
-    return null;
+      // Try case-insensitive lookup in Pages config
+      const pageKeys = Object.keys(Pages);
+      const matchedKey = pageKeys.find((key) => key.toLowerCase() === pathSegment.toLowerCase());
+
+      pageName = matchedKey || null;
+    }
+
+    if (isAuthenticated && pageName) {
+      db.appLogs?.logUserInApp(pageName).catch(() => {
+        // Silently fail - logging shouldn't break the app
+      });
+    }
+  }, [location, isAuthenticated, Pages, mainPageKey]);
+
+  return null;
 }

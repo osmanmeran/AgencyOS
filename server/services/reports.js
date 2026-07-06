@@ -4,6 +4,12 @@ function num(x) {
   return typeof x === 'number' && Number.isFinite(x) ? x : 0;
 }
 
+/**
+ * Build the dashboard revenue summary: collected revenue, outstanding invoice
+ * balance, this month's confirmed trip revenue, proposal accept rate, and
+ * upcoming payment dues in the next 30 days.
+ * @returns {object} Revenue overview metrics.
+ */
 export function getRevenueOverview() {
   const db = getDb();
   const now = new Date();
@@ -12,48 +18,70 @@ export function getRevenueOverview() {
   const todayStr = now.toISOString().slice(0, 10);
   const next30Str = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-  const totalRevenue = db.prepare(`
+  const totalRevenue = db
+    .prepare(
+      `
     SELECT COALESCE(SUM(json_extract(data, '$.amount')), 0) AS total FROM entities
     WHERE type = 'ClientPayment' AND json_extract(data, '$.status') = 'completed'
-  `).get().total;
+  `,
+    )
+    .get().total;
 
-  const totalOutstanding = db.prepare(`
+  const totalOutstanding = db
+    .prepare(
+      `
     SELECT COALESCE(SUM(json_extract(data, '$.amount_due')), 0) AS total FROM entities
     WHERE type = 'Invoice' AND json_extract(data, '$.status') NOT IN ('paid', 'cancelled')
-  `).get().total;
+  `,
+    )
+    .get().total;
 
-  const confirmedThisMonth = db.prepare(`
+  const confirmedThisMonth = db
+    .prepare(
+      `
     SELECT COUNT(*) AS count, COALESCE(SUM(json_extract(data, '$.total_cost')), 0) AS total FROM entities
     WHERE type = 'Trip' AND json_extract(data, '$.proposal_status') = 'confirmed'
     AND created_date >= ? AND created_date < ?
-  `).get(monthStart, monthEndExclusive);
+  `,
+    )
+    .get(monthStart, monthEndExclusive);
 
-  const proposalCounts = db.prepare(`
+  const proposalCounts = db
+    .prepare(
+      `
     SELECT
       COUNT(*) AS total,
       SUM(CASE WHEN json_extract(data, '$.status') = 'sent' THEN 1 ELSE 0 END) AS pending,
       SUM(CASE WHEN json_extract(data, '$.status') = 'accepted' THEN 1 ELSE 0 END) AS accepted
     FROM entities WHERE type = 'Proposal'
-  `).get();
+  `,
+    )
+    .get();
 
-  const upcomingRows = db.prepare(`
+  const upcomingRows = db
+    .prepare(
+      `
     SELECT id, data FROM entities WHERE type = 'Invoice'
     AND json_extract(data, '$.status') NOT IN ('paid', 'cancelled')
     AND json_extract(data, '$.due_date') <= ?
     ORDER BY json_extract(data, '$.due_date') ASC
     LIMIT 10
-  `).all(next30Str);
+  `,
+    )
+    .all(next30Str);
 
-  const clientIds = [...new Set(upcomingRows.map(r => JSON.parse(r.data).client_id).filter(Boolean))];
+  const clientIds = [...new Set(upcomingRows.map((r) => JSON.parse(r.data).client_id).filter(Boolean))];
   const clientNames = {};
   if (clientIds.length) {
     const placeholders = clientIds.map(() => '?').join(',');
     db.prepare(`SELECT id, data FROM entities WHERE type = 'Client' AND id IN (${placeholders})`)
       .all(...clientIds)
-      .forEach(r => { clientNames[r.id] = JSON.parse(r.data).name; });
+      .forEach((r) => {
+        clientNames[r.id] = JSON.parse(r.data).name;
+      });
   }
 
-  const upcomingPaymentDues = upcomingRows.map(r => {
+  const upcomingPaymentDues = upcomingRows.map((r) => {
     const inv = JSON.parse(r.data);
     return {
       id: r.id,
@@ -65,9 +93,8 @@ export function getRevenueOverview() {
     };
   });
 
-  const proposalAcceptRate = proposalCounts.total > 0
-    ? Math.round((proposalCounts.accepted / proposalCounts.total) * 100)
-    : 0;
+  const proposalAcceptRate =
+    proposalCounts.total > 0 ? Math.round((proposalCounts.accepted / proposalCounts.total) * 100) : 0;
 
   return {
     totalRevenue: num(totalRevenue),
@@ -81,20 +108,30 @@ export function getRevenueOverview() {
   };
 }
 
+/**
+ * Compute per-trip and per-agent commission from completed/confirmed trips,
+ * using each trip's explicit `commission_rate`, or its `markup_percentage`
+ * converted to a decimal rate, or a 10% default.
+ * @returns {object} Totals plus per-trip and per-agent breakdowns.
+ */
 export function getCommissionReport() {
   const db = getDb();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT id, data FROM entities WHERE type = 'Trip'
     AND json_extract(data, '$.status') IN ('completed', 'confirmed')
-  `).all();
+  `,
+    )
+    .all();
 
-  const trips = rows.map(r => {
+  const trips = rows.map((r) => {
     const t = JSON.parse(r.data);
     const cost = num(t.total_cost);
     const price = num(t.final_price);
     const profit = price - cost;
-    const commissionRate = t.commission_rate != null ? t.commission_rate
-      : (t.markup_percentage ? t.markup_percentage / 100 : 0.1);
+    const commissionRate =
+      t.commission_rate != null ? t.commission_rate : t.markup_percentage ? t.markup_percentage / 100 : 0.1;
     const commission = profit * commissionRate;
     return {
       id: r.id,
@@ -109,13 +146,16 @@ export function getCommissionReport() {
     };
   });
 
-  const totals = trips.reduce((acc, t) => {
-    acc.totalCommission += t.commission;
-    acc.totalProfit += t.profit;
-    acc.totalRevenue += t.final_price;
-    acc.rateSum += t.commissionRate;
-    return acc;
-  }, { totalCommission: 0, totalProfit: 0, totalRevenue: 0, rateSum: 0 });
+  const totals = trips.reduce(
+    (acc, t) => {
+      acc.totalCommission += t.commission;
+      acc.totalProfit += t.profit;
+      acc.totalRevenue += t.final_price;
+      acc.rateSum += t.commissionRate;
+      return acc;
+    },
+    { totalCommission: 0, totalProfit: 0, totalRevenue: 0, rateSum: 0 },
+  );
 
   const avgCommissionRate = trips.length ? totals.rateSum / trips.length : 0;
 

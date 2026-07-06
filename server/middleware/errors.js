@@ -52,9 +52,11 @@ export function sendError(res, statusCode, code, message) {
 }
 
 export function errorHandler(err, req, res, _next) {
+  const requestId = req.id;
+
   if (err.isOperational) {
     return res.status(err.statusCode).json({
-      error: { code: err.code, message: err.message },
+      error: { code: err.code, message: err.message, request_id: requestId },
     });
   }
 
@@ -63,14 +65,15 @@ export function errorHandler(err, req, res, _next) {
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Invalid request data',
-        details: err.errors.map(e => ({ path: e.path.join('.'), message: e.message })),
+        details: err.errors.map((e) => ({ path: e.path.join('.'), message: e.message })),
+        request_id: requestId,
       },
     });
   }
 
-  logger.error({ err, statusCode: 500 }, 'Unhandled error');
+  (req.log || logger).error({ err, statusCode: 500, requestId }, 'Unhandled error');
   res.status(500).json({
-    error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' },
+    error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred', request_id: requestId },
   });
 }
 

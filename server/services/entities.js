@@ -1,4 +1,4 @@
-import { getDb, uid, getEntities } from '../db.js';
+import { getDb, uid, getEntities, hasFts } from '../db.js';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../middleware/errors.js';
 import { hasPermission } from '../permissions.js';
 
@@ -10,21 +10,66 @@ const ENTITY_PERMISSION_MAP = {
   Reservation: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
   SupplierBooking: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
   Invoice: { create: 'create_invoices', read: 'view_invoices', update: 'modify_invoices', delete: 'delete_invoices' },
-  ClientPayment: { create: 'create_invoices', read: 'view_invoices', update: 'modify_invoices', delete: 'delete_invoices' },
-  Proposal: { create: 'create_proposals', read: 'view_all_data', update: 'modify_proposals', delete: 'delete_proposals' },
-  Supplier: { create: 'create_suppliers', read: 'view_all_data', update: 'modify_suppliers', delete: 'delete_suppliers' },
-  SupplierInvoice: { create: 'create_invoices', read: 'view_invoices', update: 'modify_invoices', delete: 'delete_invoices' },
+  ClientPayment: {
+    create: 'create_invoices',
+    read: 'view_invoices',
+    update: 'modify_invoices',
+    delete: 'delete_invoices',
+  },
+  Proposal: {
+    create: 'create_proposals',
+    read: 'view_all_data',
+    update: 'modify_proposals',
+    delete: 'delete_proposals',
+  },
+  Supplier: {
+    create: 'create_suppliers',
+    read: 'view_all_data',
+    update: 'modify_suppliers',
+    delete: 'delete_suppliers',
+  },
+  SupplierInvoice: {
+    create: 'create_invoices',
+    read: 'view_invoices',
+    update: 'modify_invoices',
+    delete: 'delete_invoices',
+  },
   Client: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
   Company: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
   Service: { create: 'create_services', read: 'view_all_data', update: 'modify_services', delete: 'delete_services' },
-  BookingTemplate: { create: 'manage_booking_templates', read: 'view_all_data', update: 'manage_booking_templates', delete: 'manage_booking_templates' },
-  Category: { create: 'manage_categories', read: 'view_all_data', update: 'manage_categories', delete: 'manage_categories' },
-  TourContract: { create: 'manage_tour_contracts', read: 'view_all_data', update: 'manage_tour_contracts', delete: 'manage_tour_contracts' },
-  Suggestion: { create: 'view_own_data', read: 'view_all_data', update: 'manage_app_settings', delete: 'manage_app_settings' },
+  BookingTemplate: {
+    create: 'manage_booking_templates',
+    read: 'view_all_data',
+    update: 'manage_booking_templates',
+    delete: 'manage_booking_templates',
+  },
+  Category: {
+    create: 'manage_categories',
+    read: 'view_all_data',
+    update: 'manage_categories',
+    delete: 'manage_categories',
+  },
+  TourContract: {
+    create: 'manage_tour_contracts',
+    read: 'view_all_data',
+    update: 'manage_tour_contracts',
+    delete: 'manage_tour_contracts',
+  },
+  Suggestion: {
+    create: 'view_own_data',
+    read: 'view_all_data',
+    update: 'manage_app_settings',
+    delete: 'manage_app_settings',
+  },
   // Client-portal users submit quote requests through the dedicated /api/b2b routes
   // (which write directly to the DB), not this generic entity API — so the create/update/delete
   // permissions here only need to cover staff review workflows.
-  QuoteRequest: { create: 'manage_quote_requests', read: 'view_quote_requests', update: 'manage_quote_requests', delete: 'manage_quote_requests' },
+  QuoteRequest: {
+    create: 'manage_quote_requests',
+    read: 'view_quote_requests',
+    update: 'manage_quote_requests',
+    delete: 'manage_quote_requests',
+  },
 };
 
 function requireEntityPermission(user, entityType, action) {
@@ -40,23 +85,34 @@ function requireEntityPermission(user, entityType, action) {
   }
 }
 
-function hasFts(db) {
-  try { db.prepare("SELECT 1 FROM entities_fts LIMIT 0").get(); return true; } catch { return false; }
-}
-
 function upsertFts(db, id, type, data) {
   if (!hasFts(db)) return;
   try {
-    db.prepare("DELETE FROM entities_fts WHERE id = ?").run(id);
-    db.prepare("INSERT INTO entities_fts(id, type, label, content) VALUES (?, ?, ?, ?)").run(id, type, type, JSON.stringify(data));
+    db.prepare('DELETE FROM entities_fts WHERE id = ?').run(id);
+    db.prepare('INSERT INTO entities_fts(id, type, label, content) VALUES (?, ?, ?, ?)').run(
+      id,
+      type,
+      type,
+      JSON.stringify(data),
+    );
   } catch {}
 }
 
 function deleteFts(db, id) {
   if (!hasFts(db)) return;
-  try { db.prepare("DELETE FROM entities_fts WHERE id = ?").run(id); } catch {}
+  try {
+    db.prepare('DELETE FROM entities_fts WHERE id = ?').run(id);
+  } catch {}
 }
 
+/**
+ * Row-level access check applied to every generic-entity read/write: admins
+ * and managers see everything, client/supplier portal users are scoped to
+ * their own records, and other staff (agent/accounting) pass this check for
+ * any record — the actual per-entity-type restriction for them comes from
+ * the separate `ENTITY_PERMISSION_MAP` permission-key check, not this function.
+ * @returns {boolean} Whether `user` may access this entity record.
+ */
 export function userCanAccessEntity(user, entityType, entityData) {
   const tier = user.user_tier || 'agent';
   if (tier === 'admin' || tier === 'manager') return true;
@@ -108,6 +164,12 @@ export function userCanAccessEntity(user, entityType, entityData) {
   return entityData.created_by === user.id || entityData.user_id === user.id;
 }
 
+/**
+ * Strip prototype-pollution-prone keys (`__proto__`, `constructor`,
+ * `prototype`) and Mongo-style operator/dotted keys before storing user input
+ * as JSON.
+ * @returns {*} The sanitized copy (non-objects/arrays are returned as-is).
+ */
 export function sanitizeEntityData(data) {
   if (data === null || data === undefined || Array.isArray(data)) return data;
   const safe = {};
@@ -119,6 +181,7 @@ export function sanitizeEntityData(data) {
   return safe;
 }
 
+/** @throws {BadRequestError} If `type` isn't a registered entity type. */
 export function assertValidEntityType(type) {
   const entities = getEntities();
   if (!entities.includes(type)) {
@@ -126,6 +189,7 @@ export function assertValidEntityType(type) {
   }
 }
 
+/** @returns {object|null} Parsed JSON filter, or null if missing/invalid JSON. */
 export function parseFilter(filterStr) {
   if (!filterStr) return null;
   try {
@@ -135,6 +199,12 @@ export function parseFilter(filterStr) {
   }
 }
 
+/**
+ * Reject filters using dotted/`$`-prefixed keys (except the allowed `$in`,
+ * `$gte`, `$lte` operators), to keep query filters from reaching into nested
+ * JSON structure or unsupported operators.
+ * @returns {boolean} True if the filter is safe to apply.
+ */
 export function isFilterSafe(filter) {
   if (!filter || typeof filter !== 'object') return true;
   for (const [k, v] of Object.entries(filter)) {
@@ -149,8 +219,13 @@ export function isFilterSafe(filter) {
   return true;
 }
 
+/**
+ * Filter raw entity rows by both access control ({@link userCanAccessEntity})
+ * and field-match filter conditions (equality, or `$in`/`$gte`/`$lte`).
+ * @returns {object[]} Rows (still raw, with `data` as a JSON string) that pass both checks.
+ */
 export function applyFilter(records, filter, user, type) {
-  return records.filter(r => {
+  return records.filter((r) => {
     const data = JSON.parse(r.data);
     // id lives in the row, not the JSON body — userCanAccessEntity needs it
     // (e.g. to match a Client record's own id against user.client_id).
@@ -167,25 +242,38 @@ export function applyFilter(records, filter, user, type) {
   });
 }
 
+/**
+ * @param {string} [sort] - Field name; a leading `-` means descending.
+ * @returns {object[]} A new sorted array (input is not mutated).
+ */
 export function applySort(records, sort) {
   if (!sort) return records;
   const dir = sort.startsWith('-') ? -1 : 1;
   const field = sort.replace(/^-/, '');
   return [...records].sort((a, b) => {
-    const av = a[field] ?? '', bv = b[field] ?? '';
+    const av = a[field] ?? '',
+      bv = b[field] ?? '';
     return dir * (typeof av === 'string' ? av.localeCompare(bv) : av - bv);
   });
 }
 
+/** @returns {object} A raw `entities` row flattened into `{ id, ...data, created_date, updated_date }`. */
 export function mapRecord(r) {
   return { id: r.id, ...JSON.parse(r.data), created_date: r.created_date, updated_date: r.updated_date };
 }
 
 function matchesSearch(record, search) {
   const needle = search.toLowerCase();
-  return Object.values(record).some(v => typeof v === 'string' && v.toLowerCase().includes(needle));
+  return Object.values(record).some((v) => typeof v === 'string' && v.toLowerCase().includes(needle));
 }
 
+/**
+ * Core generic-entity list query: access-controlled, optionally filtered,
+ * text-searched, sorted, and paginated.
+ * @returns {object[]|{data: object[], total: number}} Plain array if no
+ *   limit/offset given (back-compat for existing call sites), otherwise a
+ *   paginated `{ data, total }` envelope.
+ */
 export function findEntities(type, { sort, filter, search, limit, offset, user } = {}) {
   assertValidEntityType(type);
   const db = getDb();
@@ -200,11 +288,11 @@ export function findEntities(type, { sort, filter, search, limit, offset, user }
     records = applyFilter(raw, parsed, user, type).map(mapRecord);
   } else {
     records = db.prepare('SELECT * FROM entities WHERE type = ?').all(type).map(mapRecord);
-    records = records.filter(r => userCanAccessEntity(user, type, r));
+    records = records.filter((r) => userCanAccessEntity(user, type, r));
   }
 
   if (search && search.trim()) {
-    records = records.filter(r => matchesSearch(r, search.trim()));
+    records = records.filter((r) => matchesSearch(r, search.trim()));
   }
 
   records = applySort(records, sort);
@@ -224,6 +312,10 @@ export function findEntities(type, { sort, filter, search, limit, offset, user }
   return records;
 }
 
+/**
+ * @returns {object} The entity, mapped via {@link mapRecord}.
+ * @throws {NotFoundError|ForbiddenError}
+ */
 export function findEntityById(type, id, user) {
   assertValidEntityType(type);
   const db = getDb();
@@ -237,6 +329,11 @@ export function findEntityById(type, id, user) {
   return data;
 }
 
+/**
+ * Insert a new entity row, stamping `created_by` and keeping the FTS index in sync.
+ * @returns {object} The created entity.
+ * @throws {ForbiddenError} If the user lacks the type's create permission.
+ */
 export function createEntity(type, body, user) {
   assertValidEntityType(type);
   requireEntityPermission(user, type, 'create');
@@ -247,14 +344,24 @@ export function createEntity(type, body, user) {
   delete data.id;
 
   const db = getDb();
-  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)')
-    .run(id, type, JSON.stringify(data), now, now);
+  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+    id,
+    type,
+    JSON.stringify(data),
+    now,
+    now,
+  );
 
   upsertFts(db, id, type, data);
 
   return { id, ...data, created_date: now, updated_date: now };
 }
 
+/**
+ * Merge `body` into an existing entity's JSON data and keep the FTS index in sync.
+ * @returns {object} The updated entity.
+ * @throws {NotFoundError|ForbiddenError}
+ */
 export function updateEntity(type, id, body, user) {
   assertValidEntityType(type);
   requireEntityPermission(user, type, 'update');
@@ -271,14 +378,18 @@ export function updateEntity(type, id, body, user) {
   const newData = sanitizeEntityData({ ...existingData, ...body });
   delete newData.id;
 
-  db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?')
-    .run(JSON.stringify(newData), now, id);
+  db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(JSON.stringify(newData), now, id);
 
   upsertFts(db, id, type, newData);
 
   return { id, ...newData, created_date: existing.created_date, updated_date: now };
 }
 
+/**
+ * Delete an entity row and remove it from the FTS index.
+ * @returns {object} The deleted entity, as it was before removal.
+ * @throws {NotFoundError|ForbiddenError}
+ */
 export function deleteEntity(type, id, user) {
   assertValidEntityType(type);
   requireEntityPermission(user, type, 'delete');
@@ -299,6 +410,11 @@ export function deleteEntity(type, id, user) {
 
 const MAX_BULK_SIZE = 500;
 
+/**
+ * Create up to {@link MAX_BULK_SIZE} entities in a single transaction.
+ * @returns {object[]} The created entities.
+ * @throws {BadRequestError} If `records` is empty or exceeds the bulk size limit.
+ */
 export function bulkCreateEntities(type, records, user) {
   assertValidEntityType(type);
   requireEntityPermission(user, type, 'create');
@@ -312,22 +428,34 @@ export function bulkCreateEntities(type, records, user) {
   const db = getDb();
   const now = new Date().toISOString();
 
-  const insert = db.transaction((items) => items.map(body => {
-    const id = uid();
-    const data = sanitizeEntityData({ ...body });
-    data.created_by = user.id;
-    delete data.id;
-    db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)')
-      .run(id, type, JSON.stringify(data), now, now);
-    upsertFts(db, id, type, data);
-    return { id, ...data, created_date: now, updated_date: now };
-  }));
+  const insert = db.transaction((items) =>
+    items.map((body) => {
+      const id = uid();
+      const data = sanitizeEntityData({ ...body });
+      data.created_by = user.id;
+      delete data.id;
+      db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+        id,
+        type,
+        JSON.stringify(data),
+        now,
+        now,
+      );
+      upsertFts(db, id, type, data);
+      return { id, ...data, created_date: now, updated_date: now };
+    }),
+  );
 
   return insert(records);
 }
 
-// For update/delete, inaccessible or missing records are skipped rather than
-// failing the whole batch — the caller gets back exactly which ids succeeded.
+/**
+ * Apply the same field patch to multiple entities in one transaction.
+ * Inaccessible or missing records are skipped rather than failing the whole
+ * batch — the caller gets back exactly which ids succeeded.
+ * @returns {{updated: object[], skipped: {id: string, reason: string}[]}}
+ * @throws {BadRequestError} If `ids` is empty or exceeds the bulk size limit.
+ */
 export function bulkUpdateEntities(type, ids, body, user) {
   assertValidEntityType(type);
   requireEntityPermission(user, type, 'update');
@@ -348,10 +476,16 @@ export function bulkUpdateEntities(type, ids, body, user) {
     const skipped = [];
     for (const id of idList) {
       const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
-      if (!existing) { skipped.push({ id, reason: 'not_found' }); continue; }
+      if (!existing) {
+        skipped.push({ id, reason: 'not_found' });
+        continue;
+      }
 
       const existingData = JSON.parse(existing.data);
-      if (!userCanAccessEntity(user, type, existingData)) { skipped.push({ id, reason: 'forbidden' }); continue; }
+      if (!userCanAccessEntity(user, type, existingData)) {
+        skipped.push({ id, reason: 'forbidden' });
+        continue;
+      }
 
       const newData = { ...existingData, ...newFields };
       db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(JSON.stringify(newData), now, id);
@@ -364,6 +498,12 @@ export function bulkUpdateEntities(type, ids, body, user) {
   return run(ids);
 }
 
+/**
+ * Delete multiple entities in one transaction; inaccessible or missing
+ * records are skipped rather than failing the whole batch.
+ * @returns {{deleted: string[], skipped: {id: string, reason: string}[]}}
+ * @throws {BadRequestError} If `ids` is empty or exceeds the bulk size limit.
+ */
 export function bulkDeleteEntities(type, ids, user) {
   assertValidEntityType(type);
   requireEntityPermission(user, type, 'delete');
@@ -381,10 +521,16 @@ export function bulkDeleteEntities(type, ids, user) {
     const skipped = [];
     for (const id of idList) {
       const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
-      if (!existing) { skipped.push({ id, reason: 'not_found' }); continue; }
+      if (!existing) {
+        skipped.push({ id, reason: 'not_found' });
+        continue;
+      }
 
       const existingData = JSON.parse(existing.data);
-      if (!userCanAccessEntity(user, type, existingData)) { skipped.push({ id, reason: 'forbidden' }); continue; }
+      if (!userCanAccessEntity(user, type, existingData)) {
+        skipped.push({ id, reason: 'forbidden' });
+        continue;
+      }
 
       db.prepare('DELETE FROM entities WHERE id = ?').run(id);
       deleteFts(db, id);

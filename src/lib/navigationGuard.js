@@ -15,10 +15,12 @@
 let activeMessage = null;
 let installed = false;
 
+/** Arms the guard: in-app link clicks will confirm with `message` before navigating away. */
 export function registerDirtyGuard(message) {
   activeMessage = message;
 }
 
+/** Disarms the guard (call once the form is no longer dirty / is saved). */
 export function unregisterDirtyGuard() {
   activeMessage = null;
 }
@@ -39,7 +41,11 @@ function handleClick(e) {
   if (!href || href.startsWith('#')) return;
 
   let url;
-  try { url = new URL(href, window.location.href); } catch { return; }
+  try {
+    url = new URL(href, window.location.href);
+  } catch {
+    return;
+  }
   if (url.origin !== window.location.origin) return; // let beforeunload handle external navigation
 
   if (!window.confirm(activeMessage)) {
@@ -48,6 +54,11 @@ function handleClick(e) {
   }
 }
 
+/**
+ * Installs the app-wide click listener that intercepts in-app link
+ * navigation while a dirty-form guard is registered. Idempotent — safe to
+ * call more than once.
+ */
 export function installGlobalNavigationGuard() {
   if (installed) return;
   installed = true;

@@ -4,6 +4,7 @@ import { createNotification } from './notifications.js';
 
 let intervalHandle = null;
 
+/** Run an immediate reminder check, then repeat it every 60 minutes (due-soon/overdue invoices, trips starting tomorrow). */
 export function startReminderService() {
   logger.info('Reminder service started');
 
@@ -21,6 +22,7 @@ export function startReminderService() {
   logger.info('Reminder service scheduled (every 60 minutes)');
 }
 
+/** Cancel the scheduled reminder-check interval, if running. */
 export function stopReminderService() {
   if (intervalHandle) {
     clearInterval(intervalHandle);
@@ -37,11 +39,15 @@ function checkPendingInvoices() {
   // Range (not exact-day equality) so a missed hourly run — e.g. the server
   // was down on the exact day an invoice crossed the 3-day mark — still
   // catches up instead of permanently skipping that invoice's reminder.
-  const dueSoon = db.prepare(`
+  const dueSoon = db
+    .prepare(
+      `
     SELECT id, data FROM entities WHERE type = 'Invoice'
     AND json_extract(data, '$.status') = 'sent'
     AND json_extract(data, '$.due_date') BETWEEN ? AND ?
-  `).all(today, threeDaysFromNow);
+  `,
+    )
+    .all(today, threeDaysFromNow);
 
   for (const row of dueSoon) {
     const data = JSON.parse(row.data);
@@ -49,11 +55,15 @@ function checkPendingInvoices() {
     createNotificationForEntity(db, row.id, 'invoice_due_soon', `Invoice ${data.invoice_number} is due soon`);
   }
 
-  const overdue = db.prepare(`
+  const overdue = db
+    .prepare(
+      `
     SELECT id, data FROM entities WHERE type = 'Invoice'
     AND json_extract(data, '$.status') = 'sent'
     AND json_extract(data, '$.due_date') < ?
-  `).all(today);
+  `,
+    )
+    .all(today);
 
   for (const row of overdue) {
     const data = JSON.parse(row.data);
@@ -66,16 +76,25 @@ function checkUpcomingTrips() {
   const db = getDb();
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-  const starting = db.prepare(`
+  const starting = db
+    .prepare(
+      `
     SELECT id, data FROM entities WHERE type = 'Trip'
     AND json_extract(data, '$.status') IN ('confirmed', 'in_progress')
     AND json_extract(data, '$.start_date') = ?
-  `).all(tomorrow);
+  `,
+    )
+    .all(tomorrow);
 
   for (const row of starting) {
     const data = JSON.parse(row.data);
     logger.info({ trip_id: row.id, name: data.name }, 'Trip starting tomorrow');
-    createNotificationForEntity(db, row.id, 'trip_starting_soon', `Trip "${data.name}" to ${data.destination} starts tomorrow!`);
+    createNotificationForEntity(
+      db,
+      row.id,
+      'trip_starting_soon',
+      `Trip "${data.name}" to ${data.destination} starts tomorrow!`,
+    );
   }
 }
 
@@ -90,16 +109,21 @@ function createNotificationForEntity(db, entityId, type, message) {
   // The notifications table has no reference_id column — the actual schema
   // is (id, user_id, type, title, message, data, read, created_date), same
   // as server/services/notifications.js. Store the entity link in `data`.
-  const existing = db.prepare(
-    `SELECT id FROM notifications WHERE user_id = ? AND type = ? AND json_extract(data, '$.entityId') = ? AND created_date > ?`
-  ).get(userId, type, entityId, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+  const existing = db
+    .prepare(
+      `SELECT id FROM notifications WHERE user_id = ? AND type = ? AND json_extract(data, '$.entityId') = ? AND created_date > ?`,
+    )
+    .get(userId, type, entityId, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
   if (existing) return;
 
   // Also emails the user if they've opted into email notifications
   // (services/notifications.js checks the preference and no-ops otherwise).
   createNotification({
-    userId, type, title: message, message,
+    userId,
+    type,
+    title: message,
+    message,
     data: { entityId },
     email: { subject: message, body: message },
   });

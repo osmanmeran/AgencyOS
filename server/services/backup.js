@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
+/** @returns {string} Path to the `backups/` directory under the given data dir. */
 export function getBackupDir(dataDir) {
   return path.join(dataDir, 'backups');
 }
@@ -10,9 +11,12 @@ function backupFilename(label) {
   return `marvelops-${label}-${timestamp}.db`;
 }
 
-// Synchronous — safe to call from db.js's module-level init, before the
-// server (and any concurrent writers) exist yet. Checkpoints the WAL file
-// into the main .db first so the copy isn't missing recent writes.
+/**
+ * Synchronous file-copy backup — safe to call from db.js's module-level init,
+ * before the server (and any concurrent writers) exist yet. Checkpoints the
+ * WAL file into the main .db first so the copy isn't missing recent writes.
+ * @returns {string} Path to the created backup file.
+ */
 export function createBackupSync(db, dataDir, label) {
   const dir = getBackupDir(dataDir);
   fs.mkdirSync(dir, { recursive: true });
@@ -22,9 +26,12 @@ export function createBackupSync(db, dataDir, label) {
   return dest;
 }
 
-// Async — uses SQLite's official online backup API (safe against a live
-// database under concurrent writes), used by the daily scheduler while the
-// app is serving traffic.
+/**
+ * Async backup using SQLite's official online backup API (safe against a live
+ * database under concurrent writes), used by the daily scheduler while the
+ * app is serving traffic.
+ * @returns {Promise<string>} Path to the created backup file.
+ */
 export async function createBackupAsync(db, dataDir, label) {
   const dir = getBackupDir(dataDir);
   fs.mkdirSync(dir, { recursive: true });
@@ -33,26 +40,31 @@ export async function createBackupAsync(db, dataDir, label) {
   return dest;
 }
 
+/** @returns {string[]} Backup filenames in the data dir, newest first. */
 export function listBackups(dataDir) {
   const dir = getBackupDir(dataDir);
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter(f => f.endsWith('.db'))
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.db'))
     .sort()
     .reverse();
 }
 
-// Keeps the newest `keep` backups, deletes the rest. Returns the filenames
-// that were removed.
+/**
+ * Keep the newest `keep` backups, delete the rest.
+ * @returns {string[]} Filenames that were removed.
+ */
 export function pruneBackups(dataDir, keep = 14) {
   const dir = getBackupDir(dataDir);
   if (!fs.existsSync(dir)) return [];
-  const files = fs.readdirSync(dir)
-    .filter(f => f.endsWith('.db'))
-    .map(f => ({ name: f, mtime: fs.statSync(path.join(dir, f)).mtimeMs }))
+  const files = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.db'))
+    .map((f) => ({ name: f, mtime: fs.statSync(path.join(dir, f)).mtimeMs }))
     .sort((a, b) => b.mtime - a.mtime);
 
   const toRemove = files.slice(keep);
   for (const f of toRemove) fs.unlinkSync(path.join(dir, f.name));
-  return toRemove.map(f => f.name);
+  return toRemove.map((f) => f.name);
 }

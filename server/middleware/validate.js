@@ -8,10 +8,11 @@ export function validate(schema, source = 'body') {
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid request data',
-          details: result.error.errors.map(e => ({
+          details: result.error.errors.map((e) => ({
             path: e.path.join('.'),
             message: e.message,
           })),
+          request_id: req.id,
         },
       });
     }
@@ -30,51 +31,55 @@ export const schemas = {
     idToken: z.string().min(1, 'idToken is required'),
   }),
 
+  createUser: z
+    .object({
+      email: z.string().email('Invalid email format'),
+      password: z
+        .string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+        .regex(/[a-z]/, 'Password must contain a lowercase letter')
+        .regex(/[0-9]/, 'Password must contain a number'),
+      name: z.string().min(1, 'Name is required'),
+      user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional().default('agent'),
+      custom_permissions: z.array(z.string()).optional(),
+      departments: z.array(z.string()).optional(),
+      is_active: z.boolean().optional(),
+      client_id: z.string().optional(),
+    })
+    .refine((data) => data.user_tier !== 'client' || !!data.client_id, {
+      message: 'client_id is required when user_tier is "client"',
+      path: ['client_id'],
+    }),
 
-  createUser: z.object({
-    email: z.string().email('Invalid email format'),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(/[A-Z]/, 'Password must contain an uppercase letter')
-      .regex(/[a-z]/, 'Password must contain a lowercase letter')
-      .regex(/[0-9]/, 'Password must contain a number'),
-    name: z.string().min(1, 'Name is required'),
-    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional().default('agent'),
-    custom_permissions: z.array(z.string()).optional(),
-    departments: z.array(z.string()).optional(),
-    is_active: z.boolean().optional(),
-    client_id: z.string().optional(),
-  }).refine(data => data.user_tier !== 'client' || !!data.client_id, {
-    message: 'client_id is required when user_tier is "client"',
-    path: ['client_id'],
-  }),
-
-  updateUser: z.object({
-    name: z.string().optional(),
-    email: z.string().email('Invalid email format').optional(),
-    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional(),
-    language: z.string().optional(),
-    custom_permissions: z.array(z.string()).optional(),
-    departments: z.array(z.string()).optional(),
-    is_active: z.boolean().optional(),
-    // Nullable: the Edit User form always sends client_id (null when the
-    // tier isn't 'client', to clear a stale link on tier change) rather
-    // than omitting the key.
-    client_id: z.string().nullable().optional(),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(/[A-Z]/, 'Password must contain an uppercase letter')
-      .regex(/[a-z]/, 'Password must contain a lowercase letter')
-      .regex(/[0-9]/, 'Password must contain a number')
-      .optional(),
-  }).refine(data => Object.keys(data).length > 0, {
-    message: 'At least one field must be provided for update',
-  }).refine(data => data.user_tier !== 'client' || !!data.client_id, {
-    message: 'client_id is required when setting user_tier to "client"',
-    path: ['client_id'],
-  }),
+  updateUser: z
+    .object({
+      name: z.string().optional(),
+      email: z.string().email('Invalid email format').optional(),
+      user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional(),
+      language: z.string().optional(),
+      custom_permissions: z.array(z.string()).optional(),
+      departments: z.array(z.string()).optional(),
+      is_active: z.boolean().optional(),
+      // Nullable: the Edit User form always sends client_id (null when the
+      // tier isn't 'client', to clear a stale link on tier change) rather
+      // than omitting the key.
+      client_id: z.string().nullable().optional(),
+      password: z
+        .string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+        .regex(/[a-z]/, 'Password must contain a lowercase letter')
+        .regex(/[0-9]/, 'Password must contain a number')
+        .optional(),
+    })
+    .refine((data) => Object.keys(data).length > 0, {
+      message: 'At least one field must be provided for update',
+    })
+    .refine((data) => data.user_tier !== 'client' || !!data.client_id, {
+      message: 'client_id is required when setting user_tier to "client"',
+      path: ['client_id'],
+    }),
 
   updateMe: z.object({
     name: z.string().optional(),
@@ -93,17 +98,19 @@ export const schemas = {
       .optional(),
   }),
 
-  inviteUser: z.object({
-    email: z.string().email('Invalid email format'),
-    name: z.string().optional(),
-    user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional().default('agent'),
-    custom_permissions: z.array(z.string()).optional(),
-    departments: z.array(z.string()).optional(),
-    client_id: z.string().optional(),
-  }).refine(data => data.user_tier !== 'client' || !!data.client_id, {
-    message: 'client_id is required when inviting a client-tier user',
-    path: ['client_id'],
-  }),
+  inviteUser: z
+    .object({
+      email: z.string().email('Invalid email format'),
+      name: z.string().optional(),
+      user_tier: z.enum(['admin', 'manager', 'accounting', 'agent', 'client']).optional().default('agent'),
+      custom_permissions: z.array(z.string()).optional(),
+      departments: z.array(z.string()).optional(),
+      client_id: z.string().optional(),
+    })
+    .refine((data) => data.user_tier !== 'client' || !!data.client_id, {
+      message: 'client_id is required when inviting a client-tier user',
+      path: ['client_id'],
+    }),
 
   acceptInvite: z.object({
     token: z.string().min(1, 'Token is required'),
@@ -203,19 +210,23 @@ export const schemas = {
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     passengers: z.array(z.record(z.unknown())).optional(),
-    items: z.array(z.object({
-      pricing_id: z.string().min(1, 'pricing_id is required'),
-      quantity: z.number().positive().optional().default(1),
-      // Optional per-line trip details (lodging nights, transfer logistics).
-      start_date: z.string().optional(),
-      end_date: z.string().optional(),
-      room_type: z.string().optional(),
-      pickup_location: z.string().optional(),
-      dropoff_location: z.string().optional(),
-      flight_number: z.string().optional(),
-      service_time: z.string().optional(),
-      details: z.string().optional(),
-    })).min(1, 'At least one item is required'),
+    items: z
+      .array(
+        z.object({
+          pricing_id: z.string().min(1, 'pricing_id is required'),
+          quantity: z.number().positive().optional().default(1),
+          // Optional per-line trip details (lodging nights, transfer logistics).
+          start_date: z.string().optional(),
+          end_date: z.string().optional(),
+          room_type: z.string().optional(),
+          pickup_location: z.string().optional(),
+          dropoff_location: z.string().optional(),
+          flight_number: z.string().optional(),
+          service_time: z.string().optional(),
+          details: z.string().optional(),
+        }),
+      )
+      .min(1, 'At least one item is required'),
     notes: z.string().optional(),
   }),
 
@@ -225,13 +236,13 @@ export const schemas = {
   }),
 
   entityData: z.record(z.unknown()).refine(
-    data => {
+    (data) => {
       for (const key of Object.keys(data)) {
         if (key === '__proto__' || key === 'constructor' || key === 'prototype') return false;
         if (key.startsWith('$') || key.includes('.')) return false;
       }
       return true;
     },
-    { message: 'Invalid entity data: contains prohibited keys' }
+    { message: 'Invalid entity data: contains prohibited keys' },
   ),
 };

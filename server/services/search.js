@@ -1,4 +1,4 @@
-import { getDb } from '../db.js';
+import { getDb, hasFts } from '../db.js';
 
 const SEARCH_CONFIG = [
   {
@@ -45,37 +45,40 @@ const SEARCH_CONFIG = [
   },
 ];
 
-function hasFts(db) {
-  try {
-    db.prepare("SELECT count(*) FROM entities_fts").get();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function searchWithFts(db, pattern, entityTypes) {
   // FTS5 search: escape special FTS characters and use prefix matching
   const sanitized = pattern.replace(/[^\w\s]/g, '').trim();
   if (!sanitized) return [];
-  const ftsQuery = sanitized.split(/\s+/).map(w => `"${w}"*`).join(' AND ');
+  const ftsQuery = sanitized
+    .split(/\s+/)
+    .map((w) => `"${w}"*`)
+    .join(' AND ');
   const placeholders = entityTypes.map(() => '?').join(',');
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT e.id, e.type, e.data FROM entities e
     INNER JOIN entities_fts fts ON e.id = fts.id
     WHERE entities_fts MATCH ? AND e.type IN (${placeholders})
     ORDER BY rank
     LIMIT 50
-  `).all(ftsQuery, ...entityTypes);
+  `,
+    )
+    .all(ftsQuery, ...entityTypes);
 }
 
 function searchWithLike(db, pattern, entityTypes) {
   const placeholders = entityTypes.map(() => '?').join(',');
-  return db.prepare(
-    `SELECT id, type, data FROM entities WHERE type IN (${placeholders}) AND data LIKE ? LIMIT 50`
-  ).all(...entityTypes, `%${pattern}%`);
+  return db
+    .prepare(`SELECT id, type, data FROM entities WHERE type IN (${placeholders}) AND data LIKE ? LIMIT 50`)
+    .all(...entityTypes, `%${pattern}%`);
 }
 
+/**
+ * Global search across users and the configured entity types in {@link SEARCH_CONFIG},
+ * using FTS5 when available and falling back to a LIKE scan otherwise.
+ * @returns {object[]} Unified result list with label/subtitle/url/icon for the UI.
+ */
 export function searchAll(query, userId) {
   if (!query || query.trim().length < 2) return [];
 
@@ -85,9 +88,11 @@ export function searchAll(query, userId) {
 
   // Search users table (always uses LIKE for simplicity)
   const userPattern = `%${q}%`;
-  const users = db.prepare(
-    'SELECT id, name, email, user_tier FROM users WHERE is_active = 1 AND (name LIKE ? OR email LIKE ?) LIMIT 10'
-  ).all(userPattern, userPattern);
+  const users = db
+    .prepare(
+      'SELECT id, name, email, user_tier FROM users WHERE is_active = 1 AND (name LIKE ? OR email LIKE ?) LIMIT 10',
+    )
+    .all(userPattern, userPattern);
 
   for (const user of users) {
     results.push({
@@ -102,12 +107,10 @@ export function searchAll(query, userId) {
   }
 
   // Search entity types using FTS or LIKE fallback
-  const entityTypes = SEARCH_CONFIG.map(c => c.type);
-  const rows = hasFts(db)
-    ? searchWithFts(db, q, entityTypes)
-    : searchWithLike(db, q, entityTypes);
+  const entityTypes = SEARCH_CONFIG.map((c) => c.type);
+  const rows = hasFts(db) ? searchWithFts(db, q, entityTypes) : searchWithLike(db, q, entityTypes);
 
-  const typeConfig = Object.fromEntries(SEARCH_CONFIG.map(c => [c.type, c]));
+  const typeConfig = Object.fromEntries(SEARCH_CONFIG.map((c) => [c.type, c]));
 
   for (const row of rows) {
     const config = typeConfig[row.type];

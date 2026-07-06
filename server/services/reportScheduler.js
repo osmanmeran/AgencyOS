@@ -5,11 +5,12 @@ import { sendEmail } from './email.js';
 
 let intervalHandle = null;
 
+/** Run an immediate pass over due report schedules, then repeat it every 60 minutes. */
 export function startReportScheduler() {
   logger.info('Report scheduler started');
 
   const check = () => {
-    runDueSchedules().catch(err => logger.error({ err }, 'Report scheduler check error'));
+    runDueSchedules().catch((err) => logger.error({ err }, 'Report scheduler check error'));
   };
 
   check();
@@ -17,6 +18,7 @@ export function startReportScheduler() {
   logger.info('Report scheduler scheduled (every 60 minutes)');
 }
 
+/** Cancel the scheduled report-check interval, if running. */
 export function stopReportScheduler() {
   if (intervalHandle) {
     clearInterval(intervalHandle);
@@ -42,13 +44,17 @@ function money(n) {
 }
 
 function renderCommissionsHtml(data) {
-  const rows = data.trips.map(t => `
+  const rows = data.trips
+    .map(
+      (t) => `
     <tr>
       <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${t.name || ''}</td>
       <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${t.client_name || ''}</td>
       <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${money(t.final_price)}</td>
       <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${money(t.commission)}</td>
-    </tr>`).join('');
+    </tr>`,
+    )
+    .join('');
 
   return `
     <h2 style="margin-top:0;">Commission Report</h2>
@@ -83,8 +89,12 @@ function reportPayload(reportType) {
   return { subject: 'Revenue Overview', html: renderRevenueOverviewHtml(getRevenueOverview()) };
 }
 
-// Exported (not just used via start/stop) so callers — including tests —
-// can trigger and await a single pass deterministically.
+/**
+ * Send any active `ReportSchedule` whose frequency interval has elapsed since
+ * `last_sent_date`, then stamp it with the new send time. Exported (not just
+ * used via start/stop) so callers — including tests — can trigger and await
+ * a single pass deterministically.
+ */
 export async function runDueSchedules() {
   const db = getDb();
   const rows = db.prepare(`SELECT id, data FROM entities WHERE type = 'ReportSchedule'`).all();
@@ -100,7 +110,9 @@ export async function runDueSchedules() {
     if (!isDue(schedule)) continue;
 
     const recipients = (schedule.recipients || '')
-      .split(',').map(s => s.trim()).filter(Boolean);
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     if (recipients.length === 0) continue;
 
     const { subject, html } = reportPayload(schedule.report_type);
@@ -108,8 +120,11 @@ export async function runDueSchedules() {
     try {
       await sendEmail({ to: recipients, subject: `Marvelops — ${subject}`, body: html });
       const now = new Date().toISOString();
-      db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?')
-        .run(JSON.stringify({ ...schedule, last_sent_date: now }), now, row.id);
+      db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
+        JSON.stringify({ ...schedule, last_sent_date: now }),
+        now,
+        row.id,
+      );
       logger.info({ scheduleId: row.id, reportType: schedule.report_type }, 'Scheduled report sent');
     } catch (err) {
       logger.error({ err: err.message, scheduleId: row.id }, 'Failed to send scheduled report');

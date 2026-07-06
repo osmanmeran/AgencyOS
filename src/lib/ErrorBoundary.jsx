@@ -1,5 +1,9 @@
 import React from 'react';
 
+/**
+ * Catches render errors in its subtree and shows a fallback "something went
+ * wrong" screen with a reload button instead of a blank/broken page.
+ */
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);

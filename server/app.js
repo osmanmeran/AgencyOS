@@ -7,7 +7,10 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { seedDatabase } from './seed.js';
-import { getDb, uid } from './db.js';
+import { getDb, uid, getDataDir } from './db.js';
+import { migrationStatus } from './migrations/runner.js';
+import fs from 'fs';
+import crypto from 'crypto';
 import { errorHandler, notFoundHandler, sendError } from './middleware/errors.js';
 import { authMiddleware } from './middleware/auth.js';
 import { requireAdmin } from './middleware/permissions.js';
@@ -35,31 +38,44 @@ seedDatabase();
 const app = express();
 app.set('trust proxy', 1);
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
-      fontSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://login.microsoftonline.com'],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      ...(isProduction && { upgradeInsecureRequests: [] }),
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+        fontSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://login.microsoftonline.com'],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        ...(isProduction && { upgradeInsecureRequests: [] }),
+      },
     },
-  },
-  crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-}));
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+);
 
-app.use(cors({
-  origin: isProduction ? process.env.CORS_ORIGIN || false : true,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: isProduction ? process.env.CORS_ORIGIN || false : true,
+    credentials: true,
+  }),
+);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
+
+// Correlation ID: tags every request/log line/error response with a shared
+// id so a user-reported error can be traced back to a specific log line.
+app.use((req, res, next) => {
+  req.id = crypto.randomUUID();
+  req.log = logger.child({ requestId: req.id });
+  res.setHeader('X-Request-Id', req.id);
+  next();
+});
 
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -109,14 +125,52 @@ app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/reports', reportRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+  const checks = { database: 'ok', migrations: 'ok', disk: 'ok' };
+  let healthy = true;
+
+  try {
+    getDb().prepare('SELECT 1').get();
+  } catch (err) {
+    checks.database = 'error';
+    healthy = false;
+  }
+
+  let pendingMigrations = 0;
+  try {
+    pendingMigrations = migrationStatus(getDb()).filter((m) => !m.applied).length;
+    if (pendingMigrations > 0) checks.migrations = 'pending';
+  } catch (err) {
+    checks.migrations = 'error';
+    healthy = false;
+  }
+
+  let freeBytes = null;
+  try {
+    const stats = fs.statfsSync(getDataDir());
+    freeBytes = stats.bfree * stats.bsize;
+    if (freeBytes < 100 * 1024 * 1024) checks.disk = 'low';
+  } catch (err) {
+    checks.disk = 'unknown';
+  }
+
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'ok' : 'degraded',
+    uptime: process.uptime(),
+    checks,
+    pendingMigrations,
+    diskFreeBytes: freeBytes,
+  });
 });
 
 app.get('/api/admin/list-users', authMiddleware, requireAdmin, (req, res) => {
   const db = getDb();
   const limit = Math.min(Math.max(parseInt(req.query.limit) || 100, 1), 500);
   const offset = Math.max(parseInt(req.query.offset) || 0, 0);
-  const users = db.prepare('SELECT id, email, name, user_tier, role, is_active, microsoft_id FROM users ORDER BY created_date LIMIT ? OFFSET ?').all(limit, offset);
+  const users = db
+    .prepare(
+      'SELECT id, email, name, user_tier, role, is_active, microsoft_id FROM users ORDER BY created_date LIMIT ? OFFSET ?',
+    )
+    .all(limit, offset);
   const total = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   res.json({ users, total, limit, offset });
 });
@@ -131,9 +185,15 @@ app.post('/api/admin/fix-user', authMiddleware, requireAdmin, (req, res) => {
     if (!user) return sendError(res, 404, 'USER_NOT_FOUND', `User not found: ${email}`);
     const tier = user_tier || 'admin';
     const r = role || tier;
-    db.prepare('UPDATE users SET user_tier = ?, role = ?, updated_date = ? WHERE id = ?')
-      .run(tier, r, new Date().toISOString(), user.id);
-    const updated = db.prepare('SELECT id, email, name, user_tier, role, is_active FROM users WHERE id = ?').get(user.id);
+    db.prepare('UPDATE users SET user_tier = ?, role = ?, updated_date = ? WHERE id = ?').run(
+      tier,
+      r,
+      new Date().toISOString(),
+      user.id,
+    );
+    const updated = db
+      .prepare('SELECT id, email, name, user_tier, role, is_active FROM users WHERE id = ?')
+      .get(user.id);
     res.json({ success: true, user: updated });
   } catch (err) {
     sendError(res, 500, 'INTERNAL_ERROR', err.message);
@@ -153,7 +213,7 @@ app.post('/api/admin/fix-trip-agents', authMiddleware, requireAdmin, (req, res) 
         if (user && user.name) {
           data.created_by_name = user.name;
           if (user.phone) data.created_by_phone = user.phone;
-          db.prepare("UPDATE entities SET data = ? WHERE id = ?").run(JSON.stringify(data), row.id);
+          db.prepare('UPDATE entities SET data = ? WHERE id = ?').run(JSON.stringify(data), row.id);
           fixed++;
         }
       }
@@ -168,7 +228,13 @@ app.post('/api/email/test-outlook', authMiddleware, async (req, res) => {
   try {
     const { sendOutlookEmail, getOutlookStatus } = await import('./services/integrations.js');
     const status = await getOutlookStatus(req.user.id);
-    if (!status.connected) return sendError(res, 400, 'OUTLOOK_NOT_CONNECTED', 'Outlook non connesso. Vai su Impostazioni → Integrazioni per collegarlo.');
+    if (!status.connected)
+      return sendError(
+        res,
+        400,
+        'OUTLOOK_NOT_CONNECTED',
+        'Outlook non connesso. Vai su Impostazioni → Integrazioni per collegarlo.',
+      );
     await sendOutlookEmail(req.user.id, {
       to: req.user.email,
       subject: 'Marvelops – Test Outlook',
@@ -184,7 +250,12 @@ app.post('/api/email/test', authMiddleware, async (req, res) => {
   try {
     const { sendEmail, isSmtpConfigured } = await import('./services/email.js');
     if (!isSmtpConfigured()) {
-      return sendError(res, 400, 'SMTP_NOT_CONFIGURED', 'SMTP not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS environment variables.');
+      return sendError(
+        res,
+        400,
+        'SMTP_NOT_CONFIGURED',
+        'SMTP not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS environment variables.',
+      );
     }
     const result = await sendEmail({
       to: req.user.email,
@@ -202,8 +273,12 @@ app.post('/api/app-logs', authMiddleware, (req, res) => {
     const { pageName } = req.body || {};
     if (pageName) {
       const db = getDb();
-      db.prepare('INSERT INTO app_logs (id, page_name, user_id, created_date) VALUES (?, ?, ?, ?)')
-        .run(uid(), pageName, req.user?.id || null, new Date().toISOString());
+      db.prepare('INSERT INTO app_logs (id, page_name, user_id, created_date) VALUES (?, ?, ?, ?)').run(
+        uid(),
+        pageName,
+        req.user?.id || null,
+        new Date().toISOString(),
+      );
     }
   } catch (e) {
     logger.error({ err: e, pageName: req.body?.pageName }, 'Failed to log page visit');

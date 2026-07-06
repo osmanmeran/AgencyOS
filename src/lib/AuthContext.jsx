@@ -6,6 +6,10 @@ import { appParams } from '@/lib/app-params';
 
 const AuthContext = createContext(null);
 
+/**
+ * Provides auth state (current user, auth/loading flags) and actions
+ * (logout, navigateToLogin, refreshUser) to the app via {@link useAuth}.
+ */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -34,12 +38,12 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
-      
+
       // If user auth fails, it might be an expired token
       if (error.status === 401 || error.status === 403) {
         setAuthError({
           type: 'auth_required',
-          message: 'Authentication required'
+          message: 'Authentication required',
         });
       }
     }
@@ -48,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
-    
+
     if (shouldRedirect) {
       // Use the SDK's logout method which handles token cleanup and redirect
       db.auth.logout(window.location.href);
@@ -63,23 +67,29 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
-      isLoadingAuth,
-      isLoadingPublicSettings,
-      authError,
-      appPublicSettings,
-      logout,
-      navigateToLogin,
-      checkAppState,
-      refreshUser: checkUserAuth,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        isLoadingAuth,
+        isLoadingPublicSettings,
+        authError,
+        appPublicSettings,
+        logout,
+        navigateToLogin,
+        checkAppState,
+        refreshUser: checkUserAuth,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
+/**
+ * Reads the current auth state/actions from {@link AuthProvider}.
+ * @throws {Error} if called outside an AuthProvider.
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

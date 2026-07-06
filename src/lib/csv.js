@@ -1,3 +1,9 @@
+/**
+ * Parses CSV text (handling quoted fields, escaped quotes, and CRLF/LF/CR
+ * line endings), returning an array of row arrays, or an array of objects
+ * keyed by the header row when `hasHeader` is true.
+ * @returns {Array<string[]>|Array<object>}
+ */
 export function parseCsv(text, { hasHeader = true, delimiter = ',' } = {}) {
   const rows = [];
   let currentRow = [];
@@ -67,6 +73,7 @@ export function parseCsv(text, { hasHeader = true, delimiter = ',' } = {}) {
   return result;
 }
 
+/** Prefixes a value with `'` if it starts with `=`, `+`, `-`, or `@`, to prevent CSV/formula injection when opened in spreadsheet apps. */
 export function sanitizeCsvField(value) {
   const str = String(value ?? '');
   if (/^[=+\-@]/.test(str)) {
@@ -75,6 +82,7 @@ export function sanitizeCsvField(value) {
   return str;
 }
 
+/** Formats an array of field values into one CSV row, quoting/escaping as needed and guarding against formula injection. */
 export function toCsvRow(fields) {
   return fields
     .map((f) => {

@@ -17,6 +17,12 @@ async function fetchRates() {
   return data.usd;
 }
 
+/**
+ * Look up the conversion rate between two currencies, using an hour-long
+ * in-memory cache of the full rate table.
+ * @returns {Promise<{rate: number, source: string, timestamp: string}>}
+ * @throws {BadRequestError} If either currency code is unsupported.
+ */
 export async function getExchangeRate(from, to) {
   const fromLower = from.toLowerCase();
   const toLower = to.toLowerCase();
@@ -29,11 +35,18 @@ export async function getExchangeRate(from, to) {
   return { rate: toRate / fromRate, source: 'fawazahmed0/currency-api', timestamp: new Date().toISOString() };
 }
 
+/** Record a sent email in `email_logs` (used after sending via Outlook, which has no local log of its own). */
 export function logEmail(to, subject, body) {
   const db = getDb();
   const now = new Date().toISOString();
-  db.prepare('INSERT INTO email_logs (id, to_email, subject, body, status, sent_date) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(uid(), Array.isArray(to) ? to.join(', ') : to, subject, body || '', 'sent', now);
+  db.prepare('INSERT INTO email_logs (id, to_email, subject, body, status, sent_date) VALUES (?, ?, ?, ?, ?, ?)').run(
+    uid(),
+    Array.isArray(to) ? to.join(', ') : to,
+    subject,
+    body || '',
+    'sent',
+    now,
+  );
 }
 
 // ── Outlook / Microsoft Graph ──────────────────────────────────────────
@@ -43,6 +56,7 @@ const GRAPH_API = 'https://graph.microsoft.com/v1.0';
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID;
 const SCOPES = 'https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read offline_access';
 
+/** @returns {{connected: boolean, email?: string, name?: string}} Whether this user has linked Outlook. */
 export function getOutlookStatus(userId) {
   const db = getDb();
   const row = db.prepare("SELECT data FROM entities WHERE type = 'OutlookToken' AND id = ?").get(userId);
@@ -51,6 +65,13 @@ export function getOutlookStatus(userId) {
   return { connected: true, email: token.user_email, name: token.user_name };
 }
 
+/**
+ * Store an Outlook OAuth token obtained client-side (token exchange happens
+ * in the browser because Azure's SPA app type requires cross-origin requests),
+ * fetching the user's email/name from Graph to display the connection.
+ * @returns {Promise<{email: string, name: string}>}
+ * @throws {BadRequestError} If no access token was provided.
+ */
 export async function connectOutlook(userId, { token_data }) {
   const db = getDb();
 
@@ -91,16 +112,25 @@ export async function connectOutlook(userId, { token_data }) {
   const existing = db.prepare("SELECT id FROM entities WHERE type = 'OutlookToken' AND id = ?").get(userId);
 
   if (existing) {
-    db.prepare("UPDATE entities SET data = ?, updated_date = ? WHERE type = 'OutlookToken' AND id = ?")
-      .run(JSON.stringify(tokenRecord), now, userId);
+    db.prepare("UPDATE entities SET data = ?, updated_date = ? WHERE type = 'OutlookToken' AND id = ?").run(
+      JSON.stringify(tokenRecord),
+      now,
+      userId,
+    );
   } else {
-    db.prepare("INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)")
-      .run(userId, 'OutlookToken', JSON.stringify(tokenRecord), now, now);
+    db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+      userId,
+      'OutlookToken',
+      JSON.stringify(tokenRecord),
+      now,
+      now,
+    );
   }
 
   return { email: userEmail, name: userName };
 }
 
+/** Remove a user's stored Outlook token, unlinking their account. */
 export function disconnectOutlook(userId) {
   const db = getDb();
   db.prepare("DELETE FROM entities WHERE type = 'OutlookToken' AND id = ?").run(userId);
@@ -152,12 +182,20 @@ async function getGraphAccessToken(userId) {
     user_name: token.user_name,
   };
 
-  db.prepare("UPDATE entities SET data = ?, updated_date = ? WHERE type = 'OutlookToken' AND id = ?")
-    .run(JSON.stringify(updated), new Date().toISOString(), userId);
+  db.prepare("UPDATE entities SET data = ?, updated_date = ? WHERE type = 'OutlookToken' AND id = ?").run(
+    JSON.stringify(updated),
+    new Date().toISOString(),
+    userId,
+  );
 
   return updated.access_token;
 }
 
+/**
+ * Send an email through the user's connected Outlook mailbox via Microsoft Graph.
+ * Disconnects the account automatically if Graph reports the auth as expired.
+ * @throws {UnauthorizedError|BadRequestError} On missing/expired auth or a Graph API failure.
+ */
 export async function sendOutlookEmail(userId, { to, subject, body, cc, bcc }) {
   let accessToken;
   try {
@@ -166,15 +204,19 @@ export async function sendOutlookEmail(userId, { to, subject, body, cc, bcc }) {
     throw new UnauthorizedError(err.message);
   }
 
-  const toRecipients = (Array.isArray(to) ? to : [to]).map(email => ({
-    emailAddress: { address: email.trim() }
+  const toRecipients = (Array.isArray(to) ? to : [to]).map((email) => ({
+    emailAddress: { address: email.trim() },
   }));
-  const ccRecipients = cc ? (Array.isArray(cc) ? cc : [cc]).filter(Boolean).map(email => ({
-    emailAddress: { address: email.trim() }
-  })) : [];
-  const bccRecipients = bcc ? (Array.isArray(bcc) ? bcc : [bcc]).filter(Boolean).map(email => ({
-    emailAddress: { address: email.trim() }
-  })) : [];
+  const ccRecipients = cc
+    ? (Array.isArray(cc) ? cc : [cc]).filter(Boolean).map((email) => ({
+        emailAddress: { address: email.trim() },
+      }))
+    : [];
+  const bccRecipients = bcc
+    ? (Array.isArray(bcc) ? bcc : [bcc]).filter(Boolean).map((email) => ({
+        emailAddress: { address: email.trim() },
+      }))
+    : [];
 
   const message = {
     message: {
@@ -204,10 +246,14 @@ export async function sendOutlookEmail(userId, { to, subject, body, cc, bcc }) {
       throw new UnauthorizedError('Outlook authorization expired — please reconnect your account');
     }
     if (sendResp.status === 403) {
-      throw new BadRequestError('Outlook permission denied: ensure Mail.Send is granted in Azure AD (API permissions → Grant admin consent)');
+      throw new BadRequestError(
+        'Outlook permission denied: ensure Mail.Send is granted in Azure AD (API permissions → Grant admin consent)',
+      );
     }
     let errMsg = errText;
-    try { errMsg = JSON.parse(errText)?.error?.message || errText; } catch {}
+    try {
+      errMsg = JSON.parse(errText)?.error?.message || errText;
+    } catch {}
     throw new BadRequestError(`Outlook send failed: ${errMsg}`);
   }
 
@@ -216,6 +262,11 @@ export async function sendOutlookEmail(userId, { to, subject, body, cc, bcc }) {
 
 // ── Supplier Web Search ────────────────────────────────────────────────
 
+/**
+ * Look up candidate supplier details (address, description) by combining a
+ * Nominatim (OpenStreetMap) geocode search with a Wikipedia summary lookup.
+ * @returns {Promise<object[]>} Best-effort results; empty if both sources fail.
+ */
 export async function searchSupplier(name, city) {
   const query = [name, city].filter(Boolean).join(', ');
   const results = [];
@@ -223,7 +274,7 @@ export async function searchSupplier(name, city) {
   try {
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
-      { headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' } }
+      { headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' } },
     );
     const geoData = await geoRes.json();
     if (Array.isArray(geoData)) {
@@ -233,11 +284,18 @@ export async function searchSupplier(name, city) {
         results.push({
           name: place.name || place.display_name.split(',')[0],
           address: place.display_name,
-          phone: '', website: '', email: '',
-          description: place.type ? `${place.type} in ${addr.city || addr.town || addr.village || ''}, ${addr.country || ''}`.trim() : '',
-          rating: 0, source: 'nominatim',
-          osm_id: place.osm_id, osm_type: place.osm_type,
-          lat: place.lat, lon: place.lon,
+          phone: '',
+          website: '',
+          email: '',
+          description: place.type
+            ? `${place.type} in ${addr.city || addr.town || addr.village || ''}, ${addr.country || ''}`.trim()
+            : '',
+          rating: 0,
+          source: 'nominatim',
+          osm_id: place.osm_id,
+          osm_type: place.osm_type,
+          lat: place.lat,
+          lon: place.lon,
         });
       }
     }
@@ -247,7 +305,7 @@ export async function searchSupplier(name, city) {
 
   try {
     const wikiRes = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}?redirect=true`
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}?redirect=true`,
     );
     if (wikiRes.ok) {
       const wiki = await wikiRes.json();
@@ -257,8 +315,14 @@ export async function searchSupplier(name, city) {
           if (wiki.content_urls?.desktop?.page) results[0].website = wiki.content_urls.desktop.page;
         } else {
           results.push({
-            name: wiki.title || name, address: '', phone: '', website: wiki.content_urls?.desktop?.page || '',
-            email: '', description: wiki.extract, rating: 0, source: 'wikipedia',
+            name: wiki.title || name,
+            address: '',
+            phone: '',
+            website: wiki.content_urls?.desktop?.page || '',
+            email: '',
+            description: wiki.extract,
+            rating: 0,
+            source: 'wikipedia',
           });
         }
       }

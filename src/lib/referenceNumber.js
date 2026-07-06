@@ -1,5 +1,11 @@
 import { db } from '@/lib/DbContext';
 
+/**
+ * Generates the next sequential reference number for a department (e.g.
+ * `TRP-SAL-2607-0001`), atomically bumping (or creating) the per-department
+ * monthly counter in `ReferenceCounter`.
+ * @returns {Promise<string>}
+ */
 export async function generateReferenceNumber(department, settings) {
   const now = new Date();
   const year = now.getFullYear();

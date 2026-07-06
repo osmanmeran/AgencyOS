@@ -13,18 +13,43 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Tests get a throwaway DB in a fresh temp dir instead of the real dev
 // database — otherwise every test run permanently writes real rows (users,
 // entities) into data/marvelops.db with no cleanup.
-const DATA_DIR = process.env.NODE_ENV === 'test'
-  ? fs.mkdtempSync(path.join(os.tmpdir(), 'marvelops-test-'))
-  : path.join(__dirname, '..', 'data');
+const DATA_DIR =
+  process.env.NODE_ENV === 'test'
+    ? fs.mkdtempSync(path.join(os.tmpdir(), 'marvelops-test-'))
+    : path.join(__dirname, '..', 'data');
 const DB_PATH = path.join(DATA_DIR, 'marvelops.db');
 
 const ENTITIES = [
-  'AppSettings', 'BookingRequest', 'BookingTemplate', 'Client', 'ClientPayment',
-  'ClientTask', 'Company', 'EmailLog', 'Invoice', 'ItineraryEvent', 'Message', 'PackingItem',
-  'Proposal', 'ProposalTemplate', 'QuoteRequest', 'ReferenceCounter', 'ServiceCategory',
-  'ServiceTemplate', 'Supplier', 'SupplierBooking', 'SupplierCategory',
-  'SupplierInvoice', 'SupplierPricing', 'SupplierReview', 'SupplierService',
-  'SupplierSubcategory', 'Trip', 'OutlookToken', 'TourContract', 'ReportSchedule'
+  'AppSettings',
+  'BookingRequest',
+  'BookingTemplate',
+  'Client',
+  'ClientPayment',
+  'ClientTask',
+  'Company',
+  'EmailLog',
+  'Invoice',
+  'ItineraryEvent',
+  'Message',
+  'PackingItem',
+  'Proposal',
+  'ProposalTemplate',
+  'QuoteRequest',
+  'ReferenceCounter',
+  'ServiceCategory',
+  'ServiceTemplate',
+  'Supplier',
+  'SupplierBooking',
+  'SupplierCategory',
+  'SupplierInvoice',
+  'SupplierPricing',
+  'SupplierReview',
+  'SupplierService',
+  'SupplierSubcategory',
+  'Trip',
+  'OutlookToken',
+  'TourContract',
+  'ReportSchedule',
 ];
 
 let db;
@@ -39,7 +64,7 @@ db.pragma('journal_mode = WAL');
 // of just reverting the code — see scripts/backup-cli.mjs.
 // Skipped in test env: every test run starts from a fresh, empty temp DB,
 // so there's nothing worth snapshotting and it would just add file I/O.
-if (process.env.NODE_ENV !== 'test' && migrationStatus(db).some(m => !m.applied)) {
+if (process.env.NODE_ENV !== 'test' && migrationStatus(db).some((m) => !m.applied)) {
   try {
     const dest = createBackupSync(db, DATA_DIR, 'pre-migration');
     logger.info({ dest }, 'Pre-migration backup created');
@@ -60,7 +85,9 @@ export function getDb() {
 
 export function closeDb() {
   if (db) {
-    try { db.pragma('wal_checkpoint(TRUNCATE)'); } catch (e) {}
+    try {
+      db.pragma('wal_checkpoint(TRUNCATE)');
+    } catch (e) {}
     db.close();
     db = null;
   }
@@ -86,4 +113,14 @@ export function getEntities() {
 
 export function uid() {
   return crypto.randomBytes(8).toString('hex');
+}
+
+/** Whether the `entities_fts` FTS5 virtual table exists on this connection. */
+export function hasFts(dbConn) {
+  try {
+    dbConn.prepare('SELECT 1 FROM entities_fts LIMIT 0').get();
+    return true;
+  } catch {
+    return false;
+  }
 }

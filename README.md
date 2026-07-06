@@ -11,6 +11,7 @@ A full-stack travel agency operations management platform for tour operators and
 ## Features
 
 ### Core Operations
+
 - **Dashboard** — Upcoming arrivals/departures, trip calendar, pending tasks, quick actions
 - **Trips / Reservations** — Full CRUD with pagination, search, bulk actions, status workflow
 - **Clients** — Table view + Kanban CRM pipeline (lead → contacted → proposal → negotiation → won/lost)
@@ -18,6 +19,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Calendar** — Monthly view of trip arrivals and departures
 
 ### Sales & Finance
+
 - **Proposals** — Create, track status (delivered/changed/approved/rejected), change history
 - **Invoices** — CRUD with line items, status tracking (draft/sent/paid/overdue/cancelled)
 - **Revenue Reports** — Charts and breakdowns
@@ -25,6 +27,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Client Payments** — Manual payment recording (no gateway integration)
 
 ### Advanced Tools
+
 - **Itinerary Builder** — Day-by-day editor with drag-and-drop, category detection
 - **Tour Contracts** — Recurring serial contracts with pricing tiers, Utravel import
 - **RFP Manager** — Request for Proposal wizard, supplier quoting
@@ -33,6 +36,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Import Hub** — Outlook contacts, bulk supplier CSV, AI price analyzer
 
 ### Integrations
+
 - **Microsoft SSO** — Azure AD login with auto-provisioning
 - **Outlook Mail** — Send/receive via Microsoft Graph API
 - **SMTP Email** — HTML templates for proposals, confirmations, invoices, invites
@@ -43,6 +47,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Audit Logging** — All mutations logged with user, action, timestamp
 
 ### Admin
+
 - **User Management** — CRUD with invite tokens, 4 permission tiers (admin/manager/agent/accounting)
 - **Permission Manager** — Granular custom permissions per user
 - **App Settings** — Branding, departments, invoice header, default currency
@@ -50,6 +55,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **File Uploads** — Documents with MIME validation
 
 ### Portal Access
+
 - **Client Portal** — View proposals, trips, invoices
 - **Supplier Portal** — View bookings, invoices, ratings
 
@@ -94,7 +100,7 @@ server/            — Express.js backend
 ├── services/      — Business logic (auth, entities, email, etc.)
 ├── middleware/     — Auth, permissions, error handling
 ├── lib/           — Logger, WebSocket helpers
-└── migrations/    — 8 migration files
+└── migrations/    — 12 migration files
 
 entities/          — JSON schemas for 25+ entity types
 tests/             — Vitest test suite (server-side only)
@@ -102,28 +108,29 @@ tests/             — Vitest test suite (server-side only)
 
 ## Permission Tiers
 
-| Tier | Access |
-|------|--------|
-| **Admin** | Full system control, user management, app settings |
-| **Manager** | Operations management, modify/cancel trips & invoices |
-| **Agent** | Daily ops: trips, proposals, invoices, supplier info |
-| **Accounting** | Read-only finance, reports, search |
+| Tier           | Access                                                |
+| -------------- | ----------------------------------------------------- |
+| **Admin**      | Full system control, user management, app settings    |
+| **Manager**    | Operations management, modify/cancel trips & invoices |
+| **Agent**      | Daily ops: trips, proposals, invoices, supplier info  |
+| **Accounting** | Read-only finance, reports, search                    |
 
 ## Environment Variables
 
-| Variable | Required | Default | Purpose |
-|----------|----------|---------|---------|
-| `JWT_SECRET` | Yes | — | JWT signing key |
-| `PORT` | No | 3001 | Server port |
-| `MICROSOFT_CLIENT_ID` | No | — | Microsoft SSO & Outlook |
-| `MICROSOFT_TENANT_ID` | No | — | Azure AD tenant |
-| `SMTP_HOST / USER / PASS` | No | — | Email sending |
-| `APP_URL` | No | — | Callback URLs, invite links |
-| `DATA_DIR` | No | ./data | Database + uploads path |
+| Variable                  | Required | Default | Purpose                     |
+| ------------------------- | -------- | ------- | --------------------------- |
+| `JWT_SECRET`              | Yes      | —       | JWT signing key             |
+| `PORT`                    | No       | 3001    | Server port                 |
+| `MICROSOFT_CLIENT_ID`     | No       | —       | Microsoft SSO & Outlook     |
+| `MICROSOFT_TENANT_ID`     | No       | —       | Azure AD tenant             |
+| `SMTP_HOST / USER / PASS` | No       | —       | Email sending               |
+| `APP_URL`                 | No       | —       | Callback URLs, invite links |
+| `DATA_DIR`                | No       | ./data  | Database + uploads path     |
 
 ## Recent Fixes
 
 ### Backend (Audit)
+
 - **API 404s now return JSON** — SPA catch-all skips `/api` routes so unmatched API paths return proper JSON errors
 - **WebSocket+SSL fixed** — WebSocket server now attaches to whichever server (HTTP/HTTPS) is actually started
 - **Upload directory unified** — Document uploads now save to `data/uploads/` matching the static server path
@@ -133,7 +140,7 @@ tests/             — Vitest test suite (server-side only)
 - **SMTP retry loop fixed** — Failed SMTP verification is now cached to prevent infinite retry on every email send
 - **Outlook token retention** — Transient network errors no longer permanently delete Outlook tokens (only 400/401 do)
 - **PDF error handling** — Stream errors logged instead of thrown (was causing unhandled promise rejections)
-- **Rate limiter fixed** — `ipKeyGenerator` was passing a string instead of `req` object, which would crash the limiter
+- **OCR maxBuffer restored** — The async `spawn`-based OCR conversion needed its output size cap (10MB/5MB) restored to match the original `spawnSync` behavior
 - **Empty catch blocks resolved** — Silent error swallowing in `/api/app-logs` replaced with proper logging
 - **JWT_SECRET warning** — Missing secret now logs at `error` level instead of silently generating ephemeral key
 - **Admin user list paginated** — Added `LIMIT/OFFSET` parameters to prevent unbounded response growth
@@ -144,6 +151,7 @@ tests/             — Vitest test suite (server-side only)
 - **Email template whitelist** — Added `quote_response` to allowed templates in validation schema
 
 ### Frontend (Audit)
+
 - **Console logs removed** — 11 production `console.log/error/warn` calls stripped or replaced
 - **React StrictMode enabled** — Uncommented `<React.StrictMode>` wrapper in `main.jsx`
 - **Stub code fixed** — `google-auth.js` now properly checks `VITE_GOOGLE_CLIENT_ID` env var
@@ -153,23 +161,34 @@ tests/             — Vitest test suite (server-side only)
 - **Mixed language cleanup** — Microsoft OAuth callback step strings and error messages unified to English
 - **Commented-out code removed** — 12+ lines of dead commented code cleaned across 10 files
 
+### Roadmap cleanup (2026-07-06)
+
+- **Deduplicated `hasFts()`** — moved into `server/db.js`, `search.js`/`entities.js` now import it instead of each defining their own copy
+- **Deduplicated `ALLOWED_MIME_TYPES`** — moved into new `server/lib/mimeTypes.js`, shared by `documents.js` and `routes/integrations.js`
+- **`getEntityById` duplication was stale** — turned out to only exist once (`server/routes/b2b.js`), nothing to deduplicate
+- **Enhanced health check** — `/api/health` now checks DB connectivity, pending migrations, and disk free space, returning `503`/`degraded` if any fail
+- **Request correlation IDs** — every request gets a `req.id` (returned as `X-Request-Id`), logged via a per-request child logger, and included as `request_id` in validation/error responses
+- **Prettier added** — `.prettierrc.json` + `npm run format`/`format:check` (config only; no repo-wide reformat was run)
+- **Pre-commit hooks** — husky + lint-staged now run `eslint --fix` (scoped to the files ESLint already covers) and `prettier --write` on staged files
+- **JSDoc pass** — added to exported functions across `server/services/` and `src/lib/` (documentation only — neither directory is covered by `jsconfig.json`'s typecheck)
+- **`ARCHITECTURE.md` added** — documents the entity system, permission model, auth, data flow, and real-time sync
+
 ## Improvement Roadmap
 
 ### Architecture
+
 - **Shared types package** — Introduce a `shared/` package with Zod schemas consumed by both frontend and backend to eliminate duplication and enforce API contracts
 - **Replace JSON blob with typed columns** — The generic `data` JSON field pattern sacrifices type safety and queryability. Migrate to typed columns or adopt an ORM (Knex/Drizzle)
 - **API documentation** — Auto-generate OpenAPI/Swagger docs from Zod schemas to formalize the API contract
-- **Request correlation IDs** — Add request ID tracking through the full request lifecycle for debugging
 - **SQL-level entity filtering** — Push `findEntities` filtering/sorting/pagination from JavaScript to SQL for large datasets
 
 ### Code Quality
+
 - **Standardize module system** — Migrate remaining CJS files (`migrations/*.cjs`) to ESM
-- **Add Prettier** — Enforce consistent formatting with a shared config
 - **Import ordering** — Enforce import ordering rules and eliminate barrel files that cause circular dependencies
-- **Pre-commit hooks** — Add husky + lint-staged for linting/formatting on commit
-- **Deduplicate code** — Merge duplicated `hasFts()`, `ALLOWED_MIME_TYPES`, and `getEntityById` implementations
 
 ### Backend
+
 - **Formal transactions** — Wrap multi-step entity operations in database transactions (unit-of-work pattern)
 - **Dedicated admin routes** — Move inline admin endpoints (`/api/admin/fix-user`, `/api/admin/fix-trip-agents`) into a proper admin route module
 - **Refresh token rotation** — Replace single 24h JWT with short-lived access tokens + rotating refresh tokens
@@ -178,12 +197,14 @@ tests/             — Vitest test suite (server-side only)
 - **Response shape consistency** — Standardize entity list responses to always return `{ data, total }` instead of mixing plain arrays with paginated objects
 
 ### Frontend
+
 - **Break up monolithic pages** — Pages like Dashboard (367 lines), ItineraryBuilder, and others should be decomposed into smaller composable components
 - **State machines for complex flows** — Use XState or `useReducer` for multi-step flows (ItineraryBuilder, ProposalBuilder)
 - **Accessibility audit** — Add aria labels, keyboard navigation, focus traps across all interactive components
 - **Granular code splitting** — Extend the existing lazy loading to route-level and component-level chunks
 
 ### Testing (Current coverage: minimal)
+
 - **Unit tests** — Target ~80% coverage on all `server/services/` modules
 - **Integration tests** — Test all route handlers via supertest with the isolated test DB
 - **Component tests** — Add React Testing Library tests for key UI flows
@@ -193,17 +214,17 @@ tests/             — Vitest test suite (server-side only)
 - **CI pipeline** — Run lint → typecheck → test → build in GitHub Actions
 
 ### DevOps
+
 - **Docker Compose** — Containerize dev environment (DB + app + optional mailhog for email testing)
 - **CI/CD pipeline** — GitHub Actions with lint, typecheck, test, build, and deploy stages
 - **Cloud backups** — Automated DB backup to S3/R2
-- **Enhanced health check** — Verify DB connectivity, migration status, and disk space
 
 ### Documentation
-- **JSDoc** — Add typed documentation to all public functions in `server/services/` and `src/lib/`
-- **ARCHITECTURE.md** — Document the entity system, permission model, and data flow
+
 - **Inline comments** — Add explanations for non-obvious logic (e.g., client portal redirect, auth guards)
 
 ### Remaining Gaps
+
 - **No payment gateway** — `ClientPayment` entity exists but Stripe/PayPal integration is absent
 - **No SMS provider** — SMS endpoint logs locally but sends nothing
 - **No LLM/AI features** — `InvokeLLM` and `GenerateImage` are stubbed but unimplemented

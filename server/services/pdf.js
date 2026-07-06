@@ -24,7 +24,7 @@ function createDoc(filename) {
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
   const stream = fs.createWriteStream(filePath);
   doc.pipe(stream);
-  doc.on('error', err => stream.destroy(err));
+  doc.on('error', (err) => stream.destroy(err));
   stream.on('error', (err) => {
     logger.error({ err: err.message, filename }, 'PDF stream error');
   });
@@ -49,7 +49,9 @@ function drawHeader(doc, settings, subtitle) {
     settings.invoice_header?.address_line2,
     settings.invoice_header?.city,
     settings.invoice_header?.country,
-  ].filter(Boolean).join(', ');
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   if (companyName) {
     doc.fontSize(20).font('Helvetica-Bold').fillColor('#1a1a2e').text(companyName, { align: 'left' });
@@ -61,7 +63,10 @@ function drawHeader(doc, settings, subtitle) {
     doc.fontSize(9).fillColor('#64748b').text(settings.invoice_header.phone, { align: 'left' });
   }
   if (settings.invoice_header?.email || settings.support_email) {
-    doc.fontSize(9).fillColor('#64748b').text(settings.invoice_header?.email || settings.support_email, { align: 'left' });
+    doc
+      .fontSize(9)
+      .fillColor('#64748b')
+      .text(settings.invoice_header?.email || settings.support_email, { align: 'left' });
   }
 
   doc.moveDown(0.5);
@@ -79,18 +84,16 @@ function drawHeader(doc, settings, subtitle) {
 function drawFooter(doc, settings) {
   const footerText = settings.invoice_footer || '';
   if (footerText) {
-    doc.fontSize(8).fillColor('#94a3b8').text(
-      footerText,
-      50, doc.page.height - 55,
-      { align: 'center', width: 500 }
-    );
+    doc
+      .fontSize(8)
+      .fillColor('#94a3b8')
+      .text(footerText, 50, doc.page.height - 55, { align: 'center', width: 500 });
   }
   // Page number only
-  doc.fontSize(8).fillColor('#cbd5e1').text(
-    `${new Date().toLocaleDateString('it-IT')}`,
-    50, doc.page.height - 40,
-    { align: 'right', width: 500 }
-  );
+  doc
+    .fontSize(8)
+    .fillColor('#cbd5e1')
+    .text(`${new Date().toLocaleDateString('it-IT')}`, 50, doc.page.height - 40, { align: 'right', width: 500 });
 }
 
 function drawField(doc, label, value) {
@@ -100,6 +103,10 @@ function drawField(doc, label, value) {
   doc.moveDown(0.4);
 }
 
+/**
+ * Render a booking-confirmation PDF to disk, branded with the agency's app settings.
+ * @returns {Promise<{filePath: string, filename: string}>}
+ */
 export async function generateBookingConfirmation({ clientName, reference, destination, dates, details } = {}) {
   const settings = getAppSettings();
   const filename = `booking_${reference || 'draft'}_${Date.now()}.pdf`;
@@ -126,7 +133,22 @@ export async function generateBookingConfirmation({ clientName, reference, desti
   return finalizeDoc(ctx);
 }
 
-export async function generateProposal({ clientName, destination, proposalUrl, agentName, details, startDate, endDate, totalPrice, currency, items } = {}) {
+/**
+ * Render a travel-proposal PDF to disk, including itemized services if provided.
+ * @returns {Promise<{filePath: string, filename: string}>}
+ */
+export async function generateProposal({
+  clientName,
+  destination,
+  proposalUrl,
+  agentName,
+  details,
+  startDate,
+  endDate,
+  totalPrice,
+  currency,
+  items,
+} = {}) {
   const settings = getAppSettings();
   const filename = `proposal_${(clientName || 'draft').replace(/\s+/g, '_')}_${Date.now()}.pdf`;
   const ctx = createDoc(filename);
@@ -147,7 +169,10 @@ export async function generateProposal({ clientName, destination, proposalUrl, a
     doc.fillColor('#374151').font('Helvetica-Bold').text('Services Included:');
     doc.moveDown(0.4);
     for (const item of items) {
-      doc.fillColor('#1a1a2e').font('Helvetica').text(`• ${item.name}${item.price ? ` — ${item.price} ${currency || ''}` : ''}`);
+      doc
+        .fillColor('#1a1a2e')
+        .font('Helvetica')
+        .text(`• ${item.name}${item.price ? ` — ${item.price} ${currency || ''}` : ''}`);
     }
   }
 
@@ -161,6 +186,10 @@ export async function generateProposal({ clientName, destination, proposalUrl, a
   return finalizeDoc(ctx);
 }
 
+/**
+ * Render an invoice PDF to disk.
+ * @returns {Promise<{filePath: string, filename: string}>}
+ */
 export async function generateInvoice({ clientName, invoiceNumber, amount, dueDate, details } = {}) {
   const settings = getAppSettings();
   const filename = `invoice_${invoiceNumber || 'draft'}_${Date.now()}.pdf`;

@@ -6,9 +6,18 @@ import { fileURLToPath } from 'url';
 import { authMiddleware } from '../middleware/auth.js';
 import { catchAsync, sendError } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
-import { getExchangeRate, logEmail, getOutlookStatus, connectOutlook, disconnectOutlook, sendOutlookEmail, searchSupplier } from '../services/integrations.js';
+import {
+  getExchangeRate,
+  logEmail,
+  getOutlookStatus,
+  connectOutlook,
+  disconnectOutlook,
+  sendOutlookEmail,
+  searchSupplier,
+} from '../services/integrations.js';
 import { sendEmail, isSmtpConfigured, renderTemplate } from '../services/email.js';
 import { sanitizeFilename } from '../lib/sanitizeFilename.js';
+import { ALLOWED_MIME_TYPES } from '../lib/mimeTypes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // On Railway, /app/data is the persistent volume (same as the DB).
@@ -23,19 +32,8 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname).toLowerCase();
     const safeName = sanitizeFilename(path.basename(file.originalname, ext));
     cb(null, `${Date.now()}_${safeName}${ext}`);
-  }
+  },
 });
-
-const ALLOWED_MIME_TYPES = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-  'application/pdf',
-  'text/plain', 'text/csv',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/json',
-];
 
 const upload = multer({
   storage,
@@ -46,30 +44,42 @@ const upload = multer({
     } else {
       cb(new Error(`File type ${file.mimetype} is not allowed`), false);
     }
-  }
+  },
 });
 
 const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/exchange-rate', validate(schemas.exchangeRate, 'query'), catchAsync(async (req, res) => {
-  const result = await getExchangeRate(req.query.from, req.query.to);
-  res.json(result);
-}));
+router.get(
+  '/exchange-rate',
+  validate(schemas.exchangeRate, 'query'),
+  catchAsync(async (req, res) => {
+    const result = await getExchangeRate(req.query.from, req.query.to);
+    res.json(result);
+  }),
+);
 
-router.post('/email', validate(schemas.sendEmail), catchAsync(async (req, res) => {
-  const { to, subject, body, cc, bcc } = req.body;
-  const result = await sendEmail({ to, subject, body, cc, bcc });
-  res.json({ success: true, ...result });
-}));
+router.post(
+  '/email',
+  validate(schemas.sendEmail),
+  catchAsync(async (req, res) => {
+    const { to, subject, body, cc, bcc } = req.body;
+    const result = await sendEmail({ to, subject, body, cc, bcc });
+    res.json({ success: true, ...result });
+  }),
+);
 
-router.post('/email/template', validate(schemas.sendEmailTemplate), catchAsync(async (req, res) => {
-  const { to, subject, cc, bcc } = req.body;
-  const { template, templateData } = req.body;
-  const result = await sendEmail({ to, subject, template, templateData, cc, bcc });
-  res.json({ success: true, ...result });
-}));
+router.post(
+  '/email/template',
+  validate(schemas.sendEmailTemplate),
+  catchAsync(async (req, res) => {
+    const { to, subject, cc, bcc } = req.body;
+    const { template, templateData } = req.body;
+    const result = await sendEmail({ to, subject, template, templateData, cc, bcc });
+    res.json({ success: true, ...result });
+  }),
+);
 
 router.get('/email/status', (req, res) => {
   res.json({
@@ -78,9 +88,13 @@ router.get('/email/status', (req, res) => {
   });
 });
 
-router.post('/sms', validate(schemas.sendSms), catchAsync(async (req, res) => {
-  res.json({ success: true, message: 'SMS sent (logged locally)' });
-}));
+router.post(
+  '/sms',
+  validate(schemas.sendSms),
+  catchAsync(async (req, res) => {
+    res.json({ success: true, message: 'SMS sent (logged locally)' });
+  }),
+);
 
 router.post('/upload', (req, res) => {
   upload.single('file')(req, res, (err) => {
@@ -95,24 +109,36 @@ router.post('/upload', (req, res) => {
   });
 });
 
-router.post('/supplier-web-search', validate(schemas.supplierWebSearch), catchAsync(async (req, res) => {
-  const results = await searchSupplier(req.body.name, req.body.city);
-  res.json({ success: true, results });
-}));
+router.post(
+  '/supplier-web-search',
+  validate(schemas.supplierWebSearch),
+  catchAsync(async (req, res) => {
+    const results = await searchSupplier(req.body.name, req.body.city);
+    res.json({ success: true, results });
+  }),
+);
 
 router.get('/outlook/status', (req, res) => {
   res.json(getOutlookStatus(req.user.id));
 });
 
-router.post('/outlook/connect', validate(schemas.outlookConnect), catchAsync(async (req, res) => {
-  const result = await connectOutlook(req.user.id, req.body);
-  res.json({ success: true, ...result });
-}));
+router.post(
+  '/outlook/connect',
+  validate(schemas.outlookConnect),
+  catchAsync(async (req, res) => {
+    const result = await connectOutlook(req.user.id, req.body);
+    res.json({ success: true, ...result });
+  }),
+);
 
-router.post('/outlook/send', validate(schemas.sendEmail), catchAsync(async (req, res) => {
-  await sendOutlookEmail(req.user.id, req.body);
-  res.json({ success: true, message: 'Email sent via Outlook' });
-}));
+router.post(
+  '/outlook/send',
+  validate(schemas.sendEmail),
+  catchAsync(async (req, res) => {
+    await sendOutlookEmail(req.user.id, req.body);
+    res.json({ success: true, message: 'Email sent via Outlook' });
+  }),
+);
 
 router.post('/outlook/disconnect', (req, res) => {
   disconnectOutlook(req.user.id);
