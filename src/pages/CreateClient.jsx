@@ -55,7 +55,7 @@ export default function CreateClient() {
 
   return (
     <div className="space-y-6">
-      <Link to={createPageUrl('Clients')}>
+      <Link to={createPageUrl('ClientCRM')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
           Back to Clients
@@ -263,7 +263,7 @@ export default function CreateClient() {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Link to={createPageUrl('Clients')}>
+          <Link to={createPageUrl('ClientCRM')}>
             <Button type="button" variant="outline">Cancel</Button>
           </Link>
           <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>

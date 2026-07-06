@@ -3,6 +3,7 @@ import { db } from '@/lib/DbContext';
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
+import { usePermissions } from '@/components/permissions/PermissionContext';
 import { PERMISSION_GROUPS, DEFAULT_TIER_PERMISSIONS } from '@/lib/permissions';
 import { showSuccess, showError } from '@/lib/toast';
 import { Card } from '@/components/ui/card';
@@ -55,7 +56,7 @@ const DEPARTMENT_COLORS = [
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
-//   const { hasPermission } = usePermissions();
+  const { hasPermission } = usePermissions();
   const [tab, setTab] = useState('users');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -330,6 +331,16 @@ export default function UserManagement() {
     });
     setDirty(true);
   };
+
+  if (!hasPermission('manage_users')) {
+    return (
+      <Card className="p-12 text-center">
+        <Shield className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-slate-600">Access Denied</h3>
+        <p className="text-sm text-slate-400 mt-1">You need the Manage Users permission to access this page.</p>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (

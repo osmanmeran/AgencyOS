@@ -3,26 +3,26 @@ import { handleMicrosoftCallback, exchangeIdTokenWithServer } from '@/lib/micros
 
 export default function MicrosoftCallback() {
   const [error, setError] = useState('');
-  const [step, setStep] = useState('Verifica codice di autorizzazione...');
+  const [step, setStep] = useState('Verifying authorization code...');
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        setStep('Scambio codice con token Microsoft...');
+        setStep('Exchanging code for a Microsoft token...');
         const { idToken, returnUrl } = await handleMicrosoftCallback();
         if (cancelled) return;
 
-        setStep('Autenticazione sul server...');
+        setStep('Authenticating with the server...');
         await exchangeIdTokenWithServer(idToken);
         if (cancelled) return;
 
-        setStep('Accesso completato, reindirizzamento...');
+        setStep('Login complete, redirecting...');
         window.location.href = returnUrl;
       } catch (err) {
         if (!cancelled) {
           console.error('[MicrosoftCallback] Login error:', err);
-          setError(err.message || 'Login Microsoft fallito.');
+          setError(err.message || 'Microsoft login failed.');
         }
       }
     })();
@@ -38,10 +38,10 @@ export default function MicrosoftCallback() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-2">Login fallito</h2>
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">Login failed</h2>
           <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3 mb-6 text-left">{error}</p>
           <a href="/mock-login" className="inline-block px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700">
-            Torna al login
+            Back to login
           </a>
         </div>
       </div>

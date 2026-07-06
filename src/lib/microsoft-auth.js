@@ -27,7 +27,7 @@ export async function loginWithMicrosoft(returnUrl) {
   const redirectUri = getRedirectUri();
 
   if (!clientId || !tenant) {
-    throw new Error('Microsoft SSO non configurato.');
+    throw new Error('Microsoft SSO is not configured.');
   }
 
   const state = generateRandomString(32);
@@ -66,7 +66,7 @@ export async function handleMicrosoftCallback() {
   }
 
   if (!code) {
-    throw new Error('Codice di autorizzazione mancante.');
+    throw new Error('Missing authorization code.');
   }
 
   const ssState = sessionStorage.getItem('ms_state');
@@ -83,11 +83,11 @@ export async function handleMicrosoftCallback() {
   }
 
   if (!savedState || state !== savedState) {
-    throw new Error(`State non valido. url=${state?.slice(0,8)} ss=${ssState?.slice(0,8)} ls=${lsState?.slice(0,8)}`);
+    throw new Error(`Invalid state. url=${state?.slice(0,8)} ss=${ssState?.slice(0,8)} ls=${lsState?.slice(0,8)}`);
   }
 
   if (!codeVerifier) {
-    throw new Error('Sessione scaduta. Riprova il login.');
+    throw new Error('Session expired. Please try logging in again.');
   }
 
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
@@ -109,7 +109,7 @@ export async function handleMicrosoftCallback() {
 
   const tokenData = await tokenRes.json();
   if (!tokenRes.ok || !tokenData.id_token) {
-    throw new Error(tokenData.error_description || 'Impossibile ottenere il token.');
+    throw new Error(tokenData.error_description || 'Could not obtain the token.');
   }
 
   return { idToken: tokenData.id_token, returnUrl };
@@ -125,7 +125,7 @@ export async function exchangeIdTokenWithServer(idToken) {
       credentials: 'include',
     });
   } catch (networkErr) {
-    throw new Error(`Errore di rete: impossibile raggiungere il server. (${networkErr.message})`);
+    throw new Error(`Network error: could not reach the server. (${networkErr.message})`);
   }
 
   const text = await res.text();
@@ -133,12 +133,12 @@ export async function exchangeIdTokenWithServer(idToken) {
   try {
     data = JSON.parse(text);
   } catch {
-    // Il server ha risposto con testo non-JSON (crash serverless)
-    throw new Error(`Errore del server (${res.status}): ${text.slice(0, 200)}`);
+    // The server responded with non-JSON text (serverless crash)
+    throw new Error(`Server error (${res.status}): ${text.slice(0, 200)}`);
   }
 
   if (!res.ok) {
-    throw new Error(data?.error?.message || data?.message || `Errore ${res.status} dal server.`);
+    throw new Error(data?.error?.message || data?.message || `Error ${res.status} from server.`);
   }
 
   try {

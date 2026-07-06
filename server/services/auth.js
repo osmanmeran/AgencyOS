@@ -46,7 +46,7 @@ export function authenticateLocal(email, password) {
 
 export async function authenticateMicrosoft(idToken) {
   if (!MICROSOFT_CLIENT_ID || !MICROSOFT_TENANT_ID) {
-    throw new UnauthorizedError('Microsoft SSO non configurato sul server.');
+    throw new UnauthorizedError('Microsoft SSO is not configured on the server.');
   }
 
   const JWKS = createRemoteJWKSet(
@@ -61,14 +61,14 @@ export async function authenticateMicrosoft(idToken) {
     });
     payload = result.payload;
   } catch (err) {
-    logger.error({ err: err.message }, 'Verifica token Microsoft fallita');
-    throw new UnauthorizedError('Token Microsoft non valido o scaduto.');
+    logger.error({ err: err.message }, 'Microsoft token verification failed');
+    throw new UnauthorizedError('Microsoft token is invalid or expired.');
   }
 
-  // Verifica che l'utente appartenga al tenant aziendale corretto
+  // Verify the user belongs to the correct company tenant
   if (payload.tid !== MICROSOFT_TENANT_ID) {
-    logger.warn({ tid: payload.tid, expected: MICROSOFT_TENANT_ID }, 'Accesso negato: tenant non autorizzato');
-    throw new ForbiddenError('Accesso negato: il tuo account non appartiene all\'organizzazione autorizzata.');
+    logger.warn({ tid: payload.tid, expected: MICROSOFT_TENANT_ID }, 'Access denied: unauthorized tenant');
+    throw new ForbiddenError('Access denied: your account does not belong to the authorized organization.');
   }
 
   const microsoftId = payload.oid || payload.sub;
@@ -76,7 +76,7 @@ export async function authenticateMicrosoft(idToken) {
   const name = payload.name || email.split('@')[0];
 
   if (!email) {
-    throw new UnauthorizedError('Impossibile ottenere l\'email dall\'account Microsoft.');
+    throw new UnauthorizedError('Could not retrieve the email from the Microsoft account.');
   }
 
   const db = getDb();
@@ -103,7 +103,7 @@ export async function authenticateMicrosoft(idToken) {
   })();
 
   if (!user.is_active) {
-    throw new ForbiddenError('Account in attesa di approvazione. Contatta un amministratore.', 'ACCOUNT_PENDING');
+    throw new ForbiddenError('Account pending approval. Contact an administrator.', 'ACCOUNT_PENDING');
   }
 
   return safeUser(user);

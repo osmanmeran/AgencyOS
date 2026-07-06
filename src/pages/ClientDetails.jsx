@@ -217,7 +217,7 @@ export default function ClientDetails() {
 
   return (
     <div className="space-y-6">
-      <Link to={createPageUrl('Clients')}>
+      <Link to={createPageUrl('ClientCRM')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
           Back to Clients

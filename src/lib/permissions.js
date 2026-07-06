@@ -1,6 +1,6 @@
 // Full catalog of all permissions, grouped by category
 // Each permission has a key, label, and description
-// Used by PermissionContext, PermissionManager, and UserManagement
+// Used by PermissionContext, AppSettings' Permissions tab, and UserManagement
 
 export const PERMISSION_GROUPS = [
   {

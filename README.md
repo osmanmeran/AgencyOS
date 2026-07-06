@@ -121,39 +121,61 @@ tests/             — Vitest test suite (server-side only)
 | `APP_URL` | No | — | Callback URLs, invite links |
 | `DATA_DIR` | No | ./data | Database + uploads path |
 
-## What's Missing / Areas to Improve
+## Improvement Roadmap
 
-### Security
-- **Rotate committed credentials** — The `.env` file contains real Microsoft OAuth client/tenant IDs and was committed. **Rotate these immediately.**
-- **Set a strong JWT_SECRET** — `dev-secret-key-change-in-production` is the default; override in production.
-- **React StrictMode is disabled** — `src/main.jsx` wraps the app without `<StrictMode>`, hiding potential issues.
-
-### Gaps vs. Feature Completeness
-- **No payment gateway** — `ClientPayment` entity exists but there is no Stripe/PayPal integration. Payments are recorded manually.
-- **No SMS provider** — The `/api/integrations/sms` endpoint logs locally but sends nothing.
-- **No LLM/AI features** — `InvokeLLM` and `GenerateImage` are referenced in the API client stub but have no server-side implementation.
-- **No calendar sync** — iCal, Google Calendar, and Outlook calendar sync are absent.
-- **No mobile app** — Responsive web only.
-- **OCR requires Python** — `server/ocr_parse.py` is called as a subprocess; the script is not in the repo, and the endpoint fails if Python 3 is absent.
-
-### Testing
-- **No frontend tests** — The Vitest suite covers server services only. No component, integration, or E2E tests exist.
-- **No API endpoint tests** — Routes are not tested via supertest or similar.
-- **No WebSocket tests.**
+### Architecture
+- **Shared types package** — Introduce a `shared/` package with Zod schemas consumed by both frontend and backend to eliminate duplication and enforce API contracts
+- **Replace JSON blob with typed columns** — The generic `data` JSON field pattern sacrifices type safety and queryability. Migrate to typed columns or adopt an ORM (Knex/Drizzle)
+- **API documentation** — Auto-generate OpenAPI/Swagger docs from Zod schemas to formalize the API contract
+- **Request correlation IDs** — Add request ID tracking through the full request lifecycle for debugging
 
 ### Code Quality
-- **`PermissionManager.jsx` is not registered in the router** — It's a full page component but unreachable from navigation.
-- **`ClientCRM.jsx` and `Clients.jsx` overlap** — Two UIs for client management (Kanban vs table). Users may find this confusing.
-- **Mixed languages** — Error messages and comments use a mix of English and Italian.
-- **`test.cjs` at root** — Unexplained test file outside the Vitest suite.
+- **Standardize module system** — Migrate remaining CJS files (`migrations/*.cjs`) to ESM
+- **Add Prettier** — Enforce consistent formatting with a shared config
+- **Import ordering** — Enforce import ordering rules and eliminate barrel files that cause circular dependencies
+- **Pre-commit hooks** — Add husky + lint-staged for linting/formatting on commit
 
-### Infrastructure
-- **No Dockerfile** — The project has `railway.json` but no container config for other platforms.
-- **No HTTPS setup** — SSL support exists via env vars but is undocumented and not automated.
-- **Missing entity schema** — `TourContract` lacks a JSON schema in the `entities/` directory.
+### Backend
+- **Formal transactions** — Wrap multi-step entity operations in database transactions (unit-of-work pattern)
+- **Dedicated admin routes** — Move inline admin endpoints (`/api/admin/fix-user`, `/api/admin/fix-trip-agents`) into a proper admin route module
+- **Structured logging** — Add correlation ID and user context to every log line
+- **Refresh token rotation** — Replace single 24h JWT with short-lived access tokens + rotating refresh tokens
+- **CSRF protection** — Add CSRF tokens for cookie-based auth (currently relies on same-origin only)
+- **Audit auth events** — Log all login/logout/failed-attempt events alongside entity mutations
 
-### Optional Integrations
-- Google OAuth (environment variable documented, no server code)
-- Google Maps / Places (uses OpenStreetMap instead)
-- WhatsApp / messaging
-- Additional email providers (SendGrid, Mailgun, Gmail API)
+### Frontend
+- **Break up monolithic pages** — Pages like Dashboard (367 lines), ItineraryBuilder, and others should be decomposed into smaller composable components
+- **State machines for complex flows** — Use XState or `useReducer` for multi-step flows (ItineraryBuilder, ProposalBuilder)
+- **Accessibility audit** — Add aria labels, keyboard navigation, focus traps across all interactive components
+- **Granular code splitting** — Extend the existing lazy loading to route-level and component-level chunks
+
+### Testing (Current coverage: minimal)
+- **Unit tests** — Target ~80% coverage on all `server/services/` modules
+- **Integration tests** — Test all route handlers via supertest with the isolated test DB
+- **Component tests** — Add React Testing Library tests for key UI flows
+- **E2E tests** — Cover critical paths: login, entity CRUD, proposal creation workflow
+- **Permission system tests** — Exhaustively test the permission engine (most error-prone layer)
+- **WebSocket tests** — Test real-time broadcast and connection lifecycle
+- **CI pipeline** — Run lint → typecheck → test → build in GitHub Actions
+
+### DevOps
+- **Docker Compose** — Containerize dev environment (DB + app + optional mailhog for email testing)
+- **CI/CD pipeline** — GitHub Actions with lint, typecheck, test, build, and deploy stages
+- **Cloud backups** — Automated DB backup to S3/R2
+- **Enhanced health check** — Verify DB connectivity, migration status, and disk space
+
+### Documentation
+- **JSDoc** — Add typed documentation to all public functions in `server/services/` and `src/lib/`
+- **ARCHITECTURE.md** — Document the entity system, permission model, and data flow
+- **Inline comments** — Add explanations for non-obvious logic (e.g., client portal redirect, auth guards)
+
+### Existing Gaps
+- **No payment gateway** — `ClientPayment` entity exists but Stripe/PayPal integration is absent
+- **No SMS provider** — SMS endpoint logs locally but sends nothing
+- **No LLM/AI features** — `InvokeLLM` and `GenerateImage` are stubbed but unimplemented
+- **No calendar sync** — iCal, Google Calendar, Outlook calendar sync absent
+- **No mobile app** — Responsive web only
+- **OCR requires Python** — `server/ocr_parse.py` is called as a subprocess and is not in the repo
+- **Google OAuth** — Environment variables documented but no server code
+- **React StrictMode disabled** — `src/main.jsx` wraps without `<StrictMode>`
+- **Missing entity schema** — `TourContract` lacks a JSON schema in `entities/`

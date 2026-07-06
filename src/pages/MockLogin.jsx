@@ -18,7 +18,7 @@ export default function MockLogin() {
     try {
       await loginWithMicrosoft(initialReturnUrl);
     } catch (err) {
-      setError(err.message || 'Login Microsoft fallito.');
+      setError(err.message || 'Microsoft login failed.');
       setLoading(false);
     }
   };
@@ -63,14 +63,14 @@ export default function MockLogin() {
               <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
               <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
             </svg>
-            {loading ? 'Accesso in corso...' : 'Accedi con Microsoft'}
+            {loading ? 'Signing in...' : 'Sign in with Microsoft'}
           </button>
         )}
 
         {msConfigured && (
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-200" /></div>
-            <div className="relative flex justify-center text-xs"><span className="bg-white px-2 text-slate-400">oppure</span></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-white px-2 text-slate-400">or</span></div>
           </div>
         )}
 

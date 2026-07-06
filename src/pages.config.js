@@ -13,7 +13,6 @@ const ReservationDetails = lazy(() => import('./pages/ReservationDetails'));
 const Revenue = lazy(() => import('./pages/Revenue'));
 const AuditLogViewer = lazy(() => import('./pages/AuditLogViewer'));
 const FAQ = lazy(() => import('./pages/FAQ'));
-const Clients = lazy(() => import('./pages/Clients'));
 const CreateClient = lazy(() => import('./pages/CreateClient'));
 const ClientDetails = lazy(() => import('./pages/ClientDetails'));
 const ClientPortal = lazy(() => import('./pages/ClientPortal'));
@@ -59,7 +58,6 @@ export const PAGES = {
     "Proposals": Proposals,
     "CreateProposal": CreateProposal,
     "ProposalDetails": ProposalDetails,
-    "Clients": Clients,
     "CreateClient": CreateClient,
     "ClientDetails": ClientDetails,
     "ClientPortal": ClientPortal,

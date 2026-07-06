@@ -9,11 +9,9 @@ import NewClientForm from '../components/crm/NewClientForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Plus, X, Users, ArrowLeft, LayoutGrid, List, Search,
+  Plus, X, Users, ArrowLeft, List, Search,
   TrendingUp, UserCheck, Star, DollarSign
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { filterClientsByCompany } from '../lib/companySearch';
 
 const PIPELINE_STAGES = [
@@ -147,11 +145,6 @@ export default function ClientCRM() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to={createPageUrl('Clients')}>
-            <Button variant="outline" size="sm">
-              <LayoutGrid className="w-3.5 h-3.5 mr-1.5" />Grid View
-            </Button>
-          </Link>
           <Button onClick={() => setShowNewForm(true)} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />New Client
           </Button>
