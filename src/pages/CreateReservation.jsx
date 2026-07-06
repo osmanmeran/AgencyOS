@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -17,7 +17,7 @@ import { SkeletonCard } from '@/components/ui/skeletons';
 import {
   ArrowLeft, Plus, Trash2, TrendingUp,
   RefreshCw, ArrowRightLeft, BookOpen, Users, Star, Hash,
-  Building, User, Coffee, Plane, Map, Zap, Loader2, Check, Search
+  Building, User, Coffee, Plane, Map, Zap, Loader2, Check, Search, ClipboardCheck
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { showSuccess, showError } from '@/lib/toast';
@@ -93,6 +93,9 @@ export default function CreateReservation() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('id');
   const isEditing = !!editId;
+  const fromQuoteId = searchParams.get('fromQuote');
+  const isFromQuote = !!fromQuoteId && !isEditing;
+  const prefillAppliedRef = useRef(false);
 
   const [formData, setFormData] = useState({
     name: '', destination: '', start_date: '', end_date: '',
@@ -171,6 +174,96 @@ export default function CreateReservation() {
     enabled: isEditing
   }));
 
+  const { data: sourceQuote, isLoading: quoteLoading } = /** @type {any} */ (useQuery({
+    queryKey: ['quoteRequest', fromQuoteId],
+    queryFn: () => db.entities.QuoteRequest.get(fromQuoteId),
+    enabled: isFromQuote
+  }));
+
+  const { data: quotePricingLookup } = /** @type {any} */ (useQuery({
+    queryKey: ['quotePricingLookup', fromQuoteId],
+    queryFn: async () => {
+      const pricingIds = [...new Set((sourceQuote.items || []).map(i => i.pricing_id).filter(Boolean))];
+      const supplierIds = [...new Set((sourceQuote.items || []).map(i => i.supplier_id).filter(Boolean))];
+      const [pricingRows, supplierRows] = await Promise.all([
+        Promise.all(pricingIds.map(id => db.entities.SupplierPricing.get(id).catch(() => null))),
+        Promise.all(supplierIds.map(id => db.entities.Supplier.get(id).catch(() => null))),
+      ]);
+      const pricingById = Object.fromEntries(pricingRows.filter(Boolean).map(p => [p.id, p]));
+      const supplierById = Object.fromEntries(supplierRows.filter(Boolean).map(s => [s.id, s]));
+      return { pricingById, supplierById };
+    },
+    enabled: isFromQuote && !!sourceQuote
+  }));
+
+  // Prefill the blank form from a QuoteRequest's structured data (passengers,
+  // items) once its supporting lookups (SupplierPricing/Supplier, for cost
+  // fields never exposed to the client) have loaded. Guarded to run once so
+  // later edits aren't clobbered by query refetches.
+  useEffect(() => {
+    if (!isFromQuote || isEditing || prefillAppliedRef.current) return;
+    if (!sourceQuote || !quotePricingLookup) return;
+    prefillAppliedRef.current = true;
+
+    const { pricingById, supplierById } = quotePricingLookup;
+    const quoteCurrency = sourceQuote.currency || 'USD';
+    let missingPricing = false;
+
+    const prefilledServices = (sourceQuote.items || []).map(item => {
+      const pricing = pricingById[item.pricing_id];
+      const supplier = supplierById[item.supplier_id];
+      if (!pricing) missingPricing = true;
+      const categoryName = supplier ? (categories.find(c => c.id === supplier.category_id)?.name || '') : '';
+      const location = supplier ? (supplier.city || supplier.area || '') : '';
+      return {
+        _key: `svc-${Date.now()}-${Math.random()}`,
+        supplier_id: item.supplier_id || '',
+        name: item.service_name || '',
+        description: '',
+        category: categoryName,
+        location,
+        start_date: item.start_date || '',
+        end_date: item.end_date || '',
+        unit: item.unit || 'per_person',
+        quantity: item.quantity || 1,
+        room_type: item.room_type || '',
+        pickup_location: item.pickup_location || '',
+        dropoff_location: item.dropoff_location || '',
+        flight_number: item.flight_number || '',
+        acquiring_price: pricing ? (parseFloat(pricing.base_price) || 0) : 0,
+        supplier_currency: pricing?.currency || quoteCurrency,
+        base_selling_price: item.unit_price || 0,
+        selling_price: item.unit_price || 0,
+        client_currency: quoteCurrency,
+        pricing_id: item.pricing_id || '',
+      };
+    });
+
+    if (missingPricing) {
+      showError('Some pricing data could not be found', 'Fill in the affected service costs manually before creating the reservation.');
+    }
+
+    const client = clients.find(c => c.id === sourceQuote.client_id);
+    setFormData(prev => ({
+      ...prev,
+      name: sourceQuote.title || prev.name,
+      destination: sourceQuote.destination || prev.destination,
+      start_date: sourceQuote.start_date || prev.start_date,
+      end_date: sourceQuote.end_date || prev.end_date,
+      client_id: sourceQuote.client_id || prev.client_id,
+      client_name: sourceQuote.client_name || client?.name || prev.client_name,
+      client_email: client?.email || prev.client_email,
+      notes: sourceQuote.notes || prev.notes,
+    }));
+    setRooms(passengersToRooms(sourceQuote.passengers || []));
+    setPassengerCount(sourceQuote.passengers?.length || 2);
+    setServices(prefilledServices.length > 0 ? prefilledServices : [emptyService()]);
+    setMarkupPct(0);
+    setAcquiringCurrency(quoteCurrency);
+    setSellingCurrency(quoteCurrency);
+    setExchangeRate(1);
+  }, [isFromQuote, isEditing, sourceQuote, quotePricingLookup, categories, clients]);
+
   const isDirty = useDirtyState(
     { formData, serviceTypes, passengerCount, rooms, services, markupPct, acquiringCurrency, sellingCurrency, exchangeRate },
     editTrip?.id
@@ -184,6 +277,11 @@ export default function CreateReservation() {
     onSuccess: (/** @type {any} */ created) => {
       showSuccess('Reservation created');
       queryClient.invalidateQueries({ queryKey: ['trips'] });
+      if (isFromQuote) {
+        db.entities.QuoteRequest.update(fromQuoteId, { converted_trip_id: created.id })
+          .then(() => queryClient.invalidateQueries({ queryKey: ['allQuoteRequests'] }))
+          .catch(err => showError('Reservation created, but failed to link the quote request', err.message));
+      }
       navigate(createPageUrl(`ReservationDetails?id=${created.id}`));
     },
     onError: (error) => showError('Failed to create reservation', error.message)
@@ -433,6 +531,7 @@ export default function CreateReservation() {
         reference_number: referenceNumber,
         proposal_status: 'pending',
         status: 'planning',
+        quote_request_id: isFromQuote ? fromQuoteId : undefined,
         created_by: currentUser?.email || 'unknown',
         created_by_name: currentUser?.name || currentUser?.email || 'Unknown',
         created_by_phone: currentUser?.phone || '',
@@ -489,6 +588,20 @@ export default function CreateReservation() {
               <span className="font-mono font-semibold text-blue-900">{previewRef}</span>
               <span className="text-xs text-blue-500 ml-auto">{isEditing ? '(existing reference)' : '(auto-generated on save)'}</span>
             </div>
+
+            {isFromQuote && sourceQuote && (
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                <span className="text-sm text-purple-800">
+                  Prefilled from Quote Request <strong>&ldquo;{sourceQuote.title}&rdquo;</strong> — review services and passenger details before creating.
+                </span>
+              </div>
+            )}
+            {isFromQuote && (quoteLoading || !quotePricingLookup) && (
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg flex items-center gap-2 text-sm text-purple-700">
+                <Loader2 className="w-4 h-4 animate-spin" />Loading quote request data…
+              </div>
+            )}
 
             {/* Basic Info */}
             <Card className="p-6 bg-white shadow-md">
@@ -853,7 +966,7 @@ export default function CreateReservation() {
 
             <div className="flex justify-end gap-3 pb-8">
               <Link to={createPageUrl('Reservations')}><Button type="button" variant="outline">Cancel</Button></Link>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={(createMutation.isPending || updateMutation.isPending) || !formData.client_id}>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={(createMutation.isPending || updateMutation.isPending) || !formData.client_id || (isFromQuote && (quoteLoading || !quotePricingLookup))}>
                 {createMutation.isPending || updateMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : isEditing ? 'Save Changes' : 'Create Reservation'}
               </Button>
             </div>

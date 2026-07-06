@@ -128,6 +128,10 @@
     "responded_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "converted_trip_id": {
+      "type": "string",
+      "description": "Set once this quote has been converted into a Trip; prevents duplicate conversion"
     }
   },
   "required": [

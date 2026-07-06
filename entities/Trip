@@ -191,6 +191,10 @@
     "notes": {
       "type": "string"
     },
+    "quote_request_id": {
+      "type": "string",
+      "description": "Set when this reservation was created from a B2B QuoteRequest"
+    },
     "internal_notes": {
       "type": "string",
       "description": "Internal notes visible only to staff, not to clients"

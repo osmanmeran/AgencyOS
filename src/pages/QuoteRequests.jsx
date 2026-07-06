@@ -2,6 +2,7 @@ import { db } from '@/lib/DbContext';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,12 +12,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonTable } from '@/components/ui/skeletons';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, ArrowRightCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { format, parseISO } from 'date-fns';
 import { respondToQuote } from '@/lib/b2bApi';
 import { formatCurrency } from '@/lib/formatters';
 import { QuoteTripInfo, QuoteLineExtras } from '@/components/b2b/QuoteRichDetails';
+import { createPageUrl } from '../utils';
+import { usePermissions } from '@/components/permissions/PermissionContext';
 
 const STATUS_COLORS = {
   submitted: 'bg-blue-100 text-blue-800',
@@ -30,6 +33,8 @@ const STATUS_FILTERS = ['all', 'submitted', 'reviewing', 'quoted', 'accepted', '
 
 export default function QuoteRequests() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(/** @type {any} */ (null));
   const [responseStatus, setResponseStatus] = useState('reviewing');
@@ -164,6 +169,31 @@ export default function QuoteRequests() {
                   <div className="text-sm">
                     <span className="font-medium text-slate-700">Client notes: </span>
                     <span className="text-slate-600">{selected.notes}</span>
+                  </div>
+                )}
+
+                {selected.status === 'accepted' && (
+                  <div className="pt-2">
+                    {selected.converted_trip_id ? (
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2 text-green-700 border-green-300 hover:bg-green-50"
+                        onClick={() => navigate(createPageUrl(`ReservationDetails?id=${selected.converted_trip_id}`))}
+                      >
+                        <ArrowRightCircle className="w-4 h-4" />View Reservation
+                      </Button>
+                    ) : hasPermission('create_trips') && (
+                      <Button
+                        className="w-full gap-2 bg-purple-600 hover:bg-purple-700"
+                        onClick={() => {
+                          const quoteId = selected.id;
+                          setSelected(null);
+                          navigate(createPageUrl(`CreateReservation?fromQuote=${quoteId}`));
+                        }}
+                      >
+                        <ArrowRightCircle className="w-4 h-4" />Convert to Reservation
+                      </Button>
+                    )}
                   </div>
                 )}
 
