@@ -252,8 +252,11 @@ export default function ReservationDetails() {
       // behind. Overwrite the existing one in place instead, so only one
       // "full" invoice ever exists for this trip. An invoice that already
       // has a payment recorded is left alone and a fresh one is issued
-      // instead — never silently overwrite payment history.
-      const [existingFull, ...staleDuplicates] = linkedInvoices.filter(inv => inv.milestone_key === 'full' && (inv.amount_paid || 0) === 0);
+      // instead — never silently overwrite payment history. A cancelled
+      // invoice (voided manually, e.g. a stale duplicate from before this fix
+      // existed) is left untouched too — never revived by reusing it here,
+      // and never a candidate for the duplicate cleanup below either.
+      const [existingFull, ...staleDuplicates] = linkedInvoices.filter(inv => inv.milestone_key === 'full' && inv.status !== 'cancelled' && (inv.amount_paid || 0) === 0);
 
       try {
         if (existingFull) {
@@ -327,6 +330,10 @@ export default function ReservationDetails() {
   const invoiceHeader = appSettings?.invoice_header || {};
   const companyLogoUrl = invoiceHeader.logo_url || appSettings?.logo_url || '';
   const companyName = invoiceHeader.company_name || appSettings?.app_name || '';
+  // Cancelled invoices (e.g. a stale duplicate voided instead of deleted) are
+  // kept for the audit trail but shouldn't clutter the reservation's primary
+  // action buttons — only the current, active invoice(s) belong there.
+  const activeInvoices = linkedInvoices.filter(inv => inv.status !== 'cancelled');
 
   return (
     <div className="space-y-6 print:space-y-4">
@@ -372,8 +379,8 @@ export default function ReservationDetails() {
             <Send className="w-4 h-4 mr-2" />Send to Client
           </Button>
 
-          {linkedInvoices.length > 0 ? (
-            linkedInvoices.map(inv => (
+          {activeInvoices.length > 0 ? (
+            activeInvoices.map(inv => (
               <Link key={inv.id} to={createPageUrl(`InvoiceDetails?id=${inv.id}`)}>
                 <Button variant="outline" className="border-green-300 text-green-600 hover:bg-green-50">
                   <FileText className="w-4 h-4 mr-2" />Invoice {inv.invoice_number}
