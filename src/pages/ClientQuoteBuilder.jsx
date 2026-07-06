@@ -12,10 +12,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { Plus, Trash2, Users, Star, Building, Send, Loader2, MapPin } from 'lucide-react';
+import { Plus, Trash2, Users, Star, Building, Send, Loader2, MapPin, ArrowRightLeft } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
+
+const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' };
+const sym = (cur) => CURRENCY_SYMBOLS[cur] || `${cur} `;
 
 const AGE_CATEGORIES = [
   { value: 'adult', label: 'Adult' },
@@ -25,17 +28,39 @@ const AGE_CATEGORIES = [
 
 const NIGHT_UNITS = ['per_night', 'per_day'];
 const FIXED_UNITS = ['per_group', 'flat_rate'];
+const HOTEL_TREATMENTS = ['Room Only', 'Bed & Breakfast', 'Half Board', 'Full Board', 'All Inclusive'];
+const TRANSFER_TYPES = ['Airport Pickup', 'Airport Drop-off', 'Point to Point', 'Hotel to Hotel', 'Port Transfer', 'City Transfer'];
 
 const rid = (p) => `${p}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const newPassenger = () => ({ id: rid('pax'), name: '', age_category: 'adult', date_of_birth: '', passport_number: '', phone: '', email: '', is_contact: false });
 const newRoom = () => ({ id: rid('room'), type: 'double', passengers: [newPassenger(), newPassenger()] });
-const newLine = () => ({ _key: rid('line'), pricing_id: '', service_name: '', unit: '', min_quantity: 1, quantity: 1, start_date: '', end_date: '', room_type: '', pickup_location: '', dropoff_location: '', flight_number: '', service_time: '', details: '' });
+const newLine = () => ({
+  _key: rid('line'), pricing_id: '', service_name: '', unit: '', min_quantity: 1, quantity: 1,
+  start_date: '', end_date: '', room_type: '', hotel_treatment: '',
+  pickup_location: '', dropoff_location: '', flight_number: '', transfer_type: '',
+  service_date: '', service_time: '', duration: '', details: '',
+});
 
 function nightsBetween(start, end) {
   if (!start || !end) return 0;
   const ms = new Date(end).getTime() - new Date(start).getTime();
   if (!Number.isFinite(ms) || ms <= 0) return 0;
   return Math.round(ms / 86400000);
+}
+
+function lineQty(line) {
+  let qty = Math.max(1, line.quantity || 1);
+  if (NIGHT_UNITS.includes(line.unit)) {
+    const n = nightsBetween(line.start_date, line.end_date);
+    if (n > 0) qty *= n;
+  }
+  return qty;
+}
+
+function lineTotal(line, unitPrice) {
+  if (!unitPrice) return 0;
+  if (FIXED_UNITS.includes(line.unit)) return unitPrice;
+  return unitPrice * lineQty(line);
 }
 
 // One passenger data-entry row — deliberately NOT the staff PassengerFieldsRow,
@@ -70,27 +95,36 @@ function PaxRow({ pax, onChange, onSetContact }) {
 }
 
 // One service line: the client picks a service by name (grouped by service
-// category) and fills in the trip details for it. Suppliers / service
-// providers and all prices are deliberately never shown — the final pricing
-// is confirmed by our team after review.
-function ServiceLineCard({ line, groups, servicesById, onChange, onRemove }) {
-  const pickService = (pricing_id) => {
-    const svc = servicesById.get(pricing_id);
-    if (!svc) return;
-    onChange({
-      ...line,
-      pricing_id,
-      service_name: svc.name,
-      unit: svc.unit,
-      min_quantity: svc.min_quantity || 1,
-      quantity: Math.max(line.quantity || 1, svc.min_quantity || 1),
-    });
-  };
-  const set = (field, value) => onChange({ ...line, [field]: value });
-
+// category, never by supplier) then fills in day-specific details for it —
+// mirroring the staff reservation builder's per-category fields, minus
+// anything cost/margin/supplier related. Prices shown here are the client's
+// own sell price: pulled from the catalog (server already applied the
+// client's markup and converted to their preferred currency).
+function ServiceLineCard({ line, groups, servicesById, currency, onChange, onRemove }) {
+  const svc = servicesById.get(line.pricing_id);
+  const catName = (svc?.category_name || '').toLowerCase();
+  const isLodging = catName.includes('hotel') || catName.includes('lodging') || catName.includes('accommodation') || catName.includes('resort');
+  const isTransfer = catName.includes('transfer');
+  const isGuided = catName.includes('tour') || catName.includes('guide') || catName.includes('excursion') || catName.includes('activity');
   const isNightly = NIGHT_UNITS.includes(line.unit);
   const isFixed = FIXED_UNITS.includes(line.unit);
   const nights = nightsBetween(line.start_date, line.end_date);
+  const unitPrice = svc?.unit_price || 0;
+
+  const pickService = (pricing_id) => {
+    const picked = servicesById.get(pricing_id);
+    if (!picked) return;
+    onChange({
+      ...newLine(),
+      _key: line._key,
+      pricing_id,
+      service_name: picked.name,
+      unit: picked.unit,
+      min_quantity: picked.min_quantity || 1,
+      quantity: picked.min_quantity || 1,
+    });
+  };
+  const set = (field, value) => onChange({ ...line, [field]: value });
 
   return (
     <div className="border border-slate-200 rounded-lg bg-slate-50 p-4 space-y-3">
@@ -119,7 +153,7 @@ function ServiceLineCard({ line, groups, servicesById, onChange, onRemove }) {
       {line.pricing_id && (
         <>
           <div className="flex flex-wrap gap-3">
-            {isNightly && (
+            {isNightly ? (
               <>
                 <div className="space-y-1">
                   <Label className="text-xs text-slate-500">Check-in</Label>
@@ -129,11 +163,12 @@ function ServiceLineCard({ line, groups, servicesById, onChange, onRemove }) {
                   <Label className="text-xs text-slate-500">Check-out</Label>
                   <Input type="date" className="w-40" value={line.end_date} onChange={e => set('end_date', e.target.value)} />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-slate-500">Room type</Label>
-                  <Input className="w-36" placeholder="e.g. Double" value={line.room_type} onChange={e => set('room_type', e.target.value)} />
-                </div>
               </>
+            ) : (
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Date</Label>
+                <Input type="date" className="w-40" value={line.service_date} onChange={e => set('service_date', e.target.value)} />
+              </div>
             )}
             {!isFixed && (
               <div className="space-y-1">
@@ -147,14 +182,59 @@ function ServiceLineCard({ line, groups, servicesById, onChange, onRemove }) {
             )}
           </div>
 
-          {/* Transfer / logistics details (optional, useful for transfers) */}
-          <div className="flex flex-wrap gap-3">
-            <Input className="flex-1 min-w-[150px]" placeholder="Pickup location" value={line.pickup_location} onChange={e => set('pickup_location', e.target.value)} />
-            <Input className="flex-1 min-w-[150px]" placeholder="Drop-off location" value={line.dropoff_location} onChange={e => set('dropoff_location', e.target.value)} />
-            <Input className="w-36" placeholder="Flight no." value={line.flight_number} onChange={e => set('flight_number', e.target.value)} />
-            <Input type="time" className="w-32" title="Time" value={line.service_time} onChange={e => set('service_time', e.target.value)} />
-          </div>
+          {isLodging && (
+            <div className="flex flex-wrap gap-3">
+              <div className="space-y-1 flex-1 min-w-[160px]">
+                <Label className="text-xs text-slate-500">Room type</Label>
+                <Input placeholder="e.g. Double" value={line.room_type} onChange={e => set('room_type', e.target.value)} />
+              </div>
+              <div className="space-y-1 flex-1 min-w-[160px]">
+                <Label className="text-xs text-slate-500">Meal plan</Label>
+                <Select value={line.hotel_treatment} onValueChange={v => set('hotel_treatment', v)}>
+                  <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                  <SelectContent>{HOTEL_TREATMENTS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {isTransfer && (
+            <div className="flex flex-wrap gap-3">
+              <Input className="flex-1 min-w-[150px]" placeholder="Pickup location" value={line.pickup_location} onChange={e => set('pickup_location', e.target.value)} />
+              <Input className="flex-1 min-w-[150px]" placeholder="Drop-off location" value={line.dropoff_location} onChange={e => set('dropoff_location', e.target.value)} />
+              <div className="space-y-1 min-w-[160px]">
+                <Select value={line.transfer_type} onValueChange={v => set('transfer_type', v)}>
+                  <SelectTrigger><SelectValue placeholder="Transfer type (optional)" /></SelectTrigger>
+                  <SelectContent>{TRANSFER_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <Input className="w-36" placeholder="Flight no. (optional)" value={line.flight_number} onChange={e => set('flight_number', e.target.value)} />
+              <Input type="time" className="w-32" title="Pickup time" value={line.service_time} onChange={e => set('service_time', e.target.value)} />
+            </div>
+          )}
+
+          {isGuided && (
+            <div className="flex flex-wrap gap-3">
+              <Input className="flex-1 min-w-[150px]" placeholder="Duration (e.g. Half day, 4 hours)" value={line.duration} onChange={e => set('duration', e.target.value)} />
+              <Input type="time" className="w-32" title="Start time" value={line.service_time} onChange={e => set('service_time', e.target.value)} />
+            </div>
+          )}
+
+          {!isLodging && !isTransfer && !isGuided && (
+            <div className="flex flex-wrap gap-3">
+              <Input type="time" className="w-32" title="Time (optional)" value={line.service_time} onChange={e => set('service_time', e.target.value)} />
+            </div>
+          )}
+
           <Textarea rows={2} placeholder="Extra details for this service (optional)" value={line.details} onChange={e => set('details', e.target.value)} />
+
+          <div className="flex items-center justify-between text-sm pt-1">
+            <span className="text-slate-500">
+              {sym(currency)}{unitPrice.toFixed(2)} {line.unit?.replace('per_', '/ ')}
+              {isNightly && nights > 0 ? ` · ${nights} night${nights !== 1 ? 's' : ''}` : ''}
+            </span>
+            <span className="font-semibold text-green-700">{sym(currency)}{lineTotal(line, unitPrice).toFixed(2)}</span>
+          </div>
         </>
       )}
     </div>
@@ -184,14 +264,18 @@ export default function ClientQuoteBuilder() {
     }).catch(() => setClientLoaded(true));
   }, []);
 
+  const currency = client?.preferred_currency || 'USD';
+
   const { data: catalog, isLoading: catLoading } = /** @type {any} */ (useQuery({
     queryKey: ['b2bCatalog'],
     queryFn: getCatalog,
     enabled: !!client,
   }));
 
-  // All available services, grouped by service category for the picker. Neither
-  // the supplier nor the price is exposed to the client here.
+  // All available services, grouped by service category for the picker. The
+  // supplier behind each service is never exposed to the client here; the
+  // unit_price already has the client's markup applied and is already
+  // converted to their preferred currency (both computed server-side).
   const services = catalog?.items || [];
   const servicesById = useMemo(() => new Map(services.map(s => [s.pricing_id, s])), [services]);
   const groups = useMemo(() => {
@@ -232,6 +316,10 @@ export default function ClientQuoteBuilder() {
   const removeLine = (key) => setLines(prev => (prev.length <= 1 ? [newLine()] : prev.filter(l => l._key !== key)));
 
   const validLines = lines.filter(l => l.pricing_id);
+  const total = useMemo(() => validLines.reduce((sum, l) => {
+    const unitPrice = servicesById.get(l.pricing_id)?.unit_price || 0;
+    return sum + lineTotal(l, unitPrice);
+  }, 0), [validLines, servicesById]);
 
   const submitMutation = /** @type {any} */ (useMutation({
     mutationFn: () => submitQuote({
@@ -244,14 +332,14 @@ export default function ClientQuoteBuilder() {
       items: validLines.map(l => ({
         pricing_id: l.pricing_id,
         quantity: l.quantity || 1,
-        start_date: l.start_date || undefined,
-        end_date: l.end_date || undefined,
+        start_date: l.start_date || l.service_date || undefined,
+        end_date: l.end_date || l.service_date || undefined,
         room_type: l.room_type || undefined,
         pickup_location: l.pickup_location || undefined,
         dropoff_location: l.dropoff_location || undefined,
         flight_number: l.flight_number || undefined,
         service_time: l.service_time || undefined,
-        details: l.details || undefined,
+        details: [l.hotel_treatment, l.transfer_type, l.duration, l.details].filter(Boolean).join(' · ') || undefined,
       })),
     }),
     onSuccess: (quote) => {
@@ -277,7 +365,12 @@ export default function ClientQuoteBuilder() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Request a Quote</h1>
-        <p className="text-slate-500 mt-1">Build your trip and send it to us — we'll confirm the details and pricing for you.</p>
+        <p className="text-slate-500 mt-1 flex items-center gap-2">
+          Build your trip and send it to us for pricing
+          <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+            <ArrowRightLeft className="w-3 h-3" /> Prices in {currency}
+          </span>
+        </p>
       </div>
 
       {/* Trip details */}
@@ -345,21 +438,25 @@ export default function ClientQuoteBuilder() {
         ) : (
           <div className="space-y-4">
             {lines.map(line => (
-              <ServiceLineCard key={line._key} line={line} groups={groups} servicesById={servicesById}
+              <ServiceLineCard key={line._key} line={line} groups={groups} servicesById={servicesById} currency={currency}
                 onChange={u => updateLine(line._key, u)} onRemove={() => removeLine(line._key)} />
             ))}
           </div>
         )}
       </Card>
 
-      {/* Notes + submit */}
+      {/* Notes + summary */}
       <Card className="p-6 bg-white shadow-md">
         <div className="space-y-2 mb-4">
           <Label>Notes (optional)</Label>
           <Textarea rows={3} value={trip.notes} onChange={e => setTrip({ ...trip, notes: e.target.value })} placeholder="Anything else we should know..." />
         </div>
         <Separator className="mb-4" />
-        <p className="text-sm text-slate-500 mb-4">Once you submit, our team reviews your request and confirms availability and pricing before anything is booked.</p>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-lg font-bold text-slate-900">Estimated total</span>
+          <span className="text-2xl font-bold text-green-700">{sym(currency)}{total.toFixed(2)}</span>
+        </div>
+        <p className="text-xs text-slate-400 mb-4">This is an estimate in {currency}. Your final quote is confirmed by our team after review.</p>
         <Button className="w-full bg-blue-600 hover:bg-blue-700" disabled={validLines.length === 0 || submitMutation.isPending} onClick={() => submitMutation.mutate()}>
           {submitMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : <><Send className="w-4 h-4 mr-2" />Submit Quote Request</>}
         </Button>

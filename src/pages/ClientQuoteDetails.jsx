@@ -94,7 +94,6 @@ export default function ClientQuoteDetails() {
                 <div className="flex justify-between items-start flex-1">
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg text-slate-900">{item.service_name}</h3>
-                    <p className="text-slate-500 text-sm mt-1">{item.supplier_name}</p>
                     <QuoteLineExtras item={item} />
                   </div>
                   <div className="text-right ml-4">
