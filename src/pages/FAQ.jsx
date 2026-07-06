@@ -1,7 +1,20 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronRight, Search, HelpCircle, Mail, FileText, Users, Shield, FileDown, Calendar, SendHorizontal, DollarSign } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Search,
+  HelpCircle,
+  Mail,
+  FileText,
+  Users,
+  Shield,
+  FileDown,
+  Calendar,
+  SendHorizontal,
+  DollarSign,
+} from 'lucide-react';
 
 const CATEGORIES = [
   { key: 'general', label: 'General', icon: HelpCircle },
@@ -43,7 +56,7 @@ const FAQS = [
   },
   {
     q: 'What are the user tiers and what can they do?',
-    a: 'There are four tiers: Tier 1 (Admin) — full control, Tier 2 (Manager) — modify trips/invoices, Tier 3 (Agent) — create trips/proposals, Tier 4 (Accounting) — view reports and invoices. Each tier has specific permissions that can be customized.',
+    a: "There are four staff tiers: Admin — full system control, including user management and app settings (the only tier that can delete records); Manager — full operations management, can create/modify/cancel trips, invoices, suppliers, clients, proposals, and services (no delete); Agent — daily ops: creates trips/invoices/proposals, can view all trips but can't modify or cancel them, edits supplier pricing, and handles B2B quote requests; Accounting — read-only access to trips, invoices, reports, search, and export. Each tier's defaults can be overridden per user in Permission Manager. Client and Supplier portal accounts don't use these tiers at all — their access is limited to their own data.",
     category: 'permissions',
   },
   {
@@ -103,7 +116,7 @@ const FAQS = [
   },
   {
     q: 'Why did my session expire?',
-    a: 'Sessions expire after 24 hours for security. If you see a login prompt, just sign in again. Your data is preserved. Check "Remember me" during login to stay signed in longer.',
+    a: 'Sessions expire after 24 hours for security. If you see a login prompt, just sign in again — your data is preserved.',
     category: 'account',
   },
   {
@@ -128,8 +141,13 @@ const FAQS = [
   },
   {
     q: 'Can clients request a quote online?',
-    a: 'Yes. Share the public link /request-quote with potential clients. The form collects name, email, destination, dates, traveler count, budget, and trip description. Submissions create a new client lead with source "web_quote_request" so your team can follow up.',
+    a: 'Yes, two ways. (1) Share the public link /request-quote with potential clients — the form collects name, email, destination, dates, traveler count, budget, and trip description, and creates a new lead with source "web_quote_request". (2) Existing B2B clients with portal access can log in, browse the curated e-shop catalog, and submit a quote request directly.',
     category: 'general',
+  },
+  {
+    q: 'How does B2B client quoting work?',
+    a: 'Client portal accounts see an e-shop-style catalog of services (organized by category and supplier, with photos) priced with their markup automatically applied. They pick services and submit a quote request. Your team reviews it in Quote Requests, can adjust pricing or availability, and approves or rejects it. Once approved, the quote converts into a reservation.',
+    category: 'bookings',
   },
   {
     q: 'How does the multi-currency dashboard work?',
@@ -153,8 +171,9 @@ export default function FAQ() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [openItems, setOpenItems] = useState(new Set());
 
-  const filtered = FAQS.filter(faq => {
-    const matchesSearch = !search ||
+  const filtered = FAQS.filter((faq) => {
+    const matchesSearch =
+      !search ||
       faq.q.toLowerCase().includes(search.toLowerCase()) ||
       faq.a.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = activeCategory === 'all' || faq.category === activeCategory;
@@ -172,7 +191,9 @@ export default function FAQ() {
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Frequently Asked Questions</h1>
-        <p className="text-slate-500 dark:text-slate-400">Find answers to common questions about using Marvelops TravelPro.</p>
+        <p className="text-slate-500 dark:text-slate-400">
+          Find answers to common questions about using Marvelops TravelPro.
+        </p>
       </div>
 
       <div className="relative">
@@ -180,7 +201,7 @@ export default function FAQ() {
         <Input
           placeholder="Search FAQs..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           className="pl-10 h-12 text-base"
         />
       </div>
@@ -196,7 +217,7 @@ export default function FAQ() {
         >
           All
         </button>
-        {CATEGORIES.map(cat => {
+        {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           return (
             <button
@@ -226,7 +247,7 @@ export default function FAQ() {
           filtered.map((faq, _i) => {
             const idx = FAQS.indexOf(faq);
             const isOpen = openItems.has(idx);
-            const cat = CATEGORIES.find(c => c.key === faq.category);
+            const cat = CATEGORIES.find((c) => c.key === faq.category);
             const CatIcon = cat?.icon || HelpCircle;
             return (
               <Card
@@ -262,7 +283,7 @@ export default function FAQ() {
 
       <div className="text-center py-8">
         <p className="text-sm text-slate-400 dark:text-slate-500">
-          Still have questions? Contact your system administrator or email support@travelpro.com
+          Still have questions? Contact your system administrator or email osman.meran@gmail.com
         </p>
       </div>
     </div>
