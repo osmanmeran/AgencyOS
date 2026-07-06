@@ -270,7 +270,7 @@ export default function ClientItinerary() {
           it still appears when this itinerary is printed or saved as PDF. */}
       {(companyLogoUrl || companyName) && (
         <div className="max-w-4xl mx-auto px-4 pt-6 flex items-center gap-3">
-          {companyLogoUrl && <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-10 object-contain" />}
+          {companyLogoUrl && <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-20 object-contain" />}
           {companyName && <span className="font-semibold text-slate-700">{companyName}</span>}
         </div>
       )}

@@ -577,7 +577,7 @@ export default function ReservationDetails() {
         <Card className="bg-white shadow-lg print:shadow-none overflow-hidden">
           {(companyLogoUrl || companyName) && (
             <div className="flex items-center gap-3 px-6 pt-6">
-              {companyLogoUrl && <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-10 object-contain" />}
+              {companyLogoUrl && <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-20 object-contain" />}
               {companyName && <span className="font-semibold text-slate-700">{companyName}</span>}
             </div>
           )}
