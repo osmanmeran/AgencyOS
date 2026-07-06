@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { Plus, Trash2, Users, Star, Building, Send, Loader2, MapPin, ArrowRightLeft } from 'lucide-react';
+import { Plus, Trash2, Users, Star, Building, Send, Loader2, MapPin, ArrowRightLeft, ImageOff, Pencil } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
@@ -94,12 +95,78 @@ function PaxRow({ pax, onChange, onSetContact }) {
   );
 }
 
-// One service line: the client picks a service by name (grouped by service
-// category, never by supplier) then fills in day-specific details for it —
-// mirroring the staff reservation builder's per-category fields, minus
-// anything cost/margin/supplier related. Prices shown here are the client's
-// own sell price: pulled from the catalog (server already applied the
-// client's markup and converted to their preferred currency).
+// Visual service picker: a photo + characteristics card for each catalog
+// item, filterable by category chips. Never shows the supplier behind a
+// service — only what the client is choosing (name, photo, unit, price).
+function ServicePickerDialog({ open, onOpenChange, groups, currency, onSelect }) {
+  const [catFilter, setCatFilter] = useState('all');
+  const visibleGroups = catFilter === 'all' ? groups : groups.filter(g => g.name === catFilter);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Choose a service</DialogTitle></DialogHeader>
+        <div className="flex flex-wrap gap-2 mb-2">
+          <button
+            type="button"
+            onClick={() => setCatFilter('all')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${catFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          >
+            All
+          </button>
+          {groups.map(g => (
+            <button
+              key={g.name}
+              type="button"
+              onClick={() => setCatFilter(g.name)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${catFilter === g.name ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              {g.name}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {visibleGroups.flatMap(g => g.items).map(s => (
+            <button
+              key={s.pricing_id}
+              type="button"
+              onClick={() => onSelect(s.pricing_id)}
+              className="text-left border border-slate-200 rounded-lg bg-white overflow-hidden hover:shadow-md hover:border-blue-300 transition-all"
+            >
+              <div className="h-24 bg-slate-100">
+                {s.image_url ? (
+                  <img src={s.image_url} alt={s.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center"><ImageOff className="w-6 h-6 text-slate-300" /></div>
+                )}
+              </div>
+              <div className="p-3">
+                <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">{s.category_name || 'Other'}</div>
+                <div className="text-sm font-medium text-slate-800 line-clamp-1" title={s.name}>{s.name}</div>
+                {s.description && <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{s.description}</div>}
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs text-slate-500">{s.occupancy ? s.occupancy : (s.unit || '').replace('per_', '/ ')}</span>
+                  <span className="text-sm font-semibold text-green-700">{sym(currency)}{s.unit_price.toFixed(2)}</span>
+                </div>
+              </div>
+            </button>
+          ))}
+          {visibleGroups.flatMap(g => g.items).length === 0 && (
+            <p className="col-span-full text-center text-sm text-slate-400 py-8">No services in this category</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// One service line: the client picks a service visually (photo + name +
+// price, grouped by service category, never by supplier) then fills in
+// day-specific details for it — mirroring the staff reservation builder's
+// per-category fields, minus anything cost/margin/supplier related. Prices
+// shown here are the client's own sell price: pulled from the catalog
+// (server already applied the client's markup and converted to their
+// preferred currency).
 function ServiceLineCard({ line, groups, servicesById, currency, onChange, onRemove }) {
   const svc = servicesById.get(line.pricing_id);
   const catName = (svc?.category_name || '').toLowerCase();
@@ -110,6 +177,7 @@ function ServiceLineCard({ line, groups, servicesById, currency, onChange, onRem
   const isFixed = FIXED_UNITS.includes(line.unit);
   const nights = nightsBetween(line.start_date, line.end_date);
   const unitPrice = svc?.unit_price || 0;
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const pickService = (pricing_id) => {
     const picked = servicesById.get(pricing_id);
@@ -123,32 +191,47 @@ function ServiceLineCard({ line, groups, servicesById, currency, onChange, onRem
       min_quantity: picked.min_quantity || 1,
       quantity: picked.min_quantity || 1,
     });
+    setPickerOpen(false);
   };
   const set = (field, value) => onChange({ ...line, [field]: value });
 
   return (
     <div className="border border-slate-200 rounded-lg bg-slate-50 p-4 space-y-3">
-      <div className="flex flex-wrap gap-3">
-        <div className="flex-1 min-w-[220px] space-y-1">
-          <Label className="text-xs text-slate-500">Service</Label>
-          <Select value={line.pricing_id} onValueChange={pickService}>
-            <SelectTrigger><SelectValue placeholder="Choose a service" /></SelectTrigger>
-            <SelectContent>
-              {groups.map(g => (
-                <SelectGroup key={g.name}>
-                  <SelectLabel>{g.name}</SelectLabel>
-                  {g.items.map(s => (
-                    <SelectItem key={s.pricing_id} value={s.pricing_id}>{s.name}</SelectItem>
-                  ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button type="button" variant="ghost" size="icon" className="self-end text-red-400 hover:text-red-600 hover:bg-red-50" onClick={onRemove}>
+      <div className="flex flex-wrap gap-3 items-start">
+        {svc ? (
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="flex-1 min-w-[220px] flex items-center gap-3 p-2 bg-white border border-slate-200 rounded-lg hover:border-blue-300 transition-colors text-left"
+          >
+            <div className="w-14 h-14 rounded-md bg-slate-100 flex-shrink-0 overflow-hidden">
+              {svc.image_url ? (
+                <img src={svc.image_url} alt={svc.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center"><ImageOff className="w-5 h-5 text-slate-300" /></div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-blue-600 font-medium">{svc.category_name || 'Other'}</div>
+              <div className="text-sm font-semibold text-slate-800 truncate">{svc.name}</div>
+            </div>
+            <Pencil className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="flex-1 min-w-[220px] h-[70px] flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+          >
+            <Plus className="w-4 h-4" />Choose a service
+          </button>
+        )}
+        <Button type="button" variant="ghost" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50" onClick={onRemove}>
           <Trash2 className="w-4 h-4" />
         </Button>
       </div>
+
+      <ServicePickerDialog open={pickerOpen} onOpenChange={setPickerOpen} groups={groups} currency={currency} onSelect={pickService} />
 
       {line.pricing_id && (
         <>

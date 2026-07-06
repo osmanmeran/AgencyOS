@@ -21,21 +21,8 @@ export function getCatalog() {
   return apiFetch('/catalog');
 }
 
-export function getFeatured() {
-  return apiFetch('/featured');
-}
-
-export function getStorefront() {
-  return apiFetch('/storefront');
-}
-
-export function getSupplierCatalog(id) {
-  return apiFetch(`/suppliers/${id}`);
-}
-
-// Accepts the simple cart shape ({ title, items, notes }) as well as the
-// richer reservation-style builder payload (destination, dates, passengers,
-// and per-item trip details). The server ignores unknown fields.
+// The reservation-style builder payload: title, destination, dates,
+// passengers, and per-item trip details. The server ignores unknown fields.
 export function submitQuote(payload) {
   return apiFetch('/quote', { method: 'POST', body: JSON.stringify(payload) });
 }

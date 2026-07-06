@@ -20,7 +20,6 @@ const CalendarView = lazy(() => import('./pages/CalendarView'));
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { I18nProvider } from '@/lib/i18n/I18nContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import { CartProvider } from '@/lib/b2bCart';
 import ErrorBoundary from '@/lib/ErrorBoundary';
 import MockLogin from '@/pages/MockLogin';
 import MicrosoftCallback from '@/pages/MicrosoftCallback';
@@ -39,7 +38,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
 
 // Mirrors the isClientPortal check in Layout.jsx — pages a client-tier
 // portal account is allowed to land on without being bounced to ClientPortal.
-const CLIENT_PORTAL_PREFIXES = ['ClientPortal', 'ClientProposal', 'ClientTrip', 'ClientInvoice', 'ClientCatalog', 'ClientSupplier', 'ClientQuoteBuilder', 'ClientQuote'];
+const CLIENT_PORTAL_PREFIXES = ['ClientPortal', 'ClientProposal', 'ClientTrip', 'ClientInvoice', 'ClientQuoteBuilder', 'ClientQuote'];
 // Standalone routes (magic-link / pre-auth pages) that aren't part of the
 // Pages registry and should never trigger the client-portal redirect.
 const NON_REDIRECT_ROUTES = ['/mock-login', '/auth/microsoft/callback', '/accept-invite', '/auth/outlook-callback', '/client-itinerary', '/request-quote'];
@@ -159,14 +158,12 @@ function App() {
     <I18nProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <CartProvider>
-          <Router>
-            <NavigationTracker />
-            <AuthenticatedApp />
-          </Router>
-          <Toaster richColors closeButton />
-          <VisualEditAgent />
-        </CartProvider>
+        <Router>
+          <NavigationTracker />
+          <AuthenticatedApp />
+        </Router>
+        <Toaster richColors closeButton />
+        <VisualEditAgent />
       </QueryClientProvider>
     </AuthProvider>
     </I18nProvider>

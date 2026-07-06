@@ -38,7 +38,7 @@ export default function ClientQuotes() {
           <h1 className="text-4xl font-bold text-slate-900 mb-2">My Quote Requests</h1>
           <p className="text-slate-600">Track the quotes you've requested</p>
         </div>
-        <Link to={createPageUrl('ClientCatalog')}>
+        <Link to={createPageUrl('ClientQuoteBuilder')}>
           <Button className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
             New Quote Request
@@ -52,9 +52,9 @@ export default function ClientQuotes() {
             <FileText className="w-8 h-8 text-blue-600" />
           </div>
           <h3 className="text-xl font-bold text-slate-900 mb-2">No quote requests yet</h3>
-          <p className="text-slate-600 mb-6">Browse the catalog to request your first quote</p>
-          <Link to={createPageUrl('ClientCatalog')}>
-            <Button className="bg-blue-600 hover:bg-blue-700">Browse Catalog</Button>
+          <p className="text-slate-600 mb-6">Build a trip from our services to request your first quote</p>
+          <Link to={createPageUrl('ClientQuoteBuilder')}>
+            <Button className="bg-blue-600 hover:bg-blue-700">Request a Quote</Button>
           </Link>
         </Card>
       ) : (
