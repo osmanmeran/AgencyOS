@@ -77,6 +77,16 @@ export function userCanAccessEntity(user, entityType, entityData) {
     if (entityType === 'Client') {
       return entityData.id === user.client_id;
     }
+    // ...and the Company their own Client record belongs to, since a
+    // contact billed to a company (see Client.company_id) needs to see that
+    // company's billing details (tax ID, invoice address) on their invoices.
+    if (entityType === 'Company') {
+      const db = getDb();
+      const row = db.prepare("SELECT data FROM entities WHERE type = 'Client' AND id = ?").get(user.client_id);
+      if (!row) return false;
+      const myClient = JSON.parse(row.data);
+      return myClient.company_id === entityData.id;
+    }
   }
 
   // Supplier portal users can only see their own supplier's data

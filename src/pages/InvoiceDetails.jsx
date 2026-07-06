@@ -46,6 +46,14 @@ export default function InvoiceDetails() {
     enabled: !!invoice?.client_id
   }));
 
+  // Contacts that belong to a company are billed to that company, not to
+  // themselves — the company's own tax ID / invoice address take over.
+  const { data: billingCompany } = /** @type {any} */ (useQuery({
+    queryKey: ['company', client?.company_id],
+    queryFn: () => db.entities.Company.get(client.company_id),
+    enabled: !!client?.company_id
+  }));
+
   const { data: settings } = /** @type {any} */ (useQuery({
     queryKey: ['appSettings'],
     queryFn: async () => {
@@ -229,11 +237,19 @@ export default function InvoiceDetails() {
           <div className="grid grid-cols-2 gap-10 mb-10">
             <div>
               <div className="text-xs uppercase tracking-wider text-slate-400 mb-2" style={{ fontWeight: 300 }}>Bill To</div>
-              <div className="text-base font-medium text-slate-900" style={{ fontWeight: 500 }}>{client?.name}</div>
-              {client?.address && <div className="text-sm text-slate-600 mt-1">{client.address}</div>}
-              {client?.city && client?.country && (
-                <div className="text-sm text-slate-600">{client.city}, {client.country}</div>
+              <div className="text-base font-medium text-slate-900" style={{ fontWeight: 500 }}>{billingCompany?.name || client?.name}</div>
+              {billingCompany?.tax_id && <div className="text-sm text-slate-600 mt-1">Tax ID: {billingCompany.tax_id}</div>}
+              {billingCompany?.invoice_address ? (
+                <div className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{billingCompany.invoice_address}</div>
+              ) : (
+                <>
+                  {client?.address && <div className="text-sm text-slate-600 mt-1">{client.address}</div>}
+                  {client?.city && client?.country && (
+                    <div className="text-sm text-slate-600">{client.city}, {client.country}</div>
+                  )}
+                </>
               )}
+              {billingCompany && <div className="text-sm text-slate-600 mt-1">Attn: {client?.name}</div>}
               {client?.email && <div className="text-sm text-slate-600 mt-1">{client.email}</div>}
               {client?.phone && <div className="text-sm text-slate-600">{client.phone}</div>}
             </div>

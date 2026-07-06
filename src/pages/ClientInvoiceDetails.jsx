@@ -23,6 +23,14 @@ export default function ClientInvoiceDetails() {
     enabled: !!invoiceId
   }));
 
+  // Contacts that belong to a company are billed to that company, not to
+  // themselves — the company's own tax ID / invoice address take over.
+  const { data: billingCompany } = /** @type {any} */ (useQuery({
+    queryKey: ['company', client?.company_id],
+    queryFn: () => db.entities.Company.get(client.company_id),
+    enabled: !!client?.company_id
+  }));
+
   if (isLoading) {
     return <SkeletonCard />;
   }
@@ -98,7 +106,12 @@ export default function ClientInvoiceDetails() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <div>
             <div className="text-sm text-slate-500 mb-1">Bill To:</div>
-            <div className="font-bold text-lg text-slate-900">{client?.name}</div>
+            <div className="font-bold text-lg text-slate-900">{billingCompany?.name || client?.name}</div>
+            {billingCompany?.tax_id && <div className="text-slate-600 mt-1">Tax ID: {billingCompany.tax_id}</div>}
+            {billingCompany?.invoice_address && (
+              <div className="text-slate-600 mt-1 whitespace-pre-wrap">{billingCompany.invoice_address}</div>
+            )}
+            {billingCompany && <div className="text-slate-600 mt-1">Attn: {client?.name}</div>}
             {client?.email && <div className="text-slate-600">{client.email}</div>}
           </div>
           <div className="text-right">

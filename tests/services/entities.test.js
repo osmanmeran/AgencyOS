@@ -99,6 +99,20 @@ describe('Entities Service', () => {
       expect(userCanAccessEntity(clientUser, 'Trip', { client_id: 'client1' })).toBe(true);
       expect(userCanAccessEntity(clientUser, 'Trip', { client_id: 'client2' })).toBe(false);
     });
+
+    it('should let a client-portal user read only the Company their own Client record belongs to', () => {
+      const db = getDb();
+      const now = new Date().toISOString();
+      db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)')
+        .run('test-client-with-company', 'Client', JSON.stringify({ name: 'Test Contact', company_id: 'test-company-a' }), now, now);
+
+      const clientUser = { user_tier: 'client', client_id: 'test-client-with-company' };
+      expect(userCanAccessEntity(clientUser, 'Company', { id: 'test-company-a' })).toBe(true);
+      expect(userCanAccessEntity(clientUser, 'Company', { id: 'test-company-b' })).toBe(false);
+
+      const orphanClientUser = { user_tier: 'client', client_id: 'no-such-client' };
+      expect(userCanAccessEntity(orphanClientUser, 'Company', { id: 'test-company-a' })).toBe(false);
+    });
   });
 
   describe('applySort', () => {
