@@ -18,7 +18,7 @@ export default function MockLogin() {
     try {
       await loginWithMicrosoft(initialReturnUrl);
     } catch (err) {
-      setError(err.message || 'Microsoft login failed.');
+      setError(err.message || 'Login failed.');
       setLoading(false);
     }
   };

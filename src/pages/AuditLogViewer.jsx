@@ -30,7 +30,7 @@ async function api(path, opts = {}) {
 const ENTITY_TYPE_OPTIONS = ['', 'auth', 'entities', 'notifications', 'documents', 'proposal', 'booking', 'invoice', 'email'];
 
 export default function AuditLogViewer() {
-//   const { user } = useAuth();
+
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterEntity, setFilterEntity] = useState('');
@@ -48,7 +48,7 @@ export default function AuditLogViewer() {
       params.set('limit', '100');
       const { logs: data } = await api(`/api/audit/logs?${params}`);
       setLogs(data);
-    } catch (err) { console.error(err); } finally { setLoading(false); setSearching(false); }
+    } catch (_) { /* ignore */ } finally { setLoading(false); setSearching(false); }
   };
 
   useEffect(() => { loadLogs(); }, []);

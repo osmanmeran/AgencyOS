@@ -58,7 +58,7 @@ export function auditMiddleware(req, res, next) {
     const isAuthRoute = req.path.startsWith('/api/auth');
 
     if (isMutation && req.user) {
-      const entityType = req.baseUrl?.split('/').pop() || req.path.split('/')[2];
+      const entityType = req.params?.type || req.baseUrl?.split('/').pop() || req.path.split('/')[2];
       const entityId = req.params?.id || req.body?.id || body?.id;
       const action = method === 'POST' ? 'create' : method === 'DELETE' ? 'delete' : 'update';
 

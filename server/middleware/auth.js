@@ -3,12 +3,13 @@ import crypto from 'crypto';
 import logger from '../lib/logger.js';
 import { sendError } from './errors.js';
 
-let JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
+  logger.error('JWT_SECRET is not set. Set it in .env for persistence.');
+  // Use an ephemeral secret as fallback so the app can still start,
+  // but all existing tokens become invalid on restart.
   const generated = crypto.randomBytes(32).toString('hex');
-  logger.warn('JWT_SECRET not set — using ephemeral secret. Set it in .env for persistence.');
   process.env.JWT_SECRET = generated;
-  JWT_SECRET = generated;
 }
 
 export function getJwtSecret() {

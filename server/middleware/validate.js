@@ -167,7 +167,7 @@ export const schemas = {
   sendEmailTemplate: z.object({
     to: z.union([z.string().email(), z.array(z.string().email())]),
     subject: z.string().min(1, 'Subject is required'),
-    template: z.enum(['generic', 'proposal', 'booking_confirmation', 'invoice', 'invite_user']),
+    template: z.enum(['generic', 'proposal', 'booking_confirmation', 'invoice', 'invite_user', 'quote_response']),
     templateData: z.record(z.unknown()).optional(),
     cc: z.union([z.string().email(), z.array(z.string().email())]).optional(),
     bcc: z.union([z.string().email(), z.array(z.string().email())]).optional(),

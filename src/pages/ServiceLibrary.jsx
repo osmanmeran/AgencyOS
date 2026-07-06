@@ -285,7 +285,6 @@ export default function ServiceLibrary() {
     );
 
   const getCategoryName = (id) => categories.find(c => c.id === id)?.name || '';
-//   const getSupplierName = (id) => suppliers.find(s => s.id === id)?.name || '';
 
   return (
     <div className="space-y-8">

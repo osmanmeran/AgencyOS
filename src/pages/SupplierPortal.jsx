@@ -31,9 +31,7 @@ export default function SupplierPortal() {
           const allSuppliers = await db.entities.Supplier.list();
           const found = allSuppliers.find(s => s.id === currentUser.linked_supplier_id);
           if (found) setSupplier(found);
-        } catch (e) {
-          console.error('Failed to load supplier', e);
-        }
+        } catch (_) { /* ignore */ }
       }
     });
   }, []);

@@ -21,7 +21,7 @@ const MEAL_BASIS_LABELS = { RO: 'Room Only', BB: 'B&B', HB: 'Half Board', FB: 'F
 export default function SupplierBookingDetails() {
   const [params] = useSearchParams();
   const bookingId = params.get('id');
-//   const navigate = useNavigate();
+
   const queryClient = useQueryClient();
 
   const { data: booking, isLoading } = /** @type {any} */ (useQuery({

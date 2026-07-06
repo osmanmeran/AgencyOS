@@ -9,7 +9,7 @@ import {
   Map, Zap, Sun, Share2, Check
 } from 'lucide-react';
 
-// const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || (cur || '$'));
+
 
 const CATEGORY_MAP = {
   lodging:        { label: 'Lodging',        icon: Building,       color: 'bg-blue-500',      bg: 'bg-blue-50',    text: 'text-blue-700',   border: 'border-blue-200' },

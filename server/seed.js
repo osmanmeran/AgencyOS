@@ -20,5 +20,5 @@ export function seedDatabase() {
   db.prepare('INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, client_id, linked_supplier_id, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
     .run(uid(), email, hash, 'Admin User', 'admin', 'admin', 'en', '[]', null, null, nowISO, nowISO);
 
-  logger.warn({ email, password }, 'No users found — created initial admin account. Log in and change this password immediately; this message will not repeat.');
+  logger.warn({ email }, 'No users found — created initial admin account. Log in and change this password immediately; this message will not repeat.');
 }

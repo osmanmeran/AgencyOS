@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { migrate, migrationStatus } from './migrations/runner.js';
 import { createBackupSync } from './services/backup.js';
+import logger from './lib/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,17 +42,15 @@ db.pragma('journal_mode = WAL');
 if (process.env.NODE_ENV !== 'test' && migrationStatus(db).some(m => !m.applied)) {
   try {
     const dest = createBackupSync(db, DATA_DIR, 'pre-migration');
-    console.log(`[DB] Pre-migration backup created at ${dest}`);
+    logger.info({ dest }, 'Pre-migration backup created');
   } catch (err) {
-    // A failed backup shouldn't block the app from starting — log loudly
-    // and proceed. Worst case, the daily scheduled backup is the safety net.
-    console.error('[DB] Pre-migration backup failed:', err.message);
+    logger.warn({ err: err.message }, 'Pre-migration backup failed');
   }
 }
 
 migrate(db, { quiet: false });
 
-console.log(`[DB] Initialized at ${DB_PATH}`);
+logger.info({ path: DB_PATH }, 'Database initialized');
 
 // --- Exports ---
 
@@ -87,22 +86,4 @@ export function getEntities() {
 
 export function uid() {
   return crypto.randomBytes(8).toString('hex');
-}
-
-function rebuildFts(db) {
-  try {
-    db.exec('DROP TRIGGER IF EXISTS entities_fts_insert');
-    db.exec('DROP TRIGGER IF EXISTS entities_fts_delete');
-    db.exec('DROP TRIGGER IF EXISTS entities_fts_update');
-  } catch {}
-  try {
-    db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS entities_fts USING fts5(
-      id UNINDEXED, type UNINDEXED, label, content, tokenize='unicode61'
-    )`);
-    db.exec('DELETE FROM entities_fts');
-    db.exec(`INSERT INTO entities_fts(id, type, label, content)
-      SELECT id, type, type, data FROM entities`);
-  } catch (e) {
-    console.error('[FTS] rebuild failed:', e.message);
-  }
 }

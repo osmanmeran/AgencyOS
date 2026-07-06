@@ -82,7 +82,7 @@ export default function ProposalBuilder() {
   }));
 
   const getCategoryName = (id) => categories.find(c => c.id === id)?.name || 'Uncategorized';
-//   const getCategoryColor = (id) => categories.find(c => c.id === id)?.color || '#6366f1';
+
 
   const filteredServices = services.filter(s => {
     const matchSearch = searchTerm === '' ||
@@ -201,7 +201,7 @@ export default function ProposalBuilder() {
                   <p className="text-sm text-slate-400 text-center py-6">No services found</p>
                 )}
                 {Object.entries(groupedServices).map(([catId, svcs]) => {
-//                   const catColor = getCategoryColor(catId);
+
                   const catName = getCategoryName(catId);
                   const isOpen = expandedCategories[catId] !== false;
                   return (

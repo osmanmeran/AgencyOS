@@ -91,7 +91,6 @@ export default function SupplierBookings() {
       <div className="grid grid-cols-3 gap-4">
         {['pending','confirmed','cancelled'].map(s => {
           const count = bookings.filter(b => b.status === s).length;
-//           const { color } = STATUS_STYLES[s];
           return (
             <Card key={s} className="p-4 bg-white text-center">
               <div className={`text-2xl font-bold ${s === 'pending' ? 'text-yellow-600' : s === 'confirmed' ? 'text-green-600' : 'text-red-600'}`}>{count}</div>

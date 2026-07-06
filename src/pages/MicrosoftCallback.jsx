@@ -21,8 +21,7 @@ export default function MicrosoftCallback() {
         window.location.href = returnUrl;
       } catch (err) {
         if (!cancelled) {
-          console.error('[MicrosoftCallback] Login error:', err);
-          setError(err.message || 'Microsoft login failed.');
+          setError(err.message || 'Login failed.');
         }
       }
     })();

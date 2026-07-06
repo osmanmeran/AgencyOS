@@ -25,7 +25,9 @@ function createDoc(filename) {
   const stream = fs.createWriteStream(filePath);
   doc.pipe(stream);
   doc.on('error', err => stream.destroy(err));
-  stream.on('error', err => { throw err; });
+  stream.on('error', (err) => {
+    logger.error({ err: err.message, filename }, 'PDF stream error');
+  });
   return { doc, filePath, filename, stream };
 }
 

@@ -26,9 +26,7 @@ export default function PdfDownloadButton({ type = 'proposal', data = {}, childr
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (err) {
-      console.error('PDF generation failed:', err);
-    }
+    } catch (_) { /* ignore */ }
   };
 
   return (

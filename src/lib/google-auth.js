@@ -1,4 +1,3 @@
-// Google SSO — not configured.
 export function isGoogleSsoConfigured() {
-  return false;
+  return !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
 }

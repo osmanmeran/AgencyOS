@@ -114,8 +114,11 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/admin/list-users', authMiddleware, requireAdmin, (req, res) => {
   const db = getDb();
-  const users = db.prepare('SELECT id, email, name, user_tier, role, is_active, microsoft_id FROM users ORDER BY created_date').all();
-  res.json(users);
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 100, 1), 500);
+  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+  const users = db.prepare('SELECT id, email, name, user_tier, role, is_active, microsoft_id FROM users ORDER BY created_date LIMIT ? OFFSET ?').all(limit, offset);
+  const total = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+  res.json({ users, total, limit, offset });
 });
 
 // Emergency user fix endpoint — admin only
@@ -202,7 +205,9 @@ app.post('/api/app-logs', authMiddleware, (req, res) => {
       db.prepare('INSERT INTO app_logs (id, page_name, user_id, created_date) VALUES (?, ?, ?, ?)')
         .run(uid(), pageName, req.user?.id || null, new Date().toISOString());
     }
-  } catch (e) {}
+  } catch (e) {
+    logger.error({ err: e, pageName: req.body?.pageName }, 'Failed to log page visit');
+  }
   res.json({ ok: true });
 });
 
@@ -215,7 +220,8 @@ const uploadsPath = process.env.DATA_DIR
 app.use('/uploads', express.static(uploadsPath));
 
 if (isProduction) {
-  app.get('*', (req, res) => {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }

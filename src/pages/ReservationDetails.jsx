@@ -221,7 +221,7 @@ export default function ReservationDetails() {
     )];
 
     if (pendingStatus === 'confirmed') {
-//       const amount = trip.total_cost || 0;
+
       const issueDate = new Date().toISOString().split('T')[0];
       const dueDate = addDays(new Date(), 14).toISOString().split('T')[0];
 
@@ -325,7 +325,7 @@ export default function ReservationDetails() {
   const sc = currSymbol(trip.selling_currency || 'USD');
   const statusConf = PROPOSAL_STATUS_CONFIG[trip.proposal_status] || PROPOSAL_STATUS_CONFIG.pending;
   const StatusIcon = statusConf.icon;
-//   const contactPassenger = trip.passengers?.find(p => p.is_contact);
+
   const supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s.name]));
   const invoiceHeader = appSettings?.invoice_header || {};
   const companyLogoUrl = invoiceHeader.logo_url || appSettings?.logo_url || '';

@@ -121,6 +121,38 @@ tests/             — Vitest test suite (server-side only)
 | `APP_URL` | No | — | Callback URLs, invite links |
 | `DATA_DIR` | No | ./data | Database + uploads path |
 
+## Recent Fixes
+
+### Backend (Audit)
+- **API 404s now return JSON** — SPA catch-all skips `/api` routes so unmatched API paths return proper JSON errors
+- **WebSocket+SSL fixed** — WebSocket server now attaches to whichever server (HTTP/HTTPS) is actually started
+- **Upload directory unified** — Document uploads now save to `data/uploads/` matching the static server path
+- **OCR non-blocking** — Replaced synchronous `spawnSync` (60s event loop pause) with async `spawn`
+- **SQL filtering in catalog** — `getActiveCatalogItems` uses `json_extract` in SQL instead of loading all rows into memory
+- **N+1 queries eliminated** — Quote creation batches pricing/supplier lookups into 2 queries instead of 100+
+- **SMTP retry loop fixed** — Failed SMTP verification is now cached to prevent infinite retry on every email send
+- **Outlook token retention** — Transient network errors no longer permanently delete Outlook tokens (only 400/401 do)
+- **PDF error handling** — Stream errors logged instead of thrown (was causing unhandled promise rejections)
+- **Rate limiter fixed** — `ipKeyGenerator` was passing a string instead of `req` object, which would crash the limiter
+- **Empty catch blocks resolved** — Silent error swallowing in `/api/app-logs` replaced with proper logging
+- **JWT_SECRET warning** — Missing secret now logs at `error` level instead of silently generating ephemeral key
+- **Admin user list paginated** — Added `LIMIT/OFFSET` parameters to prevent unbounded response growth
+- **Seed password not logged** — Initial admin password no longer written to server logs
+- **Console.log → logger** — All remaining `console.log/error` calls replaced with structured `logger.*` calls
+- **Dead code removed** — Unreachable `rebuildFts()` function removed
+- **Non-ASCII filenames preserved** — `sanitizeFilename` now allows accented/Unicode characters (Turkish, Italian, etc.)
+- **Email template whitelist** — Added `quote_response` to allowed templates in validation schema
+
+### Frontend (Audit)
+- **Console logs removed** — 11 production `console.log/error/warn` calls stripped or replaced
+- **React StrictMode enabled** — Uncommented `<React.StrictMode>` wrapper in `main.jsx`
+- **Stub code fixed** — `google-auth.js` now properly checks `VITE_GOOGLE_CLIENT_ID` env var
+- **Admin note removed** — `PageNotFound.jsx` no longer shows "AI hasn't implemented this page" to admin users
+- **Deprecated API fixed** — `keepPreviousData` replaced with inline `placeholderData` function (TanStack Query v5)
+- **Logic bug fixed** — `app-params.js` now handles falsy default values (`0`, `""`, `false`) correctly via `!== undefined` check
+- **Mixed language cleanup** — Microsoft OAuth callback step strings and error messages unified to English
+- **Commented-out code removed** — 12+ lines of dead commented code cleaned across 10 files
+
 ## Improvement Roadmap
 
 ### Architecture
@@ -128,20 +160,22 @@ tests/             — Vitest test suite (server-side only)
 - **Replace JSON blob with typed columns** — The generic `data` JSON field pattern sacrifices type safety and queryability. Migrate to typed columns or adopt an ORM (Knex/Drizzle)
 - **API documentation** — Auto-generate OpenAPI/Swagger docs from Zod schemas to formalize the API contract
 - **Request correlation IDs** — Add request ID tracking through the full request lifecycle for debugging
+- **SQL-level entity filtering** — Push `findEntities` filtering/sorting/pagination from JavaScript to SQL for large datasets
 
 ### Code Quality
 - **Standardize module system** — Migrate remaining CJS files (`migrations/*.cjs`) to ESM
 - **Add Prettier** — Enforce consistent formatting with a shared config
 - **Import ordering** — Enforce import ordering rules and eliminate barrel files that cause circular dependencies
 - **Pre-commit hooks** — Add husky + lint-staged for linting/formatting on commit
+- **Deduplicate code** — Merge duplicated `hasFts()`, `ALLOWED_MIME_TYPES`, and `getEntityById` implementations
 
 ### Backend
 - **Formal transactions** — Wrap multi-step entity operations in database transactions (unit-of-work pattern)
 - **Dedicated admin routes** — Move inline admin endpoints (`/api/admin/fix-user`, `/api/admin/fix-trip-agents`) into a proper admin route module
-- **Structured logging** — Add correlation ID and user context to every log line
 - **Refresh token rotation** — Replace single 24h JWT with short-lived access tokens + rotating refresh tokens
 - **CSRF protection** — Add CSRF tokens for cookie-based auth (currently relies on same-origin only)
 - **Audit auth events** — Log all login/logout/failed-attempt events alongside entity mutations
+- **Response shape consistency** — Standardize entity list responses to always return `{ data, total }` instead of mixing plain arrays with paginated objects
 
 ### Frontend
 - **Break up monolithic pages** — Pages like Dashboard (367 lines), ItineraryBuilder, and others should be decomposed into smaller composable components
@@ -169,13 +203,12 @@ tests/             — Vitest test suite (server-side only)
 - **ARCHITECTURE.md** — Document the entity system, permission model, and data flow
 - **Inline comments** — Add explanations for non-obvious logic (e.g., client portal redirect, auth guards)
 
-### Existing Gaps
+### Remaining Gaps
 - **No payment gateway** — `ClientPayment` entity exists but Stripe/PayPal integration is absent
 - **No SMS provider** — SMS endpoint logs locally but sends nothing
 - **No LLM/AI features** — `InvokeLLM` and `GenerateImage` are stubbed but unimplemented
 - **No calendar sync** — iCal, Google Calendar, Outlook calendar sync absent
 - **No mobile app** — Responsive web only
 - **OCR requires Python** — `server/ocr_parse.py` is called as a subprocess and is not in the repo
-- **Google OAuth** — Environment variables documented but no server code
-- **React StrictMode disabled** — `src/main.jsx` wraps without `<StrictMode>`
+- **Google OAuth** — Environment variables documented but server-side code is not implemented
 - **Missing entity schema** — `TourContract` lacks a JSON schema in `entities/`

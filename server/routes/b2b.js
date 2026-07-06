@@ -159,22 +159,24 @@ function notifyStaffOfNewQuote(db, quoteId, quote) {
 // by both /catalog and /featured. base_price / client_price are
 // intentionally never included in the response.
 function getActiveCatalogItems(db, markupPct) {
-  const suppliers = new Map(
-    db.prepare("SELECT * FROM entities WHERE type = 'Supplier'").all()
-      .map(r => [r.id, JSON.parse(r.data)])
-  );
-  const categories = new Map(
-    db.prepare("SELECT * FROM entities WHERE type = 'SupplierCategory'").all()
-      .map(r => [r.id, JSON.parse(r.data)])
-  );
+  const supplierRows = db.prepare("SELECT * FROM entities WHERE type = 'Supplier'").all();
+  const suppliers = new Map(supplierRows.map(r => [r.id, JSON.parse(r.data)]));
+  const categoryRows = db.prepare("SELECT * FROM entities WHERE type = 'SupplierCategory'").all();
+  const categories = new Map(categoryRows.map(r => [r.id, JSON.parse(r.data)]));
 
-  return db.prepare("SELECT * FROM entities WHERE type = 'SupplierPricing'").all()
-    .map(r => ({ id: r.id, ...JSON.parse(r.data) }))
-    .filter(p => p.is_active !== false && p.approval_status === 'approved')
-    .map(p => {
-      const supplier = suppliers.get(p.supplier_id);
-      return {
-      pricing_id: p.id,
+  // Use SQL json_extract to filter active/approved on the server side,
+  // avoiding loading all pricing rows into memory
+  const pricingRows = db.prepare(`
+    SELECT * FROM entities WHERE type = 'SupplierPricing'
+      AND json_extract(data, '$.approval_status') = 'approved'
+      AND (json_extract(data, '$.is_active') IS NULL OR json_extract(data, '$.is_active') = 1)
+  `).all();
+
+  return pricingRows.map(r => {
+    const p = JSON.parse(r.data);
+    const supplier = suppliers.get(p.supplier_id);
+    return {
+      pricing_id: r.id,
       supplier_id: p.supplier_id,
       supplier_name: supplier?.name || '',
       city: supplier?.city || '',
@@ -194,8 +196,8 @@ function getActiveCatalogItems(db, markupPct) {
       season_type: p.season_type || 'all_year',
       season_start: p.season_start || null,
       season_end: p.season_end || null,
-      };
-    });
+    };
+  });
 }
 
 router.get('/catalog', catchAsync(async (req, res) => {
@@ -216,16 +218,24 @@ router.post('/quote', validate(schemas.b2bSubmitQuote), catchAsync(async (req, r
   const markupPct = client.default_markup || 0;
   const displayCurrency = client.preferred_currency || null;
 
+  // Batch-load all pricing and supplier entities to avoid N+1 queries
+  const pricingIds = [...new Set(req.body.items.map(i => i.pricing_id))];
+  const pricingRows = db.prepare(`SELECT * FROM entities WHERE type = 'SupplierPricing' AND id IN (${pricingIds.map(() => '?').join(',')})`).all(...pricingIds);
+  const pricings = Object.fromEntries(pricingRows.map(r => [r.id, { id: r.id, ...JSON.parse(r.data) }]));
+  const supplierIds = [...new Set(pricingRows.map(r => JSON.parse(r.data).supplier_id))];
+  const supplierRows = supplierIds.length ? db.prepare(`SELECT * FROM entities WHERE type = 'Supplier' AND id IN (${supplierIds.map(() => '?').join(',')})`).all(...supplierIds) : [];
+  const suppliers = Object.fromEntries(supplierRows.map(r => [r.id, { id: r.id, ...JSON.parse(r.data) }]));
+
   // Build each line authoritatively from the DB in its supplier currency —
   // never trust a client-sent price. Trip-specific details (dates, transfer
   // logistics) are carried through as-is.
   const rawItems = req.body.items.map(reqItem => {
-    const pricing = getEntityById(db, 'SupplierPricing', reqItem.pricing_id);
+    const pricing = pricings[reqItem.pricing_id];
     if (!pricing) throw new BadRequestError(`Unknown pricing_id: ${reqItem.pricing_id}`);
     if (pricing.is_active === false || pricing.approval_status !== 'approved') {
       throw new BadRequestError(`Pricing "${pricing.name}" is not currently available`);
     }
-    const supplier = getEntityById(db, 'Supplier', pricing.supplier_id);
+    const supplier = suppliers[pricing.supplier_id];
     const quantity = Math.max(1, reqItem.quantity || 1);
     const nights = nightsBetween(reqItem.start_date, reqItem.end_date);
 
@@ -292,10 +302,13 @@ router.get('/quotes', catchAsync(async (req, res) => {
   const client = resolveReadClientContext(req);
   const db = getDb();
 
-  const quotes = db.prepare("SELECT * FROM entities WHERE type = 'QuoteRequest'").all()
+  const rows = db.prepare(`
+    SELECT * FROM entities WHERE type = 'QuoteRequest'
+    ORDER BY created_date DESC
+  `).all();
+  const quotes = rows
     .map(r => ({ id: r.id, ...JSON.parse(r.data), created_date: r.created_date, updated_date: r.updated_date }))
-    .filter(q => q.client_id === client.id)
-    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    .filter(q => q.client_id === client.id);
 
   res.json(quotes);
 }));

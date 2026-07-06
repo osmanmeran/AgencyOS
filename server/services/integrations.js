@@ -135,8 +135,12 @@ async function getGraphAccessToken(userId) {
   });
 
   if (!resp.ok) {
-    db.prepare("DELETE FROM entities WHERE type = 'OutlookToken' AND id = ?").run(userId);
-    throw new Error('Failed to refresh Outlook token — please reconnect');
+    if (resp.status === 400 || resp.status === 401) {
+      db.prepare("DELETE FROM entities WHERE type = 'OutlookToken' AND id = ?").run(userId);
+      throw new Error('Outlook authorization expired — please reconnect');
+    }
+    const errData = await resp.json().catch(() => ({}));
+    throw new Error(`Token refresh failed: ${errData.error_description || resp.statusText}`);
   }
 
   const data = await resp.json();

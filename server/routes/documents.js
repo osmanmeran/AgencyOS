@@ -7,7 +7,9 @@ import { catchAsync, sendError } from '../middleware/errors.js';
 import { upload, saveDocument, getDocuments, getDocumentById, deleteDocument } from '../services/documents.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+const UPLOAD_DIR = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'uploads')
+  : path.join(__dirname, '..', 'data', 'uploads');
 
 const router = Router();
 

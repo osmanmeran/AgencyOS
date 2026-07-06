@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { spawnSync } from 'child_process';
+import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from '../middleware/auth.js';
 import { sendError } from '../middleware/errors.js';
@@ -33,73 +33,102 @@ router.post('/ocr/upload', upload.single('file'), (req, res) => {
   res.json({ file_path: req.file.path, original_name: req.file.originalname, success: true });
 });
 
-router.post('/ocr/extract', (req, res) => {
-  const { file_path, lang, parse, supplier_category } = req.body;
-  if (!file_path) return sendError(res, 400, 'NO_FILE_PATH', 'No file_path provided');
+function runOcrScript(scriptPath, args, timeout, maxBuffer) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('python3', [scriptPath, JSON.stringify(args)], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const finish = (fn, arg) => { if (!settled) { settled = true; clearTimeout(timer); fn(arg); } };
+    const timer = setTimeout(() => {
+      proc.kill('SIGTERM');
+      finish(reject, new Error('OCR process timed out'));
+    }, timeout);
 
-  // Validate file_path is within allowed directories
-  const resolved = path.resolve(file_path);
-  const allowedDirs = [path.resolve(UPLOAD_DIR)];
-  const isAllowed = allowedDirs.some(dir => resolved.startsWith(dir));
-  if (!isAllowed) {
-    return sendError(res, 400, 'INVALID_FILE_PATH', 'Invalid file path');
-  }
-
-  if (!fs.existsSync(resolved)) return sendError(res, 400, 'FILE_NOT_FOUND', 'File not found on server');
-
-  const scriptPath = path.join(__dirname, '..', 'ocr_parse.py');
-  if (!fs.existsSync(scriptPath)) {
-    return sendError(res, 500, 'SCRIPT_NOT_FOUND', 'OCR script not found');
-  }
-
-  const parseArgs = {
-    path: resolved,
-    lang: typeof lang === 'string' && lang.length <= 20 ? lang : 'tur+eng',
-    parse: parse !== false,
-    supplier_category: typeof supplier_category === 'string' ? supplier_category.slice(0, 50) : null,
-  };
-
-  const result = spawnSync('python3', [scriptPath, JSON.stringify(parseArgs)], {
-    encoding: 'utf-8',
-    timeout: 60000,
-    maxBuffer: 10 * 1024 * 1024,
+    const overBuffer = () => maxBuffer && (Buffer.byteLength(stdout) + Buffer.byteLength(stderr)) > maxBuffer;
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk;
+      if (overBuffer()) { proc.kill('SIGTERM'); finish(reject, new Error('OCR process output exceeded maxBuffer')); }
+    });
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk;
+      if (overBuffer()) { proc.kill('SIGTERM'); finish(reject, new Error('OCR process output exceeded maxBuffer')); }
+    });
+    proc.on('error', (err) => finish(reject, err));
+    proc.on('close', (code) => {
+      if (code !== 0) {
+        finish(reject, new Error(stderr || `Process exited with code ${code}`));
+      } else {
+        finish(resolve, { stdout, stderr });
+      }
+    });
   });
+}
 
-  if (result.error) {
-    return sendError(res, 500, 'OCR_PROCESS_ERROR', 'OCR process error: ' + result.error.message);
-  }
-  if (result.stderr) {
-    logger.error({ stderr: result.stderr }, 'OCR process stderr');
-  }
-
+router.post('/ocr/extract', async (req, res) => {
   try {
+    const { file_path, lang, parse, supplier_category } = req.body;
+    if (!file_path) return sendError(res, 400, 'NO_FILE_PATH', 'No file_path provided');
+
+    const resolved = path.resolve(file_path);
+    const allowedDirs = [path.resolve(UPLOAD_DIR)];
+    const isAllowed = allowedDirs.some(dir => resolved.startsWith(dir));
+    if (!isAllowed) {
+      return sendError(res, 400, 'INVALID_FILE_PATH', 'Invalid file path');
+    }
+
+    if (!fs.existsSync(resolved)) return sendError(res, 400, 'FILE_NOT_FOUND', 'File not found on server');
+
+    const scriptPath = path.join(__dirname, '..', 'ocr_parse.py');
+    if (!fs.existsSync(scriptPath)) {
+      return sendError(res, 500, 'SCRIPT_NOT_FOUND', 'OCR script not found');
+    }
+
+    const parseArgs = {
+      path: resolved,
+      lang: typeof lang === 'string' && lang.length <= 20 ? lang : 'tur+eng',
+      parse: parse !== false,
+      supplier_category: typeof supplier_category === 'string' ? supplier_category.slice(0, 50) : null,
+    };
+
+    const result = await runOcrScript(scriptPath, parseArgs, 60000, 10 * 1024 * 1024);
+
+    if (result.stderr) {
+      logger.warn({ stderr: result.stderr }, 'OCR process stderr');
+    }
+
     const data = JSON.parse(result.stdout);
-    // Clean up the uploaded file after processing
     try { fs.unlinkSync(resolved); } catch (e) {}
     res.json(data);
   } catch (e) {
-    res.status(500).json({ error: { code: 'PARSE_ERROR', message: 'Failed to parse OCR output' }, raw: result.stdout.substring(0, 2000) });
+    if (e.message === 'Failed to parse OCR output' || e instanceof SyntaxError) {
+      res.status(500).json({ error: { code: 'PARSE_ERROR', message: 'Failed to parse OCR output' }, raw: e.stdout?.substring(0, 2000) });
+    } else {
+      sendError(res, 500, 'OCR_PROCESS_ERROR', e.message);
+    }
   }
 });
 
-router.post('/ocr/parse-text', (req, res) => {
-  const { text, supplier_category } = req.body;
-  if (!text) return sendError(res, 400, 'NO_TEXT', 'No text provided');
-
-  // Limit text size to prevent resource exhaustion
-  if (text.length > 50000) {
-    return sendError(res, 400, 'TEXT_TOO_LARGE', 'Text too large (max 50000 characters)');
-  }
-
-  const scriptPath = path.join(__dirname, '..', 'ocr_parse.py');
-  if (!fs.existsSync(scriptPath)) {
-    return sendError(res, 500, 'SCRIPT_NOT_FOUND', 'OCR script not found');
-  }
-
-  const tmpFile = path.join(UPLOAD_DIR, '_parse_text_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.txt');
-  fs.writeFileSync(tmpFile, text);
-
+router.post('/ocr/parse-text', async (req, res) => {
+  let tmpFile = '';
   try {
+    const { text, supplier_category } = req.body;
+    if (!text) return sendError(res, 400, 'NO_TEXT', 'No text provided');
+
+    if (text.length > 50000) {
+      return sendError(res, 400, 'TEXT_TOO_LARGE', 'Text too large (max 50000 characters)');
+    }
+
+    const scriptPath = path.join(__dirname, '..', 'ocr_parse.py');
+    if (!fs.existsSync(scriptPath)) {
+      return sendError(res, 500, 'SCRIPT_NOT_FOUND', 'OCR script not found');
+    }
+
+    tmpFile = path.join(UPLOAD_DIR, '_parse_text_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.txt');
+    fs.writeFileSync(tmpFile, text);
+
     const parseArgs = {
       path: tmpFile,
       lang: 'tur+eng',
@@ -107,22 +136,16 @@ router.post('/ocr/parse-text', (req, res) => {
       supplier_category: typeof supplier_category === 'string' ? supplier_category.slice(0, 50) : null,
     };
 
-    const result = spawnSync('python3', [scriptPath, JSON.stringify(parseArgs)], {
-      encoding: 'utf-8',
-      timeout: 15000,
-      maxBuffer: 5 * 1024 * 1024,
-    });
-
-    if (result.error) {
-      return sendError(res, 500, 'PARSE_ERROR', 'Parse error: ' + result.error.message);
-    }
-    try {
-      res.json(JSON.parse(result.stdout));
-    } catch (e) {
-      res.status(500).json({ error: { code: 'PARSE_ERROR', message: 'Failed to parse output' }, raw: result.stdout.substring(0, 2000) });
+    const result = await runOcrScript(scriptPath, parseArgs, 15000, 5 * 1024 * 1024);
+    res.json(JSON.parse(result.stdout));
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      res.status(500).json({ error: { code: 'PARSE_ERROR', message: 'Failed to parse output' } });
+    } else {
+      sendError(res, 500, 'PARSE_ERROR', e.message);
     }
   } finally {
-    try { fs.unlinkSync(tmpFile); } catch (e) {}
+    if (tmpFile) { try { fs.unlinkSync(tmpFile); } catch (e) {} }
   }
 });
 

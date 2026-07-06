@@ -86,7 +86,6 @@ export default function OutlookCallback() {
         setStatus('success');
       })
       .catch((err) => {
-        console.error('[OutlookCallback] error:', err);
         setErrorMsg(err.message || 'Connection failed');
         setStatus('error');
       });

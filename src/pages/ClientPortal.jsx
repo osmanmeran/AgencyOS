@@ -87,8 +87,6 @@ export default function ClientPortal() {
   }
 
   const totalPaid = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
-//   const pendingProposals = proposals.filter(p => p.status === 'sent').length;
-//   const acceptedProposals = proposals.filter(p => p.status === 'accepted').length;
 
   return (
     <div className="space-y-8">

@@ -17,10 +17,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
 const BIND_ADDRESS = process.env.BIND_ADDRESS || '0.0.0.0';
 
-const server = http.createServer(app);
-
-const wss = createWebSocketServer(server);
-
 setBroadcastFn((userId, notification) => {
   sendToUser(userId, { type: 'notification', notification });
 });
@@ -47,12 +43,16 @@ const onServerStart = () => {
   startBackupScheduler();
 };
 
+let server;
 if (hasSsl) {
   const httpsOptions = {
     key: fs.readFileSync(sslKeyPath),
     cert: fs.readFileSync(sslCertPath),
   };
-  https.createServer(httpsOptions, app).listen(PORT, BIND_ADDRESS, onServerStart);
+  server = https.createServer(httpsOptions, app);
 } else {
-  server.listen(PORT, BIND_ADDRESS, onServerStart);
+  server = http.createServer(app);
 }
+
+const wss = createWebSocketServer(server);
+server.listen(PORT, BIND_ADDRESS, onServerStart);

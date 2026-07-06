@@ -195,7 +195,7 @@ export default function ProposalDetails() {
     setBookingModalOpen(true);
   };
 
-//   const supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s.name]));
+
   const proposalCurrencies = [...new Set((proposal.services || []).map(s => s.client_currency).filter(Boolean))];
   const proposalCurrencySymbol = ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[proposalCurrencies[0] || 'USD'] || proposalCurrencies[0] || '$');
 

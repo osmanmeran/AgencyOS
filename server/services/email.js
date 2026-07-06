@@ -24,9 +24,11 @@ function getFromAddress() {
 }
 
 let transporter = null;
+let smtpFailed = false;
 
 function getTransporter() {
   if (transporter) return transporter;
+  if (smtpFailed) return null;
 
   const config = getSmtpConfig();
   if (!config) return null;
@@ -38,6 +40,7 @@ function getTransporter() {
   }).catch((err) => {
     logger.error({ err: err.message }, 'SMTP connection verification failed');
     transporter = null;
+    smtpFailed = true;
   });
 
   return transporter;

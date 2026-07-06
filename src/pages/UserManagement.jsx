@@ -29,7 +29,7 @@ const PERMISSION_TIERS = [
   { key: 'accounting', label: 'Accounting', color: 'bg-green-100 text-green-800', desc: 'Finance & reports' },
 ];
 
-// const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.permissions);
+
 
 const PASSWORD_HINT = 'At least 8 characters, with an uppercase letter, a lowercase letter, and a number.';
 
@@ -810,7 +810,7 @@ export default function UserManagement() {
             {PERMISSION_GROUPS.map(group => {
               const isExpanded = expandedGroups.has(group.key);
               const allChecked = hasAllInGroup(selectedTier, group);
-//               const someChecked = group.permissions.some(p => (tierPerms[selectedTier] || []).includes(p.key));
+
 
               return (
                 <Card key={group.key} className="overflow-hidden">

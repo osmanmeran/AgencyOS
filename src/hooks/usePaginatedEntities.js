@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { db } from '@/lib/DbContext';
 
 const DEBOUNCE_MS = 350;
@@ -32,7 +32,7 @@ export function usePaginatedEntities(entityType, { pageSize = 24, sort, filter }
       sort,
       filter,
     }),
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData) => previousData,
   });
 
   const items = data?.data || [];

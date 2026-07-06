@@ -75,8 +75,6 @@ export async function handleMicrosoftCallback() {
   const codeVerifier = sessionStorage.getItem('ms_code_verifier') || localStorage.getItem('ms_code_verifier');
   const returnUrl = sessionStorage.getItem('ms_return_url') || localStorage.getItem('ms_return_url') || '/';
 
-  console.log('[MSAuth] url_state:', state, '| ss_state:', ssState, '| ls_state:', lsState);
-
   for (const k of ['ms_state', 'ms_code_verifier', 'ms_return_url']) {
     try { sessionStorage.removeItem(k); } catch (e) {}
     try { localStorage.removeItem(k); } catch (e) {}

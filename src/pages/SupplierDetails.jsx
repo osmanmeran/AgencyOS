@@ -38,7 +38,7 @@ export default function SupplierDetails() {
 
   const canModify = hasPermission('modify_suppliers');
   const canModifyBasic = hasPermission('modify_suppliers_basic');
-//   const canDelete = hasPermission('delete_suppliers');
+
 
   const { data: supplier, isLoading } = /** @type {any} */ (useQuery({
     queryKey: ['supplier', supplierId],

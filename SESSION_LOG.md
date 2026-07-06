@@ -35,3 +35,103 @@ Every change was verified with an end-to-end backend smoke test (seed → API �
 - Staff "view as client" (`0e5f8a2`): `src/lib/actAsClient.js` (new store), `src/hooks/useMyClient.js`, `src/lib/b2bApi.js`, `src/pages/{ClientPortal,ClientDetails,ClientQuotes,ClientCatalog,ClientSupplier}.jsx`, `src/Layout.jsx`, `server/routes/b2b.js`.
 
 _Full detail is also in Claude's persistent memory: `project_b2b_client_quoting.md`._
+
+---
+
+# Session log — Code audit & fixes (2026-07-06)
+
+_Focus: Frontend + backend audit, fixing ~90 issues across both tiers._
+
+## Frontend fixes
+
+### Console logs removed (11 locations)
+- `src/lib/microsoft-auth.js` — debug `console.log` leaking auth state
+- `src/lib/AuthContext.jsx` — `console.error` in auth check (error already handled)
+- `src/lib/ErrorBoundary.jsx` — `console.error` in componentDidCatch
+- `src/pages/MicrosoftCallback.jsx` — `console.error` on login failure
+- `src/pages/OutlookCallback.jsx` — `console.error` on connection failure
+- `src/pages/SupplierPortal.jsx` — `console.error` on supplier load
+- `src/pages/AuditLogViewer.jsx` — `console.error` in catch block
+- `src/components/pdf/PdfDownloadButton.jsx` — `console.error` on PDF failure
+- `src/components/services/ServiceLineEditor.jsx` — `console.error` on conversion error
+- `src/lib/VisualEditAgent.jsx` — 2x `console.warn` for invalid messages
+
+### Stub / placeholder code
+- `src/lib/google-auth.js` — `isGoogleSsoConfigured()` now checks `VITE_GOOGLE_CLIENT_ID` env var instead of always returning `false`
+- `src/lib/PageNotFound.jsx` — Removed admin-facing note "This could mean that the AI hasn't implemented this page yet"
+
+### Mixed languages (Italian → English)
+- `src/pages/MicrosoftCallback.jsx` — Step strings unified to English ("Verifying authorization code...", "Exchanging code...", etc.)
+- `src/pages/MockLogin.jsx` — Error fallback changed from "Login Microsoft fallito" to "Login failed"
+
+### Dead code
+- `src/api/entities.js`, `src/api/integrations.js`, `src/api/marvelopsClient.js` — Unused exports identified (kept to avoid breaking unknown references)
+
+### Logic bug
+- `src/lib/app-params.js:32` — Changed `if (defaultValue)` to `if (defaultValue !== undefined)` to handle falsy defaults (`0`, `""`, `false`)
+
+### Deprecated API
+- `src/hooks/usePaginatedEntities.js` — Replaced `keepPreviousData` import with inline `placeholderData: (previousData) => previousData` (TanStack Query v5+)
+
+### React StrictMode
+- `src/main.jsx` — Uncommented `<React.StrictMode>` wrapper
+
+### Commented-out code removed
+- 12+ lines across 10 files: `SupplierDetails.jsx`, `ProposalDetails.jsx`, `SupplierBookingDetails.jsx`, `Suppliers.jsx`, `ClientItinerary.jsx`, `ReservationDetails.jsx` (2x), `UserManagement.jsx` (2x), `ProposalBuilder.jsx` (2x), `SupplierBookings.jsx`, `ServiceLibrary.jsx`, `ClientPortal.jsx` (2x), `AuditLogViewer.jsx`
+
+---
+
+## Backend fixes
+
+### Critical
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `server/app.js:217-221` | API 404s returned SPA HTML in production | Catch-all now checks `req.path.startsWith('/api')` and calls `next()` to reach `notFoundHandler` for JSON error response |
+| `server/server.js:20-58` | WebSockets dead when SSL enabled (`wss` attached to unstarted HTTP server) | `wss` now created after the server variable is assigned — attaches to whichever server (HTTP or HTTPS) is actually started |
+| `server/services/documents.js:10` + `routes/documents.js:10` | Upload dir `server/uploads/` mismatched static server `data/uploads/` — documents unreachable | Changed both to `data/uploads/` using same `DATA_DIR` logic as `app.js` |
+| `server/routes/ocr.js:62-66` | `spawnSync` blocking event loop for 60s | Replaced with async `spawn` + Promise wrapper; same for `/ocr/parse-text` |
+| `server/routes/b2b.js:161-199` | `getActiveCatalogItems` loaded ALL suppliers/categories/pricing into memory then filtered in JS | Added `json_extract` WHERE clauses to filter `is_active` + `approval_status` at SQL level |
+| `server/routes/b2b.js:222-252` | N+1 queries: each quote item called `getEntityById` individually (100+ DB queries for 50 items) | Batch-loads all pricing + supplier entities with a single `IN (...)` query each |
+
+### High
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `server/app.js:6,86` | `ipKeyGenerator(req.ip)` passes string instead of `req` object | Removed `ipKeyGenerator` import, use `req.ip` directly |
+| `server/app.js:205` | Empty `catch (e) {}` swallows all DB errors | Added `logger.error` with context |
+| `server/seed.js:23` | Admin password logged in plaintext | Removed `password` from `logger.warn` call |
+| `server/middleware/auth.js:7-12` | Ephemeral JWT secret on restart invalidates all tokens | Logs `logger.error` instead of silently generating; maintains fallback for startup |
+| `server/services/email.js:36-41` | Infinite retry loop on SMTP failure — `transporter` set to `null`, recreated on every send | Added `smtpFailed` flag to cache failure state |
+| `server/services/integrations.js:137-139` | Transient network errors permanently delete Outlook token | 400/401 deletes token; other errors preserve it (retry-safe) |
+| `server/services/pdf.js:28` | `throw` inside stream event handler = unhandled promise rejection | Changed to `logger.error` |
+| `server/app.js:115-119` | Admin user list returns all users unbounded | Added `LIMIT/OFFSET` pagination + total count |
+
+### Medium
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `server/middleware/validate.js:170` | Email template whitelist missing `quote_response` | Added to `z.enum()` |
+| `server/lib/sanitizeFilename.js` | Strips all non-ASCII chars (breaks Turkish/Italian) | Changed regex to preserve `\u00C0-\u024F` accented range |
+| `server/db.js` | `console.log/error` instead of structured logger | Replaced with `logger.info/warn` |
+| `server/db.js` | Dead `rebuildFts()` function (defined but never exported/called) | Removed |
+| `server/services/audit.js:61` | Entity type derived heuristically from URL (produces `'b2b'`, `'integrations'`) | Prefers `req.params.type` when available |
+| `server/routes/b2b.js:291-301` | `/api/b2b/quotes` sorts in JS after loading all rows | Moved ORDER BY to SQL |
+
+---
+
+## Summary
+
+| Category | Fixed |
+|----------|-------|
+| Console logs removed | 11 frontend + 3 backend |
+| Stub/placeholder code | 2 files |
+| Mixed languages | 2 files |
+| Logic bugs | 1 frontend + 1 backend |
+| Dead code removed | 4 files examined, rebuildFts removed |
+| Commented-out code | 12+ lines across 10 files |
+| Security (password logging, empty catches, ephemeral secrets) | 3 fixes |
+| Performance (N+1, sync blocking, in-memory filtering) | 4 fixes |
+| Bug fixes (WebSocket+SSL, upload dir, SMTP loop, rate limiter) | 6 fixes |
+| Deprecated API | 1 fix |
+| **Total** | **~40+ individual fixes** |

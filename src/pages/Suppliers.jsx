@@ -30,7 +30,7 @@ import { createPageUrl } from '../utils';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { showSuccess, showError } from '@/lib/toast';
 
-// const DEFAULT_COLUMNS = ['name', 'category', 'city', 'rating', 'area'];
+
 
 const SortHeader = ({ field, label, filter, filterActive, sortField, handleSort }) => (
   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider select-none">

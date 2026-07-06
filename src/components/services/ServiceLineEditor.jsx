@@ -85,9 +85,7 @@ export default function ServiceLineEditor({ service, categories, onUpdate, onRem
         handleChange('client_currency', toCur);
         handleChange('selling_price_converted', '');
       }
-    } catch (err) {
-      console.error('Conversion error:', err);
-    }
+    } catch (_) { /* ignore */ }
     if (type === 'cost') setConvertingCost(false); else setConvertingSell(false);
   };
 
