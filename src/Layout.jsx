@@ -194,10 +194,8 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
   // CRM record) still carry their own userTier (never 'client') — give them an
   // obvious way back instead of stranding them in the client-only nav.
   const isStaffPreviewingClient = isClientPortal && userTier && userTier !== 'client';
-  // Staff "view as" is read-only: hide the quote builder (a client-only write
-  // action the server rejects for staff). Real clients keep it.
   const navSections = isClientPortal
-    ? { main: () => CLIENT_NAV(t).filter(i => !(isStaffPreviewingClient && i.page === 'ClientQuoteBuilder')) }
+    ? { main: () => CLIENT_NAV(t) }
     : NAV_SECTIONS;
 
   return (

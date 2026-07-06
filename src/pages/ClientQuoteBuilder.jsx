@@ -17,6 +17,7 @@ import { Plus, Trash2, Users, Star, Building, Send, Loader2, MapPin, ArrowRightL
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
+import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 
 const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' };
 const sym = (cur) => CURRENCY_SYMBOLS[cur] || `${cur} `;
@@ -330,22 +331,35 @@ export default function ClientQuoteBuilder() {
 
   const [client, setClient] = useState(/** @type {any} */ (null));
   const [clientLoaded, setClientLoaded] = useState(false);
+  const [isStaffPreview, setIsStaffPreview] = useState(false);
   const [trip, setTrip] = useState({ title: '', destination: '', start_date: '', end_date: '', notes: '' });
   const [rooms, setRooms] = useState(() => [newRoom()]);
   const [lines, setLines] = useState(() => [newLine()]);
+  const actAsClientId = useActAsClientId();
 
   useEffect(() => {
     db.auth.me().then(async (me) => {
       let resolved = null;
-      if (me.client_id) resolved = await db.entities.Client.get(me.client_id).catch(() => null);
-      if (!resolved && me.email) {
-        const list = await db.entities.Client.filter({ email: me.email });
-        resolved = list[0] || null;
+      // Staff previewing the portal "as" a client (via "View portal as
+      // client" on a CRM record) have no client_id of their own — resolve
+      // the chosen client instead, same as ClientPortal does. Submitting is
+      // still blocked server-side for staff; see isStaffPreview below.
+      const asClientId = getActAsClientId();
+      if (asClientId && me.user_tier !== 'client') {
+        resolved = await db.entities.Client.get(asClientId).catch(() => null);
+        setIsStaffPreview(true);
+      } else {
+        setIsStaffPreview(false);
+        if (me.client_id) resolved = await db.entities.Client.get(me.client_id).catch(() => null);
+        if (!resolved && me.email) {
+          const list = await db.entities.Client.filter({ email: me.email });
+          resolved = list[0] || null;
+        }
       }
       setClient(resolved);
       setClientLoaded(true);
     }).catch(() => setClientLoaded(true));
-  }, []);
+  }, [actAsClientId]);
 
   const currency = client?.preferred_currency || 'USD';
 
@@ -540,9 +554,15 @@ export default function ClientQuoteBuilder() {
           <span className="text-2xl font-bold text-green-700">{sym(currency)}{total.toFixed(2)}</span>
         </div>
         <p className="text-xs text-slate-400 mb-4">This is an estimate in {currency}. Your final quote is confirmed by our team after review.</p>
-        <Button className="w-full bg-blue-600 hover:bg-blue-700" disabled={validLines.length === 0 || submitMutation.isPending} onClick={() => submitMutation.mutate()}>
-          {submitMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : <><Send className="w-4 h-4 mr-2" />Submit Quote Request</>}
-        </Button>
+        {isStaffPreview ? (
+          <p className="text-center text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg py-2.5">
+            Staff preview is read-only — sign in as the client to submit a quote request.
+          </p>
+        ) : (
+          <Button className="w-full bg-blue-600 hover:bg-blue-700" disabled={validLines.length === 0 || submitMutation.isPending} onClick={() => submitMutation.mutate()}>
+            {submitMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : <><Send className="w-4 h-4 mr-2" />Submit Quote Request</>}
+          </Button>
+        )}
       </Card>
     </div>
   );
