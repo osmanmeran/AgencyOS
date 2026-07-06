@@ -61,6 +61,12 @@ export function userCanAccessEntity(user, entityType, entityData) {
   const tier = user.user_tier || 'agent';
   if (tier === 'admin' || tier === 'manager') return true;
 
+  // Global branding/config singleton (app name, logo, invoice header) with no
+  // owner or client scoping — every authenticated user, including client-
+  // portal accounts, needs to read it so client-facing documents (proposals,
+  // invoices, itineraries) show consistent agency branding.
+  if (entityType === 'AppSettings') return true;
+
   if (USER_SCOPED_TYPES.includes(entityType)) {
     return entityData.user_id === user.id || entityData.created_by === user.id;
   }

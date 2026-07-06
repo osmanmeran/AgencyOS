@@ -297,6 +297,9 @@ export default function ReservationDetails() {
   const StatusIcon = statusConf.icon;
 //   const contactPassenger = trip.passengers?.find(p => p.is_contact);
   const supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s.name]));
+  const invoiceHeader = appSettings?.invoice_header || {};
+  const companyLogoUrl = invoiceHeader.logo_url || appSettings?.logo_url || '';
+  const companyName = invoiceHeader.company_name || appSettings?.app_name || '';
 
   return (
     <div className="space-y-6 print:space-y-4">
@@ -572,6 +575,12 @@ export default function ReservationDetails() {
       {/* Itinerary Recap */}
       {showItinerary && trip.start_date && trip.end_date && trip.services?.length > 0 && (
         <Card className="bg-white shadow-lg print:shadow-none overflow-hidden">
+          {(companyLogoUrl || companyName) && (
+            <div className="flex items-center gap-3 px-6 pt-6">
+              {companyLogoUrl && <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-10 object-contain" />}
+              {companyName && <span className="font-semibold text-slate-700">{companyName}</span>}
+            </div>
+          )}
           {/* Cover Image */}
           <div className="relative h-48 md:h-56 overflow-hidden">
             <img

@@ -100,6 +100,11 @@ describe('Entities Service', () => {
       expect(userCanAccessEntity(clientUser, 'Trip', { client_id: 'client2' })).toBe(false);
     });
 
+    it('should let anyone authenticated read AppSettings, including client-portal accounts', () => {
+      const clientUser = { user_tier: 'client', client_id: 'some-client' };
+      expect(userCanAccessEntity(clientUser, 'AppSettings', { logo_url: 'https://example.com/logo.png' })).toBe(true);
+    });
+
     it('should let a client-portal user read only the Company their own Client record belongs to', () => {
       const db = getDb();
       const now = new Date().toISOString();

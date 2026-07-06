@@ -137,6 +137,16 @@ export default function ClientItinerary() {
     enabled: !!tripId
   }));
 
+  const { data: settings } = /** @type {any} */ (useQuery({
+    queryKey: ['appSettings'],
+    queryFn: async () => {
+      const all = await db.entities.AppSettings.list();
+      return all[0] || {};
+    }
+  }));
+  const companyLogoUrl = settings?.invoice_header?.logo_url || settings?.logo_url || '';
+  const companyName = settings?.invoice_header?.company_name || settings?.app_name || '';
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -255,6 +265,15 @@ export default function ClientItinerary() {
           </div>
         </div>
       </nav>
+
+      {/* Agency branding — kept outside <nav> (which is hidden on print) so
+          it still appears when this itinerary is printed or saved as PDF. */}
+      {(companyLogoUrl || companyName) && (
+        <div className="max-w-4xl mx-auto px-4 pt-6 flex items-center gap-3">
+          {companyLogoUrl && <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-10 object-contain" />}
+          {companyName && <span className="font-semibold text-slate-700">{companyName}</span>}
+        </div>
+      )}
 
       {/* Hero */}
       <div className="relative h-72 md:h-80 overflow-hidden">
