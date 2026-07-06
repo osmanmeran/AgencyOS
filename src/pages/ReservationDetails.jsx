@@ -104,7 +104,17 @@ export default function ReservationDetails() {
   });
 
   const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.Trip.update(tripId, data),
+    // created_by_name/created_by_phone are captured once when the reservation
+    // is first saved and never touched again — if that staff member's phone
+    // was blank at the time (or they add one to their profile later), the
+    // itinerary's "Emergency Contact" stays permanently blank/stale. Refresh
+    // both from whoever is currently saving, on every edit, so the itinerary
+    // always shows a reachable contact instead of a frozen snapshot.
+    mutationFn: (/** @type {any} */ data) => db.entities.Trip.update(tripId, {
+      ...data,
+      created_by_name: user?.name || user?.email || trip?.created_by_name || '',
+      created_by_phone: user?.phone || trip?.created_by_phone || '',
+    }),
     onSuccess: () => {
       showSuccess('Reservation updated');
       queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
@@ -243,45 +253,62 @@ export default function ReservationDetails() {
       // "full" invoice ever exists for this trip. An invoice that already
       // has a payment recorded is left alone and a fresh one is issued
       // instead — never silently overwrite payment history.
-      const existingFull = linkedInvoices.find(inv => inv.milestone_key === 'full' && (inv.amount_paid || 0) === 0);
+      const [existingFull, ...staleDuplicates] = linkedInvoices.filter(inv => inv.milestone_key === 'full' && (inv.amount_paid || 0) === 0);
 
-      if (existingFull) {
-        await db.entities.Invoice.update(existingFull.id, {
-          issue_date: issueDate,
-          due_date: dueDate,
-          line_items: lineItems,
-          subtotal,
-          total_amount: subtotal,
-          amount_due: subtotal,
-          currency: trip.selling_currency || 'USD',
-          notes,
-        });
-        history.push(changeEntry('invoice_created', `Invoice ${existingFull.invoice_number} updated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`));
-      } else {
-        const invNumber = `INV-${trip.reference_number || trip.id?.slice(0, 6)?.toUpperCase() || 'RES'}-FULL-${Date.now().toString().slice(-4)}`;
-        await db.entities.Invoice.create({
-          invoice_number: invNumber,
-          client_id: trip.client_id,
-          trip_id: trip.id,
-          issue_date: issueDate,
-          due_date: dueDate,
-          line_items: lineItems,
-          subtotal,
-          tax_rate: 0,
-          tax_amount: 0,
-          total_amount: subtotal,
-          amount_paid: 0,
-          amount_due: subtotal,
-          status: 'draft',
-          currency: trip.selling_currency || 'USD',
-          milestone_key: 'full',
-          notes,
-          payment_terms: appSettings?.default_payment_terms || 'Due within 30 days',
-        });
-        history.push(changeEntry('invoice_created', `Invoice ${invNumber} auto-generated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`));
+      try {
+        if (existingFull) {
+          await db.entities.Invoice.update(existingFull.id, {
+            issue_date: issueDate,
+            due_date: dueDate,
+            line_items: lineItems,
+            subtotal,
+            total_amount: subtotal,
+            amount_due: subtotal,
+            currency: trip.selling_currency || 'USD',
+            notes,
+          });
+          history.push(changeEntry('invoice_created', `Invoice ${existingFull.invoice_number} updated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`));
+        } else {
+          const invNumber = `INV-${trip.reference_number || trip.id?.slice(0, 6)?.toUpperCase() || 'RES'}-FULL-${Date.now().toString().slice(-4)}`;
+          await db.entities.Invoice.create({
+            invoice_number: invNumber,
+            client_id: trip.client_id,
+            trip_id: trip.id,
+            issue_date: issueDate,
+            due_date: dueDate,
+            line_items: lineItems,
+            subtotal,
+            tax_rate: 0,
+            tax_amount: 0,
+            total_amount: subtotal,
+            amount_paid: 0,
+            amount_due: subtotal,
+            status: 'draft',
+            currency: trip.selling_currency || 'USD',
+            milestone_key: 'full',
+            notes,
+            payment_terms: appSettings?.default_payment_terms || 'Due within 30 days',
+          });
+          history.push(changeEntry('invoice_created', `Invoice ${invNumber} auto-generated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`));
+        }
+
+        // Best-effort: also clear out any OTHER stale unpaid "full" invoices
+        // for this trip (leftovers from before invoices were superseded in
+        // place, or any other edge case). Silently skipped per-invoice if the
+        // current user lacks delete_invoices (e.g. manager tier) — leaving a
+        // harmless extra draft behind is better than blocking the confirm.
+        for (const dup of staleDuplicates) {
+          try { await db.entities.Invoice.delete(dup.id); } catch { /* insufficient permission, or already gone */ }
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['invoicesForTrip', tripId] });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['allInvoices'] });
+        queryClient.invalidateQueries({ queryKey: ['allInvoicesMulti'] });
+        queryClient.invalidateQueries({ queryKey: ['clientInvoices'] });
+      } catch (err) {
+        showError('Reservation confirmed, but the invoice could not be updated', err.message);
       }
-
-      queryClient.invalidateQueries({ queryKey: ['invoicesForTrip', tripId] });
     }
 
     updateMutation.mutate({ proposal_status: pendingStatus, change_history: history });
