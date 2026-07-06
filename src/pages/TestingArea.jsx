@@ -11,7 +11,20 @@ async function api(path, opts = {}) {
     credentials: 'include',
     ...opts,
   });
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data?.error) {
+    // Server errors come back as { error: { code, message } }. Surface the
+    // human-readable message — passing the object straight to Error() (as the
+    // callers used to) stringifies it to the useless "[object Object]".
+    const e = data?.error;
+    const msg =
+      (e && typeof e === 'object' && (e.message || e.code)) ||
+      (typeof e === 'string' ? e : null) ||
+      res.statusText ||
+      `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  return data;
 }
 
 export default function TestingArea() {
