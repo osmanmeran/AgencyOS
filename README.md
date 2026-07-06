@@ -6,7 +6,7 @@ A full-stack travel agency operations management platform for tour operators and
 
 - **Frontend:** React 18, Vite 6, MUI 9, Radix UI (shadcn-style), Tailwind CSS, Framer Motion, Recharts
 - **Backend:** Express.js, WebSockets, SQLite (better-sqlite3 with FTS5), JWT auth, Microsoft SSO
-- **Infrastructure:** Vercel / Railway, Docker-ready
+- **Infrastructure:** Railway (deploy on push to `main`), GitHub Actions CI (lint, typecheck, test, build)
 
 ## Features
 
@@ -57,6 +57,7 @@ A full-stack travel agency operations management platform for tour operators and
 ### Portal Access
 
 - **Client Portal** — View proposals, trips, invoices
+- **B2B Client Quoting** — Curated e-shop catalog (categories, suppliers, photos) with markup-based pricing; clients submit quote requests, staff review/price/approve, accepted quotes convert into reservations
 - **Supplier Portal** — View bookings, invoices, ratings
 
 ## Quick Start
@@ -108,12 +109,14 @@ tests/             — Vitest test suite (server-side only)
 
 ## Permission Tiers
 
-| Tier           | Access                                                |
-| -------------- | ----------------------------------------------------- |
-| **Admin**      | Full system control, user management, app settings    |
-| **Manager**    | Operations management, modify/cancel trips & invoices |
-| **Agent**      | Daily ops: trips, proposals, invoices, supplier info  |
-| **Accounting** | Read-only finance, reports, search                    |
+| Tier           | Access                                                                                                                                   |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Admin**      | Full system control — user management, app settings, branding, integrations, billing; only tier that can delete records                  |
+| **Manager**    | Full operations management — create/modify/cancel trips, invoices, suppliers, clients, proposals, services (no delete)                   |
+| **Agent**      | Daily ops — create trips/invoices/proposals, view all trips (can't modify/cancel them), edit supplier pricing, handle B2B quote requests |
+| **Accounting** | Read-only — view trips & invoices, reports, search, export; no create/modify access                                                      |
+
+Each user's effective permissions are their tier's defaults plus any per-user overrides granted in **Permission Manager** (see `server/permissions.js`). Client and Supplier portal accounts don't use these tiers at all — their access is scoped to their own `client_id`/`linked_supplier_id` via dedicated routes, not the permission engine.
 
 ## Environment Variables
 
@@ -211,12 +214,10 @@ tests/             — Vitest test suite (server-side only)
 - **E2E tests** — Cover critical paths: login, entity CRUD, proposal creation workflow
 - **Permission system tests** — Exhaustively test the permission engine (most error-prone layer)
 - **WebSocket tests** — Test real-time broadcast and connection lifecycle
-- **CI pipeline** — Run lint → typecheck → test → build in GitHub Actions
 
 ### DevOps
 
-- **Docker Compose** — Containerize dev environment (DB + app + optional mailhog for email testing)
-- **CI/CD pipeline** — GitHub Actions with lint, typecheck, test, build, and deploy stages
+- **Docker Compose** — Containerize dev environment (DB + app + optional mailhog for email testing); no `Dockerfile` exists in the repo yet
 - **Cloud backups** — Automated DB backup to S3/R2
 
 ### Documentation
@@ -232,4 +233,3 @@ tests/             — Vitest test suite (server-side only)
 - **No mobile app** — Responsive web only
 - **OCR requires Python** — `server/ocr_parse.py` is called as a subprocess and is not in the repo
 - **Google OAuth** — Environment variables documented but server-side code is not implemented
-- **Missing entity schema** — `TourContract` lacks a JSON schema in `entities/`
