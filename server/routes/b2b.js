@@ -192,6 +192,8 @@ function getActiveCatalogItems(db, markupPct) {
       max_quantity: p.max_quantity ?? null,
       occupancy: p.occupancy || null,
       season_type: p.season_type || 'all_year',
+      season_start: p.season_start || null,
+      season_end: p.season_end || null,
       };
     });
 }

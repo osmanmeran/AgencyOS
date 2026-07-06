@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SendHorizontal, CheckCircle2, Plane } from 'lucide-react';
+import LocationSearch from '@/components/services/LocationSearch';
 
 export default function RequestQuote() {
   const [submitted, setSubmitted] = useState(false);
@@ -82,7 +83,11 @@ export default function RequestQuote() {
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-700">Destination *</label>
-                <Input required value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} placeholder="e.g., Paris, France" />
+                <LocationSearch
+                  value={form.destination}
+                  onChange={v => setForm({...form, destination: v})}
+                  placeholder="e.g., Paris, France"
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-700">Start Date</label>

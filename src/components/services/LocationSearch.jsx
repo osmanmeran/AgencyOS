@@ -4,7 +4,7 @@ import { MapPin, Navigation, Loader2 } from 'lucide-react';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 
-export default function LocationSearch({ value, onChange, placeholder }) {
+export default function LocationSearch({ value, onChange, onSelect, placeholder }) {
   const [query, setQuery] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
@@ -66,6 +66,7 @@ export default function LocationSearch({ value, onChange, placeholder }) {
     setQuery(item.label);
     setOpen(false);
     onChange(item.label);
+    if (onSelect) onSelect(item);
   };
 
   const useCurrentLocation = () => {

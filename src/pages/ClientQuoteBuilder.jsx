@@ -18,6 +18,7 @@ import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
+import LocationSearch from '@/components/services/LocationSearch';
 
 const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' };
 const sym = (cur) => CURRENCY_SYMBOLS[cur] || `${cur} `;
@@ -38,10 +39,45 @@ const newPassenger = () => ({ id: rid('pax'), name: '', age_category: 'adult', d
 const newRoom = () => ({ id: rid('room'), type: 'double', passengers: [newPassenger(), newPassenger()] });
 const newLine = () => ({
   _key: rid('line'), pricing_id: '', service_name: '', unit: '', min_quantity: 1, quantity: 1,
+  supplier_id: '', room_occupancy: '',
   start_date: '', end_date: '', room_type: '', hotel_treatment: '',
   pickup_location: '', dropoff_location: '', flight_number: '', transfer_type: '',
   service_date: '', service_time: '', duration: '', details: '',
 });
+
+const OCCUPANCY_LABELS = { single: 'Single', double: 'Double', twin: 'Twin', triple: 'Triple', quad: 'Quad', family: 'Family', extra_bed: 'Extra bed' };
+
+function isLodgingCategory(name) {
+  const c = (name || '').toLowerCase();
+  return c.includes('hotel') || c.includes('lodging') || c.includes('accommodation') || c.includes('resort');
+}
+
+// A rate is usable for a given check-in date if it's an all-year rate, or a
+// 'custom' season whose date range contains it. high_season/low_season/peak
+// carry no stored date range in the DB (season_start/season_end are only
+// entered for 'custom' — see SupplierPricingManager.jsx) so they can never be
+// auto-matched; they fall through to the ambiguous case in resolveRoomRate.
+function isRateValidOn(rate, date) {
+  if (rate.season_type === 'all_year') return true;
+  if (!date) return false;
+  if (rate.season_type === 'custom') return !!rate.season_start && !!rate.season_end && date >= rate.season_start && date <= rate.season_end;
+  return false;
+}
+
+// Given every rate tier for a supplier + room type, pick the one that
+// actually applies to the requested check-in date. If exactly one candidate
+// exists it's used regardless of date (nothing to disambiguate). Otherwise a
+// rate is only auto-selected when the date narrows it down to exactly one
+// match; anything else (no date yet, an undated season label alongside an
+// all-year rate, overlapping custom ranges) is left for the client to
+// resolve manually from the returned candidate list.
+function resolveRoomRate(candidates, date) {
+  if (candidates.length === 0) return { rate: null, candidates: [] };
+  if (candidates.length === 1) return { rate: candidates[0], candidates };
+  const valid = date ? candidates.filter(r => isRateValidOn(r, date)) : [];
+  if (valid.length === 1) return { rate: valid[0], candidates };
+  return { rate: null, candidates: valid.length > 0 ? valid : candidates };
+}
 
 function nightsBetween(start, end) {
   if (!start || !end) return 0;
@@ -102,7 +138,7 @@ const locationOf = (s) => s.city || s.area || 'Other';
 // builder's category -> service selection (ServiceLineEditor.jsx) instead of
 // a photo card grid. Category -> Location -> Supplier (each narrowing the
 // next) -> Service.
-function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect }) {
+function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect, onSelectRoom }) {
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
   const [supplierId, setSupplierId] = useState('');
@@ -153,8 +189,23 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect 
     return [...bySupplier.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name));
   }, [locationItems]);
 
+  const isLodgingCat = isLodgingCategory(category);
+  const roomOptions = useMemo(() => {
+    if (!isLodgingCat) return [];
+    const byOcc = new Map();
+    for (const s of supplierItems) {
+      if (!s.occupancy) continue;
+      byOcc.set(s.occupancy, (byOcc.get(s.occupancy) || 0) + 1);
+    }
+    return [...byOcc.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [supplierItems, isLodgingCat]);
+
   const pick = (pricingId) => {
     onSelect(pricingId);
+    onOpenChange(false);
+  };
+  const pickRoom = (occupancy) => {
+    onSelectRoom(supplierId, occupancy);
     onOpenChange(false);
   };
 
@@ -211,7 +262,26 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect 
             )
           )}
 
-          {supplierId && (
+          {supplierId && isLodgingCat && (
+            roomOptions.length ? (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-500">Room type</Label>
+                <Select onValueChange={pickRoom}>
+                  <SelectTrigger><SelectValue placeholder="Select a room type" /></SelectTrigger>
+                  <SelectContent>
+                    {roomOptions.map(([occ, count]) => (
+                      <SelectItem key={occ} value={occ}>{OCCUPANCY_LABELS[occ] || occ} ({count} rate{count === 1 ? '' : 's'})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-400">The exact rate is picked from check-in date once you enter it.</p>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 text-center py-4">No room types for this supplier</p>
+            )
+          )}
+
+          {supplierId && !isLodgingCat && (
             supplierItems.length ? (
               <div className="space-y-1.5">
                 <Label className="text-xs text-slate-500">Service</Label>
@@ -246,7 +316,10 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect 
 function ServiceLineCard({ line, services, servicesById, currency, onChange, onRemove }) {
   const svc = servicesById.get(line.pricing_id);
   const catName = (svc?.category_name || '').toLowerCase();
-  const isLodging = catName.includes('hotel') || catName.includes('lodging') || catName.includes('accommodation') || catName.includes('resort');
+  // A room type has been picked but the exact rate might still be unresolved
+  // (ambiguous by date) — still treat the line as lodging so the check-in
+  // date fields (needed to resolve it) render.
+  const isLodging = !!line.room_occupancy || isLodgingCategory(catName);
   const isTransfer = catName.includes('transfer');
   const isGuided = catName.includes('tour') || catName.includes('guide') || catName.includes('excursion') || catName.includes('activity');
   const isNightly = NIGHT_UNITS.includes(line.unit);
@@ -254,6 +327,37 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
   const nights = nightsBetween(line.start_date, line.end_date);
   const unitPrice = svc?.unit_price || 0;
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Every rate tier for the chosen supplier + room type, and which one (if
+  // any) unambiguously applies to the current check-in date.
+  const roomCandidates = useMemo(
+    () => (line.room_occupancy && line.supplier_id)
+      ? services.filter(s => s.supplier_id === line.supplier_id && s.occupancy === line.room_occupancy)
+      : [],
+    [services, line.supplier_id, line.room_occupancy]
+  );
+  const { rate: resolvedRate, candidates: rateOptions } = useMemo(
+    () => resolveRoomRate(roomCandidates, line.start_date),
+    [roomCandidates, line.start_date]
+  );
+
+  // Keep pricing_id in sync with whichever rate the check-in date resolves
+  // to. Only clears an existing pick (forcing the manual "Rate" picker below)
+  // if it's no longer valid for the current date — a manual choice made
+  // before dates were entered, or one that's still in-season, is left alone.
+  useEffect(() => {
+    if (!line.room_occupancy) return;
+    if (resolvedRate && line.pricing_id !== resolvedRate.pricing_id) {
+      onChange({ ...line, pricing_id: resolvedRate.pricing_id, service_name: resolvedRate.name, unit: resolvedRate.unit });
+      return;
+    }
+    if (!resolvedRate && line.pricing_id) {
+      const stillValid = line.start_date
+        ? roomCandidates.some(c => c.pricing_id === line.pricing_id && isRateValidOn(c, line.start_date))
+        : roomCandidates.some(c => c.pricing_id === line.pricing_id);
+      if (!stillValid) onChange({ ...line, pricing_id: '' });
+    }
+  }, [resolvedRate?.pricing_id, roomCandidates, line.room_occupancy, line.pricing_id, line.start_date]);
 
   const pickService = (pricing_id) => {
     const picked = servicesById.get(pricing_id);
@@ -266,6 +370,19 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
       unit: picked.unit,
       min_quantity: picked.min_quantity || 1,
       quantity: picked.min_quantity || 1,
+    });
+    setPickerOpen(false);
+  };
+  const pickRoom = (supplierId, occupancy) => {
+    onChange({
+      ...newLine(),
+      _key: line._key,
+      supplier_id: supplierId,
+      room_occupancy: occupancy,
+      room_type: OCCUPANCY_LABELS[occupancy] || occupancy,
+      unit: 'per_night',
+      min_quantity: 1,
+      quantity: 1,
     });
     setPickerOpen(false);
   };
@@ -286,6 +403,20 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
             </div>
             <Pencil className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
           </button>
+        ) : line.room_occupancy ? (
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="flex-1 min-w-[220px] flex items-center gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 transition-colors text-left"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-blue-600 font-medium">{OCCUPANCY_LABELS[line.room_occupancy] || line.room_occupancy}</div>
+              <div className="text-sm font-medium text-slate-500">
+                {line.start_date ? 'Multiple rates match these dates — pick one below' : 'Enter check-in date to find the rate'}
+              </div>
+            </div>
+            <Pencil className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          </button>
         ) : (
           <button
             type="button"
@@ -300,9 +431,9 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
         </Button>
       </div>
 
-      <ServicePickerDialog open={pickerOpen} onOpenChange={setPickerOpen} services={services} currency={currency} onSelect={pickService} />
+      <ServicePickerDialog open={pickerOpen} onOpenChange={setPickerOpen} services={services} currency={currency} onSelect={pickService} onSelectRoom={pickRoom} />
 
-      {line.pricing_id && (
+      {(line.pricing_id || line.room_occupancy) && (
         <>
           <div className="flex flex-wrap gap-3">
             {isNightly ? (
@@ -333,6 +464,26 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
               <div className="flex items-end text-xs text-slate-500 pb-2">{nights} night{nights !== 1 ? 's' : ''}</div>
             )}
           </div>
+
+          {line.room_occupancy && !line.pricing_id && (
+            <div className="space-y-1.5">
+              <Label className="text-xs text-slate-500">Rate</Label>
+              {rateOptions.length ? (
+                <Select onValueChange={pricing_id => set('pricing_id', pricing_id)}>
+                  <SelectTrigger><SelectValue placeholder={line.start_date ? 'Multiple rates match — choose one' : 'Select dates, or choose a rate'} /></SelectTrigger>
+                  <SelectContent>
+                    {rateOptions.map(r => (
+                      <SelectItem key={r.pricing_id} value={r.pricing_id}>
+                        {r.name} — {sym(currency)}{r.unit_price.toFixed(2)} {(r.unit || '').replace('per_', '/ ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-xs text-red-500">No rate is available for this room type.</p>
+              )}
+            </div>
+          )}
 
           {isLodging && (
             <div className="flex flex-wrap gap-3">
@@ -380,13 +531,15 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
 
           <Textarea rows={2} placeholder="Extra details for this service (optional)" value={line.details} onChange={e => set('details', e.target.value)} />
 
-          <div className="flex items-center justify-between text-sm pt-1">
-            <span className="text-slate-500">
-              {sym(currency)}{unitPrice.toFixed(2)} {line.unit?.replace('per_', '/ ')}
-              {isNightly && nights > 0 ? ` · ${nights} night${nights !== 1 ? 's' : ''}` : ''}
-            </span>
-            <span className="font-semibold text-green-700">{sym(currency)}{lineTotal(line, unitPrice).toFixed(2)}</span>
-          </div>
+          {line.pricing_id && (
+            <div className="flex items-center justify-between text-sm pt-1">
+              <span className="text-slate-500">
+                {sym(currency)}{unitPrice.toFixed(2)} {line.unit?.replace('per_', '/ ')}
+                {isNightly && nights > 0 ? ` · ${nights} night${nights !== 1 ? 's' : ''}` : ''}
+              </span>
+              <span className="font-semibold text-green-700">{sym(currency)}{lineTotal(line, unitPrice).toFixed(2)}</span>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -536,7 +689,11 @@ export default function ClientQuoteBuilder() {
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Destination</Label>
-            <Input value={trip.destination} onChange={e => setTrip({ ...trip, destination: e.target.value })} placeholder="e.g. Istanbul & Cappadocia" />
+            <LocationSearch
+              value={trip.destination}
+              onChange={v => setTrip({ ...trip, destination: v })}
+              placeholder="e.g. Istanbul & Cappadocia"
+            />
           </div>
           <div className="space-y-2">
             <Label>Start date</Label>

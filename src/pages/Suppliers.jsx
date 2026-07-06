@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Star, Search, Settings, X, ArrowUpDown, Upload, Filter, FilterX, Download, XCircle, Loader2 } from 'lucide-react';
+import LocationSearch from '@/components/services/LocationSearch';
 import SupplierCsvImporter from '../components/suppliers/SupplierCsvImporter';
 import SupplierCategorySummary from '../components/suppliers/SupplierCategorySummary';
 import { SupplierTextFilter, SupplierCategoryFilter, SupplierRatingFilter, SupplierFilterButton } from '../components/suppliers/SupplierFilters';
@@ -527,7 +528,16 @@ export default function Suppliers() {
             </div>
             <div className="space-y-2">
               <Label>Address</Label>
-              <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+              <LocationSearch
+                value={formData.address}
+                onChange={(v) => setFormData({ ...formData, address: v })}
+                onSelect={(item) => setFormData(prev => ({
+                  ...prev,
+                  address: item.label,
+                  city: prev.city || item.city,
+                }))}
+                placeholder="Search address (OpenStreetMap)..."
+              />
             </div>
             <div className="space-y-2">
               <Label>Pricing Information</Label>

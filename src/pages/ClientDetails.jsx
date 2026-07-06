@@ -30,6 +30,7 @@ import { setActAsClientId } from '@/lib/actAsClient';
 import { format } from 'date-fns';
 import ClientProfile from '../components/clients/ClientProfile';
 import ClientTasksPanel from '../components/clients/ClientTasksPanel';
+import LocationSearch from '@/components/services/LocationSearch';
 
 const STATUS_COLORS = {
 active: 'bg-green-100 text-green-800',
@@ -590,7 +591,17 @@ export default function ClientDetails() {
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>
-                <Input value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
+                <LocationSearch
+                  value={editForm.address}
+                  onChange={(v) => setEditForm({ ...editForm, address: v })}
+                  onSelect={(item) => setEditForm(prev => ({
+                    ...prev,
+                    address: item.label,
+                    city: prev.city || item.city,
+                    country: prev.country || item.country,
+                  }))}
+                  placeholder="Search address (OpenStreetMap)..."
+                />
               </div>
               <div className="space-y-2">
                 <Label>City</Label>

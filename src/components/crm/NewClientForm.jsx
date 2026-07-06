@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useT } from '../../lib/i18n/I18nContext';
 import CompanyPicker from './CompanyPicker';
+import LocationSearch from '@/components/services/LocationSearch';
 
 const PAYMENT_METHODS = ['credit_card', 'bank_transfer', 'paypal', 'check', 'cash', 'other'];
 
@@ -104,7 +105,17 @@ export default function NewClientForm({ onCreated, onCancel }) {
           </div>
           <div className="sm:col-span-2 space-y-1">
             <Label>{t('common.address')}</Label>
-            <Input value={form.address} onChange={e => set('address', e.target.value)} placeholder="123 Main St" />
+            <LocationSearch
+              value={form.address}
+              onChange={v => set('address', v)}
+              onSelect={(item) => setForm(prev => ({
+                ...prev,
+                address: item.label,
+                city: prev.city || item.city,
+                country: prev.country || item.country,
+              }))}
+              placeholder="Search address (OpenStreetMap)..."
+            />
           </div>
           <div className="space-y-1">
             <Label>{t('common.city')}</Label>
