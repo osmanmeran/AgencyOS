@@ -214,7 +214,6 @@ export default function ReservationDetails() {
 //       const amount = trip.total_cost || 0;
       const issueDate = new Date().toISOString().split('T')[0];
       const dueDate = addDays(new Date(), 14).toISOString().split('T')[0];
-      const invNumber = `INV-${trip.reference_number || trip.id?.slice(0, 6)?.toUpperCase() || 'RES'}-FULL-${Date.now().toString().slice(-4)}`;
 
       const effQty = (s) => {
         const qty = parseInt(s.quantity) || 1;
@@ -235,28 +234,54 @@ export default function ReservationDetails() {
       }));
 
       const subtotal = lineItems.reduce((sum, li) => sum + li.amount, 0);
+      const notes = `Auto-generated on confirmation of reservation ${trip.reference_number || trip.name}.${appSettings?.default_invoice_notes ? '\n\n' + appSettings.default_invoice_notes : ''}`;
 
-      await db.entities.Invoice.create({
-        invoice_number: invNumber,
-        client_id: trip.client_id,
-        trip_id: trip.id,
-        issue_date: issueDate,
-        due_date: dueDate,
-        line_items: lineItems,
-        subtotal,
-        tax_rate: 0,
-        tax_amount: 0,
-        total_amount: subtotal,
-        amount_paid: 0,
-        amount_due: subtotal,
-        status: 'draft',
-        currency: trip.selling_currency || 'USD',
-        milestone_key: 'full',
-        notes: `Auto-generated on confirmation of reservation ${trip.reference_number || trip.name}.${appSettings?.default_invoice_notes ? '\n\n' + appSettings.default_invoice_notes : ''}`,
-        payment_terms: appSettings?.default_payment_terms || 'Due within 30 days',
-      });
+      // Re-confirming after an edit (e.g. status was reset to pending to
+      // change services, then confirmed again) used to create a brand new
+      // "full" invoice every time, leaving a stale copy of the old amount
+      // behind. Overwrite the existing one in place instead, so only one
+      // "full" invoice ever exists for this trip. An invoice that already
+      // has a payment recorded is left alone and a fresh one is issued
+      // instead — never silently overwrite payment history.
+      const existingFull = linkedInvoices.find(inv => inv.milestone_key === 'full' && (inv.amount_paid || 0) === 0);
 
-      history.push(changeEntry('invoice_created', `Invoice ${invNumber} auto-generated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`));
+      if (existingFull) {
+        await db.entities.Invoice.update(existingFull.id, {
+          issue_date: issueDate,
+          due_date: dueDate,
+          line_items: lineItems,
+          subtotal,
+          total_amount: subtotal,
+          amount_due: subtotal,
+          currency: trip.selling_currency || 'USD',
+          notes,
+        });
+        history.push(changeEntry('invoice_created', `Invoice ${existingFull.invoice_number} updated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`));
+      } else {
+        const invNumber = `INV-${trip.reference_number || trip.id?.slice(0, 6)?.toUpperCase() || 'RES'}-FULL-${Date.now().toString().slice(-4)}`;
+        await db.entities.Invoice.create({
+          invoice_number: invNumber,
+          client_id: trip.client_id,
+          trip_id: trip.id,
+          issue_date: issueDate,
+          due_date: dueDate,
+          line_items: lineItems,
+          subtotal,
+          tax_rate: 0,
+          tax_amount: 0,
+          total_amount: subtotal,
+          amount_paid: 0,
+          amount_due: subtotal,
+          status: 'draft',
+          currency: trip.selling_currency || 'USD',
+          milestone_key: 'full',
+          notes,
+          payment_terms: appSettings?.default_payment_terms || 'Due within 30 days',
+        });
+        history.push(changeEntry('invoice_created', `Invoice ${invNumber} auto-generated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`));
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['invoicesForTrip', tripId] });
     }
 
     updateMutation.mutate({ proposal_status: pendingStatus, change_history: history });
