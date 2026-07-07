@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useDb } from '@/lib/DbContext';
 import { isMicrosoftSsoConfigured, loginWithMicrosoft } from '@/lib/microsoft-auth';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function MockLogin() {
+  const { t } = useT();
   const db = useDb();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +20,7 @@ export default function MockLogin() {
     try {
       await loginWithMicrosoft(initialReturnUrl);
     } catch (err) {
-      setError(err.message || 'Login failed.');
+      setError(err.message || t('auth.login.errLoginFailedPeriod'));
       setLoading(false);
     }
   };
@@ -31,7 +33,7 @@ export default function MockLogin() {
       await db.auth.loginViaEmailPassword(adminEmail, adminPassword);
       window.location.href = initialReturnUrl;
     } catch (err) {
-      setError(err.message || 'Login failed');
+      setError(err.message || t('auth.login.errLoginFailed'));
     }
     setLoading(false);
   };
@@ -44,7 +46,7 @@ export default function MockLogin() {
             <span className="text-2xl font-bold text-white">M</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">Marvelops TravelPro</h1>
-          <p className="text-muted-foreground mt-1">Sign in to your account</p>
+          <p className="text-muted-foreground mt-1">{t('auth.login.subtitle')}</p>
         </div>
 
         {error && (
@@ -65,7 +67,7 @@ export default function MockLogin() {
               <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
               <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
             </svg>
-            {loading ? 'Signing in...' : 'Sign in with Microsoft'}
+            {loading ? t('auth.login.signingIn') : t('auth.login.signInWithMicrosoft')}
           </button>
         )}
 
@@ -75,14 +77,14 @@ export default function MockLogin() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
+              <span className="bg-card px-2 text-muted-foreground">{t('auth.login.or')}</span>
             </div>
           </div>
         )}
 
         <form onSubmit={handleAdminLogin} className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Email</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('common.email')}</label>
             <input
               type="email"
               value={adminEmail}
@@ -93,12 +95,12 @@ export default function MockLogin() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Password</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('common.password')}</label>
             <input
               type="password"
               value={adminPassword}
               onChange={(e) => setAdminPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder={t('auth.login.passwordPlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
               required
             />
@@ -108,7 +110,7 @@ export default function MockLogin() {
             disabled={loading}
             className="w-full py-2.5 bg-foreground hover:bg-foreground/90 disabled:bg-muted text-background text-sm font-medium rounded-lg transition-all"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('auth.login.signingIn') : t('auth.login.signIn')}
           </button>
         </form>
       </div>

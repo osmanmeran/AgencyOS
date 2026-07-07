@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function OutlookCallback() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('connecting');
@@ -26,7 +28,7 @@ export default function OutlookCallback() {
 
     const savedState = sessionStorage.getItem('outlook_oauth_state');
     if (state && savedState && state !== savedState) {
-      setErrorMsg('State mismatch — possible CSRF attack');
+      setErrorMsg(t('auth.outlookCallback.stateMismatch'));
       setStatus('error');
       return;
     }
@@ -43,7 +45,7 @@ export default function OutlookCallback() {
     sessionStorage.removeItem('outlook_oauth_client_id');
 
     if (!codeVerifier || !redirectUri) {
-      setErrorMsg('Missing PKCE verifier — please try again');
+      setErrorMsg(t('auth.outlookCallback.missingPkce'));
       setStatus('error');
       return;
     }
@@ -69,7 +71,7 @@ export default function OutlookCallback() {
           const msg =
             data.error_description ||
             (typeof data.error === 'string' ? data.error : data.error?.message) ||
-            'Token exchange failed';
+            t('auth.outlookCallback.tokenExchangeFailed');
           throw new Error(msg);
         }
         return data;
@@ -86,13 +88,13 @@ export default function OutlookCallback() {
           const msg =
             data?.message ||
             (typeof data?.error === 'string' ? data.error : data?.error?.message) ||
-            'Failed to save connection';
+            t('auth.outlookCallback.saveConnectionFailed');
           throw new Error(msg);
         }
         setStatus('success');
       })
       .catch((err) => {
-        setErrorMsg(err.message || 'Connection failed');
+        setErrorMsg(err.message || t('auth.outlookCallback.connectionFailed'));
         setStatus('error');
       });
   }, [searchParams]);
@@ -103,37 +105,33 @@ export default function OutlookCallback() {
         {status === 'connecting' && (
           <>
             <Loader2 className="w-12 h-12 mx-auto text-blue-600 dark:text-blue-300 animate-spin mb-4" />
-            <h2 className="text-xl font-semibold text-foreground">Connecting Outlook...</h2>
-            <p className="text-muted-foreground mt-2">Completing the connection to your Microsoft account.</p>
+            <h2 className="text-xl font-semibold text-foreground">{t('auth.outlookCallback.connectingTitle')}</h2>
+            <p className="text-muted-foreground mt-2">{t('auth.outlookCallback.connectingBody')}</p>
           </>
         )}
         {status === 'success' && (
           <>
             <CheckCircle2 className="w-12 h-12 mx-auto text-green-500 dark:text-green-300 mb-4" />
-            <h2 className="text-xl font-semibold text-foreground">Outlook Connected!</h2>
-            <p className="text-muted-foreground mt-2">
-              Your Outlook account is now linked. You can send emails directly from the app.
-            </p>
+            <h2 className="text-xl font-semibold text-foreground">{t('auth.outlookCallback.successTitle')}</h2>
+            <p className="text-muted-foreground mt-2">{t('auth.outlookCallback.successBody')}</p>
             <button
               onClick={() => navigate('/AppSettings')}
               className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Back to Settings
+              {t('auth.outlookCallback.backToSettings')}
             </button>
           </>
         )}
         {status === 'error' && (
           <>
             <XCircle className="w-12 h-12 mx-auto text-red-500 dark:text-red-300 mb-4" />
-            <h2 className="text-xl font-semibold text-foreground">Connection Failed</h2>
-            <p className="text-muted-foreground mt-2">
-              {errorMsg || 'Could not connect your Outlook account. Please try again.'}
-            </p>
+            <h2 className="text-xl font-semibold text-foreground">{t('auth.outlookCallback.errorTitle')}</h2>
+            <p className="text-muted-foreground mt-2">{errorMsg || t('auth.outlookCallback.errorBodyDefault')}</p>
             <button
               onClick={() => navigate('/AppSettings')}
               className="mt-6 px-6 py-2 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors"
             >
-              Back to Settings
+              {t('auth.outlookCallback.backToSettings')}
             </button>
           </>
         )}

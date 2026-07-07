@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function AcceptInvite() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
@@ -16,8 +18,8 @@ export default function AcceptInvite() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted via-blue-50 dark:via-blue-950/40 to-muted">
         <div className="bg-card rounded-2xl shadow-xl border border-border p-8 w-full max-w-md text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Invalid Link</h1>
-          <p className="text-muted-foreground">This invitation link is missing the required token.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t('auth.acceptInvite.invalidLinkTitle')}</h1>
+          <p className="text-muted-foreground">{t('auth.acceptInvite.invalidLinkBody')}</p>
         </div>
       </div>
     );
@@ -28,27 +30,27 @@ export default function AcceptInvite() {
     setError('');
 
     if (!name.trim()) {
-      setError('Name is required');
+      setError(t('auth.acceptInvite.errNameRequired'));
       return;
     }
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('auth.acceptInvite.errPasswordLength'));
       return;
     }
     if (!/[A-Z]/.test(password)) {
-      setError('Password must contain an uppercase letter');
+      setError(t('auth.acceptInvite.errPasswordUppercase'));
       return;
     }
     if (!/[a-z]/.test(password)) {
-      setError('Password must contain a lowercase letter');
+      setError(t('auth.acceptInvite.errPasswordLowercase'));
       return;
     }
     if (!/[0-9]/.test(password)) {
-      setError('Password must contain a number');
+      setError(t('auth.acceptInvite.errPasswordNumber'));
       return;
     }
     if (password !== confirm) {
-      setError('Passwords do not match');
+      setError(t('auth.acceptInvite.errPasswordMismatch'));
       return;
     }
 
@@ -58,7 +60,7 @@ export default function AcceptInvite() {
       await db.auth.acceptInvite({ token, name: name.trim(), password });
       setSuccess(true);
     } catch (err) {
-      setError(err.message || 'Failed to accept invitation');
+      setError(err.message || t('auth.acceptInvite.errGeneric'));
     }
     setLoading(false);
   };
@@ -77,13 +79,13 @@ export default function AcceptInvite() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Account Created!</h1>
-          <p className="text-muted-foreground mb-6">Your account is ready. You're being redirected...</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t('auth.acceptInvite.accountCreatedTitle')}</h1>
+          <p className="text-muted-foreground mb-6">{t('auth.acceptInvite.accountCreatedBody')}</p>
           <a
             href="/"
             className="inline-block px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
           >
-            Go to Dashboard
+            {t('auth.acceptInvite.goToDashboard')}
           </a>
         </div>
       </div>
@@ -97,8 +99,8 @@ export default function AcceptInvite() {
           <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl font-bold text-white">M</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Accept Invitation</h1>
-          <p className="text-muted-foreground mt-1">Set up your account to get started</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('auth.acceptInvite.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('auth.acceptInvite.subtitle')}</p>
         </div>
 
         {error && (
@@ -109,34 +111,36 @@ export default function AcceptInvite() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Full Name</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('crm.fullName')}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
+              placeholder={t('auth.acceptInvite.namePlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
               required
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Password</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('common.password')}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters with uppercase, lowercase & number"
+              placeholder={t('auth.acceptInvite.passwordPlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
               required
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Confirm Password</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t('auth.acceptInvite.confirmPasswordLabel')}
+            </label>
             <input
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Repeat your password"
+              placeholder={t('auth.acceptInvite.confirmPasswordPlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
               required
             />
@@ -146,7 +150,7 @@ export default function AcceptInvite() {
             disabled={loading}
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-all"
           >
-            {loading ? 'Setting up account...' : 'Accept & Sign In'}
+            {loading ? t('auth.acceptInvite.settingUp') : t('auth.acceptInvite.submit')}
           </button>
         </form>
       </div>
