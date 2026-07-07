@@ -3,7 +3,19 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, CheckCircle2, Loader2, Mail, FileText, Bell, Upload, Shield, RefreshCw, Database, Plus, Trash2 } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Mail,
+  FileText,
+  Upload,
+  Shield,
+  RefreshCw,
+  Database,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -34,18 +46,18 @@ export default function TestingArea() {
 
   const addResult = (key, data) => {
     const status = data?.error ? 'fail' : 'pass';
-    setResults(prev => ({ ...prev, [key]: { status, data, timestamp: new Date().toLocaleTimeString() } }));
+    setResults((prev) => ({ ...prev, [key]: { status, data, timestamp: new Date().toLocaleTimeString() } }));
   };
 
   const runTest = async (key, fn) => {
-    setLoading(prev => ({ ...prev, [key]: true }));
+    setLoading((prev) => ({ ...prev, [key]: true }));
     try {
       const data = await fn();
       addResult(key, data);
     } catch (err) {
       addResult(key, { error: err.message });
     }
-    setLoading(prev => ({ ...prev, [key]: false }));
+    setLoading((prev) => ({ ...prev, [key]: false }));
   };
 
   if (!user || (user.user_tier !== 'admin' && user.role !== 'admin')) {
@@ -67,16 +79,26 @@ export default function TestingArea() {
         </div>
         {action && (
           <Button size="sm" variant="outline" onClick={() => runTest(testKey, action)} disabled={loading[testKey]}>
-            {loading[testKey] ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+            {loading[testKey] ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-1" />
+            )}
             Run
           </Button>
         )}
       </div>
       {children}
       {results[testKey] && (
-        <div className={`rounded-lg p-3 text-sm font-mono ${results[testKey].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+        <div
+          className={`rounded-lg p-3 text-sm font-mono ${results[testKey].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}
+        >
           <div className="flex items-center gap-1 mb-1">
-            {results[testKey].status === 'pass' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            {results[testKey].status === 'pass' ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
             <span className="font-semibold">{results[testKey].status === 'pass' ? 'OK' : 'FAIL'}</span>
             <span className="text-xs opacity-60 ml-auto">{results[testKey].timestamp}</span>
           </div>
@@ -140,22 +162,6 @@ export default function TestingArea() {
             </TestCard>
 
             <TestCard
-              title="Notifications"
-              description="Send a test notification to your account"
-              testKey="notification"
-              action={async () => {
-                const data = await api('/api/notifications/test', { method: 'POST' });
-                if (data.error) throw new Error(data.error);
-                return data;
-              }}
-            >
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <Bell className="w-4 h-4" />
-                Creates a test notification for the current user
-              </div>
-            </TestCard>
-
-            <TestCard
               title="File Upload"
               description="Upload a test document to verify file handling"
               testKey="upload"
@@ -188,38 +194,64 @@ export default function TestingArea() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-semibold text-lg">Create Test Users</h3>
-                <p className="text-sm text-slate-500 mt-1">Provision temporary users for each tier to test permission boundaries</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  Provision temporary users for each tier to test permission boundaries
+                </p>
               </div>
-              <Button size="sm" variant="outline" onClick={async () => {
-                await runTest('createTestUsers', async () => {
-                  const data = await api('/api/testing/create-test-users', { method: 'POST' });
-                  if (data.error) throw new Error(data.error);
-                  return data;
-                });
-              }} disabled={loading['createTestUsers']}>
-                {loading['createTestUsers'] ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  await runTest('createTestUsers', async () => {
+                    const data = await api('/api/testing/create-test-users', { method: 'POST' });
+                    if (data.error) throw new Error(data.error);
+                    return data;
+                  });
+                }}
+                disabled={loading['createTestUsers']}
+              >
+                {loading['createTestUsers'] ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-1" />
+                )}
                 Create All
               </Button>
             </div>
             {results['createTestUsers'] && (
-              <div className={`rounded-lg p-3 text-sm font-mono ${results['createTestUsers'].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                <pre className="whitespace-pre-wrap text-xs">{JSON.stringify(results['createTestUsers'].data, null, 2)}</pre>
+              <div
+                className={`rounded-lg p-3 text-sm font-mono ${results['createTestUsers'].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}
+              >
+                <pre className="whitespace-pre-wrap text-xs">
+                  {JSON.stringify(results['createTestUsers'].data, null, 2)}
+                </pre>
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-              {['manager', 'agent', 'accounting'].map(tier => (
-                <Button key={tier} variant="outline" size="sm" className="justify-start" onClick={async () => {
-                  await runTest(`createUser_${tier}`, async () => {
-                    const data = await api('/api/testing/create-test-user', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ tier }),
+              {['manager', 'agent', 'accounting'].map((tier) => (
+                <Button
+                  key={tier}
+                  variant="outline"
+                  size="sm"
+                  className="justify-start"
+                  onClick={async () => {
+                    await runTest(`createUser_${tier}`, async () => {
+                      const data = await api('/api/testing/create-test-user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tier }),
+                      });
+                      if (data.error) throw new Error(data.error);
+                      return data;
                     });
-                    if (data.error) throw new Error(data.error);
-                    return data;
-                  });
-                }} disabled={loading[`createUser_${tier}`]}>
-                  {loading[`createUser_${tier}`] ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                  }}
+                  disabled={loading[`createUser_${tier}`]}
+                >
+                  {loading[`createUser_${tier}`] ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
+                  )}
                   Create {tier.charAt(0).toUpperCase() + tier.slice(1)}
                 </Button>
               ))}
@@ -232,20 +264,33 @@ export default function TestingArea() {
                 <h3 className="font-semibold text-lg">Clean Up Test Users</h3>
                 <p className="text-sm text-slate-500 mt-1">Remove all test users created in the testing area</p>
               </div>
-              <Button size="sm" variant="destructive" onClick={async () => {
-                await runTest('cleanupTestUsers', async () => {
-                  const data = await api('/api/testing/cleanup-test-users', { method: 'POST' });
-                  if (data.error) throw new Error(data.error);
-                  return data;
-                });
-              }} disabled={loading['cleanupTestUsers']}>
-                {loading['cleanupTestUsers'] ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={async () => {
+                  await runTest('cleanupTestUsers', async () => {
+                    const data = await api('/api/testing/cleanup-test-users', { method: 'POST' });
+                    if (data.error) throw new Error(data.error);
+                    return data;
+                  });
+                }}
+                disabled={loading['cleanupTestUsers']}
+              >
+                {loading['cleanupTestUsers'] ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                ) : (
+                  <Trash2 className="w-4 h-4 mr-1" />
+                )}
                 Clean Up
               </Button>
             </div>
             {results['cleanupTestUsers'] && (
-              <div className={`rounded-lg p-3 text-sm font-mono mt-4 ${results['cleanupTestUsers'].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                <pre className="whitespace-pre-wrap text-xs">{JSON.stringify(results['cleanupTestUsers'].data, null, 2)}</pre>
+              <div
+                className={`rounded-lg p-3 text-sm font-mono mt-4 ${results['cleanupTestUsers'].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}
+              >
+                <pre className="whitespace-pre-wrap text-xs">
+                  {JSON.stringify(results['cleanupTestUsers'].data, null, 2)}
+                </pre>
               </div>
             )}
           </Card>
@@ -275,14 +320,16 @@ export default function TestingArea() {
               testKey="apiHealth"
               action={async () => {
                 const endpoints = ['/api/entities', '/api/search?q=', '/api/notifications', '/api/audit/logs'];
-                const results = await Promise.all(endpoints.map(async ep => {
-                  try {
-                    const res = await fetch(ep, { credentials: 'include' });
-                    return { endpoint: ep, status: res.status, ok: res.ok };
-                  } catch (e) {
-                    return { endpoint: ep, status: 'error', error: e.message };
-                  }
-                }));
+                const results = await Promise.all(
+                  endpoints.map(async (ep) => {
+                    try {
+                      const res = await fetch(ep, { credentials: 'include' });
+                      return { endpoint: ep, status: res.status, ok: res.ok };
+                    } catch (e) {
+                      return { endpoint: ep, status: 'error', error: e.message };
+                    }
+                  }),
+                );
                 return { endpoints: results };
               }}
             >
