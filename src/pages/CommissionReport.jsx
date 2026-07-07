@@ -17,10 +17,12 @@ import {
 } from 'recharts';
 import { DollarSign, TrendingUp, Download } from 'lucide-react';
 import { useExport } from '@/hooks/useExport';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function CommissionReport() {
+  const { t } = useT();
   const { exportCSV } = useExport();
 
   const { data: report = /** @type {any} */ ({}) } = /** @type {any} */ (
@@ -73,25 +75,25 @@ export default function CommissionReport() {
             <DollarSign className="w-6 h-6 text-green-700 dark:text-green-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Commission Report</h1>
-            <p className="text-sm text-muted-foreground">Track agent commissions and profitability</p>
+            <h1 className="text-2xl font-bold">{t('commissionReport.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('commissionReport.subtitle')}</p>
           </div>
         </div>
         <Button variant="outline" onClick={handleExport}>
-          <Download className="w-4 h-4 mr-2" /> Export CSV
+          <Download className="w-4 h-4 mr-2" /> {t('common.exportCsv')}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4 bg-card">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <DollarSign className="w-4 h-4" /> Total Revenue
+            <DollarSign className="w-4 h-4" /> {t('commissionReport.totalRevenue')}
           </div>
           <p className="text-2xl font-bold">${(totalRevenue || 0).toLocaleString()}</p>
         </Card>
         <Card className="p-4 bg-card">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <TrendingUp className="w-4 h-4" /> Total Profit
+            <TrendingUp className="w-4 h-4" /> {t('commissionReport.totalProfit')}
           </div>
           <p className="text-2xl font-bold text-green-600 dark:text-green-300">
             ${(totalProfit || 0).toLocaleString()}
@@ -99,7 +101,7 @@ export default function CommissionReport() {
         </Card>
         <Card className="p-4 bg-card">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <DollarSign className="w-4 h-4" /> Total Commission
+            <DollarSign className="w-4 h-4" /> {t('commissionReport.totalCommission')}
           </div>
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">
             ${(totalCommission || 0).toLocaleString()}
@@ -107,7 +109,7 @@ export default function CommissionReport() {
         </Card>
         <Card className="p-4 bg-card">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <TrendingUp className="w-4 h-4" /> Avg Rate
+            <TrendingUp className="w-4 h-4" /> {t('commissionReport.avgRate')}
           </div>
           <p className="text-2xl font-bold">{(avgCommissionRate * 100).toFixed(1)}%</p>
         </Card>
@@ -115,9 +117,9 @@ export default function CommissionReport() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-4 bg-card">
-          <h3 className="font-semibold mb-4">Commission by Agent</h3>
+          <h3 className="font-semibold mb-4">{t('commissionReport.commissionByAgent')}</h3>
           {byAgent.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No commission data yet</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">{t('commissionReport.noCommissionData')}</p>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={byAgent}>
@@ -132,9 +134,9 @@ export default function CommissionReport() {
         </Card>
 
         <Card className="p-4 bg-card">
-          <h3 className="font-semibold mb-4">Commission by Agent (Pie)</h3>
+          <h3 className="font-semibold mb-4">{t('commissionReport.commissionByAgentPie')}</h3>
           {byAgent.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No commission data yet</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">{t('commissionReport.noCommissionData')}</p>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -160,18 +162,30 @@ export default function CommissionReport() {
 
       <Card className="bg-card">
         <div className="p-4 border-b border-border">
-          <h3 className="font-semibold">Trip Details</h3>
+          <h3 className="font-semibold">{t('commissionReport.tripDetails')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Trip</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Client</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Revenue</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Profit</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Rate</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Commission</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">
+                  {t('commissionReport.trip')}
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">
+                  {t('commissionReport.client')}
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">
+                  {t('commissionReport.revenue')}
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">
+                  {t('commissionReport.profit')}
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">
+                  {t('commissionReport.rate')}
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">
+                  {t('commissionReport.commission')}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
