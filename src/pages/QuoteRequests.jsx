@@ -20,6 +20,7 @@ import { formatCurrency } from '@/lib/formatters';
 import { QuoteTripInfo, QuoteLineExtras } from '@/components/b2b/QuoteRichDetails';
 import { createPageUrl } from '../utils';
 import { usePermissions } from '@/components/permissions/PermissionContext';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   submitted: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
@@ -32,6 +33,7 @@ const STATUS_COLORS = {
 const STATUS_FILTERS = ['all', 'submitted', 'reviewing', 'quoted', 'accepted', 'declined'];
 
 export default function QuoteRequests() {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
@@ -59,11 +61,11 @@ export default function QuoteRequests() {
     useMutation({
       mutationFn: () => respondToQuote(selected.id, { status: responseStatus, response_notes: responseNotes }),
       onSuccess: () => {
-        showSuccess('Quote updated', 'The client has been notified by email.');
+        showSuccess(t('quoteRequests.quoteUpdatedSuccess'), t('quoteRequests.quoteUpdatedSuccessBody'));
         queryClient.invalidateQueries({ queryKey: ['allQuoteRequests'] });
         setSelected(null);
       },
-      onError: (error) => showError('Failed to update quote', error.message),
+      onError: (error) => showError(t('quoteRequests.quoteUpdateError'), error.message),
     })
   );
 
@@ -76,9 +78,9 @@ export default function QuoteRequests() {
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-1 flex items-center gap-2">
           <ClipboardList className="text-blue-600 dark:text-blue-300 w-7 h-7" />
-          Quote Requests
+          {t('quoteRequests.title')}
         </h1>
-        <p className="text-muted-foreground text-sm">Review and respond to B2B quote requests submitted by clients</p>
+        <p className="text-muted-foreground text-sm">{t('quoteRequests.subtitle')}</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -90,7 +92,9 @@ export default function QuoteRequests() {
             className={statusFilter === s ? 'bg-blue-600 hover:bg-blue-700' : ''}
             onClick={() => setStatusFilter(s)}
           >
-            {s === 'all' ? `All (${quotes.length})` : `${s} (${quotes.filter((q) => q.status === s).length})`}
+            {s === 'all'
+              ? `${t('common.all')} (${quotes.length})`
+              : `${t(`quotes.status.${s}`)} (${quotes.filter((q) => q.status === s).length})`}
           </Button>
         ))}
       </div>
@@ -98,7 +102,9 @@ export default function QuoteRequests() {
       {filtered.length === 0 ? (
         <Card className="p-12 text-center bg-card">
           <p className="text-muted-foreground">
-            No quote requests {statusFilter !== 'all' ? `with status "${statusFilter}"` : 'yet'}.
+            {statusFilter !== 'all'
+              ? t('quoteRequests.noRequestsWithStatus', { status: statusFilter })
+              : t('quoteRequests.noRequestsYet')}
           </p>
         </Card>
       ) : (
@@ -113,11 +119,16 @@ export default function QuoteRequests() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-foreground">{quote.title}</h3>
-                    <Badge className={STATUS_COLORS[quote.status] || 'bg-muted text-foreground'}>{quote.status}</Badge>
+                    <Badge className={STATUS_COLORS[quote.status] || 'bg-muted text-foreground'}>
+                      {t(`quotes.status.${quote.status}`)}
+                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {quote.client_name} · {quote.items?.length || 0} item{quote.items?.length === 1 ? '' : 's'} ·
-                    Requested {format(parseISO(quote.created_date), 'MMM d, yyyy')}
+                    {quote.client_name} ·{' '}
+                    {t(quote.items?.length === 1 ? 'quoteRequests.itemSingular' : 'quoteRequests.itemPlural', {
+                      count: quote.items?.length || 0,
+                    })}{' '}
+                    · {t('quoteRequests.requested', { date: format(parseISO(quote.created_date), 'MMM d, yyyy') })}
                   </p>
                 </div>
                 <div className="font-bold text-green-700 dark:text-green-300 ml-4">
@@ -137,15 +148,15 @@ export default function QuoteRequests() {
                 <DialogTitle className="flex items-center gap-2">
                   {selected.title}
                   <Badge className={STATUS_COLORS[selected.status] || 'bg-muted text-foreground'}>
-                    {selected.status}
+                    {t(`quotes.status.${selected.status}`)}
                   </Badge>
                 </DialogTitle>
               </DialogHeader>
 
               <div className="space-y-4 mt-2">
                 <div className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">{selected.client_name}</span> · Requested{' '}
-                  {format(parseISO(selected.created_date), 'MMM d, yyyy')}
+                  <span className="font-medium text-foreground">{selected.client_name}</span> ·{' '}
+                  {t('quoteRequests.requested', { date: format(parseISO(selected.created_date), 'MMM d, yyyy') })}
                 </div>
 
                 {(selected.destination || selected.start_date || selected.passengers?.length > 0) && (
@@ -181,7 +192,7 @@ export default function QuoteRequests() {
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="font-bold text-foreground">Total</span>
+                  <span className="font-bold text-foreground">{t('clientProposalDetails.total')}</span>
                   <span className="font-bold text-green-700 dark:text-green-300 text-lg">
                     {formatCurrency(selected.total || 0, selected.currency)}
                   </span>
@@ -189,7 +200,7 @@ export default function QuoteRequests() {
 
                 {selected.notes && (
                   <div className="text-sm">
-                    <span className="font-medium text-foreground">Client notes: </span>
+                    <span className="font-medium text-foreground">{t('quoteRequests.clientNotesLabel')} </span>
                     <span className="text-muted-foreground">{selected.notes}</span>
                   </div>
                 )}
@@ -203,7 +214,7 @@ export default function QuoteRequests() {
                         onClick={() => navigate(createPageUrl(`ReservationDetails?id=${selected.converted_trip_id}`))}
                       >
                         <ArrowRightCircle className="w-4 h-4" />
-                        View Reservation
+                        {t('quoteRequests.viewReservation')}
                       </Button>
                     ) : (
                       hasPermission('create_trips') && (
@@ -216,7 +227,7 @@ export default function QuoteRequests() {
                           }}
                         >
                           <ArrowRightCircle className="w-4 h-4" />
-                          Convert to Reservation
+                          {t('quoteRequests.convertToReservation')}
                         </Button>
                       )
                     )}
@@ -225,38 +236,38 @@ export default function QuoteRequests() {
 
                 <div className="pt-4 border-t space-y-3">
                   <div className="space-y-2">
-                    <Label>Set status</Label>
+                    <Label>{t('quoteRequests.setStatus')}</Label>
                     <Select value={responseStatus} onValueChange={setResponseStatus}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="reviewing">Reviewing</SelectItem>
-                        <SelectItem value="quoted">Quoted</SelectItem>
-                        <SelectItem value="accepted">Accepted</SelectItem>
-                        <SelectItem value="declined">Declined</SelectItem>
+                        <SelectItem value="reviewing">{t('quotes.status.reviewing')}</SelectItem>
+                        <SelectItem value="quoted">{t('quotes.status.quoted')}</SelectItem>
+                        <SelectItem value="accepted">{t('quotes.status.accepted')}</SelectItem>
+                        <SelectItem value="declined">{t('quotes.status.declined')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Response notes (sent to client by email)</Label>
+                    <Label>{t('quoteRequests.responseNotesLabel')}</Label>
                     <Textarea
                       value={responseNotes}
                       onChange={(e) => setResponseNotes(e.target.value)}
-                      placeholder="e.g. Confirmed for your dates, we'll follow up with final booking details."
+                      placeholder={t('quoteRequests.responseNotesPlaceholder')}
                       rows={3}
                     />
                   </div>
                   <div className="flex justify-end gap-3">
                     <Button variant="outline" onClick={() => setSelected(null)}>
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                     <Button
                       className="bg-blue-600 hover:bg-blue-700"
                       disabled={respondMutation.isPending}
                       onClick={() => respondMutation.mutate()}
                     >
-                      {respondMutation.isPending ? 'Saving...' : 'Save & Notify Client'}
+                      {respondMutation.isPending ? t('common.saving') : t('quoteRequests.saveAndNotify')}
                     </Button>
                   </div>
                 </div>

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { SendHorizontal, CheckCircle2, XCircle, Building2, Plus } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_STYLES = {
   pending:
@@ -24,6 +25,7 @@ const STATUS_STYLES = {
 };
 
 function RFPWizard({ onClose, suppliers, categories, _services }) {
+  const { t } = useT();
   const [step, setStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSuppliers, setSelectedSuppliers] = useState([]);
@@ -49,11 +51,11 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
     useMutation({
       mutationFn: (data) => db.entities.BookingRequest.create(data),
       onSuccess: () => {
-        showSuccess('RFP sent');
+        showSuccess(t('rfpManager.rfpSentSuccess'));
         queryClient.invalidateQueries({ queryKey: ['bookingRequests'] });
         onClose();
       },
-      onError: (error) => showError('Failed to send RFP', error.message),
+      onError: (error) => showError(t('rfpManager.rfpSentError'), error.message),
     })
   );
 
@@ -92,7 +94,11 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
             <span
               className={`text-xs ${step >= s ? 'text-blue-600 dark:text-blue-300 font-medium' : 'text-muted-foreground'}`}
             >
-              {s === 1 ? 'Service' : s === 2 ? 'Suppliers' : 'Review'}
+              {s === 1
+                ? t('rfpManager.wizard.stepService')
+                : s === 2
+                  ? t('rfpManager.wizard.stepSuppliers')
+                  : t('rfpManager.wizard.stepReview')}
             </span>
             {s < 3 && <div className="w-8 h-px bg-border" />}
           </div>
@@ -101,20 +107,20 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
 
       {step === 1 && (
         <div className="space-y-3">
-          <h3 className="font-semibold">Service Details</h3>
+          <h3 className="font-semibold">{t('rfpManager.wizard.serviceDetails')}</h3>
           <Input
-            placeholder="Service name"
+            placeholder={t('rfpManager.wizard.serviceNamePlaceholder')}
             value={rfp.service_name}
             onChange={(e) => setRfp({ ...rfp, service_name: e.target.value })}
           />
           <Textarea
-            placeholder="Description"
+            placeholder={t('rfpManager.wizard.descriptionPlaceholder')}
             value={rfp.description}
             onChange={(e) => setRfp({ ...rfp, description: e.target.value })}
           />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Quantity</label>
+              <label className="text-xs text-muted-foreground">{t('common.quantity')}</label>
               <Input
                 type="number"
                 min={1}
@@ -123,32 +129,32 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Unit</label>
+              <label className="text-xs text-muted-foreground">{t('rfpManager.wizard.unitLabel')}</label>
               <Select value={rfp.unit} onValueChange={(v) => setRfp({ ...rfp, unit: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="per_person">Per Person</SelectItem>
-                  <SelectItem value="per_night">Per Night</SelectItem>
-                  <SelectItem value="per_day">Per Day</SelectItem>
-                  <SelectItem value="flat_rate">Flat Rate</SelectItem>
+                  <SelectItem value="per_person">{t('units.perPerson')}</SelectItem>
+                  <SelectItem value="per_night">{t('units.perNight')}</SelectItem>
+                  <SelectItem value="per_day">{t('units.perDay')}</SelectItem>
+                  <SelectItem value="flat_rate">{t('units.flatRate')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Deadline for quotes</label>
+            <label className="text-xs text-muted-foreground">{t('rfpManager.wizard.deadlineLabel')}</label>
             <Input type="date" value={rfp.deadline} onChange={(e) => setRfp({ ...rfp, deadline: e.target.value })} />
           </div>
           <Textarea
-            placeholder="Additional notes for suppliers"
+            placeholder={t('rfpManager.wizard.additionalNotesPlaceholder')}
             value={rfp.notes}
             onChange={(e) => setRfp({ ...rfp, notes: e.target.value })}
           />
           <div className="flex justify-end">
             <Button disabled={!rfp.service_name} onClick={() => setStep(2)}>
-              Next →
+              {t('rfpManager.wizard.next')}
             </Button>
           </div>
         </div>
@@ -156,12 +162,12 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
 
       {step === 2 && (
         <div className="space-y-3">
-          <h3 className="font-semibold">Select Suppliers</h3>
+          <h3 className="font-semibold">{t('rfpManager.wizard.selectSuppliers')}</h3>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Filter by category</label>
+            <label className="text-xs text-muted-foreground">{t('rfpManager.wizard.filterByCategory')}</label>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger>
-                <SelectValue placeholder="All categories" />
+                <SelectValue placeholder={t('rfpManager.wizard.allCategories')} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
@@ -209,15 +215,17 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
               );
             })}
             {filteredSuppliers.length === 0 && (
-              <p className="text-sm text-muted-foreground py-4 text-center">No suppliers found</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                {t('rfpManager.wizard.noSuppliersFound')}
+              </p>
             )}
           </div>
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(1)}>
-              ← Back
+              {t('rfpManager.wizard.back')}
             </Button>
             <Button disabled={selectedSuppliers.length === 0} onClick={() => setStep(3)}>
-              Next ({selectedSuppliers.length} selected) →
+              {t('rfpManager.wizard.nextSelected', { count: selectedSuppliers.length })}
             </Button>
           </div>
         </div>
@@ -225,24 +233,24 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
 
       {step === 3 && (
         <div className="space-y-3">
-          <h3 className="font-semibold">Review & Send</h3>
+          <h3 className="font-semibold">{t('rfpManager.wizard.reviewAndSend')}</h3>
           <Card className="p-3 bg-muted space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Service:</span>
+              <span className="text-muted-foreground">{t('rfpManager.wizard.serviceLabel')}</span>
               <span className="font-medium">{rfp.service_name}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Quantity:</span>
+              <span className="text-muted-foreground">{t('rfpManager.wizard.quantityLabel')}</span>
               <span className="font-medium">
                 {rfp.quantity} {rfp.unit}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Deadline:</span>
-              <span className="font-medium">{rfp.deadline || 'Not set'}</span>
+              <span className="text-muted-foreground">{t('rfpManager.wizard.deadlineReviewLabel')}</span>
+              <span className="font-medium">{rfp.deadline || t('rfpManager.wizard.notSet')}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Suppliers:</span>
+              <span className="text-muted-foreground">{t('rfpManager.wizard.suppliersLabel')}</span>
               <span className="font-medium">{selectedSuppliers.length}</span>
             </div>
           </Card>
@@ -258,11 +266,16 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
           </div>
           <div className="flex justify-between pt-2">
             <Button variant="outline" onClick={() => setStep(2)}>
-              ← Back
+              {t('rfpManager.wizard.back')}
             </Button>
             <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSend} disabled={sendRFP.isPending}>
               <SendHorizontal className="w-4 h-4 mr-2" />
-              Send RFP to {selectedSuppliers.length} supplier{selectedSuppliers.length > 1 ? 's' : ''}
+              {t(
+                selectedSuppliers.length === 1
+                  ? 'rfpManager.wizard.sendRfpSingular'
+                  : 'rfpManager.wizard.sendRfpPlural',
+                { count: selectedSuppliers.length },
+              )}
             </Button>
           </div>
         </div>
@@ -272,6 +285,7 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
 }
 
 export default function RFPManager() {
+  const { t } = useT();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [filter, setFilter] = useState('all');
 
@@ -307,10 +321,10 @@ export default function RFPManager() {
     useMutation({
       mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.BookingRequest.update(id, data),
       onSuccess: () => {
-        showSuccess('RFP status updated');
+        showSuccess(t('rfpManager.statusUpdateSuccess'));
         queryClient.invalidateQueries({ queryKey: ['bookingRequests'] });
       },
-      onError: (error) => showError('Failed to update RFP status', error.message),
+      onError: (error) => showError(t('rfpManager.statusUpdateError'), error.message),
     })
   );
 
@@ -326,17 +340,17 @@ export default function RFPManager() {
             <SendHorizontal className="w-6 h-6 text-teal-700 dark:text-teal-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Supplier RFP</h1>
-            <p className="text-sm text-muted-foreground">Request quotes from multiple suppliers</p>
+            <h1 className="text-2xl font-bold">{t('rfpManager.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('rfpManager.subtitle')}</p>
           </div>
         </div>
         <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
           <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => setWizardOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" /> New RFP
+            <Plus className="w-4 h-4 mr-2" /> {t('rfpManager.newRfp')}
           </Button>
           <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle>New RFP Request</DialogTitle>
+              <DialogTitle>{t('rfpManager.newRfpDialogTitle')}</DialogTitle>
             </DialogHeader>
             <RFPWizard
               onClose={() => setWizardOpen(false)}
@@ -357,7 +371,7 @@ export default function RFPManager() {
             onClick={() => setFilter(s)}
             className={filter === s ? 'bg-teal-600' : ''}
           >
-            {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+            {t(`common.${s}`)}
             {s !== 'all' && ` (${requests.filter((r) => r.status === s).length})`}
           </Button>
         ))}
@@ -367,8 +381,8 @@ export default function RFPManager() {
         {filtered.length === 0 ? (
           <Card className="p-12 text-center text-muted-foreground">
             <SendHorizontal className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-            <p className="font-medium">No RFP requests</p>
-            <p className="text-sm mt-1">Create a new RFP to request quotes from suppliers</p>
+            <p className="font-medium">{t('rfpManager.noRfpRequests')}</p>
+            <p className="text-sm mt-1">{t('rfpManager.noRfpRequestsBody')}</p>
           </Card>
         ) : (
           filtered.map((req) => {
@@ -380,15 +394,25 @@ export default function RFPManager() {
                     <Building2 className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <h4 className="font-medium">{req.service_name || 'Service Request'}</h4>
-                    <p className="text-xs text-muted-foreground mt-0.5">{supplier?.name || 'Unknown supplier'}</p>
+                    <h4 className="font-medium">{req.service_name || t('rfpManager.serviceRequestFallback')}</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {supplier?.name || t('rfpManager.unknownSupplier')}
+                    </p>
                     {req.description && <p className="text-xs text-muted-foreground mt-1">{req.description}</p>}
                     <div className="flex items-center gap-2 mt-2">
                       <Badge className={`text-[10px] ${STATUS_STYLES[req.status] || 'bg-muted'}`}>
-                        {req.status || 'pending'}
+                        {t(`common.${req.status || 'pending'}`)}
                       </Badge>
-                      {req.quantity && <span className="text-[10px] text-muted-foreground">Qty: {req.quantity}</span>}
-                      {req.deadline && <span className="text-[10px] text-muted-foreground">Due: {req.deadline}</span>}
+                      {req.quantity && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {t('rfpManager.qty', { qty: req.quantity })}
+                        </span>
+                      )}
+                      {req.deadline && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {t('rfpManager.due', { date: req.deadline })}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -400,7 +424,7 @@ export default function RFPManager() {
                       className="h-8 text-xs text-green-600 dark:text-green-300"
                       onClick={() => updateStatus.mutate({ id: req.id, data: { ...req, status: 'quoted' } })}
                     >
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> Mark Quoted
+                      <CheckCircle2 className="w-3 h-3 mr-1" /> {t('rfpManager.markQuoted')}
                     </Button>
                     <Button
                       size="sm"
@@ -408,7 +432,7 @@ export default function RFPManager() {
                       className="h-8 text-xs text-red-600 dark:text-red-300"
                       onClick={() => updateStatus.mutate({ id: req.id, data: { ...req, status: 'cancelled' } })}
                     >
-                      <XCircle className="w-3 h-3 mr-1" /> Cancel
+                      <XCircle className="w-3 h-3 mr-1" /> {t('common.cancel')}
                     </Button>
                   </div>
                 )}
@@ -418,7 +442,7 @@ export default function RFPManager() {
                     className="h-8 text-xs bg-teal-600"
                     onClick={() => updateStatus.mutate({ id: req.id, data: { ...req, status: 'confirmed' } })}
                   >
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> Confirm
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> {t('rfpManager.confirm')}
                   </Button>
                 )}
               </Card>
