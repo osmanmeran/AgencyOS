@@ -12,31 +12,39 @@ import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
 import MessageThread from '../components/messaging/MessageThread';
 import ItineraryTimeline from '../components/client-trip/ItineraryTimeline';
+import { DaySection, ServiceCard } from '../components/client-trip/ServiceItineraryCards';
 import TripMap from '../components/client-trip/TripMap';
 import TripApprovalBar from '../components/client-trip/TripApprovalBar';
+import { groupServicesByDay } from '../lib/serviceItinerary';
 
 export default function ClientTripDetails() {
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');
   const client = useMyClient();
 
-  const { data: trip, isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['trip', tripId],
-    queryFn: () => db.entities.Trip.get(tripId),
-    enabled: !!tripId
-  }));
+  const { data: trip, isLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['trip', tripId],
+      queryFn: () => db.entities.Trip.get(tripId),
+      enabled: !!tripId,
+    })
+  );
 
-  const { data: packingItems = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['packingItems', tripId],
-    queryFn: () => db.entities.PackingItem.filter({ trip_id: tripId }),
-    enabled: !!tripId
-  }));
+  const { data: packingItems = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['packingItems', tripId],
+      queryFn: () => db.entities.PackingItem.filter({ trip_id: tripId }),
+      enabled: !!tripId,
+    })
+  );
 
-  const { data: itineraryEvents = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['itineraryEvents', tripId],
-    queryFn: () => db.entities.ItineraryEvent.filter({ trip_id: tripId }, 'date'),
-    enabled: !!tripId
-  }));
+  const { data: itineraryEvents = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['itineraryEvents', tripId],
+      queryFn: () => db.entities.ItineraryEvent.filter({ trip_id: tripId }, 'date'),
+      enabled: !!tripId,
+    })
+  );
 
   if (isLoading || !client) {
     return (
@@ -56,6 +64,19 @@ export default function ClientTripDetails() {
     return acc;
   }, {});
 
+  // Staff-built ItineraryEvent records (from Itinerary Builder) take priority when
+  // present; otherwise derive a day-by-day itinerary straight from the trip's
+  // services, same as the public itinerary share page, so confirmed reservations
+  // show an itinerary without requiring separate manual entry.
+  const hasManualEvents = itineraryEvents.length > 0;
+  const services = (trip.services || []).filter((s) => s.show_in_itinerary !== false);
+  const { sortedDays, dayServices, unscheduled } = groupServicesByDay(services);
+  const mapEvents = hasManualEvents
+    ? itineraryEvents
+    : services
+        .filter((s) => s.location)
+        .map((s) => ({ id: s._key, title: s.name, location: s.location, date: s.start_date, time: s.pickup_time }));
+
   return (
     <div className="space-y-6">
       <Link to={createPageUrl('ClientTrips')}>
@@ -68,7 +89,9 @@ export default function ClientTripDetails() {
       {/* Trip Header */}
       <div className="relative h-72 rounded-2xl overflow-hidden shadow-xl">
         <img
-          src={trip.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&auto=format&fit=crop'}
+          src={
+            trip.image_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&auto=format&fit=crop'
+          }
           alt={trip.name}
           className="w-full h-full object-cover"
         />
@@ -82,7 +105,9 @@ export default function ClientTripDetails() {
             </div>
             <div className="flex items-center gap-2">
               <CalendarIcon className="w-4 h-4" />
-              <span>{format(new Date(trip.start_date), 'MMM d')} – {format(new Date(trip.end_date), 'MMM d, yyyy')}</span>
+              <span>
+                {format(new Date(trip.start_date), 'MMM d')} – {format(new Date(trip.end_date), 'MMM d, yyyy')}
+              </span>
             </div>
           </div>
         </div>
@@ -115,7 +140,30 @@ export default function ClientTripDetails() {
         <TabsContent value="itinerary">
           <Card className="p-6 bg-white shadow-md">
             <h2 className="text-2xl font-bold text-slate-900 mb-6">Your Itinerary</h2>
-            <ItineraryTimeline events={itineraryEvents} />
+            {hasManualEvents ? (
+              <ItineraryTimeline events={itineraryEvents} />
+            ) : sortedDays.length > 0 || unscheduled.length > 0 ? (
+              <div className="space-y-2">
+                {sortedDays.map((date, idx) => (
+                  <DaySection key={date} date={date} services={dayServices[date]} dayIndex={idx} />
+                ))}
+                {unscheduled.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-semibold text-slate-900 mb-3">Other Services</h3>
+                    <div className="space-y-3">
+                      {unscheduled.map((svc, idx) => (
+                        <ServiceCard key={idx} service={svc} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-16 text-slate-500">
+                <List className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                <p>No itinerary available yet.</p>
+              </div>
+            )}
           </Card>
         </TabsContent>
 
@@ -123,7 +171,7 @@ export default function ClientTripDetails() {
         <TabsContent value="map">
           <Card className="p-6 bg-white shadow-md">
             <h2 className="text-2xl font-bold text-slate-900 mb-6">Trip Map</h2>
-            <TripMap events={itineraryEvents} />
+            <TripMap events={mapEvents} />
           </Card>
         </TabsContent>
 
@@ -135,23 +183,23 @@ export default function ClientTripDetails() {
               <p className="text-slate-600 text-center py-8">No packing list available yet</p>
             ) : (
               <div className="space-y-6">
-                {Object.keys(groupedItems).map(category => (
+                {Object.keys(groupedItems).map((category) => (
                   <div key={category}>
                     <h3 className="font-semibold text-lg text-slate-900 mb-3">{category}</h3>
                     <div className="space-y-2">
-                      {groupedItems[category].map(item => (
+                      {groupedItems[category].map((item) => (
                         <div key={item.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                            item.packed ? 'bg-green-500 border-green-500' : 'border-slate-300'
-                          }`}>
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                              item.packed ? 'bg-green-500 border-green-500' : 'border-slate-300'
+                            }`}
+                          >
                             {item.packed && <span className="text-white text-xs">✓</span>}
                           </div>
                           <span className={`flex-1 ${item.packed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                             {item.item_name}
                           </span>
-                          {item.quantity > 1 && (
-                            <span className="text-sm text-slate-500">x{item.quantity}</span>
-                          )}
+                          {item.quantity > 1 && <span className="text-sm text-slate-500">x{item.quantity}</span>}
                         </div>
                       ))}
                     </div>
@@ -164,12 +212,7 @@ export default function ClientTripDetails() {
 
         {/* Messages Tab */}
         <TabsContent value="messages">
-          <MessageThread
-            clientId={client.id}
-            referenceType="trip"
-            referenceId={tripId}
-            isAgent={false}
-          />
+          <MessageThread clientId={client.id} referenceType="trip" referenceId={tripId} isAgent={false} />
         </TabsContent>
       </Tabs>
     </div>
