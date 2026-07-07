@@ -8,10 +8,13 @@ export default function BulkActionsBar({ count, label, onDeselectAll, children }
   if (count === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl px-5 py-3">
       <div className="flex items-center gap-3">
-        <CheckSquare className="w-5 h-5 text-blue-600" />
-        <span className="font-medium text-blue-800">{count} {label}{count > 1 ? 's' : ''} selected</span>
+        <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-300" />
+        <span className="font-medium text-blue-800 dark:text-blue-300">
+          {count} {label}
+          {count > 1 ? 's' : ''} selected
+        </span>
       </div>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={onDeselectAll}>

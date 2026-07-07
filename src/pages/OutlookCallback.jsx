@@ -66,7 +66,10 @@ export default function OutlookCallback() {
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok || data.error) {
-          const msg = data.error_description || (typeof data.error === 'string' ? data.error : data.error?.message) || 'Token exchange failed';
+          const msg =
+            data.error_description ||
+            (typeof data.error === 'string' ? data.error : data.error?.message) ||
+            'Token exchange failed';
           throw new Error(msg);
         }
         return data;
@@ -80,7 +83,10 @@ export default function OutlookCallback() {
         });
         const data = await r.json();
         if (!r.ok || data?.error) {
-          const msg = data?.message || (typeof data?.error === 'string' ? data.error : data?.error?.message) || 'Failed to save connection';
+          const msg =
+            data?.message ||
+            (typeof data?.error === 'string' ? data.error : data?.error?.message) ||
+            'Failed to save connection';
           throw new Error(msg);
         }
         setStatus('success');
@@ -92,20 +98,22 @@ export default function OutlookCallback() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-sm w-full text-center">
+    <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="bg-card p-8 rounded-2xl shadow-lg max-w-sm w-full text-center">
         {status === 'connecting' && (
           <>
-            <Loader2 className="w-12 h-12 mx-auto text-blue-600 animate-spin mb-4" />
-            <h2 className="text-xl font-semibold text-slate-900">Connecting Outlook...</h2>
-            <p className="text-slate-500 mt-2">Completing the connection to your Microsoft account.</p>
+            <Loader2 className="w-12 h-12 mx-auto text-blue-600 dark:text-blue-300 animate-spin mb-4" />
+            <h2 className="text-xl font-semibold text-foreground">Connecting Outlook...</h2>
+            <p className="text-muted-foreground mt-2">Completing the connection to your Microsoft account.</p>
           </>
         )}
         {status === 'success' && (
           <>
-            <CheckCircle2 className="w-12 h-12 mx-auto text-green-500 mb-4" />
-            <h2 className="text-xl font-semibold text-slate-900">Outlook Connected!</h2>
-            <p className="text-slate-500 mt-2">Your Outlook account is now linked. You can send emails directly from the app.</p>
+            <CheckCircle2 className="w-12 h-12 mx-auto text-green-500 dark:text-green-300 mb-4" />
+            <h2 className="text-xl font-semibold text-foreground">Outlook Connected!</h2>
+            <p className="text-muted-foreground mt-2">
+              Your Outlook account is now linked. You can send emails directly from the app.
+            </p>
             <button
               onClick={() => navigate('/AppSettings')}
               className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -116,12 +124,14 @@ export default function OutlookCallback() {
         )}
         {status === 'error' && (
           <>
-            <XCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
-            <h2 className="text-xl font-semibold text-slate-900">Connection Failed</h2>
-            <p className="text-slate-500 mt-2">{errorMsg || 'Could not connect your Outlook account. Please try again.'}</p>
+            <XCircle className="w-12 h-12 mx-auto text-red-500 dark:text-red-300 mb-4" />
+            <h2 className="text-xl font-semibold text-foreground">Connection Failed</h2>
+            <p className="text-muted-foreground mt-2">
+              {errorMsg || 'Could not connect your Outlook account. Please try again.'}
+            </p>
             <button
               onClick={() => navigate('/AppSettings')}
-              className="mt-6 px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+              className="mt-6 px-6 py-2 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors"
             >
               Back to Settings
             </button>

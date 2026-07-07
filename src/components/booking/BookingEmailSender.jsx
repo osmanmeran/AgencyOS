@@ -61,28 +61,33 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
   const [subject, setSubject] = useState(`Booking Request - ${booking?.reference_number || ''}`);
   const [selectedTemplate, setSelectedTemplate] = useState('default');
   const [customHtml, setCustomHtml] = useState('');
-//   const [previewMode, setPreviewMode] = useState(false);
+  //   const [previewMode, setPreviewMode] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const { data: templates = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['bookingTemplates'],
-    queryFn: () => db.entities.BookingTemplate.list()
-  }));
+  const { data: templates = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['bookingTemplates'],
+      queryFn: () => db.entities.BookingTemplate.list(),
+    })
+  );
 
-  const { data: settings } = /** @type {any} */ (useQuery({
-    queryKey: ['appSettings'],
-    queryFn: async () => {
-      const all = await db.entities.AppSettings.list();
-      return all[0] || {};
-    }
-  }));
+  const { data: settings } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['appSettings'],
+      queryFn: async () => {
+        const all = await db.entities.AppSettings.list();
+        return all[0] || {};
+      },
+    })
+  );
 
   const getProcessedHtml = () => {
-    let html = selectedTemplate === 'custom' 
-      ? customHtml 
-      : selectedTemplate === 'default' 
-        ? DEFAULT_TEMPLATE 
-        : templates.find(t => t.id === selectedTemplate)?.html_content || DEFAULT_TEMPLATE;
+    let html =
+      selectedTemplate === 'custom'
+        ? customHtml
+        : selectedTemplate === 'default'
+          ? DEFAULT_TEMPLATE
+          : templates.find((t) => t.id === selectedTemplate)?.html_content || DEFAULT_TEMPLATE;
 
     // Replace placeholders (escape all user-controlled values)
     const replacements = {
@@ -96,7 +101,7 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
       '{{total_cost}}': escapeHtml(`$${booking?.total_cost?.toFixed(2) || '0.00'}`),
       '{{service_details}}': escapeHtml(booking?.service_details || 'No additional details'),
       '{{supplier_name}}': escapeHtml(supplier?.name || 'N/A'),
-      '{{company_name}}': escapeHtml(settings?.app_name || 'TravelPro')
+      '{{company_name}}': escapeHtml(settings?.app_name || 'TravelPro'),
     };
 
     Object.entries(replacements).forEach(([key, value]) => {
@@ -111,7 +116,7 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
     await db.integrations.Core.SendEmail({
       to: recipientEmail,
       subject: subject,
-      body: getProcessedHtml()
+      body: getProcessedHtml(),
     });
     setSending(false);
     onClose();
@@ -127,7 +132,7 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Recipient Email *</Label>
-              <Input 
+              <Input
                 type="email"
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
@@ -136,21 +141,22 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
             </div>
             <div className="space-y-2">
               <Label>Subject</Label>
-              <Input 
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-              />
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Email Template</Label>
             <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="default">Default Template</SelectItem>
-                {templates.map(t => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
                 ))}
                 <SelectItem value="custom">Custom HTML</SelectItem>
               </SelectContent>
@@ -160,7 +166,7 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
           {selectedTemplate === 'custom' && (
             <div className="space-y-2">
               <Label>Custom HTML</Label>
-              <Textarea 
+              <Textarea
                 value={customHtml}
                 onChange={(e) => setCustomHtml(e.target.value)}
                 rows={10}
@@ -170,16 +176,21 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
             </div>
           )}
 
-          <div className="p-3 bg-slate-50 rounded-lg text-xs text-slate-600">
-            <strong>Available placeholders:</strong> {`{{reference_number}}, {{service_date}}, {{num_guests}}, {{trip_name}}, {{client_name}}, {{total_cost}}, {{service_details}}, {{supplier_name}}, {{company_name}}`}
+          <div className="p-3 bg-muted rounded-lg text-xs text-muted-foreground">
+            <strong>Available placeholders:</strong>{' '}
+            {`{{reference_number}}, {{service_date}}, {{num_guests}}, {{trip_name}}, {{client_name}}, {{total_cost}}, {{service_details}}, {{supplier_name}}, {{company_name}}`}
           </div>
 
           <Tabs defaultValue="preview">
             <TabsList>
-              <TabsTrigger value="preview"><Eye className="w-4 h-4 mr-2" /> Preview</TabsTrigger>
-              <TabsTrigger value="source"><FileCode className="w-4 h-4 mr-2" /> HTML Source</TabsTrigger>
+              <TabsTrigger value="preview">
+                <Eye className="w-4 h-4 mr-2" /> Preview
+              </TabsTrigger>
+              <TabsTrigger value="source">
+                <FileCode className="w-4 h-4 mr-2" /> HTML Source
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="preview" className="border rounded-lg p-4 bg-white min-h-[300px]">
+            <TabsContent value="preview" className="border rounded-lg p-4 bg-card min-h-[300px]">
               <div dangerouslySetInnerHTML={{ __html: getProcessedHtml() }} />
             </TabsContent>
             <TabsContent value="source">
@@ -190,16 +201,18 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
           </Tabs>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button 
-              onClick={sendEmail}
-              disabled={!recipientEmail || sending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={sendEmail} disabled={!recipientEmail || sending} className="bg-blue-600 hover:bg-blue-700">
               {sending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...
+                </>
               ) : (
-                <><Send className="w-4 h-4 mr-2" /> Send Email</>
+                <>
+                  <Send className="w-4 h-4 mr-2" /> Send Email
+                </>
               )}
             </Button>
           </div>

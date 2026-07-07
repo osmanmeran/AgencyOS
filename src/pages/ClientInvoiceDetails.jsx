@@ -17,19 +17,23 @@ export default function ClientInvoiceDetails() {
   const invoiceId = searchParams.get('id');
   const client = useMyClient();
 
-  const { data: invoice, isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['clientInvoice', invoiceId],
-    queryFn: () => db.entities.Invoice.get(invoiceId),
-    enabled: !!invoiceId
-  }));
+  const { data: invoice, isLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientInvoice', invoiceId],
+      queryFn: () => db.entities.Invoice.get(invoiceId),
+      enabled: !!invoiceId,
+    })
+  );
 
   // Contacts that belong to a company are billed to that company, not to
   // themselves — the company's own tax ID / invoice address take over.
-  const { data: billingCompany } = /** @type {any} */ (useQuery({
-    queryKey: ['company', client?.company_id],
-    queryFn: () => db.entities.Company.get(client.company_id),
-    enabled: !!client?.company_id
-  }));
+  const { data: billingCompany } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['company', client?.company_id],
+      queryFn: () => db.entities.Company.get(client.company_id),
+      enabled: !!client?.company_id,
+    })
+  );
 
   if (isLoading) {
     return <SkeletonCard />;
@@ -61,67 +65,74 @@ export default function ClientInvoiceDetails() {
         </Button>
       </div>
 
-      <Card className="p-8 bg-white shadow-lg print:shadow-none">
+      <Card className="p-8 bg-card shadow-lg print:shadow-none">
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">INVOICE</h1>
-            <div className="text-lg text-slate-600">{invoice.invoice_number}</div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">INVOICE</h1>
+            <div className="text-lg text-muted-foreground">{invoice.invoice_number}</div>
           </div>
-          <Badge className={`text-lg px-4 py-2 print:hidden ${
-            isPaid ? 'bg-green-100 text-green-800' :
-            isOverdue ? 'bg-red-100 text-red-800' :
-            'bg-orange-100 text-orange-800'
-          }`}>
+          <Badge
+            className={`text-lg px-4 py-2 print:hidden ${
+              isPaid
+                ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300'
+                : isOverdue
+                  ? 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300'
+                  : 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300'
+            }`}
+          >
             {isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Pending'}
           </Badge>
         </div>
 
         {!isPaid && (
-          <div className={`p-4 rounded-lg mb-6 print:hidden ${isOverdue ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'}`}>
+          <div
+            className={`p-4 rounded-lg mb-6 print:hidden ${isOverdue ? 'bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800' : 'bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800'}`}
+          >
             <div className="flex items-center gap-2">
               {isOverdue ? (
-                <AlertCircle className="w-5 h-5 text-red-600" />
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-300" />
               ) : (
-                <Calendar className="w-5 h-5 text-orange-600" />
+                <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-300" />
               )}
-              <span className={isOverdue ? 'text-red-800' : 'text-orange-800'}>
-                {isOverdue 
+              <span className={isOverdue ? 'text-red-800 dark:text-red-300' : 'text-orange-800 dark:text-orange-300'}>
+                {isOverdue
                   ? `This invoice is overdue. Please make payment as soon as possible.`
-                  : `Payment due by ${format(parseISO(invoice.due_date), 'MMMM d, yyyy')}`
-                }
+                  : `Payment due by ${format(parseISO(invoice.due_date), 'MMMM d, yyyy')}`}
               </span>
             </div>
           </div>
         )}
 
         {isPaid && (
-          <div className="p-4 rounded-lg mb-6 bg-green-50 border border-green-200 print:hidden">
+          <div className="p-4 rounded-lg mb-6 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 print:hidden">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-green-800">This invoice has been paid in full. Thank you!</span>
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-300" />
+              <span className="text-green-800 dark:text-green-300">This invoice has been paid in full. Thank you!</span>
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <div>
-            <div className="text-sm text-slate-500 mb-1">Bill To:</div>
-            <div className="font-bold text-lg text-slate-900">{billingCompany?.name || client?.name}</div>
-            {billingCompany?.tax_id && <div className="text-slate-600 mt-1">Tax ID: {billingCompany.tax_id}</div>}
-            {billingCompany?.invoice_address && (
-              <div className="text-slate-600 mt-1 whitespace-pre-wrap">{billingCompany.invoice_address}</div>
+            <div className="text-sm text-muted-foreground mb-1">Bill To:</div>
+            <div className="font-bold text-lg text-foreground">{billingCompany?.name || client?.name}</div>
+            {billingCompany?.tax_id && (
+              <div className="text-muted-foreground mt-1">Tax ID: {billingCompany.tax_id}</div>
             )}
-            {billingCompany && <div className="text-slate-600 mt-1">Attn: {client?.name}</div>}
-            {client?.email && <div className="text-slate-600">{client.email}</div>}
+            {billingCompany?.invoice_address && (
+              <div className="text-muted-foreground mt-1 whitespace-pre-wrap">{billingCompany.invoice_address}</div>
+            )}
+            {billingCompany && <div className="text-muted-foreground mt-1">Attn: {client?.name}</div>}
+            {client?.email && <div className="text-muted-foreground">{client.email}</div>}
           </div>
           <div className="text-right">
             <div className="mb-4">
-              <div className="text-sm text-slate-500">Issue Date:</div>
-              <div className="font-semibold text-slate-900">{format(parseISO(invoice.issue_date), 'MMM d, yyyy')}</div>
+              <div className="text-sm text-muted-foreground">Issue Date:</div>
+              <div className="font-semibold text-foreground">{format(parseISO(invoice.issue_date), 'MMM d, yyyy')}</div>
             </div>
             <div>
-              <div className="text-sm text-slate-500">Due Date:</div>
-              <div className="font-semibold text-slate-900">{format(parseISO(invoice.due_date), 'MMM d, yyyy')}</div>
+              <div className="text-sm text-muted-foreground">Due Date:</div>
+              <div className="font-semibold text-foreground">{format(parseISO(invoice.due_date), 'MMM d, yyyy')}</div>
             </div>
           </div>
         </div>
@@ -129,17 +140,17 @@ export default function ClientInvoiceDetails() {
         {/* Line Items */}
         <div className="mb-8">
           <table className="w-full">
-            <thead className="border-b-2 border-slate-300">
+            <thead className="border-b-2 border-border">
               <tr className="text-left">
-                <th className="pb-3 text-slate-600">Description</th>
-                <th className="pb-3 text-slate-600 text-center">Qty</th>
-                <th className="pb-3 text-slate-600 text-right">Price</th>
-                <th className="pb-3 text-slate-600 text-right">Amount</th>
+                <th className="pb-3 text-muted-foreground">Description</th>
+                <th className="pb-3 text-muted-foreground text-center">Qty</th>
+                <th className="pb-3 text-muted-foreground text-right">Price</th>
+                <th className="pb-3 text-muted-foreground text-right">Amount</th>
               </tr>
             </thead>
             <tbody>
               {invoice.line_items?.map((item, index) => (
-                <tr key={index} className="border-b border-slate-200">
+                <tr key={index} className="border-b border-border">
                   <td className="py-4">{item.description}</td>
                   <td className="py-4 text-center">{item.quantity}</td>
                   <td className="py-4 text-right">${item.unit_price.toFixed(2)}</td>
@@ -154,28 +165,34 @@ export default function ClientInvoiceDetails() {
         <div className="flex justify-end">
           <div className="w-80 space-y-3">
             <div className="flex justify-between text-lg">
-              <span className="text-slate-600">Subtotal:</span>
+              <span className="text-muted-foreground">Subtotal:</span>
               <span className="font-semibold">${invoice.subtotal?.toFixed(2)}</span>
             </div>
             {invoice.tax_amount > 0 && (
               <div className="flex justify-between text-lg">
-                <span className="text-slate-600">Tax ({invoice.tax_rate}%):</span>
+                <span className="text-muted-foreground">Tax ({invoice.tax_rate}%):</span>
                 <span className="font-semibold">${invoice.tax_amount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between text-2xl font-bold border-t-2 pt-3">
               <span>Total:</span>
-              <span className="text-green-700">${invoice.total_amount.toFixed(2)}</span>
+              <span className="text-green-700 dark:text-green-300">${invoice.total_amount.toFixed(2)}</span>
             </div>
             {invoice.amount_paid > 0 && (
               <>
-                <div className="flex justify-between text-lg text-green-600">
+                <div className="flex justify-between text-lg text-green-600 dark:text-green-300">
                   <span>Amount Paid:</span>
                   <span className="font-semibold">-${invoice.amount_paid.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold border-t pt-3">
                   <span>Amount Due:</span>
-                  <span className={invoice.amount_due > 0 ? 'text-orange-700' : 'text-green-700'}>
+                  <span
+                    className={
+                      invoice.amount_due > 0
+                        ? 'text-orange-700 dark:text-orange-300'
+                        : 'text-green-700 dark:text-green-300'
+                    }
+                  >
                     ${invoice.amount_due?.toFixed(2)}
                   </span>
                 </div>
@@ -185,9 +202,9 @@ export default function ClientInvoiceDetails() {
         </div>
 
         {invoice.payment_terms && (
-          <div className="mt-8 pt-8 border-t border-slate-200">
-            <div className="text-sm font-semibold text-slate-700 mb-1">Payment Terms:</div>
-            <div className="text-slate-600">{invoice.payment_terms}</div>
+          <div className="mt-8 pt-8 border-t border-border">
+            <div className="text-sm font-semibold text-foreground mb-1">Payment Terms:</div>
+            <div className="text-muted-foreground">{invoice.payment_terms}</div>
           </div>
         )}
       </Card>

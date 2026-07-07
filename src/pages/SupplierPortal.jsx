@@ -7,10 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SkeletonList } from '@/components/ui/skeletons';
-import { 
-  Package, Star, ClipboardList, 
-  CheckCircle, Clock
-} from 'lucide-react';
+import { Package, Star, ClipboardList, CheckCircle, Clock } from 'lucide-react';
 import SupplierServices from '../components/supplier-portal/SupplierServices';
 import SupplierBookings from '../components/supplier-portal/SupplierBookings';
 import SupplierInvoices from '../components/supplier-portal/SupplierInvoices';
@@ -29,24 +26,30 @@ export default function SupplierPortal() {
       if (currentUser.linked_supplier_id) {
         try {
           const allSuppliers = await db.entities.Supplier.list();
-          const found = allSuppliers.find(s => s.id === currentUser.linked_supplier_id);
+          const found = allSuppliers.find((s) => s.id === currentUser.linked_supplier_id);
           if (found) setSupplier(found);
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+          /* ignore */
+        }
       }
     });
   }, []);
 
-  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierBookings', supplier?.id],
-    queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplier.id }),
-    enabled: !!supplier
-  }));
+  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierBookings', supplier?.id],
+      queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplier.id }),
+      enabled: !!supplier,
+    })
+  );
 
-  const { data: reviews = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierReviews', supplier?.id],
-    queryFn: () => db.entities.SupplierReview.filter({ supplier_id: supplier.id }),
-    enabled: !!supplier
-  }));
+  const { data: reviews = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierReviews', supplier?.id],
+      queryFn: () => db.entities.SupplierReview.filter({ supplier_id: supplier.id }),
+      enabled: !!supplier,
+    })
+  );
 
   if (!user) return <SkeletonList />;
 
@@ -54,25 +57,26 @@ export default function SupplierPortal() {
     return (
       <div className="text-center py-20">
         <Card className="max-w-md mx-auto p-8">
-          <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Supplier Portal</h2>
-          <p className="text-slate-600">{t('supplierPortal.notLinked')}</p>
+          <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-4">Supplier Portal</h2>
+          <p className="text-muted-foreground">{t('supplierPortal.notLinked')}</p>
         </Card>
       </div>
     );
   }
 
-  const pendingBookings = bookings.filter(b => b.status === 'pending').length;
-  const confirmedBookings = bookings.filter(b => b.status === 'confirmed').length;
-  const avgRating = reviews.length > 0 
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) 
-    : 'N/A';
+  const pendingBookings = bookings.filter((b) => b.status === 'pending').length;
+  const confirmedBookings = bookings.filter((b) => b.status === 'confirmed').length;
+  const avgRating =
+    reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 'N/A';
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">{t('supplierPortal.welcome', { name: supplier.name })}</h1>
-        <p className="text-slate-600">{t('supplierPortal.manageServices')}</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">
+          {t('supplierPortal.welcome', { name: supplier.name })}
+        </h1>
+        <p className="text-muted-foreground">{t('supplierPortal.manageServices')}</p>
       </div>
 
       {/* Stats */}
@@ -108,7 +112,7 @@ export default function SupplierPortal() {
       </div>
 
       <Tabs defaultValue="bookings" className="space-y-6">
-        <TabsList className="bg-white border flex-wrap">
+        <TabsList className="bg-card border flex-wrap">
           <TabsTrigger value="bookings">{t('supplierPortal.bookingRequests')}</TabsTrigger>
           <TabsTrigger value="quotes">{t('supplierPortal.quoteRequests')}</TabsTrigger>
           <TabsTrigger value="services">{t('supplierPortal.myServices')}</TabsTrigger>

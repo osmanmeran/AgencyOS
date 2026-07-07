@@ -17,7 +17,7 @@ const CURRENCIES = [
   { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
   { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF' },
   { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' }
+  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
 ];
 
 export default function CurrencyConverter({ compact = false }) {
@@ -33,7 +33,12 @@ export default function CurrencyConverter({ compact = false }) {
       const response = await db.integrations.Core.GetExchangeRate(fromCurrency, toCurrency);
       const rate = response.rate;
       const convertedAmount = parseFloat(amount) * rate;
-      setResult({ rate, converted_amount: convertedAmount, source_currency: fromCurrency, target_currency: toCurrency });
+      setResult({
+        rate,
+        converted_amount: convertedAmount,
+        source_currency: fromCurrency,
+        target_currency: toCurrency,
+      });
     } catch {
       setResult(null);
     }
@@ -46,38 +51,46 @@ export default function CurrencyConverter({ compact = false }) {
     setResult(null);
   };
 
-  const getCurrencySymbol = (code) => CURRENCIES.find(c => c.code === code)?.symbol || code;
+  const getCurrencySymbol = (code) => CURRENCIES.find((c) => c.code === code)?.symbol || code;
 
   if (compact) {
     return (
       <div className="flex items-center gap-2">
-        <Input 
-          type="number" 
-          value={amount} 
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-24"
-        />
+        <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-24" />
         <Select value={fromCurrency} onValueChange={setFromCurrency}>
-          <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
-            {CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.code}</SelectItem>)}
+            {CURRENCIES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                {c.code}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Button variant="ghost" size="icon" onClick={swapCurrencies}>
           <ArrowRightLeft className="w-4 h-4" />
         </Button>
         <Select value={toCurrency} onValueChange={setToCurrency}>
-          <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
-            {CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.code}</SelectItem>)}
+            {CURRENCIES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                {c.code}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Button onClick={convertCurrency} size="sm" disabled={loading}>
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Convert'}
         </Button>
         {result && (
-          <span className="font-bold text-green-700">
-            {getCurrencySymbol(toCurrency)}{result.converted_amount?.toFixed(2)}
+          <span className="font-bold text-green-700 dark:text-green-300">
+            {getCurrencySymbol(toCurrency)}
+            {result.converted_amount?.toFixed(2)}
           </span>
         )}
       </div>
@@ -85,9 +98,9 @@ export default function CurrencyConverter({ compact = false }) {
   }
 
   return (
-    <Card className="p-6 bg-white">
-      <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-        <ArrowRightLeft className="w-5 h-5 text-blue-600" />
+    <Card className="p-6 bg-card">
+      <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+        <ArrowRightLeft className="w-5 h-5 text-blue-600 dark:text-blue-300" />
         Currency Converter
       </h3>
 
@@ -95,18 +108,29 @@ export default function CurrencyConverter({ compact = false }) {
         <div className="grid grid-cols-3 gap-4 items-end">
           <div className="space-y-2">
             <Label>Amount</Label>
-            <Input 
-              type="number" 
-              value={amount} 
-              onChange={(e) => { setAmount(e.target.value); setResult(null); }}
+            <Input
+              type="number"
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setResult(null);
+              }}
             />
           </div>
           <div className="space-y-2">
             <Label>From</Label>
-            <Select value={fromCurrency} onValueChange={(v) => { setFromCurrency(v); setResult(null); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={fromCurrency}
+              onValueChange={(v) => {
+                setFromCurrency(v);
+                setResult(null);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {CURRENCIES.map(c => (
+                {CURRENCIES.map((c) => (
                   <SelectItem key={c.code} value={c.code}>
                     {c.symbol} {c.code} - {c.name}
                   </SelectItem>
@@ -116,10 +140,18 @@ export default function CurrencyConverter({ compact = false }) {
           </div>
           <div className="space-y-2">
             <Label>To</Label>
-            <Select value={toCurrency} onValueChange={(v) => { setToCurrency(v); setResult(null); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={toCurrency}
+              onValueChange={(v) => {
+                setToCurrency(v);
+                setResult(null);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {CURRENCIES.map(c => (
+                {CURRENCIES.map((c) => (
                   <SelectItem key={c.code} value={c.code}>
                     {c.symbol} {c.code} - {c.name}
                   </SelectItem>
@@ -135,23 +167,27 @@ export default function CurrencyConverter({ compact = false }) {
           </Button>
           <Button onClick={convertCurrency} className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={loading}>
             {loading ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Converting...</>
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Converting...
+              </>
             ) : (
-              <><RefreshCw className="w-4 h-4 mr-2" /> Get Rate</>
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" /> Get Rate
+              </>
             )}
           </Button>
         </div>
 
         {result && (
-          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+          <div className="p-4 bg-green-50 dark:bg-green-950/40 rounded-lg border border-green-200 dark:border-green-800">
             <div className="text-center">
-              <div className="text-sm text-slate-600 mb-1">
+              <div className="text-sm text-muted-foreground mb-1">
                 {amount} {fromCurrency} =
               </div>
-              <div className="text-3xl font-bold text-green-700">
+              <div className="text-3xl font-bold text-green-700 dark:text-green-300">
                 {getCurrencySymbol(toCurrency)} {result.converted_amount?.toFixed(2)}
               </div>
-              <div className="text-sm text-slate-500 mt-2">
+              <div className="text-sm text-muted-foreground mt-2">
                 Rate: 1 {fromCurrency} = {result.rate?.toFixed(4)} {toCurrency}
               </div>
             </div>

@@ -1,11 +1,22 @@
 import { MapPin, Calendar, Users, Star, Plane, ArrowRight, Clock, BedDouble } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
-const ROOM_LABELS = { single: 'Single', double: 'Double', twin: 'Twin', triple: 'Triple', quad: 'Quad', family: 'Family' };
+const ROOM_LABELS = {
+  single: 'Single',
+  double: 'Double',
+  twin: 'Twin',
+  triple: 'Triple',
+  quad: 'Quad',
+  family: 'Family',
+};
 
 function fmt(d) {
   if (!d) return '';
-  try { return format(parseISO(d), 'MMM d, yyyy'); } catch { return d; }
+  try {
+    return format(parseISO(d), 'MMM d, yyyy');
+  } catch {
+    return d;
+  }
 }
 
 // Trip context captured by the reservation-style quote builder: destination,
@@ -21,7 +32,10 @@ export function QuoteTripInfo({ quote }) {
   const byId = {};
   for (const p of passengers) {
     const key = p.room_id || '_';
-    if (!byId[key]) { byId[key] = { type: p.room_type, passengers: [] }; rooms.push(key); }
+    if (!byId[key]) {
+      byId[key] = { type: p.room_type, passengers: [] };
+      rooms.push(key);
+    }
     byId[key].passengers.push(p);
   }
 
@@ -30,19 +44,22 @@ export function QuoteTripInfo({ quote }) {
       {hasTrip && (
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
           {quote.destination && (
-            <span className="flex items-center gap-1.5 text-slate-700">
-              <MapPin className="w-4 h-4 text-slate-400" />{quote.destination}
+            <span className="flex items-center gap-1.5 text-foreground">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              {quote.destination}
             </span>
           )}
           {(quote.start_date || quote.end_date) && (
-            <span className="flex items-center gap-1.5 text-slate-700">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              {fmt(quote.start_date)}{quote.end_date ? ` – ${fmt(quote.end_date)}` : ''}
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              {fmt(quote.start_date)}
+              {quote.end_date ? ` – ${fmt(quote.end_date)}` : ''}
             </span>
           )}
           {passengers.length > 0 && (
-            <span className="flex items-center gap-1.5 text-slate-700">
-              <Users className="w-4 h-4 text-slate-400" />{passengers.length} passenger{passengers.length !== 1 ? 's' : ''}
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              {passengers.length} passenger{passengers.length !== 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -53,16 +70,23 @@ export function QuoteTripInfo({ quote }) {
           {rooms.map((key, ri) => {
             const room = byId[key];
             return (
-              <div key={key} className="border border-slate-200 rounded-lg p-3 bg-slate-50">
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                  Room {ri + 1}{room.type ? ` · ${ROOM_LABELS[room.type] || room.type}` : ''}
+              <div key={key} className="border border-border rounded-lg p-3 bg-muted">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Room {ri + 1}
+                  {room.type ? ` · ${ROOM_LABELS[room.type] || room.type}` : ''}
                 </div>
                 <ul className="space-y-1">
                   {room.passengers.map((p, pi) => (
-                    <li key={pi} className="text-sm text-slate-700 flex items-center gap-1.5">
-                      {p.is_contact && <Star className="w-3 h-3 text-green-500" fill="currentColor" />}
-                      <span className={p.is_contact ? 'font-medium' : ''}>{p.name || <span className="text-slate-400 italic">Unnamed</span>}</span>
-                      {p.age_category && p.age_category !== 'adult' && <span className="text-xs text-slate-400">({p.age_category})</span>}
+                    <li key={pi} className="text-sm text-foreground flex items-center gap-1.5">
+                      {p.is_contact && (
+                        <Star className="w-3 h-3 text-green-500 dark:text-green-300" fill="currentColor" />
+                      )}
+                      <span className={p.is_contact ? 'font-medium' : ''}>
+                        {p.name || <span className="text-muted-foreground italic">Unnamed</span>}
+                      </span>
+                      {p.age_category && p.age_category !== 'adult' && (
+                        <span className="text-xs text-muted-foreground">({p.age_category})</span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -80,7 +104,10 @@ export function QuoteTripInfo({ quote }) {
 export function QuoteLineExtras({ item }) {
   const bits = [];
   if (item.start_date || item.end_date) {
-    bits.push({ icon: Calendar, text: `${fmt(item.start_date)}${item.end_date ? ` – ${fmt(item.end_date)}` : ''}${item.nights ? ` · ${item.nights} night${item.nights !== 1 ? 's' : ''}` : ''}` });
+    bits.push({
+      icon: Calendar,
+      text: `${fmt(item.start_date)}${item.end_date ? ` – ${fmt(item.end_date)}` : ''}${item.nights ? ` · ${item.nights} night${item.nights !== 1 ? 's' : ''}` : ''}`,
+    });
   }
   if (item.room_type) bits.push({ icon: BedDouble, text: item.room_type });
   if (item.pickup_location || item.dropoff_location) {
@@ -98,14 +125,15 @@ export function QuoteLineExtras({ item }) {
           {bits.map((b, i) => {
             const Icon = b.icon;
             return (
-              <span key={i} className="flex items-center gap-1 text-xs text-slate-500">
-                <Icon className="w-3 h-3 text-slate-400" />{b.text}
+              <span key={i} className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Icon className="w-3 h-3 text-muted-foreground" />
+                {b.text}
               </span>
             );
           })}
         </div>
       )}
-      {item.details && <p className="text-xs text-slate-500 italic">“{item.details}”</p>}
+      {item.details && <p className="text-xs text-muted-foreground italic">“{item.details}”</p>}
     </div>
   );
 }

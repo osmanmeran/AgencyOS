@@ -55,7 +55,7 @@ export default function ClientTripDetails() {
   }
 
   if (!trip || trip.client_id !== client.id) {
-    return <div className="text-center py-20 text-slate-600">Trip not found or access denied</div>;
+    return <div className="text-center py-20 text-muted-foreground">Trip not found or access denied</div>;
   }
 
   const groupedItems = packingItems.reduce((acc, item) => {
@@ -118,7 +118,7 @@ export default function ClientTripDetails() {
 
       {/* Tabs */}
       <Tabs defaultValue="itinerary" className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1">
+        <TabsList className="bg-card border border-border p-1">
           <TabsTrigger value="itinerary" className="gap-2">
             <List className="w-4 h-4" />
             Itinerary
@@ -138,8 +138,8 @@ export default function ClientTripDetails() {
 
         {/* Itinerary Tab */}
         <TabsContent value="itinerary">
-          <Card className="p-6 bg-white shadow-md">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Your Itinerary</h2>
+          <Card className="p-6 bg-card shadow-md">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Your Itinerary</h2>
             {hasManualEvents ? (
               <ItineraryTimeline events={itineraryEvents} />
             ) : sortedDays.length > 0 || unscheduled.length > 0 ? (
@@ -149,7 +149,7 @@ export default function ClientTripDetails() {
                 ))}
                 {unscheduled.length > 0 && (
                   <div className="mt-6">
-                    <h3 className="font-semibold text-slate-900 mb-3">Other Services</h3>
+                    <h3 className="font-semibold text-foreground mb-3">Other Services</h3>
                     <div className="space-y-3">
                       {unscheduled.map((svc, idx) => (
                         <ServiceCard key={idx} service={svc} />
@@ -159,8 +159,8 @@ export default function ClientTripDetails() {
                 )}
               </div>
             ) : (
-              <div className="text-center py-16 text-slate-500">
-                <List className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+              <div className="text-center py-16 text-muted-foreground">
+                <List className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                 <p>No itinerary available yet.</p>
               </div>
             )}
@@ -169,37 +169,39 @@ export default function ClientTripDetails() {
 
         {/* Map Tab */}
         <TabsContent value="map">
-          <Card className="p-6 bg-white shadow-md">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Trip Map</h2>
+          <Card className="p-6 bg-card shadow-md">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Trip Map</h2>
             <TripMap events={mapEvents} />
           </Card>
         </TabsContent>
 
         {/* Packing Tab */}
         <TabsContent value="packing">
-          <Card className="p-6 bg-white shadow-md">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Packing List</h2>
+          <Card className="p-6 bg-card shadow-md">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Packing List</h2>
             {packingItems.length === 0 ? (
-              <p className="text-slate-600 text-center py-8">No packing list available yet</p>
+              <p className="text-muted-foreground text-center py-8">No packing list available yet</p>
             ) : (
               <div className="space-y-6">
                 {Object.keys(groupedItems).map((category) => (
                   <div key={category}>
-                    <h3 className="font-semibold text-lg text-slate-900 mb-3">{category}</h3>
+                    <h3 className="font-semibold text-lg text-foreground mb-3">{category}</h3>
                     <div className="space-y-2">
                       {groupedItems[category].map((item) => (
-                        <div key={item.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                        <div key={item.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                           <div
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                              item.packed ? 'bg-green-500 border-green-500' : 'border-slate-300'
+                              item.packed ? 'bg-green-500 border-green-500' : 'border-border'
                             }`}
                           >
                             {item.packed && <span className="text-white text-xs">✓</span>}
                           </div>
-                          <span className={`flex-1 ${item.packed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                          <span
+                            className={`flex-1 ${item.packed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+                          >
                             {item.item_name}
                           </span>
-                          {item.quantity > 1 && <span className="text-sm text-slate-500">x{item.quantity}</span>}
+                          {item.quantity > 1 && <span className="text-sm text-muted-foreground">x{item.quantity}</span>}
                         </div>
                       ))}
                     </div>

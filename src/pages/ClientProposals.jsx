@@ -14,34 +14,38 @@ import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
 
 const STATUS_COLORS = {
-  draft: 'bg-gray-100 text-gray-800',
-  sent: 'bg-blue-100 text-blue-800',
-  accepted: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  expired: 'bg-orange-100 text-orange-800'
+  draft: 'bg-muted text-foreground',
+  sent: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+  accepted: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  rejected: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
+  expired: 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300',
 };
 
 export default function ClientProposals() {
   const client = useMyClient();
   const queryClient = useQueryClient();
 
-  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['myProposals', client?.id],
-    queryFn: () => db.entities.Proposal.filter({ client_id: client.id }),
-    enabled: !!client
-  }));
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['myProposals', client?.id],
+      queryFn: () => db.entities.Proposal.filter({ client_id: client.id }),
+      enabled: !!client,
+    })
+  );
 
-  const updateProposalMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { id, /** @type {any} */ status }) => {
-      const proposal = proposals.find(p => p.id === id);
-      return db.entities.Proposal.update(id, { ...proposal, status });
-    },
-    onSuccess: () => {
-      showSuccess('Proposal updated');
-      queryClient.invalidateQueries({ queryKey: ['myProposals', client?.id] });
-    },
-    onError: (error) => showError('Failed to update proposal', error.message)
-  }));
+  const updateProposalMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ status }) => {
+        const proposal = proposals.find((p) => p.id === id);
+        return db.entities.Proposal.update(id, { ...proposal, status });
+      },
+      onSuccess: () => {
+        showSuccess('Proposal updated');
+        queryClient.invalidateQueries({ queryKey: ['myProposals', client?.id] });
+      },
+      onError: (error) => showError('Failed to update proposal', error.message),
+    })
+  );
 
   if (!client) {
     return <SkeletonTable />;
@@ -50,54 +54,53 @@ export default function ClientProposals() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">My Proposals</h1>
-        <p className="text-slate-600">View and respond to travel proposals</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">My Proposals</h1>
+        <p className="text-muted-foreground">View and respond to travel proposals</p>
       </div>
 
       {proposals.length === 0 ? (
-        <Card className="p-12 text-center bg-white">
-          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FileText className="w-8 h-8 text-blue-600" />
+        <Card className="p-12 text-center bg-card">
+          <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-blue-600 dark:text-blue-300" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">No proposals yet</h3>
-          <p className="text-slate-600">Your travel agent will send you proposals here</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">No proposals yet</h3>
+          <p className="text-muted-foreground">Your travel agent will send you proposals here</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {proposals.map(proposal => (
-            <Card key={proposal.id} className="p-6 bg-white hover:shadow-xl transition-shadow">
+          {proposals.map((proposal) => (
+            <Card key={proposal.id} className="p-6 bg-card hover:shadow-xl transition-shadow">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="font-bold text-lg text-slate-900">{proposal.title}</h3>
-                <Badge className={STATUS_COLORS[proposal.status]}>
-                  {proposal.status}
-                </Badge>
+                <h3 className="font-bold text-lg text-foreground">{proposal.title}</h3>
+                <Badge className={STATUS_COLORS[proposal.status]}>{proposal.status}</Badge>
               </div>
 
               <div className="space-y-3 mb-4">
                 {proposal.destination && (
-                  <div className="flex items-center gap-2 text-slate-600 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <FileText className="w-4 h-4" />
                     {proposal.destination}
                   </div>
                 )}
                 {proposal.start_date && proposal.end_date && (
-                  <div className="flex items-center gap-2 text-slate-600 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Calendar className="w-4 h-4" />
-                    {format(new Date(proposal.start_date), 'MMM d')} - {format(new Date(proposal.end_date), 'MMM d, yyyy')}
+                    {format(new Date(proposal.start_date), 'MMM d')} -{' '}
+                    {format(new Date(proposal.end_date), 'MMM d, yyyy')}
                   </div>
                 )}
                 {proposal.num_travelers > 0 && (
-                  <div className="flex items-center gap-2 text-slate-600 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Users className="w-4 h-4" />
                     {proposal.num_travelers} traveler{proposal.num_travelers > 1 ? 's' : ''}
                   </div>
                 )}
               </div>
 
-              <div className="pt-4 border-t border-slate-200 mb-4">
+              <div className="pt-4 border-t border-border mb-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-slate-600 text-sm">Total Cost</span>
-                  <div className="text-2xl font-bold text-green-700 flex items-center gap-1">
+                  <span className="text-muted-foreground text-sm">Total Cost</span>
+                  <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center gap-1">
                     <DollarSign className="w-5 h-5" />
                     {(proposal.total_cost || 0).toFixed(2)}
                   </div>

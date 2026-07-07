@@ -35,7 +35,7 @@ export default function ClientItinerary() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -43,11 +43,11 @@ export default function ClientItinerary() {
 
   if (!trip) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-center p-8">
-        <MapPin className="w-16 h-16 text-slate-300 mb-4" />
-        <h1 className="text-2xl font-bold text-slate-700 mb-2">Itinerary Not Found</h1>
-        <p className="text-slate-500 mb-6">This itinerary could not be found or is no longer available.</p>
-        <Link to="/" className="text-blue-600 hover:underline text-sm">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-muted text-center p-8">
+        <MapPin className="w-16 h-16 text-muted-foreground mb-4" />
+        <h1 className="text-2xl font-bold text-foreground mb-2">Itinerary Not Found</h1>
+        <p className="text-muted-foreground mb-6">This itinerary could not be found or is no longer available.</p>
+        <Link to="/" className="text-blue-600 dark:text-blue-300 hover:underline text-sm">
           Go to homepage
         </Link>
       </div>
@@ -77,17 +77,21 @@ export default function ClientItinerary() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-muted">
       {/* Nav bar */}
-      <nav className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 no-print">
+      <nav className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border no-print">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="font-bold text-slate-800 text-sm tracking-wide">ITINERARY</span>
+          <span className="font-bold text-foreground text-sm tracking-wide">ITINERARY</span>
           <div className="flex items-center gap-2 no-print">
             <button
               onClick={handleShare}
-              className="text-xs text-slate-600 hover:text-slate-800 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1.5"
+              className="text-xs text-muted-foreground hover:text-foreground font-medium px-3 py-1.5 rounded-lg hover:bg-muted transition-colors flex items-center gap-1.5"
             >
-              {shareCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Share2 className="w-3.5 h-3.5" />}
+              {shareCopied ? (
+                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-300" />
+              ) : (
+                <Share2 className="w-3.5 h-3.5" />
+              )}
               {shareCopied ? 'Copied!' : 'Share'}
             </button>
             <button
@@ -97,7 +101,7 @@ export default function ClientItinerary() {
                 window.print();
                 document.title = prev;
               }}
-              className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+              className="text-xs text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-300 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
             >
               Print / PDF
             </button>
@@ -110,7 +114,7 @@ export default function ClientItinerary() {
       {(companyLogoUrl || companyName) && (
         <div className="max-w-4xl mx-auto px-4 pt-6 flex items-center gap-3">
           {companyLogoUrl && <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-20 object-contain" />}
-          {companyName && <span className="font-semibold text-slate-700">{companyName}</span>}
+          {companyName && <span className="font-semibold text-foreground">{companyName}</span>}
         </div>
       )}
 
@@ -159,30 +163,30 @@ export default function ClientItinerary() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {sortedDays.length === 0 && unscheduled.length === 0 ? (
           <div className="text-center py-20">
-            <Calendar className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-            <h2 className="text-xl font-semibold text-slate-600 mb-2">No Services Added</h2>
-            <p className="text-slate-400">Your itinerary is empty. Services will appear here once added.</p>
+            <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold text-muted-foreground mb-2">No Services Added</h2>
+            <p className="text-muted-foreground">Your itinerary is empty. Services will appear here once added.</p>
           </div>
         ) : (
           <>
             {/* Summary cards */}
             <div className="grid grid-cols-2 gap-3 mb-10">
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                <div className="text-xs text-slate-500 mb-1">Days</div>
-                <div className="text-2xl font-bold text-slate-900">{sortedDays.length}</div>
+              <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                <div className="text-xs text-muted-foreground mb-1">Days</div>
+                <div className="text-2xl font-bold text-foreground">{sortedDays.length}</div>
               </div>
               {trip.notes && (
-                <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                  <div className="text-xs text-slate-500 mb-1">Notes</div>
-                  <div className="text-sm font-medium text-slate-900 line-clamp-2">{trip.notes}</div>
+                <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                  <div className="text-xs text-muted-foreground mb-1">Notes</div>
+                  <div className="text-sm font-medium text-foreground line-clamp-2">{trip.notes}</div>
                 </div>
               )}
             </div>
 
             {/* Day-by-day itinerary */}
             <div className="space-y-2">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-600" />
+              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-300" />
                 Your Trip Day by Day
               </h2>
 
@@ -194,11 +198,11 @@ export default function ClientItinerary() {
             {/* Unscheduled services */}
             {unscheduled.length > 0 && (
               <div className="mt-10">
-                <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-amber-500" />
+                <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-500 dark:text-amber-300" />
                   Other Services
                 </h2>
-                <p className="text-sm text-slate-500 mb-4">These services are not tied to a specific date:</p>
+                <p className="text-sm text-muted-foreground mb-4">These services are not tied to a specific date:</p>
                 <div className="space-y-3">
                   {unscheduled.map((svc, idx) => (
                     <ServiceCard key={idx} service={svc} />
@@ -209,16 +213,16 @@ export default function ClientItinerary() {
 
             {/* Notes */}
             {trip.notes && (
-              <div className="mt-10 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                <h3 className="font-semibold text-slate-900 mb-2">Notes</h3>
-                <p className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">{trip.notes}</p>
+              <div className="mt-10 bg-card rounded-xl border border-border p-6 shadow-sm">
+                <h3 className="font-semibold text-foreground mb-2">Notes</h3>
+                <p className="text-muted-foreground text-sm whitespace-pre-wrap leading-relaxed">{trip.notes}</p>
               </div>
             )}
 
             {/* Emergency Contact */}
             {(trip.created_by || trip.created_by_phone) && (
-              <div className="mt-10 bg-red-50 rounded-xl border border-red-200 p-6">
-                <h3 className="font-semibold text-red-900 mb-3 flex items-center gap-2">
+              <div className="mt-10 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-800 p-6">
+                <h3 className="font-semibold text-red-900 dark:text-red-300 mb-3 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path
                       strokeLinecap="round"
@@ -228,7 +232,7 @@ export default function ClientItinerary() {
                   </svg>
                   Emergency Contact
                 </h3>
-                <div className="space-y-1 text-sm text-red-800">
+                <div className="space-y-1 text-sm text-red-800 dark:text-red-300">
                   {trip.created_by_name && trip.created_by_name !== 'Unknown' && (
                     <div className="font-semibold">{trip.created_by_name}</div>
                   )}
@@ -246,9 +250,9 @@ export default function ClientItinerary() {
 
             {/* Terms */}
             {trip.terms_and_conditions && (
-              <div className="mt-4 bg-slate-50 rounded-xl border border-slate-200 p-6">
-                <h3 className="font-semibold text-slate-900 mb-2 text-sm">Terms & Conditions</h3>
-                <p className="text-slate-500 text-xs whitespace-pre-wrap leading-relaxed">
+              <div className="mt-4 bg-muted rounded-xl border border-border p-6">
+                <h3 className="font-semibold text-foreground mb-2 text-sm">Terms & Conditions</h3>
+                <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-relaxed">
                   {trip.terms_and_conditions}
                 </p>
               </div>
@@ -258,8 +262,8 @@ export default function ClientItinerary() {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-slate-200 bg-white mt-10">
-        <div className="max-w-4xl mx-auto px-4 py-6 text-center text-xs text-slate-400">
+      <div className="border-t border-border bg-card mt-10">
+        <div className="max-w-4xl mx-auto px-4 py-6 text-center text-xs text-muted-foreground">
           Generated automatically from reservation data.
         </div>
       </div>

@@ -6,17 +6,36 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { ArrowLeft, CalendarDays, Users, Plane, Hotel, DollarSign, CheckCircle, Clock, XCircle, FileText, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarDays,
+  Users,
+  Plane,
+  Hotel,
+  DollarSign,
+  CheckCircle,
+  Clock,
+  XCircle,
+  FileText,
+  Loader2,
+} from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 
 const STATUS_STYLES = {
-  pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  confirmed: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle },
+  pending: { color: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300', icon: Clock },
+  confirmed: { color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300', icon: CheckCircle },
+  cancelled: { color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300', icon: XCircle },
 };
 
-const MEAL_BASIS_LABELS = { RO: 'Room Only', BB: 'B&B', HB: 'Half Board', FB: 'Full Board', AI: 'All Inclusive', UAI: 'Ultra AI' };
+const MEAL_BASIS_LABELS = {
+  RO: 'Room Only',
+  BB: 'B&B',
+  HB: 'Half Board',
+  FB: 'Full Board',
+  AI: 'All Inclusive',
+  UAI: 'Ultra AI',
+};
 
 export default function SupplierBookingDetails() {
   const [params] = useSearchParams();
@@ -24,24 +43,28 @@ export default function SupplierBookingDetails() {
 
   const queryClient = useQueryClient();
 
-  const { data: booking, isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierBooking', bookingId],
-    queryFn: () => db.entities.SupplierBooking.get(bookingId),
-    enabled: !!bookingId
-  }));
+  const { data: booking, isLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierBooking', bookingId],
+      queryFn: () => db.entities.SupplierBooking.get(bookingId),
+      enabled: !!bookingId,
+    })
+  );
 
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { status }) => db.entities.SupplierBooking.update(bookingId, { status }),
-    onSuccess: () => {
-      showSuccess('Booking updated');
-      queryClient.invalidateQueries({ queryKey: ['supplierBooking', bookingId] });
-      queryClient.invalidateQueries({ queryKey: ['supplierBookings'] });
-    },
-    onError: (error) => showError('Failed to update booking', error.message)
-  }));
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { status }) => db.entities.SupplierBooking.update(bookingId, { status }),
+      onSuccess: () => {
+        showSuccess('Booking updated');
+        queryClient.invalidateQueries({ queryKey: ['supplierBooking', bookingId] });
+        queryClient.invalidateQueries({ queryKey: ['supplierBookings'] });
+      },
+      onError: (error) => showError('Failed to update booking', error.message),
+    })
+  );
 
   if (isLoading) return <SkeletonCard />;
-  if (!booking) return <div className="text-center py-20 text-slate-500">Booking not found.</div>;
+  if (!booking) return <div className="text-center py-20 text-muted-foreground">Booking not found.</div>;
 
   const { color, icon: StatusIcon } = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
   const isHotel = booking.category_name?.toLowerCase().includes('hotel');
@@ -52,11 +75,13 @@ export default function SupplierBookingDetails() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-4">
           <Link to={createPageUrl('SupplierBookings')}>
-            <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{booking.supplier_name}</h1>
-            <p className="text-sm text-slate-500">Booking Details</p>
+            <h1 className="text-2xl font-bold text-foreground">{booking.supplier_name}</h1>
+            <p className="text-sm text-muted-foreground">Booking Details</p>
           </div>
         </div>
         <Badge className={`${color} text-sm px-3 py-1.5`}>
@@ -65,30 +90,32 @@ export default function SupplierBookingDetails() {
         </Badge>
       </div>
 
-      <Card className="p-6 bg-white space-y-6">
+      <Card className="p-6 bg-card space-y-6">
         {/* Service Info */}
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-300" />
             Service Information
           </h2>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-slate-500">Service Type</span>
-              <p className="font-medium text-slate-900">{booking.service_type}</p>
+              <span className="text-muted-foreground">Service Type</span>
+              <p className="font-medium text-foreground">{booking.service_type}</p>
             </div>
             <div>
-              <span className="text-slate-500">Category</span>
-              <p className="font-medium text-slate-900">{booking.category_name}</p>
+              <span className="text-muted-foreground">Category</span>
+              <p className="font-medium text-foreground">{booking.category_name}</p>
             </div>
             <div>
-              <span className="text-slate-500">Number of People</span>
-              <p className="font-medium text-slate-900 flex items-center gap-1"><Users className="w-4 h-4 text-slate-400" /> {booking.num_people}</p>
+              <span className="text-muted-foreground">Number of People</span>
+              <p className="font-medium text-foreground flex items-center gap-1">
+                <Users className="w-4 h-4 text-muted-foreground" /> {booking.num_people}
+              </p>
             </div>
             {booking.pricing_name && (
               <div>
-                <span className="text-slate-500">Rate Applied</span>
-                <p className="font-medium text-slate-900">{booking.pricing_name}</p>
+                <span className="text-muted-foreground">Rate Applied</span>
+                <p className="font-medium text-foreground">{booking.pricing_name}</p>
               </div>
             )}
           </div>
@@ -96,28 +123,28 @@ export default function SupplierBookingDetails() {
 
         {/* Date Info */}
         <div className="border-t pt-4">
-          <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-blue-600" />
+          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-blue-600 dark:text-blue-300" />
             Date & Schedule
           </h3>
           {isHotel && booking.check_in_date ? (
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-slate-500">Check-in</span>
+                <span className="text-muted-foreground">Check-in</span>
                 <p className="font-medium">{booking.check_in_date}</p>
               </div>
               <div>
-                <span className="text-slate-500">Check-out</span>
+                <span className="text-muted-foreground">Check-out</span>
                 <p className="font-medium">{booking.check_out_date}</p>
               </div>
               <div>
-                <span className="text-slate-500">Nights</span>
+                <span className="text-muted-foreground">Nights</span>
                 <p className="font-medium">{booking.num_nights}</p>
               </div>
             </div>
           ) : (
             <div className="text-sm">
-              <span className="text-slate-500">Service Date</span>
+              <span className="text-muted-foreground">Service Date</span>
               <p className="font-medium">{booking.service_date}</p>
             </div>
           )}
@@ -126,42 +153,46 @@ export default function SupplierBookingDetails() {
         {/* Transfer Details */}
         {isTransfer && (
           <div className="border-t pt-4">
-            <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
-              <Plane className="w-4 h-4 text-blue-600" />
+            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <Plane className="w-4 h-4 text-blue-600 dark:text-blue-300" />
               Transfer Details
             </h3>
-            <div className="bg-blue-50 rounded-lg p-4 space-y-2 text-sm">
+            <div className="bg-blue-50 dark:bg-blue-950/40 rounded-lg p-4 space-y-2 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-slate-500">Type</span>
+                  <span className="text-muted-foreground">Type</span>
                   <p className="font-medium capitalize">{booking.transfer_type?.replace(/_/g, ' ')}</p>
                 </div>
               </div>
               <div>
-                <span className="text-slate-500">From</span>
+                <span className="text-muted-foreground">From</span>
                 <p className="font-medium">{booking.pickup_location}</p>
-                {booking.origin_supplier_name && <p className="text-xs text-slate-400">Supplier: {booking.origin_supplier_name}</p>}
+                {booking.origin_supplier_name && (
+                  <p className="text-xs text-muted-foreground">Supplier: {booking.origin_supplier_name}</p>
+                )}
               </div>
               <div>
-                <span className="text-slate-500">To</span>
+                <span className="text-muted-foreground">To</span>
                 <p className="font-medium">{booking.dropoff_location}</p>
-                {booking.destination_supplier_name && <p className="text-xs text-slate-400">Supplier: {booking.destination_supplier_name}</p>}
+                {booking.destination_supplier_name && (
+                  <p className="text-xs text-muted-foreground">Supplier: {booking.destination_supplier_name}</p>
+                )}
               </div>
               {booking.flight_number && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <span className="text-slate-500">Flight</span>
+                    <span className="text-muted-foreground">Flight</span>
                     <p className="font-medium">{booking.flight_number}</p>
                   </div>
                   <div>
-                    <span className="text-slate-500">Time</span>
+                    <span className="text-muted-foreground">Time</span>
                     <p className="font-medium">{booking.flight_time}</p>
                   </div>
                 </div>
               )}
               {booking.client_phone && (
                 <div>
-                  <span className="text-slate-500">Client Phone</span>
+                  <span className="text-muted-foreground">Client Phone</span>
                   <p className="font-medium">{booking.client_phone}</p>
                 </div>
               )}
@@ -172,21 +203,21 @@ export default function SupplierBookingDetails() {
         {/* Hotel Details */}
         {isHotel && (
           <div className="border-t pt-4">
-            <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
-              <Hotel className="w-4 h-4 text-green-600" />
+            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <Hotel className="w-4 h-4 text-green-600 dark:text-green-300" />
               Room Details
             </h3>
-            <div className="bg-green-50 rounded-lg p-4 text-sm space-y-2">
+            <div className="bg-green-50 dark:bg-green-950/40 rounded-lg p-4 text-sm space-y-2">
               <div className="grid grid-cols-2 gap-4">
                 {booking.room_category && (
                   <div>
-                    <span className="text-slate-500">Room Category</span>
+                    <span className="text-muted-foreground">Room Category</span>
                     <p className="font-medium">{booking.room_category}</p>
                   </div>
                 )}
                 {booking.meal_basis && (
                   <div>
-                    <span className="text-slate-500">Meal Basis</span>
+                    <span className="text-muted-foreground">Meal Basis</span>
                     <p className="font-medium">{MEAL_BASIS_LABELS[booking.meal_basis] || booking.meal_basis}</p>
                   </div>
                 )}
@@ -198,19 +229,21 @@ export default function SupplierBookingDetails() {
         {/* Cost */}
         {booking.total_cost != null && (
           <div className="border-t pt-4">
-            <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-green-600" />
+            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-green-600 dark:text-green-300" />
               Cost
             </h3>
-            <div className="text-lg font-bold text-green-700">{booking.currency} {Number(booking.total_cost).toFixed(2)}</div>
+            <div className="text-lg font-bold text-green-700 dark:text-green-300">
+              {booking.currency} {Number(booking.total_cost).toFixed(2)}
+            </div>
           </div>
         )}
 
         {/* Notes */}
         {booking.notes && (
           <div className="border-t pt-4">
-            <h3 className="font-semibold text-slate-900 mb-2">Notes</h3>
-            <p className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3">{booking.notes}</p>
+            <h3 className="font-semibold text-foreground mb-2">Notes</h3>
+            <p className="text-sm text-muted-foreground bg-muted rounded-lg p-3">{booking.notes}</p>
           </div>
         )}
       </Card>
@@ -219,19 +252,45 @@ export default function SupplierBookingDetails() {
       <div className="flex justify-end gap-3">
         {booking.status === 'pending' && (
           <>
-            <Button onClick={() => updateMutation.mutate({ status: 'confirmed' })} className="bg-green-600 hover:bg-green-700" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+            <Button
+              onClick={() => updateMutation.mutate({ status: 'confirmed' })}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4 mr-2" />
+              )}
               {updateMutation.isPending ? 'Saving...' : 'Confirm Booking'}
             </Button>
-            <Button onClick={() => updateMutation.mutate({ status: 'cancelled' })} variant="outline" className="border-red-300 text-red-600" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
+            <Button
+              onClick={() => updateMutation.mutate({ status: 'cancelled' })}
+              variant="outline"
+              className="border-red-300 dark:border-red-800 text-red-600 dark:text-red-300"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="w-4 h-4 mr-2" />
+              )}
               {updateMutation.isPending ? 'Saving...' : 'Cancel Booking'}
             </Button>
           </>
         )}
         {booking.status === 'confirmed' && (
-          <Button onClick={() => updateMutation.mutate({ status: 'cancelled' })} variant="outline" className="border-red-300 text-red-600" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
+          <Button
+            onClick={() => updateMutation.mutate({ status: 'cancelled' })}
+            variant="outline"
+            className="border-red-300 dark:border-red-800 text-red-600 dark:text-red-300"
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <XCircle className="w-4 h-4 mr-2" />
+            )}
             {updateMutation.isPending ? 'Saving...' : 'Cancel Booking'}
           </Button>
         )}

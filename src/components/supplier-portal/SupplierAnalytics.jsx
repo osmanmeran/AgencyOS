@@ -3,30 +3,49 @@ import { db } from '@/lib/DbContext';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
 import { DollarSign, Star, Calendar, CheckCircle } from 'lucide-react';
 
 // const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function SupplierAnalytics({ supplierId }) {
-  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierBookings', supplierId],
-    queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }),
-    enabled: !!supplierId
-  }));
+  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierBookings', supplierId],
+      queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: reviews = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierReviews', supplierId],
-    queryFn: () => db.entities.SupplierReview.filter({ supplier_id: supplierId }),
-    enabled: !!supplierId
-  }));
+  const { data: reviews = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierReviews', supplierId],
+      queryFn: () => db.entities.SupplierReview.filter({ supplier_id: supplierId }),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierInvoices', supplierId],
-    queryFn: () => db.entities.SupplierInvoice.filter({ supplier_id: supplierId }),
-    enabled: !!supplierId
-  }));
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierInvoices', supplierId],
+      queryFn: () => db.entities.SupplierInvoice.filter({ supplier_id: supplierId }),
+      enabled: !!supplierId,
+    })
+  );
 
   // Calculate monthly booking trends
   const monthlyData = [];
@@ -34,14 +53,14 @@ export default function SupplierAnalytics({ supplierId }) {
     const monthDate = subMonths(new Date(), i);
     const monthStart = startOfMonth(monthDate);
     const monthEnd = endOfMonth(monthDate);
-    
-    const monthBookings = bookings.filter(b => {
+
+    const monthBookings = bookings.filter((b) => {
       if (!b.service_date) return false;
       const serviceDate = parseISO(b.service_date);
       return isWithinInterval(serviceDate, { start: monthStart, end: monthEnd });
     });
 
-    const monthInvoices = invoices.filter(inv => {
+    const monthInvoices = invoices.filter((inv) => {
       if (!inv.issue_date) return false;
       const issueDate = parseISO(inv.issue_date);
       return isWithinInterval(issueDate, { start: monthStart, end: monthEnd });
@@ -50,34 +69,36 @@ export default function SupplierAnalytics({ supplierId }) {
     monthlyData.push({
       month: format(monthDate, 'MMM'),
       bookings: monthBookings.length,
-      revenue: monthInvoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + (i.amount || 0), 0),
-      confirmed: monthBookings.filter(b => b.status === 'confirmed').length
+      revenue: monthInvoices.filter((i) => i.status === 'paid').reduce((sum, i) => sum + (i.amount || 0), 0),
+      confirmed: monthBookings.filter((b) => b.status === 'confirmed').length,
     });
   }
 
   // Booking status distribution
   const statusData = [
-    { name: 'Confirmed', value: bookings.filter(b => b.status === 'confirmed').length, color: '#10b981' },
-    { name: 'Pending', value: bookings.filter(b => b.status === 'pending').length, color: '#f59e0b' },
-    { name: 'Completed', value: bookings.filter(b => b.status === 'completed').length, color: '#3b82f6' },
-    { name: 'Cancelled', value: bookings.filter(b => b.status === 'cancelled').length, color: '#ef4444' }
-  ].filter(s => s.value > 0);
+    { name: 'Confirmed', value: bookings.filter((b) => b.status === 'confirmed').length, color: '#10b981' },
+    { name: 'Pending', value: bookings.filter((b) => b.status === 'pending').length, color: '#f59e0b' },
+    { name: 'Completed', value: bookings.filter((b) => b.status === 'completed').length, color: '#3b82f6' },
+    { name: 'Cancelled', value: bookings.filter((b) => b.status === 'cancelled').length, color: '#ef4444' },
+  ].filter((s) => s.value > 0);
 
   // Rating breakdown
-  const ratingBreakdown = [5, 4, 3, 2, 1].map(rating => ({
+  const ratingBreakdown = [5, 4, 3, 2, 1].map((rating) => ({
     rating: `${rating} Stars`,
-    count: reviews.filter(r => Math.floor(r.rating) === rating).length
+    count: reviews.filter((r) => Math.floor(r.rating) === rating).length,
   }));
 
   // Calculate stats
-  const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + (i.amount || 0), 0);
-  const pendingPayments = invoices.filter(i => i.status === 'approved').reduce((sum, i) => sum + (i.amount || 0), 0);
-  const avgRating = reviews.length > 0 
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-    : 'N/A';
-  const confirmationRate = bookings.length > 0
-    ? Math.round((bookings.filter(b => b.status === 'confirmed' || b.status === 'completed').length / bookings.length) * 100)
-    : 0;
+  const totalRevenue = invoices.filter((i) => i.status === 'paid').reduce((sum, i) => sum + (i.amount || 0), 0);
+  const pendingPayments = invoices.filter((i) => i.status === 'approved').reduce((sum, i) => sum + (i.amount || 0), 0);
+  const avgRating =
+    reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 'N/A';
+  const confirmationRate =
+    bookings.length > 0
+      ? Math.round(
+          (bookings.filter((b) => b.status === 'confirmed' || b.status === 'completed').length / bookings.length) * 100,
+        )
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -115,8 +136,8 @@ export default function SupplierAnalytics({ supplierId }) {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 bg-white">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Booking Trends</h3>
+        <Card className="p-6 bg-card">
+          <h3 className="text-lg font-bold text-foreground mb-4">Booking Trends</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={monthlyData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -129,8 +150,8 @@ export default function SupplierAnalytics({ supplierId }) {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="p-6 bg-white">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Revenue Trend</h3>
+        <Card className="p-6 bg-card">
+          <h3 className="text-lg font-bold text-foreground mb-4">Revenue Trend</h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={monthlyData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -142,10 +163,10 @@ export default function SupplierAnalytics({ supplierId }) {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="p-6 bg-white">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Booking Status Distribution</h3>
+        <Card className="p-6 bg-card">
+          <h3 className="text-lg font-bold text-foreground mb-4">Booking Status Distribution</h3>
           {statusData.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">No booking data yet</div>
+            <div className="text-center py-8 text-muted-foreground">No booking data yet</div>
           ) : (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -169,8 +190,8 @@ export default function SupplierAnalytics({ supplierId }) {
           )}
         </Card>
 
-        <Card className="p-6 bg-white">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Rating Breakdown</h3>
+        <Card className="p-6 bg-card">
+          <h3 className="text-lg font-bold text-foreground mb-4">Rating Breakdown</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={ratingBreakdown} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
@@ -185,27 +206,25 @@ export default function SupplierAnalytics({ supplierId }) {
 
       {/* Recent Reviews Summary */}
       {reviews.length > 0 && (
-        <Card className="p-6 bg-white">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Recent Reviews</h3>
+        <Card className="p-6 bg-card">
+          <h3 className="text-lg font-bold text-foreground mb-4">Recent Reviews</h3>
           <div className="space-y-4">
-            {reviews.slice(0, 5).map(review => (
-              <div key={review.id} className="p-4 bg-slate-50 rounded-lg">
+            {reviews.slice(0, 5).map((review) => (
+              <div key={review.id} className="p-4 bg-muted rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="flex">
                     {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`w-4 h-4 ${i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-slate-300'}`} 
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${i < review.rating ? 'text-yellow-500 dark:text-yellow-300 fill-yellow-500' : 'text-muted-foreground'}`}
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-muted-foreground">
                     {format(new Date(review.created_date), 'MMM d, yyyy')}
                   </span>
                 </div>
-                {review.review_text && (
-                  <p className="text-sm text-slate-700">{review.review_text}</p>
-                )}
+                {review.review_text && <p className="text-sm text-foreground">{review.review_text}</p>}
               </div>
             ))}
           </div>

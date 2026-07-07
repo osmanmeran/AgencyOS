@@ -29,7 +29,7 @@ Please review the details and let me know if you'd like any adjustments. I'm hap
 Looking forward to your thoughts!
 
 Best regards,
-{{agent_name}}`
+{{agent_name}}`,
   },
   invoice: {
     label: 'Invoice',
@@ -47,13 +47,13 @@ Kindly arrange payment at your earliest convenience. If you have any questions, 
 Thank you for your business!
 
 Best regards,
-{{agent_name}}`
+{{agent_name}}`,
   },
   custom: {
     label: 'Custom',
     subject: '',
-    body: `Dear {{client_name}},\n\n\n\nBest regards,\n{{agent_name}}`
-  }
+    body: `Dear {{client_name}},\n\n\n\nBest regards,\n{{agent_name}}`,
+  },
 };
 
 // Resolve {{variable}} tokens in a string
@@ -77,8 +77,8 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
     total_amount: proposal
       ? `$${(proposal.total_cost || 0).toFixed(2)}`
       : invoice
-      ? `$${(invoice.total_amount || 0).toFixed(2)}`
-      : '',
+        ? `$${(invoice.total_amount || 0).toFixed(2)}`
+        : '',
     invoice_number: invoice?.invoice_number || '',
     due_date: invoice?.due_date || '',
     agent_name: '', // filled from current user below
@@ -92,10 +92,13 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
 
   // Load current user name
   useEffect(() => {
-    db.auth.me().then(u => {
-      const name = u?.full_name || u?.email || '';
-      setAgentName(name);
-    }).catch(() => {});
+    db.auth
+      .me()
+      .then((u) => {
+        const name = u?.full_name || u?.email || '';
+        setAgentName(name);
+      })
+      .catch(() => {});
   }, []);
 
   // Reset when opened/template changes
@@ -109,33 +112,35 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
     }
   }, [open, agentName]);
 
-  const sendMutation = /** @type {any} */ (useMutation({
-    mutationFn: async () => {
-      const me = await db.auth.me();
-      // Send the actual email
-      await db.integrations.Core.SendEmail({
-        to: toEmail,
-        subject,
-        body,
-      });
-      // Log it
-      await db.entities.EmailLog.create({
-        client_id: client.id,
-        to_email: toEmail,
-        subject,
-        body,
-        template_type: templateType,
-        reference_id: proposal?.id || invoice?.id || null,
-        reference_label: proposal?.title || invoice?.invoice_number || null,
-        sent_by: me?.email || '',
-        status: 'sent',
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['emailLogs', client.id] });
-      onClose();
-    }
-  }));
+  const sendMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: async () => {
+        const me = await db.auth.me();
+        // Send the actual email
+        await db.integrations.Core.SendEmail({
+          to: toEmail,
+          subject,
+          body,
+        });
+        // Log it
+        await db.entities.EmailLog.create({
+          client_id: client.id,
+          to_email: toEmail,
+          subject,
+          body,
+          template_type: templateType,
+          reference_id: proposal?.id || invoice?.id || null,
+          reference_label: proposal?.title || invoice?.invoice_number || null,
+          sent_by: me?.email || '',
+          status: 'sent',
+        });
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['emailLogs', client.id] });
+        onClose();
+      },
+    })
+  );
 
   const resolvedSubject = resolveTemplate(subject, { ...variables, agent_name: agentName });
   const resolvedBody = resolveTemplate(body, { ...variables, agent_name: agentName });
@@ -143,16 +148,20 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
   const variableTokens = [
     ['{{client_name}}', client?.name],
     ['{{total_amount}}', variables.total_amount],
-    ...(proposal ? [
-      ['{{proposal_title}}', proposal.title],
-      ['{{destination}}', proposal.destination],
-      ['{{start_date}}', proposal.start_date],
-      ['{{end_date}}', proposal.end_date],
-    ] : []),
-    ...(invoice ? [
-      ['{{invoice_number}}', invoice.invoice_number],
-      ['{{due_date}}', invoice.due_date],
-    ] : []),
+    ...(proposal
+      ? [
+          ['{{proposal_title}}', proposal.title],
+          ['{{destination}}', proposal.destination],
+          ['{{start_date}}', proposal.start_date],
+          ['{{end_date}}', proposal.end_date],
+        ]
+      : []),
+    ...(invoice
+      ? [
+          ['{{invoice_number}}', invoice.invoice_number],
+          ['{{due_date}}', invoice.due_date],
+        ]
+      : []),
     ['{{agent_name}}', agentName],
   ];
 
@@ -161,7 +170,7 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Send className="w-4 h-4 text-blue-600" />
+            <Send className="w-4 h-4 text-blue-600 dark:text-blue-300" />
             {templateType === 'proposal' ? 'Send Proposal' : templateType === 'invoice' ? 'Send Invoice' : 'Send Email'}
           </DialogTitle>
         </DialogHeader>
@@ -169,16 +178,22 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
         <div className="space-y-4 mt-2">
           {/* To */}
           <div className="space-y-1">
-            <Label className="text-xs text-slate-500">To</Label>
-            <Input type="email" value={toEmail} onChange={e => setToEmail(e.target.value)} className="text-sm" placeholder="client@example.com" />
+            <Label className="text-xs text-muted-foreground">To</Label>
+            <Input
+              type="email"
+              value={toEmail}
+              onChange={(e) => setToEmail(e.target.value)}
+              className="text-sm"
+              placeholder="client@example.com"
+            />
           </div>
 
           {/* Subject */}
           <div className="space-y-1">
-            <Label className="text-xs text-slate-500">Subject</Label>
+            <Label className="text-xs text-muted-foreground">Subject</Label>
             <Input
               value={subject}
-              onChange={e => setSubject(e.target.value)}
+              onChange={(e) => setSubject(e.target.value)}
               className="text-sm"
               placeholder="Email subject..."
             />
@@ -186,15 +201,17 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
 
           {/* Variable chips */}
           <div>
-            <div className="text-xs text-slate-400 mb-2 flex items-center gap-1"><Wand2 className="w-3 h-3" /> Available variables</div>
+            <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+              <Wand2 className="w-3 h-3" /> Available variables
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {variableTokens.map(([token, val]) => (
                 <button
                   key={token}
                   type="button"
                   title={`Inserts: ${val || token}`}
-                  onClick={() => setBody(prev => prev + token)}
-                  className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded px-2 py-0.5 font-mono transition-colors"
+                  onClick={() => setBody((prev) => prev + token)}
+                  className="text-xs bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded px-2 py-0.5 font-mono transition-colors"
                 >
                   {token}
                 </button>
@@ -204,10 +221,10 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
 
           {/* Body */}
           <div className="space-y-1">
-            <Label className="text-xs text-slate-500">Message</Label>
+            <Label className="text-xs text-muted-foreground">Message</Label>
             <Textarea
               value={body}
-              onChange={e => setBody(e.target.value)}
+              onChange={(e) => setBody(e.target.value)}
               rows={12}
               className="text-sm font-mono resize-none"
               placeholder="Write your message..."
@@ -217,27 +234,29 @@ export default function EmailComposer({ open, onClose, client, proposal, invoice
           {/* Preview toggle */}
           <button
             type="button"
-            onClick={() => setShowPreview(v => !v)}
-            className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+            onClick={() => setShowPreview((v) => !v)}
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
           >
             {showPreview ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             {showPreview ? 'Hide preview' : 'Show resolved preview'}
           </button>
 
           {showPreview && (
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm whitespace-pre-wrap text-slate-700 font-sans">
-              <div className="font-semibold mb-2 text-slate-900">{resolvedSubject}</div>
-              <div className="text-slate-600">{resolvedBody}</div>
+            <div className="bg-muted border border-border rounded-xl p-4 text-sm whitespace-pre-wrap text-foreground font-sans">
+              <div className="font-semibold mb-2 text-foreground">{resolvedSubject}</div>
+              <div className="text-muted-foreground">{resolvedBody}</div>
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button
-                onClick={() => sendMutation.mutate()}
-                disabled={sendMutation.isPending || !toEmail}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => sendMutation.mutate()}
+              disabled={sendMutation.isPending || !toEmail}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               <Send className="w-4 h-4 mr-2" />
               {sendMutation.isPending ? 'Sending...' : 'Send Email'}
             </Button>

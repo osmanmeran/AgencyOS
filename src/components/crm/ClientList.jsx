@@ -28,10 +28,10 @@ import PaginationControls from '@/components/shared/PaginationControls';
 import { showSuccess, showError } from '@/lib/toast';
 
 const STATUS_COLORS = {
-  active: 'bg-green-100 text-green-700 border-green-200',
-  inactive: 'bg-gray-100 text-gray-600 border-gray-200',
-  vip: 'bg-purple-100 text-purple-700 border-purple-200',
-  cancelled: 'bg-red-100 text-red-700 border-red-200',
+  active: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
+  inactive: 'bg-muted text-muted-foreground border-border',
+  vip: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+  cancelled: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
 };
 
 const STATUS_OPTIONS = ['active', 'inactive', 'vip'];
@@ -153,15 +153,15 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
   };
 
   const SortIcon = ({ field }) => {
-    if (sortKey !== field) return <span className="text-slate-300 ml-1">↕</span>;
-    return <span className="text-blue-600 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+    if (sortKey !== field) return <span className="text-muted-foreground ml-1">↕</span>;
+    return <span className="text-blue-600 dark:text-blue-300 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
   };
 
   return (
     <div className="space-y-3">
       <BulkActionsBar count={selectedCount} label="client" onDeselectAll={clear}>
         <Select onValueChange={handleBulkStatusChange} disabled={isBulkUpdating}>
-          <SelectTrigger className="w-44 h-9 bg-white">
+          <SelectTrigger className="w-44 h-9 bg-card">
             <SelectValue placeholder="Change status" />
           </SelectTrigger>
           <SelectContent>
@@ -178,11 +178,11 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
         </Button>
       </BulkActionsBar>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-3 p-3 border-b border-slate-100 flex-wrap">
+        <div className="flex items-center gap-3 p-3 border-b border-border flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search name, email, company..."
               value={search}
@@ -190,13 +190,13 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
               className="pl-9 text-sm h-8"
             />
             {search && colleagueSet.size > 0 && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-blue-500 font-medium">
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-blue-500 dark:text-blue-300 font-medium">
                 +{colleagueSet.size} via company
               </span>
             )}
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-8 text-xs w-[110px] border-slate-200">
+            <SelectTrigger className="h-8 text-xs w-[110px] border-border">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -208,7 +208,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-8 text-xs w-[110px] border-slate-200">
+            <SelectTrigger className="h-8 text-xs w-[110px] border-border">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -232,7 +232,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
             )}
             Export CSV
           </Button>
-          <span className="text-xs text-slate-400 ml-auto">
+          <span className="text-xs text-muted-foreground ml-auto">
             {filtered.length} of {clients.length}
           </span>
         </div>
@@ -241,7 +241,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50 text-xs text-slate-500 font-semibold uppercase tracking-wide">
+              <tr className="border-b border-border bg-muted text-xs text-muted-foreground font-semibold uppercase tracking-wide">
                 <th className="px-3 py-2.5 w-8">
                   <Checkbox
                     checked={pageItems.length > 0 && allSelected}
@@ -268,7 +268,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
             <tbody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-slate-50">
+                  <tr key={i} className="border-b border-border">
                     <td className="px-3 py-3">
                       <Skeleton className="h-4 w-4" />
                     </td>
@@ -294,7 +294,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                 ))
               ) : pageItems.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center text-slate-400 py-12">
+                  <td colSpan={7} className="text-center text-muted-foreground py-12">
                     No contacts found
                   </td>
                 </tr>
@@ -303,9 +303,9 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                   <tr
                     key={client.id}
                     onClick={() => onSelect(client.id)}
-                    className={`border-b border-slate-50 hover:bg-blue-50/40 transition-colors cursor-pointer ${
-                      selectedId === client.id ? 'bg-blue-50' : ''
-                    } ${selectedIds.has(client.id) ? 'bg-blue-50/60' : ''}`}
+                    className={`border-b border-border hover:bg-blue-50/40 dark:hover:bg-blue-950/40 transition-colors cursor-pointer ${
+                      selectedId === client.id ? 'bg-blue-50 dark:bg-blue-950/40' : ''
+                    } ${selectedIds.has(client.id) ? 'bg-blue-50/60 dark:bg-blue-950/60' : ''}`}
                   >
                     <td className="px-3 py-3 w-8" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
@@ -331,16 +331,18 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                             .toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-medium text-slate-800 flex items-center gap-1.5">
+                          <div className="font-medium text-foreground flex items-center gap-1.5">
                             {client.name}
-                            {client.status === 'vip' && <Star className="w-3 h-3 text-purple-500 fill-purple-500" />}
+                            {client.status === 'vip' && (
+                              <Star className="w-3 h-3 text-purple-500 dark:text-purple-300 fill-purple-500" />
+                            )}
                             {client.potential_deal && !client.total_paid && (
-                              <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
+                              <span className="text-[9px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded-full font-medium">
                                 Lead
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-400">{client.type || 'client'}</div>
+                          <div className="text-[11px] text-muted-foreground">{client.type || 'client'}</div>
                         </div>
                       </div>
                     </td>
@@ -348,27 +350,27 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                       {client.company ? (
                         <div className="flex items-center gap-1.5">
                           <Building
-                            className={`w-3.5 h-3.5 flex-shrink-0 ${colleagueSet.has(client.id) ? 'text-blue-500' : 'text-slate-400'}`}
+                            className={`w-3.5 h-3.5 flex-shrink-0 ${colleagueSet.has(client.id) ? 'text-blue-500 dark:text-blue-300' : 'text-muted-foreground'}`}
                           />
                           {client.company_id ? (
                             <Link
                               to={createPageUrl(`CompanyDetails?id=${client.company_id}`)}
                               onClick={(e) => e.stopPropagation()}
-                              className="text-slate-700 text-sm truncate max-w-[140px] hover:text-indigo-600 hover:underline"
+                              className="text-foreground text-sm truncate max-w-[140px] hover:text-indigo-600 dark:hover:text-indigo-300 hover:underline"
                             >
                               {client.company}
                             </Link>
                           ) : (
-                            <span className="text-slate-700 text-sm truncate max-w-[140px]">{client.company}</span>
+                            <span className="text-foreground text-sm truncate max-w-[140px]">{client.company}</span>
                           )}
                           {colleagueSet.has(client.id) && (
-                            <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
+                            <span className="text-[9px] bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
                               same company
                             </span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-slate-300">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-3 py-3">
@@ -377,7 +379,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                           <a
                             href={`mailto:${client.email}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1 text-xs text-slate-600 hover:text-blue-600 truncate max-w-[160px]"
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-blue-600 dark:hover:text-blue-300 truncate max-w-[160px]"
                           >
                             <Mail className="w-3 h-3 flex-shrink-0" />
                             {client.email}
@@ -387,18 +389,18 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                           <a
                             href={`tel:${client.phone}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1 text-xs text-slate-600 hover:text-blue-600"
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-blue-600 dark:hover:text-blue-300"
                           >
                             <Phone className="w-3 h-3 flex-shrink-0" />
                             {client.phone}
                           </a>
                         ) : null}
-                        {!client.email && !client.phone && <span className="text-slate-300 text-xs">—</span>}
+                        {!client.email && !client.phone && <span className="text-muted-foreground text-xs">—</span>}
                       </div>
                     </td>
                     <td className="px-3 py-3">
                       {client.city || client.country ? (
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <MapPin className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate max-w-[120px]">
                             {client.city}
@@ -407,12 +409,12 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                           </span>
                         </div>
                       ) : (
-                        <span className="text-slate-300">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-3 py-3">
                       <Badge
-                        className={`text-[10px] font-medium border ${STATUS_COLORS[client.status] || 'bg-slate-100 text-slate-600'}`}
+                        className={`text-[10px] font-medium border ${STATUS_COLORS[client.status] || 'bg-muted text-muted-foreground'}`}
                       >
                         {client.status === 'vip' ? 'VIP' : client.status || 'active'}
                       </Badge>
@@ -420,15 +422,17 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                     <td className="px-3 py-3 text-right">
                       {(client.total_paid || 0) > 0 ? (
                         <div>
-                          <div className="text-sm font-semibold text-emerald-700">
+                          <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
                             ${(client.total_paid || 0).toFixed(0)}
                           </div>
                           {(client.total_owed || 0) > 0 && (
-                            <div className="text-[10px] text-red-500">{client.total_owed?.toFixed(0)} owed</div>
+                            <div className="text-[10px] text-red-500 dark:text-red-300">
+                              {client.total_owed?.toFixed(0)} owed
+                            </div>
                           )}
                         </div>
                       ) : (
-                        <div className="text-xs text-slate-300">—</div>
+                        <div className="text-xs text-muted-foreground">—</div>
                       )}
                     </td>
                   </tr>
@@ -439,7 +443,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
         </div>
 
         {!isLoading && filtered.length > 0 && (
-          <div className="px-3 py-3 border-t border-slate-100">
+          <div className="px-3 py-3 border-t border-border">
             <PaginationControls
               page={page}
               pageCount={pageCount}

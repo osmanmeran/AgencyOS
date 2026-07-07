@@ -33,9 +33,7 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
         continue;
       }
 
-      const matchedCategory = categories.find(
-        c => c.name.toLowerCase() === categoryName?.toLowerCase()
-      );
+      const matchedCategory = categories.find((c) => c.name.toLowerCase() === categoryName?.toLowerCase());
 
       if (!matchedCategory) {
         failed.push({ row, reason: `Category "${categoryName}" not found` });
@@ -69,7 +67,8 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
   };
 
   const downloadTemplate = () => {
-    const csv = 'name,category,contact_person,email,phone,website,city,area,notes,rating\nExample Supplier,Hotels,John Doe,john@example.com,+1234567890,https://example.com,Paris,Ile-de-France,Good supplier,5\n';
+    const csv =
+      'name,category,contact_person,email,phone,website,city,area,notes,rating\nExample Supplier,Hotels,John Doe,john@example.com,+1234567890,https://example.com,Paris,Ile-de-France,Good supplier,5\n';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -93,18 +92,26 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
 
         <div className="space-y-4 mt-2">
           {/* Instructions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+          <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-300">
             <p className="font-semibold mb-1">Required columns:</p>
-            <p><span className="font-mono bg-blue-100 px-1 rounded">name</span>, <span className="font-mono bg-blue-100 px-1 rounded">category</span> (must match an existing category name)</p>
-            <p className="mt-1 text-blue-600">Optional: contact_person, email, phone, website, city, area, notes, rating</p>
+            <p>
+              <span className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">name</span>,{' '}
+              <span className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">category</span> (must match an
+              existing category name)
+            </p>
+            <p className="mt-1 text-blue-600 dark:text-blue-300">
+              Optional: contact_person, email, phone, website, city, area, notes, rating
+            </p>
           </div>
 
           {/* Available categories */}
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Available categories</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Available categories</p>
             <div className="flex flex-wrap gap-1">
-              {categories.map(c => (
-                <Badge key={c.id} variant="outline" className="text-xs">{c.name}</Badge>
+              {categories.map((c) => (
+                <Badge key={c.id} variant="outline" className="text-xs">
+                  {c.name}
+                </Badge>
               ))}
             </div>
           </div>
@@ -122,9 +129,15 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
               disabled={importing}
             >
               {importing ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Importing...</>
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Importing...
+                </>
               ) : (
-                <><Upload className="w-4 h-4 mr-2" />Upload CSV</>
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload CSV
+                </>
               )}
             </Button>
             <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
@@ -134,11 +147,11 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
           {results && (
             <div className="space-y-3">
               <div className="flex gap-3">
-                <div className="flex items-center gap-1.5 text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm font-medium">
+                <div className="flex items-center gap-1.5 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2 text-sm font-medium">
                   <CheckCircle className="w-4 h-4" />
                   {results.succeeded.length} imported
                 </div>
-                <div className="flex items-center gap-1.5 text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm font-medium">
+                <div className="flex items-center gap-1.5 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 text-sm font-medium">
                   <XCircle className="w-4 h-4" />
                   {results.failed.length} failed
                 </div>
@@ -146,11 +159,14 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
 
               {results.failed.length > 0 && (
                 <div className="max-h-48 overflow-y-auto space-y-1">
-                  <p className="text-xs font-semibold text-slate-500 uppercase">Failed rows</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Failed rows</p>
                   {results.failed.map((f, i) => (
-                    <div key={i} className="text-xs bg-red-50 border border-red-200 rounded p-2">
-                      <span className="font-semibold text-slate-700">{f.row.name || `Row ${i + 1}`}</span>
-                      <span className="text-red-600 ml-2">— {f.reason}</span>
+                    <div
+                      key={i}
+                      className="text-xs bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded p-2"
+                    >
+                      <span className="font-semibold text-foreground">{f.row.name || `Row ${i + 1}`}</span>
+                      <span className="text-red-600 dark:text-red-300 ml-2">— {f.reason}</span>
                     </div>
                   ))}
                 </div>

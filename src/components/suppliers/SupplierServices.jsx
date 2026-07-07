@@ -14,10 +14,10 @@ import { Plus, Edit, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const STATUS_COLORS = {
-  quoted: 'bg-gray-100 text-gray-800',
-  booked: 'bg-blue-100 text-blue-800',
-  paid: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800'
+  quoted: 'bg-muted text-foreground',
+  booked: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+  paid: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  cancelled: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
 };
 
 export default function SupplierServices({ supplierId }) {
@@ -31,35 +31,43 @@ export default function SupplierServices({ supplierId }) {
     currency: 'USD',
     unit: 'per trip',
     status: 'quoted',
-    notes: ''
+    notes: '',
   });
   const queryClient = useQueryClient();
 
-  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierServices', supplierId],
-    queryFn: () => db.entities.SupplierService.filter({ supplier_id: supplierId })
-  }));
+  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierServices', supplierId],
+      queryFn: () => db.entities.SupplierService.filter({ supplier_id: supplierId }),
+    })
+  );
 
-  const createMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.SupplierService.create({ ...data, supplier_id: supplierId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] });
-      closeModal();
-    }
-  }));
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.SupplierService.create({ ...data, supplier_id: supplierId }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] });
+        closeModal();
+      },
+    })
+  );
 
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierService.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] });
-      closeModal();
-    }
-  }));
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierService.update(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] });
+        closeModal();
+      },
+    })
+  );
 
-  const deleteMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ id) => db.entities.SupplierService.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] })
-  }));
+  const deleteMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ id) => db.entities.SupplierService.delete(id),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierServices', supplierId] }),
+    })
+  );
 
   const openModal = (service = null) => {
     if (service) {
@@ -72,7 +80,7 @@ export default function SupplierServices({ supplierId }) {
         currency: service.currency || 'USD',
         unit: service.unit || 'per trip',
         status: service.status || 'quoted',
-        notes: service.notes || ''
+        notes: service.notes || '',
       });
     } else {
       setEditingService(null);
@@ -84,7 +92,7 @@ export default function SupplierServices({ supplierId }) {
         currency: 'USD',
         unit: 'per trip',
         status: 'quoted',
-        notes: ''
+        notes: '',
       });
     }
     setModalOpen(true);
@@ -100,7 +108,7 @@ export default function SupplierServices({ supplierId }) {
     const data = {
       ...formData,
       budgeted_cost: formData.budgeted_cost ? parseFloat(formData.budgeted_cost) : undefined,
-      actual_cost: formData.actual_cost ? parseFloat(formData.actual_cost) : undefined
+      actual_cost: formData.actual_cost ? parseFloat(formData.actual_cost) : undefined,
     };
     if (editingService) {
       updateMutation.mutate({ id: editingService.id, data });
@@ -116,7 +124,7 @@ export default function SupplierServices({ supplierId }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-slate-900">Services & Cost Tracking</h3>
+        <h3 className="text-lg font-semibold text-foreground">Services & Cost Tracking</h3>
         <Button onClick={() => openModal()} size="sm" className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-2" />
           Add Service
@@ -125,27 +133,31 @@ export default function SupplierServices({ supplierId }) {
 
       {services.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <div className="text-sm text-slate-600 mb-1">Total Budgeted</div>
-            <div className="text-2xl font-bold text-blue-700">${totalBudgeted.toFixed(2)}</div>
+          <Card className="p-4 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800">
+            <div className="text-sm text-muted-foreground mb-1">Total Budgeted</div>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">${totalBudgeted.toFixed(2)}</div>
           </Card>
-          <Card className="p-4 bg-green-50 border-green-200">
-            <div className="text-sm text-slate-600 mb-1">Total Actual</div>
-            <div className="text-2xl font-bold text-green-700">${totalActual.toFixed(2)}</div>
+          <Card className="p-4 bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800">
+            <div className="text-sm text-muted-foreground mb-1">Total Actual</div>
+            <div className="text-2xl font-bold text-green-700 dark:text-green-300">${totalActual.toFixed(2)}</div>
           </Card>
-          <Card className={`p-4 ${variance > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
-            <div className="text-sm text-slate-600 mb-1">Variance</div>
-            <div className={`text-2xl font-bold flex items-center gap-2 ${variance > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
-              {variance > 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-              ${Math.abs(variance).toFixed(2)}
+          <Card
+            className={`p-4 ${variance > 0 ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800' : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800'}`}
+          >
+            <div className="text-sm text-muted-foreground mb-1">Variance</div>
+            <div
+              className={`text-2xl font-bold flex items-center gap-2 ${variance > 0 ? 'text-red-700 dark:text-red-300' : 'text-emerald-700 dark:text-emerald-300'}`}
+            >
+              {variance > 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}$
+              {Math.abs(variance).toFixed(2)}
             </div>
           </Card>
         </div>
       )}
 
       {services.length === 0 ? (
-        <Card className="p-8 text-center bg-white">
-          <p className="text-slate-600 mb-4">No services added yet</p>
+        <Card className="p-8 text-center bg-card">
+          <p className="text-muted-foreground mb-4">No services added yet</p>
           <Button onClick={() => openModal()} variant="outline">
             <Plus className="w-4 h-4 mr-2" />
             Add First Service
@@ -153,34 +165,37 @@ export default function SupplierServices({ supplierId }) {
         </Card>
       ) : (
         <div className="space-y-3">
-          {services.map(service => {
+          {services.map((service) => {
             const serviceDiff = (service.actual_cost || 0) - (service.budgeted_cost || 0);
             return (
               <Card key={service.id} className="p-4 hover:shadow-md transition-shadow group">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold text-slate-900">{service.service_name}</h4>
-                      <Badge className={STATUS_COLORS[service.status]}>
-                        {service.status}
-                      </Badge>
+                      <h4 className="font-semibold text-foreground">{service.service_name}</h4>
+                      <Badge className={STATUS_COLORS[service.status]}>{service.status}</Badge>
                     </div>
-                    {service.description && (
-                      <p className="text-sm text-slate-600 mb-2">{service.description}</p>
-                    )}
-                    <div className="text-sm text-slate-500">{service.unit}</div>
+                    {service.description && <p className="text-sm text-muted-foreground mb-2">{service.description}</p>}
+                    <div className="text-sm text-muted-foreground">{service.unit}</div>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="text-right">
-                      <div className="text-xs text-slate-500">Budgeted</div>
-                      <div className="font-semibold text-blue-700">${(service.budgeted_cost || 0).toFixed(2)}</div>
+                      <div className="text-xs text-muted-foreground">Budgeted</div>
+                      <div className="font-semibold text-blue-700 dark:text-blue-300">
+                        ${(service.budgeted_cost || 0).toFixed(2)}
+                      </div>
                       {service.actual_cost > 0 && (
                         <>
-                          <div className="text-xs text-slate-500 mt-1">Actual</div>
-                          <div className="font-semibold text-green-700">${service.actual_cost.toFixed(2)}</div>
+                          <div className="text-xs text-muted-foreground mt-1">Actual</div>
+                          <div className="font-semibold text-green-700 dark:text-green-300">
+                            ${service.actual_cost.toFixed(2)}
+                          </div>
                           {serviceDiff !== 0 && (
-                            <div className={`text-xs mt-1 ${serviceDiff > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                              {serviceDiff > 0 ? '+' : ''}{serviceDiff.toFixed(2)}
+                            <div
+                              className={`text-xs mt-1 ${serviceDiff > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'}`}
+                            >
+                              {serviceDiff > 0 ? '+' : ''}
+                              {serviceDiff.toFixed(2)}
                             </div>
                           )}
                         </>
@@ -191,7 +206,7 @@ export default function SupplierServices({ supplierId }) {
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(service.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
                       </Button>
                     </div>
                   </div>

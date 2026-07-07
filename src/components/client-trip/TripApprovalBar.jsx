@@ -13,10 +13,12 @@ export default function TripApprovalBar({ trip, clientId }) {
   const [isSending, setIsSending] = useState(false);
   const queryClient = useQueryClient();
 
-  const approveMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ status) => db.entities.Trip.update(trip.id, { proposal_status: status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trip', trip.id] })
-  }));
+  const approveMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ status) => db.entities.Trip.update(trip.id, { proposal_status: status }),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trip', trip.id] }),
+    })
+  );
 
   const sendComment = async () => {
     if (!comment.trim()) return;
@@ -28,7 +30,7 @@ export default function TripApprovalBar({ trip, clientId }) {
       content: comment,
       reference_type: 'trip',
       reference_id: trip.id,
-      subject: `Comment on trip: ${trip.name}`
+      subject: `Comment on trip: ${trip.name}`,
     });
     setComment('');
     setShowComment(false);
@@ -39,10 +41,29 @@ export default function TripApprovalBar({ trip, clientId }) {
   const status = trip.proposal_status;
 
   const statusDisplay = {
-    pending: { icon: Clock, text: 'Awaiting your confirmation', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    sent: { icon: Clock, text: 'Awaiting your confirmation', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    confirmed: { icon: CheckCircle2, text: 'You confirmed this itinerary', color: 'text-green-700 bg-green-50 border-green-200' },
-    rejected: { icon: XCircle, text: 'You requested changes', color: 'text-red-700 bg-red-50 border-red-200' },
+    pending: {
+      icon: Clock,
+      text: 'Awaiting your confirmation',
+      color:
+        'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
+    },
+    sent: {
+      icon: Clock,
+      text: 'Awaiting your confirmation',
+      color:
+        'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
+    },
+    confirmed: {
+      icon: CheckCircle2,
+      text: 'You confirmed this itinerary',
+      color:
+        'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800',
+    },
+    rejected: {
+      icon: XCircle,
+      text: 'You requested changes',
+      color: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800',
+    },
   };
 
   const current = statusDisplay[status] || statusDisplay.pending;
@@ -72,7 +93,7 @@ export default function TripApprovalBar({ trip, clientId }) {
             <Button
               size="sm"
               variant="outline"
-              className="border-red-300 text-red-600 hover:bg-red-50 gap-2"
+              className="border-red-300 dark:border-red-800 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 gap-2"
               onClick={() => approveMutation.mutate('rejected')}
               disabled={approveMutation.isPending}
             >
@@ -80,12 +101,7 @@ export default function TripApprovalBar({ trip, clientId }) {
               Request Changes
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-2"
-            onClick={() => setShowComment(!showComment)}
-          >
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowComment(!showComment)}>
             <MessageSquare className="w-4 h-4" />
             Add Comment
           </Button>
@@ -99,10 +115,12 @@ export default function TripApprovalBar({ trip, clientId }) {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
-            className="bg-white"
+            className="bg-card"
           />
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={() => setShowComment(false)}>Cancel</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowComment(false)}>
+              Cancel
+            </Button>
             <Button size="sm" onClick={sendComment} disabled={isSending || !comment.trim()} className="gap-2">
               <Send className="w-4 h-4" />
               {isSending ? 'Sending...' : 'Send Comment'}

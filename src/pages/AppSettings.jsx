@@ -48,10 +48,30 @@ const LANGUAGES = [
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 
 const PERMISSION_TIERS = [
-  { key: 'admin', label: 'Administrator', color: 'bg-red-100 text-red-800', desc: 'Full system control' },
-  { key: 'manager', label: 'Manager', color: 'bg-purple-100 text-purple-800', desc: 'Manage operations' },
-  { key: 'agent', label: 'Agent', color: 'bg-blue-100 text-blue-800', desc: 'Daily operations' },
-  { key: 'accounting', label: 'Accounting', color: 'bg-green-100 text-green-800', desc: 'Finance & reports' },
+  {
+    key: 'admin',
+    label: 'Administrator',
+    color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
+    desc: 'Full system control',
+  },
+  {
+    key: 'manager',
+    label: 'Manager',
+    color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
+    desc: 'Manage operations',
+  },
+  {
+    key: 'agent',
+    label: 'Agent',
+    color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+    desc: 'Daily operations',
+  },
+  {
+    key: 'accounting',
+    label: 'Accounting',
+    color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+    desc: 'Finance & reports',
+  },
 ];
 
 export default function AppSettings() {
@@ -371,9 +391,9 @@ export default function AppSettings() {
   if (!hasPermission('manage_app_settings')) {
     return (
       <Card className="p-12 text-center">
-        <Settings className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-        <h3 className="text-xl font-bold text-slate-900 mb-2">{t('common.accessDenied')}</h3>
-        <p className="text-slate-600">{t('settings.accessDenied')}</p>
+        <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-xl font-bold text-foreground mb-2">{t('common.accessDenied')}</h3>
+        <p className="text-muted-foreground">{t('settings.accessDenied')}</p>
       </Card>
     );
   }
@@ -387,12 +407,12 @@ export default function AppSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">{t('settings.title')}</h1>
-        <p className="text-slate-600">{t('settings.subtitle')}</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">{t('settings.title')}</h1>
+        <p className="text-muted-foreground">{t('settings.subtitle')}</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center border-b border-slate-200 gap-0 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center border-b border-border gap-0 overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -401,8 +421,8 @@ export default function AppSettings() {
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors shrink-0 ${
                 activeTab === tab.key
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-300'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -416,8 +436,8 @@ export default function AppSettings() {
       {activeTab === 'general' && (
         <div className="space-y-8">
           {/* Branding */}
-          <Card className="p-6 bg-white">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">{t('settings.branding')}</h3>
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4">{t('settings.branding')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>{t('settings.appName')}</Label>
@@ -437,8 +457,8 @@ export default function AppSettings() {
           </Card>
 
           {/* Language & Currency */}
-          <Card className="p-6 bg-white">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <Globe className="w-5 h-5" /> {t('settings.language')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -489,14 +509,14 @@ export default function AppSettings() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-slate-400">Used as default in new reservations</p>
+                <p className="text-xs text-muted-foreground">Used as default in new reservations</p>
               </div>
             </div>
           </Card>
 
           {/* Reference Number Format */}
-          <Card className="p-6 bg-white">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <Hash className="w-5 h-5" /> {t('settings.referenceFormat')}
             </h3>
             <div className="space-y-4">
@@ -548,19 +568,21 @@ export default function AppSettings() {
                   <Label>{t('settings.includeYear')}</Label>
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 rounded-lg">
-                <Label className="text-sm text-slate-600">{t('settings.sampleReference')}:</Label>
-                <div className="text-xl font-mono font-bold text-blue-600 mt-1">{generateSampleReference()}</div>
+              <div className="p-4 bg-muted rounded-lg">
+                <Label className="text-sm text-muted-foreground">{t('settings.sampleReference')}:</Label>
+                <div className="text-xl font-mono font-bold text-blue-600 dark:text-blue-300 mt-1">
+                  {generateSampleReference()}
+                </div>
               </div>
             </div>
           </Card>
 
           {/* Invoice Header */}
-          <Card className="p-6 bg-white">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" /> {t('settings.invoiceHeader')}
             </h3>
-            <p className="text-sm text-slate-500 mb-4">{t('settings.invoiceHeaderHint')}</p>
+            <p className="text-sm text-muted-foreground mb-4">{t('settings.invoiceHeaderHint')}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{t('settings.companyName')}</Label>
@@ -698,8 +720,8 @@ export default function AppSettings() {
           </Card>
 
           {/* Default Invoice Settings */}
-          <Card className="p-6 bg-white">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">{t('settings.defaultInvoiceSettings')}</h3>
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4">{t('settings.defaultInvoiceSettings')}</h3>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>{t('settings.defaultPaymentTerms')}</Label>
@@ -721,8 +743,8 @@ export default function AppSettings() {
           </Card>
 
           {/* Departments */}
-          <Card className="p-6 bg-white">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">{t('settings.departments')}</h3>
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4">{t('settings.departments')}</h3>
             <div className="flex flex-wrap gap-2 mb-4">
               {formData.departments.map((dept) => (
                 <Badge key={dept} variant="secondary" className="px-3 py-1">
@@ -764,8 +786,8 @@ export default function AppSettings() {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Permission Manager</h2>
-                <p className="text-sm text-slate-500">Configure what each user tier can do</p>
+                <h2 className="text-2xl font-bold text-foreground">Permission Manager</h2>
+                <p className="text-sm text-muted-foreground">Configure what each user tier can do</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -789,7 +811,7 @@ export default function AppSettings() {
           </div>
 
           {permDirty && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-300">
               <span className="w-2 h-2 bg-amber-500 rounded-full" />
               Unsaved changes &mdash; click "Save Changes" to apply
             </div>
@@ -803,8 +825,8 @@ export default function AppSettings() {
                 onClick={() => setSelectedTier(t.key)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   selectedTier === t.key
-                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                    ? 'bg-foreground text-background shadow-lg shadow-foreground/20'
+                    : 'bg-card text-muted-foreground border border-border hover:bg-muted'
                 }`}
               >
                 <Shield className="w-4 h-4" />
@@ -819,7 +841,7 @@ export default function AppSettings() {
           {/* Permission groups for selected tier */}
           <div className="space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-lg font-semibold text-slate-800">
+              <h2 className="text-lg font-semibold text-foreground">
                 {PERMISSION_TIERS.find((t) => t.key === selectedTier)?.label || selectedTier}
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -849,15 +871,15 @@ export default function AppSettings() {
                 <Card key={group.key} className="overflow-hidden">
                   <button
                     onClick={() => toggleGroup(group.key)}
-                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       )}
-                      <span className="font-semibold text-slate-800 text-sm">{group.label}</span>
+                      <span className="font-semibold text-foreground text-sm">{group.label}</span>
                       <Badge variant="outline" className="text-xs">
                         {
                           (tierPerms[selectedTier] || []).filter((k) => group.permissions.some((p) => p.key === k))
@@ -865,7 +887,7 @@ export default function AppSettings() {
                         }
                         /{group.permissions.length}
                       </Badge>
-                      {allChecked && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                      {allChecked && <CheckCircle2 className="w-4 h-4 text-green-500 dark:text-green-300" />}
                     </div>
                     <Switch
                       checked={allChecked}
@@ -874,22 +896,22 @@ export default function AppSettings() {
                     />
                   </button>
                   {isExpanded && (
-                    <div className="border-t border-slate-100 px-5 py-3">
+                    <div className="border-t border-border px-5 py-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {group.permissions.map((perm) => {
                           const checked = (tierPerms[selectedTier] || []).includes(perm.key);
                           return (
                             <label
                               key={perm.key}
-                              className={`flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${checked ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${checked ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' : 'bg-card border-border hover:bg-muted'}`}
                             >
                               <Switch
                                 checked={checked}
                                 onCheckedChange={() => toggleTierPermission(selectedTier, perm.key)}
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-slate-800">{perm.label}</p>
-                                <p className="text-xs text-slate-400 truncate">{perm.description}</p>
+                                <p className="text-sm font-medium text-foreground">{perm.label}</p>
+                                <p className="text-xs text-muted-foreground truncate">{perm.description}</p>
                               </div>
                             </label>
                           );
@@ -907,26 +929,26 @@ export default function AppSettings() {
       {/* ==================== INTEGRATIONS TAB ==================== */}
       {activeTab === 'integrations' && (
         <div className="space-y-6">
-          <Card className="p-6 bg-white">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Mail className="w-5 h-5 text-blue-600" />
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <Mail className="w-5 h-5 text-blue-600 dark:text-blue-300" />
               Outlook / Microsoft 365
             </h3>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Connect your Microsoft 365 account to send emails directly from the app.
             </p>
             {outlookLoading ? (
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Checking connection status...
               </div>
             ) : outlookStatus.connected ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-300 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-green-800">Connected as</p>
-                    <p className="text-sm text-green-700">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-300">Connected as</p>
+                    <p className="text-sm text-green-700 dark:text-green-300">
                       {outlookStatus.name} ({outlookStatus.email})
                     </p>
                   </div>
@@ -934,16 +956,16 @@ export default function AppSettings() {
                 <Button
                   onClick={disconnectOutlook}
                   variant="outline"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  className="text-red-600 dark:text-red-300 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/40"
                 >
                   <X className="w-4 h-4 mr-2" /> Disconnect Outlook
                 </Button>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <p className="text-sm text-slate-600">
+                <div className="flex items-center gap-3 p-3 bg-muted border border-border rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <p className="text-sm text-muted-foreground">
                     Not connected. Click below to sign in with your Microsoft account.
                   </p>
                 </div>

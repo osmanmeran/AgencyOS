@@ -32,16 +32,20 @@ export default function Profile() {
   const [outlookLoading, setOutlookLoading] = useState(false);
 
   useEffect(() => {
-    db.integrations.Core.OutlookStatus().then(setOutlookStatus).catch(() => setOutlookStatus({ connected: false }));
+    db.integrations.Core.OutlookStatus()
+      .then(setOutlookStatus)
+      .catch(() => setOutlookStatus({ connected: false }));
   }, []);
 
   const connectOutlook = () => {
     const state = crypto.randomUUID();
     const codeVerifier = crypto.randomUUID();
     const encoder = new TextEncoder();
-    crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier)).then(buffer => {
+    crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier)).then((buffer) => {
       const base64Url = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
       const redirectUri = window.location.origin + '/auth/outlook-callback';
       const tenantId = import.meta.env.VITE_MICROSOFT_TENANT_ID || 'common';
       const authUrl =
@@ -78,7 +82,14 @@ export default function Profile() {
     },
   });
 
-  const [form, setForm] = useState({ name: '', phone: '', language: 'en', default_currency: 'USD', avatar_url: '', email_notifications: false });
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    language: 'en',
+    default_currency: 'USD',
+    avatar_url: '',
+    email_notifications: false,
+  });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
 
   useEffect(() => {
@@ -94,56 +105,66 @@ export default function Profile() {
     }
   }, [user]);
 
-  const updateProfile = /** @type {any} */ (useMutation({
-    mutationFn: async (/** @type {any} */ data) => {
-      const res = await fetch('/api/auth/me', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error?.message || json.error || 'Failed to update profile');
-      return json;
-    },
-    onSuccess: (data) => {
-      showSuccess('Profile updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      if (data.user?.language && data.user.language !== language) {
-        setLanguage(data.user.language);
-      }
-    },
-    onError: (err) => showError(err.message),
-  }));
+  const updateProfile = /** @type {any} */ (
+    useMutation({
+      mutationFn: async (/** @type {any} */ data) => {
+        const res = await fetch('/api/auth/me', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error?.message || json.error || 'Failed to update profile');
+        return json;
+      },
+      onSuccess: (data) => {
+        showSuccess('Profile updated successfully');
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+        if (data.user?.language && data.user.language !== language) {
+          setLanguage(data.user.language);
+        }
+      },
+      onError: (err) => showError(err.message),
+    })
+  );
 
-  const updatePassword = /** @type {any} */ (useMutation({
-    mutationFn: async (/** @type {any} */ data) => {
-      const res = await fetch('/api/auth/me', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error?.message || json.error || 'Failed to update password');
-      return json;
-    },
-    onSuccess: () => {
-      showSuccess('Password updated successfully');
-      setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
-    },
-    onError: (err) => showError(err.message),
-  }));
+  const updatePassword = /** @type {any} */ (
+    useMutation({
+      mutationFn: async (/** @type {any} */ data) => {
+        const res = await fetch('/api/auth/me', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error?.message || json.error || 'Failed to update password');
+        return json;
+      },
+      onSuccess: () => {
+        showSuccess('Password updated successfully');
+        setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
+      },
+      onError: (err) => showError(err.message),
+    })
+  );
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { showError('Please select an image file'); return; }
-    if (file.size > 5 * 1024 * 1024) { showError('Image must be under 5MB'); return; }
+    if (!file.type.startsWith('image/')) {
+      showError('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showError('Image must be under 5MB');
+      return;
+    }
 
     setUploadingPhoto(true);
     try {
       const result = await db.integrations.Core.UploadFile({ file });
       const avatar_url = result.file_url;
-      setForm(prev => ({ ...prev, avatar_url }));
+      setForm((prev) => ({ ...prev, avatar_url }));
       // Save immediately
       await fetch('/api/auth/me', {
         method: 'PUT',
@@ -161,7 +182,7 @@ export default function Profile() {
   };
 
   const handleRemovePhoto = async () => {
-    setForm(prev => ({ ...prev, avatar_url: '' }));
+    setForm((prev) => ({ ...prev, avatar_url: '' }));
     await fetch('/api/auth/me', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -200,7 +221,13 @@ export default function Profile() {
     });
   };
 
-  const initials = user?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+  const initials =
+    user?.name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase() || '?';
 
   if (isLoading) {
     return (
@@ -226,7 +253,11 @@ export default function Profile() {
         <div className="flex items-center gap-6">
           <div className="relative group">
             {form.avatar_url ? (
-              <img src={form.avatar_url} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
+              <img
+                src={form.avatar_url}
+                alt="Profile"
+                className="w-20 h-20 rounded-full object-cover border-2 border-border"
+              />
             ) : (
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-border">
                 <span className="text-2xl font-bold text-primary">{initials}</span>
@@ -245,7 +276,12 @@ export default function Profile() {
               {form.avatar_url ? 'Change Photo' : 'Upload Photo'}
             </Button>
             {form.avatar_url && (
-              <Button variant="ghost" size="sm" onClick={handleRemovePhoto} className="text-destructive hover:text-destructive">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRemovePhoto}
+                className="text-destructive hover:text-destructive"
+              >
                 <X className="w-4 h-4 mr-2" />
                 Remove
               </Button>
@@ -275,14 +311,22 @@ export default function Profile() {
               <User className="w-4 h-4 text-muted-foreground" />
               Full Name
             </Label>
-            <Input value={form.name} onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Your name" />
+            <Input
+              value={form.name}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Your name"
+            />
           </div>
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-muted-foreground" />
               Phone Number
             </Label>
-            <Input value={form.phone} onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))} placeholder="+39 000 000 0000" />
+            <Input
+              value={form.phone}
+              onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+              placeholder="+39 000 000 0000"
+            />
           </div>
         </div>
       </Card>
@@ -296,11 +340,15 @@ export default function Profile() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Language</Label>
-            <Select value={form.language} onValueChange={(val) => setForm(prev => ({ ...prev, language: val }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select value={form.language} onValueChange={(val) => setForm((prev) => ({ ...prev, language: val }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {LANGUAGES.map(lang => (
-                  <SelectItem key={lang.code} value={lang.code}>{lang.name}</SelectItem>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -310,11 +358,18 @@ export default function Profile() {
               <CreditCard className="w-4 h-4 text-muted-foreground" />
               Default Currency
             </Label>
-            <Select value={form.default_currency} onValueChange={(val) => setForm(prev => ({ ...prev, default_currency: val }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={form.default_currency}
+              onValueChange={(val) => setForm((prev) => ({ ...prev, default_currency: val }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {CURRENCIES.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                {CURRENCIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -322,11 +377,13 @@ export default function Profile() {
           <div className="flex items-center justify-between gap-4 pt-2">
             <div>
               <Label>Email notifications</Label>
-              <p className="text-sm text-muted-foreground">Also email me for invoice and trip reminders, not just in-app</p>
+              <p className="text-sm text-muted-foreground">
+                Also email me for invoice and trip reminders, not just in-app
+              </p>
             </div>
             <Switch
               checked={form.email_notifications}
-              onCheckedChange={(checked) => setForm(prev => ({ ...prev, email_notifications: checked }))}
+              onCheckedChange={(checked) => setForm((prev) => ({ ...prev, email_notifications: checked }))}
             />
           </div>
         </div>
@@ -334,7 +391,11 @@ export default function Profile() {
 
       <div className="flex justify-end">
         <Button onClick={handleProfileSave} disabled={updateProfile.isPending}>
-          {updateProfile.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+          {updateProfile.isPending ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
           Save Changes
         </Button>
       </div>
@@ -346,14 +407,24 @@ export default function Profile() {
           <h2 className="text-lg font-semibold">Outlook / Microsoft 365</h2>
         </div>
         {outlookStatus === null ? (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Checking status...</div>
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" /> Checking status...
+          </div>
         ) : outlookStatus.connected ? (
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <p className="text-sm font-medium text-green-700">✓ Connected{outlookStatus.email ? ` as ${outlookStatus.email}` : ''}</p>
+              <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                ✓ Connected{outlookStatus.email ? ` as ${outlookStatus.email}` : ''}
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">Emails are sent via your Outlook account</p>
             </div>
-            <Button variant="outline" size="sm" onClick={disconnectOutlook} disabled={outlookLoading} className="text-destructive border-destructive/30 hover:bg-destructive/5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={disconnectOutlook}
+              disabled={outlookLoading}
+              className="text-destructive border-destructive/30 hover:bg-destructive/5"
+            >
               {outlookLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disconnect'}
             </Button>
           </div>
@@ -363,7 +434,9 @@ export default function Profile() {
               <p className="text-sm text-muted-foreground">Not connected</p>
               <p className="text-xs text-muted-foreground mt-0.5">Connect to send emails via Outlook</p>
             </div>
-            <Button size="sm" onClick={connectOutlook}>Connect Outlook</Button>
+            <Button size="sm" onClick={connectOutlook}>
+              Connect Outlook
+            </Button>
           </div>
         )}
       </Card>
@@ -377,20 +450,39 @@ export default function Profile() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Current Password</Label>
-            <Input type="password" value={passwordForm.current_password} onChange={(e) => setPasswordForm(prev => ({ ...prev, current_password: e.target.value }))} placeholder="Enter current password" />
+            <Input
+              type="password"
+              value={passwordForm.current_password}
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, current_password: e.target.value }))}
+              placeholder="Enter current password"
+            />
           </div>
           <div className="space-y-2">
             <Label>New Password</Label>
-            <Input type="password" value={passwordForm.new_password} onChange={(e) => setPasswordForm(prev => ({ ...prev, new_password: e.target.value }))} placeholder="Min 8 chars, uppercase, number" />
+            <Input
+              type="password"
+              value={passwordForm.new_password}
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, new_password: e.target.value }))}
+              placeholder="Min 8 chars, uppercase, number"
+            />
           </div>
           <div className="space-y-2">
             <Label>Confirm New Password</Label>
-            <Input type="password" value={passwordForm.confirm_password} onChange={(e) => setPasswordForm(prev => ({ ...prev, confirm_password: e.target.value }))} placeholder="Confirm new password" />
+            <Input
+              type="password"
+              value={passwordForm.confirm_password}
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirm_password: e.target.value }))}
+              placeholder="Confirm new password"
+            />
           </div>
         </div>
         <div className="flex justify-end mt-4">
           <Button variant="outline" onClick={handlePasswordSave} disabled={updatePassword.isPending}>
-            {updatePassword.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Lock className="w-4 h-4 mr-2" />}
+            {updatePassword.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Lock className="w-4 h-4 mr-2" />
+            )}
             Update Password
           </Button>
         </div>

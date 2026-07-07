@@ -22,15 +22,19 @@ export default function MarketPriceAnalyzer() {
   const [imported, setImported] = useState(/** @type {any} */ ({}));
   const queryClient = useQueryClient();
 
-  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierCategories'],
-    queryFn: () => db.entities.SupplierCategory.list()
-  }));
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierCategories'],
+      queryFn: () => db.entities.SupplierCategory.list(),
+    })
+  );
 
-  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['suppliers'],
-    queryFn: () => db.entities.Supplier.list()
-  }));
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['suppliers'],
+      queryFn: () => db.entities.Supplier.list(),
+    })
+  );
 
   const analyze = async () => {
     if (!description.trim()) return;
@@ -92,12 +96,12 @@ Return a JSON with this structure:
                   unit: { type: 'string' },
                   currency: { type: 'string' },
                   notes: { type: 'string' },
-                }
-              }
+                },
+              },
             },
-            market_summary: { type: 'string' }
-          }
-        }
+            market_summary: { type: 'string' },
+          },
+        },
       });
       setResults(response);
     } finally {
@@ -106,7 +110,7 @@ Return a JSON with this structure:
   };
 
   const importPricing = async (svc, idx) => {
-    setImporting(p => ({ ...p, [idx]: true }));
+    setImporting((p) => ({ ...p, [idx]: true }));
     try {
       // Find or create a matching category
       const catKeywords = {
@@ -119,16 +123,20 @@ Return a JSON with this structure:
       };
       let _matchedCatId = categories[0]?.id || null;
       for (const [, keywords] of Object.entries(catKeywords)) {
-        if (keywords.some(kw => svc.category.toLowerCase().includes(kw) || svc.name.toLowerCase().includes(kw))) {
-          const found = categories.find(c => keywords.some(kw => c.name.toLowerCase().includes(kw)));
-          if (found) { _matchedCatId = found.id; break; }
+        if (keywords.some((kw) => svc.category.toLowerCase().includes(kw) || svc.name.toLowerCase().includes(kw))) {
+          const found = categories.find((c) => keywords.some((kw) => c.name.toLowerCase().includes(kw)));
+          if (found) {
+            _matchedCatId = found.id;
+            break;
+          }
         }
       }
 
       // Create a SupplierPricing record (linked to first matching supplier or standalone)
-      const matchingSupplier = suppliers.find(s =>
-        s.name.toLowerCase().includes(svc.name.toLowerCase().split(' ')[0]) ||
-        svc.name.toLowerCase().includes(s.name.toLowerCase().split(' ')[0])
+      const matchingSupplier = suppliers.find(
+        (s) =>
+          s.name.toLowerCase().includes(svc.name.toLowerCase().split(' ')[0]) ||
+          svc.name.toLowerCase().includes(s.name.toLowerCase().split(' ')[0]),
       );
 
       await db.entities.SupplierPricing.create({
@@ -142,31 +150,33 @@ Return a JSON with this structure:
         is_active: true,
         approval_status: 'pending',
       });
-      setImported(p => ({ ...p, [idx]: true }));
+      setImported((p) => ({ ...p, [idx]: true }));
       queryClient.invalidateQueries({ queryKey: ['supplierPricing'] });
     } finally {
-      setImporting(p => ({ ...p, [idx]: false }));
+      setImporting((p) => ({ ...p, [idx]: false }));
     }
   };
 
   return (
     <div className="space-y-6">
-      <Card className="p-5 bg-purple-50 border-purple-200">
-        <h3 className="font-bold text-purple-900 mb-1 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4" />AI Market Price Analyzer
+      <Card className="p-5 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800">
+        <h3 className="font-bold text-purple-900 dark:text-purple-300 mb-1 flex items-center gap-2">
+          <TrendingUp className="w-4 h-4" />
+          AI Market Price Analyzer
         </h3>
-        <p className="text-sm text-purple-700">
-          Describe travel services or products and our AI will research current market prices, suggest selling prices, and import them into your pricing database.
+        <p className="text-sm text-purple-700 dark:text-purple-300">
+          Describe travel services or products and our AI will research current market prices, suggest selling prices,
+          and import them into your pricing database.
         </p>
       </Card>
 
-      <Card className="p-6 bg-white shadow-sm">
+      <Card className="p-6 bg-card shadow-sm">
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="font-semibold">Describe services/products to analyze *</Label>
             <Textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder={`Example:\n- 5-star hotel room in Paris\n- Airport transfer for 2 people\n- Full-day city tour with guide\n- Dinner at fine dining restaurant\n- Museum entrance tickets`}
               rows={6}
               className="font-mono text-sm"
@@ -175,80 +185,134 @@ Return a JSON with this structure:
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Destination / Region (optional)</Label>
-              <Input value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g., Paris, France or Southeast Asia" />
+              <Input
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder="e.g., Paris, France or Southeast Asia"
+              />
             </div>
             <div className="space-y-2">
               <Label>Currency</Label>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {['USD','EUR','GBP','TRY','AED','SAR','EGP','MAD'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD'].map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <Button onClick={analyze} disabled={loading || !description.trim()} className="bg-purple-600 hover:bg-purple-700 w-full">
-            {loading
-              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing market prices...</>
-              : <><Globe className="w-4 h-4 mr-2" />Analyze with AI + Live Market Data</>
-            }
+          <Button
+            onClick={analyze}
+            disabled={loading || !description.trim()}
+            className="bg-purple-600 hover:bg-purple-700 w-full"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Analyzing market prices...
+              </>
+            ) : (
+              <>
+                <Globe className="w-4 h-4 mr-2" />
+                Analyze with AI + Live Market Data
+              </>
+            )}
           </Button>
-          <p className="text-xs text-slate-400 text-center">Uses AI with internet search for up-to-date pricing. Results are estimates.</p>
+          <p className="text-xs text-muted-foreground text-center">
+            Uses AI with internet search for up-to-date pricing. Results are estimates.
+          </p>
         </div>
       </Card>
 
       {results && (
         <div className="space-y-4">
           {results.market_summary && (
-            <Card className="p-4 bg-slate-50 border-slate-200">
-              <p className="text-sm text-slate-700 italic">{results.market_summary}</p>
+            <Card className="p-4 bg-muted border-border">
+              <p className="text-sm text-foreground italic">{results.market_summary}</p>
             </Card>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {results.services?.map((svc, idx) => (
-              <Card key={idx} className="p-5 bg-white shadow-sm border border-slate-200">
+              <Card key={idx} className="p-5 bg-card shadow-sm border border-border">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h4 className="font-bold text-slate-900">{svc.name}</h4>
-                    <Badge className="bg-purple-100 text-purple-700 text-xs mt-1">{svc.category}</Badge>
+                    <h4 className="font-bold text-foreground">{svc.name}</h4>
+                    <Badge className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs mt-1">
+                      {svc.category}
+                    </Badge>
                   </div>
-                  {imported[idx]
-                    ? <Badge className="bg-green-100 text-green-700 flex items-center gap-1"><CheckCircle className="w-3 h-3" />Imported</Badge>
-                    : <Button size="sm" variant="outline" onClick={() => importPricing(svc, idx)} disabled={importing[idx]} className="text-purple-700 border-purple-200">
-                        {importing[idx] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1" />}
-                        {importing[idx] ? 'Saving...' : 'Import Price'}
-                      </Button>
-                  }
+                  {imported[idx] ? (
+                    <Badge className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      Imported
+                    </Badge>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => importPricing(svc, idx)}
+                      disabled={importing[idx]}
+                      className="text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                    >
+                      {importing[idx] ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                      )}
+                      {importing[idx] ? 'Saving...' : 'Import Price'}
+                    </Button>
+                  )}
                 </div>
 
-                <p className="text-sm text-slate-600 mb-3">{svc.description}</p>
+                <p className="text-sm text-muted-foreground mb-3">{svc.description}</p>
 
                 <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                  <div className="bg-amber-50 rounded p-2">
-                    <div className="text-xs text-slate-500">Market Low</div>
-                    <div className="font-bold text-amber-700">{svc.currency}{svc.market_price_low?.toFixed(0)}</div>
+                  <div className="bg-amber-50 dark:bg-amber-950/40 rounded p-2">
+                    <div className="text-xs text-muted-foreground">Market Low</div>
+                    <div className="font-bold text-amber-700 dark:text-amber-300">
+                      {svc.currency}
+                      {svc.market_price_low?.toFixed(0)}
+                    </div>
                   </div>
-                  <div className="bg-orange-50 rounded p-2">
-                    <div className="text-xs text-slate-500">Market High</div>
-                    <div className="font-bold text-orange-700">{svc.currency}{svc.market_price_high?.toFixed(0)}</div>
+                  <div className="bg-orange-50 dark:bg-orange-950/40 rounded p-2">
+                    <div className="text-xs text-muted-foreground">Market High</div>
+                    <div className="font-bold text-orange-700 dark:text-orange-300">
+                      {svc.currency}
+                      {svc.market_price_high?.toFixed(0)}
+                    </div>
                   </div>
-                  <div className="bg-green-50 rounded p-2">
-                    <div className="text-xs text-slate-500">Suggested Sell</div>
-                    <div className="font-bold text-green-700">{svc.currency}{svc.suggested_price?.toFixed(0)}</div>
+                  <div className="bg-green-50 dark:bg-green-950/40 rounded p-2">
+                    <div className="text-xs text-muted-foreground">Suggested Sell</div>
+                    <div className="font-bold text-green-700 dark:text-green-300">
+                      {svc.currency}
+                      {svc.suggested_price?.toFixed(0)}
+                    </div>
                   </div>
                 </div>
 
-                <div className="text-xs text-slate-400 flex justify-between">
+                <div className="text-xs text-muted-foreground flex justify-between">
                   <span>Per: {svc.unit?.replace(/_/g, ' ')}</span>
                 </div>
-                {svc.notes && <p className="text-xs text-slate-500 mt-2 bg-slate-50 rounded p-2">{svc.notes}</p>}
+                {svc.notes && <p className="text-xs text-muted-foreground mt-2 bg-muted rounded p-2">{svc.notes}</p>}
               </Card>
             ))}
           </div>
 
           <div className="text-center">
-            <Button variant="outline" onClick={() => { setResults(null); setDescription(''); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setResults(null);
+                setDescription('');
+              }}
+            >
               Analyze More Services
             </Button>
           </div>

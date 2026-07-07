@@ -11,19 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { 
-  CheckCircle, XCircle, Clock, FileText, 
-  Calendar, Users, DollarSign, Download, Mail
-} from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, Calendar, Users, DollarSign, Download, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import BookingEmailSender from '../booking/BookingEmailSender';
 
 const STATUS_COLORS = {
-  pending: 'bg-orange-100 text-orange-800',
-  confirmed: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  cancelled: 'bg-slate-100 text-slate-800',
-  completed: 'bg-blue-100 text-blue-800'
+  pending: 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300',
+  confirmed: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  rejected: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
+  cancelled: 'bg-muted text-foreground',
+  completed: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
 };
 
 export default function SupplierBookings({ supplierId }) {
@@ -35,45 +32,55 @@ export default function SupplierBookings({ supplierId }) {
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [bookingForEmail, setBookingForEmail] = useState(null);
 
-  const { data: supplier } = /** @type {any} */ (useQuery({
-    queryKey: ['supplier', supplierId],
-    queryFn: () => db.entities.Supplier.get(supplierId),
-    enabled: !!supplierId
-  }));
+  const { data: supplier } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplier', supplierId],
+      queryFn: () => db.entities.Supplier.get(supplierId),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierBookings', supplierId],
-    queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }, '-created_date'),
-    enabled: !!supplierId
-  }));
+  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierBookings', supplierId],
+      queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }, '-created_date'),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['trips'],
-    queryFn: () => db.entities.Trip.list()
-  }));
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['trips'],
+      queryFn: () => db.entities.Trip.list(),
+    })
+  );
 
-  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clients'],
-    queryFn: () => db.entities.Client.list()
-  }));
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clients'],
+      queryFn: () => db.entities.Client.list(),
+    })
+  );
 
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: async (/** @type {any} */ { id, /** @type {any} */ data }) => {
-      let fileUrl = data.confirmation_file_url;
-      if (confirmationFile) {
-        const { file_url } = await db.integrations.Core.UploadFile({ file: confirmationFile });
-        fileUrl = file_url;
-      }
-      return db.entities.BookingRequest.update(id, { ...data, confirmation_file_url: fileUrl });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierBookings', supplierId] });
-      setSelectedBooking(null);
-      setConfirmationFile(null);
-      setNotes('');
-      setIsConfirmed(false);
-    }
-  }));
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: async (/** @type {any} */ { id, /** @type {any} */ data }) => {
+        let fileUrl = data.confirmation_file_url;
+        if (confirmationFile) {
+          const { file_url } = await db.integrations.Core.UploadFile({ file: confirmationFile });
+          fileUrl = file_url;
+        }
+        return db.entities.BookingRequest.update(id, { ...data, confirmation_file_url: fileUrl });
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierBookings', supplierId] });
+        setSelectedBooking(null);
+        setConfirmationFile(null);
+        setNotes('');
+        setIsConfirmed(false);
+      },
+    })
+  );
 
   const handleConfirm = () => {
     updateMutation.mutate({
@@ -82,8 +89,8 @@ export default function SupplierBookings({ supplierId }) {
         ...selectedBooking,
         status: 'confirmed',
         supplier_confirmed: isConfirmed,
-        supplier_notes: notes
-      }
+        supplier_notes: notes,
+      },
     });
   };
 
@@ -93,13 +100,13 @@ export default function SupplierBookings({ supplierId }) {
       data: {
         ...selectedBooking,
         status: 'rejected',
-        supplier_notes: notes
-      }
+        supplier_notes: notes,
+      },
     });
   };
 
-  const getTrip = (id) => trips.find(t => t.id === id);
-  const getClient = (id) => clients.find(c => c.id === id);
+  const getTrip = (id) => trips.find((t) => t.id === id);
+  const getClient = (id) => clients.find((c) => c.id === id);
 
   const generateBookingHTML = (booking) => {
     const trip = getTrip(booking.trip_id);
@@ -150,42 +157,49 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
     <div className="space-y-4">
       {bookings.length === 0 ? (
         <Card className="p-12 text-center">
-          <Clock className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-slate-900 mb-2">No booking requests</h3>
-          <p className="text-slate-600">You'll see booking requests here when they arrive</p>
+          <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-foreground mb-2">No booking requests</h3>
+          <p className="text-muted-foreground">You'll see booking requests here when they arrive</p>
         </Card>
       ) : (
-        bookings.map(booking => {
+        bookings.map((booking) => {
           const trip = getTrip(booking.trip_id);
-//           const client = getClient(booking.client_id);
+          //           const client = getClient(booking.client_id);
           return (
-            <Card key={booking.id} className="p-6 bg-white">
+            <Card key={booking.id} className="p-6 bg-card">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-bold text-slate-900">
+                    <h3 className="text-lg font-bold text-foreground">
                       {booking.reference_number || `Booking #${booking.id.slice(-6)}`}
                     </h3>
                     <Badge className={STATUS_COLORS[booking.status]}>{booking.status}</Badge>
                   </div>
-                  <p className="text-slate-600 text-sm">{trip?.name || 'Trip details unavailable'}</p>
+                  <p className="text-muted-foreground text-sm">{trip?.name || 'Trip details unavailable'}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    setBookingForEmail(booking);
-                    setEmailModalOpen(true);
-                  }}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setBookingForEmail(booking);
+                      setEmailModalOpen(true);
+                    }}
+                  >
                     <Mail className="w-4 h-4 mr-1" /> Email
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => downloadBookingRequest(booking)}>
                     <Download className="w-4 h-4 mr-1" /> Export
                   </Button>
                   {booking.status === 'pending' && (
-                    <Button size="sm" onClick={() => {
-                      setSelectedBooking(booking);
-                      setNotes(booking.supplier_notes || '');
-                      setIsConfirmed(booking.supplier_confirmed || false);
-                    }}>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setSelectedBooking(booking);
+                        setNotes(booking.supplier_notes || '');
+                        setIsConfirmed(booking.supplier_confirmed || false);
+                      }}
+                    >
                       Respond
                     </Button>
                   )}
@@ -194,19 +208,19 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>{format(new Date(booking.service_date), 'MMM d, yyyy')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-slate-400" />
+                  <Users className="w-4 h-4 text-muted-foreground" />
                   <span>{booking.num_guests} guests</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-slate-400" />
+                  <DollarSign className="w-4 h-4 text-muted-foreground" />
                   <span>${booking.total_cost?.toFixed(2) || '0.00'}</span>
                 </div>
                 {booking.supplier_confirmed && (
-                  <div className="flex items-center gap-2 text-green-600">
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-300">
                     <CheckCircle className="w-4 h-4" />
                     <span>Confirmed</span>
                   </div>
@@ -215,8 +229,12 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
 
               {booking.confirmation_file_url && (
                 <div className="mt-3 pt-3 border-t">
-                  <a href={booking.confirmation_file_url} target="_blank" rel="noopener noreferrer" 
-                     className="text-blue-600 hover:underline flex items-center gap-1 text-sm">
+                  <a
+                    href={booking.confirmation_file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-300 hover:underline flex items-center gap-1 text-sm"
+                  >
                     <FileText className="w-4 h-4" /> View Confirmation Letter
                   </a>
                 </div>
@@ -230,7 +248,10 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
       {bookingForEmail && (
         <BookingEmailSender
           open={emailModalOpen}
-          onClose={() => { setEmailModalOpen(false); setBookingForEmail(null); }}
+          onClose={() => {
+            setEmailModalOpen(false);
+            setBookingForEmail(null);
+          }}
           booking={bookingForEmail}
           supplier={supplier}
           trip={getTrip(bookingForEmail.trip_id)}
@@ -246,11 +267,7 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="confirm" 
-                checked={isConfirmed} 
-                onCheckedChange={setIsConfirmed}
-              />
+              <Checkbox id="confirm" checked={isConfirmed} onCheckedChange={setIsConfirmed} />
               <Label htmlFor="confirm" className="font-medium">
                 I confirm this booking is available and accepted
               </Label>
@@ -258,17 +275,13 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
 
             <div className="space-y-2">
               <Label>Upload Confirmation Letter (PDF)</Label>
-              <Input 
-                type="file" 
-                accept=".pdf,.doc,.docx"
-                onChange={(e) => setConfirmationFile(e.target.files[0])}
-              />
+              <Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setConfirmationFile(e.target.files[0])} />
             </div>
 
             <div className="space-y-2">
               <Label>Notes for Agent</Label>
-              <Textarea 
-                value={notes} 
+              <Textarea
+                value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Any additional notes..."
                 rows={3}
@@ -276,18 +289,14 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button 
+              <Button
                 onClick={handleConfirm}
                 className="flex-1 bg-green-600 hover:bg-green-700"
                 disabled={!isConfirmed}
               >
                 <CheckCircle className="w-4 h-4 mr-2" /> Confirm Booking
               </Button>
-              <Button 
-                onClick={handleReject}
-                variant="destructive"
-                className="flex-1"
-              >
+              <Button onClick={handleReject} variant="destructive" className="flex-1">
                 <XCircle className="w-4 h-4 mr-2" /> Reject
               </Button>
             </div>

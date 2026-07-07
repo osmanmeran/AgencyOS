@@ -13,9 +13,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Plus, Search, MapPin, Clock, Link as LinkIcon, 
-  FileText, Trash2, Edit, ExternalLink, Map, Users, Send
+import {
+  Plus,
+  Search,
+  MapPin,
+  Clock,
+  Link as LinkIcon,
+  FileText,
+  Trash2,
+  Edit,
+  ExternalLink,
+  Map,
+  Users,
+  Send,
 } from 'lucide-react';
 import ServiceBookingRequest from '../components/services/ServiceBookingRequest';
 import { usePermissions } from '../components/permissions/PermissionContext';
@@ -26,7 +36,7 @@ const UNIT_LABELS = {
   per_group: 'Per Group',
   per_hour: 'Per Hour',
   per_day: 'Per Day',
-  flat_rate: 'Flat Rate'
+  flat_rate: 'Flat Rate',
 };
 
 export default function ServiceLibrary() {
@@ -58,66 +68,80 @@ export default function ServiceLibrary() {
     base_price: 0,
     currency: 'USD',
     price_unit: 'per_person',
-    is_active: true
+    is_active: true,
   });
 
   const [newPoi, setNewPoi] = useState({ name: '', description: '', map_url: '' });
   const [newLink, setNewLink] = useState({ title: '', url: '' });
 
-  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['serviceTemplates'],
-    queryFn: () => db.entities.ServiceTemplate.list()
-  }));
+  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['serviceTemplates'],
+      queryFn: () => db.entities.ServiceTemplate.list(),
+    })
+  );
 
-  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['serviceCategories'],
-    queryFn: () => db.entities.ServiceCategory.list()
-  }));
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['serviceCategories'],
+      queryFn: () => db.entities.ServiceCategory.list(),
+    })
+  );
 
-  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['suppliers'],
-    queryFn: () => db.entities.Supplier.list()
-  }));
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['suppliers'],
+      queryFn: () => db.entities.Supplier.list(),
+    })
+  );
 
-  const createMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
-    onSuccess: () => {
-      showSuccess('Service created');
-      queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
-      closeModal();
-    },
-    onError: (error) => showError('Failed to create service', error.message)
-  }));
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
+      onSuccess: () => {
+        showSuccess('Service created');
+        queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
+        closeModal();
+      },
+      onError: (error) => showError('Failed to create service', error.message),
+    })
+  );
 
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ServiceTemplate.update(id, data),
-    onSuccess: () => {
-      showSuccess('Service updated');
-      queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
-      closeModal();
-    },
-    onError: (error) => showError('Failed to update service', error.message)
-  }));
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ServiceTemplate.update(id, data),
+      onSuccess: () => {
+        showSuccess('Service updated');
+        queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
+        closeModal();
+      },
+      onError: (error) => showError('Failed to update service', error.message),
+    })
+  );
 
-  const deleteMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ id) => db.entities.ServiceTemplate.delete(id),
-    onSuccess: () => {
-      showSuccess('Service deleted');
-      queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
-    },
-    onError: (error) => showError('Failed to delete service', error.message)
-  }));
+  const deleteMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ id) => db.entities.ServiceTemplate.delete(id),
+      onSuccess: () => {
+        showSuccess('Service deleted');
+        queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
+      },
+      onError: (error) => showError('Failed to delete service', error.message),
+    })
+  );
 
-  const createCategoryMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.ServiceCategory.create(data),
-    onSuccess: () => {
-      showSuccess('Category created');
-      queryClient.invalidateQueries({ queryKey: ['serviceCategories'] });
-      setCategoryModalOpen(false);
-      setNewCategory({ name: '', description: '', color: '#3b82f6' });
-    },
-    onError: (error) => showError('Failed to create category', error.message)
-  }));
+  const createCategoryMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.ServiceCategory.create(data),
+      onSuccess: () => {
+        showSuccess('Category created');
+        queryClient.invalidateQueries({ queryKey: ['serviceCategories'] });
+        setCategoryModalOpen(false);
+        setNewCategory({ name: '', description: '', color: '#3b82f6' });
+      },
+      onError: (error) => showError('Failed to create category', error.message),
+    })
+  );
 
   const openModal = (service = null) => {
     if (service) {
@@ -140,7 +164,7 @@ export default function ServiceLibrary() {
         base_price: service.base_price || 0,
         currency: service.currency || 'USD',
         price_unit: service.price_unit || 'per_person',
-        is_active: service.is_active !== false
+        is_active: service.is_active !== false,
       });
     } else {
       setEditingService(null);
@@ -162,7 +186,7 @@ export default function ServiceLibrary() {
         base_price: 0,
         currency: 'USD',
         price_unit: 'per_person',
-        is_active: true
+        is_active: true,
       });
     }
     setModalOpen(true);
@@ -173,20 +197,20 @@ export default function ServiceLibrary() {
     if (current.includes(supplierId)) {
       setFormData({
         ...formData,
-        supplier_ids: current.filter(id => id !== supplierId),
-        supplier_contacts: (formData.supplier_contacts || []).filter(c => c.supplier_id !== supplierId)
+        supplier_ids: current.filter((id) => id !== supplierId),
+        supplier_contacts: (formData.supplier_contacts || []).filter((c) => c.supplier_id !== supplierId),
       });
     } else {
       setFormData({
         ...formData,
-        supplier_ids: [...current, supplierId]
+        supplier_ids: [...current, supplierId],
       });
     }
   };
 
   const updateSupplierContact = (supplierId, field, value) => {
     const contacts = formData.supplier_contacts || [];
-    const existingIndex = contacts.findIndex(c => c.supplier_id === supplierId);
+    const existingIndex = contacts.findIndex((c) => c.supplier_id === supplierId);
     if (existingIndex >= 0) {
       const updated = [...contacts];
       updated[existingIndex] = { ...updated[existingIndex], [field]: value };
@@ -194,13 +218,13 @@ export default function ServiceLibrary() {
     } else {
       setFormData({
         ...formData,
-        supplier_contacts: [...contacts, { supplier_id: supplierId, [field]: value }]
+        supplier_contacts: [...contacts, { supplier_id: supplierId, [field]: value }],
       });
     }
   };
 
   const getSupplierContact = (supplierId) => {
-    return (formData.supplier_contacts || []).find(c => c.supplier_id === supplierId) || {};
+    return (formData.supplier_contacts || []).find((c) => c.supplier_id === supplierId) || {};
   };
 
   const openBookingModal = (service) => {
@@ -228,7 +252,7 @@ export default function ServiceLibrary() {
     if (newPoi.name) {
       setFormData({
         ...formData,
-        points_of_interest: [...formData.points_of_interest, { ...newPoi }]
+        points_of_interest: [...formData.points_of_interest, { ...newPoi }],
       });
       setNewPoi({ name: '', description: '', map_url: '' });
     }
@@ -237,7 +261,7 @@ export default function ServiceLibrary() {
   const removePoi = (index) => {
     setFormData({
       ...formData,
-      points_of_interest: formData.points_of_interest.filter((_, i) => i !== index)
+      points_of_interest: formData.points_of_interest.filter((_, i) => i !== index),
     });
   };
 
@@ -245,7 +269,7 @@ export default function ServiceLibrary() {
     if (newLink.title && newLink.url) {
       setFormData({
         ...formData,
-        links: [...formData.links, { ...newLink }]
+        links: [...formData.links, { ...newLink }],
       });
       setNewLink({ title: '', url: '' });
     }
@@ -254,7 +278,7 @@ export default function ServiceLibrary() {
   const removeLink = (index) => {
     setFormData({
       ...formData,
-      links: formData.links.filter((_, i) => i !== index)
+      links: formData.links.filter((_, i) => i !== index),
     });
   };
 
@@ -264,7 +288,7 @@ export default function ServiceLibrary() {
       const { file_url } = await db.integrations.Core.UploadFile({ file });
       setFormData({
         ...formData,
-        files: [...formData.files, { name: file.name, url: file_url }]
+        files: [...formData.files, { name: file.name, url: file_url }],
       });
     }
   };
@@ -272,26 +296,27 @@ export default function ServiceLibrary() {
   const removeFile = (index) => {
     setFormData({
       ...formData,
-      files: formData.files.filter((_, i) => i !== index)
+      files: formData.files.filter((_, i) => i !== index),
     });
   };
 
   const filteredServices = services
-    .filter(s => selectedCategory === 'all' || s.category_id === selectedCategory)
-    .filter(s => 
-      searchTerm === '' ||
-      s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    .filter((s) => selectedCategory === 'all' || s.category_id === selectedCategory)
+    .filter(
+      (s) =>
+        searchTerm === '' ||
+        s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
-  const getCategoryName = (id) => categories.find(c => c.id === id)?.name || '';
+  const getCategoryName = (id) => categories.find((c) => c.id === id)?.name || '';
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Service Library</h1>
-          <p className="text-slate-600">Pre-defined service templates with detailed information</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Service Library</h1>
+          <p className="text-muted-foreground">Pre-defined service templates with detailed information</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {hasPermission('manage_categories') && (
@@ -308,10 +333,10 @@ export default function ServiceLibrary() {
       </div>
 
       {/* Search and Filter */}
-      <Card className="p-4 bg-white shadow-sm">
+      <Card className="p-4 bg-card shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
             <Input
               placeholder="Search services..."
               value={searchTerm}
@@ -325,8 +350,10 @@ export default function ServiceLibrary() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(cat => (
-                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -335,25 +362,29 @@ export default function ServiceLibrary() {
 
       {/* Services Grid */}
       {filteredServices.length === 0 ? (
-        <Card className="p-12 text-center bg-white">
-          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FileText className="w-8 h-8 text-blue-600" />
+        <Card className="p-12 text-center bg-card">
+          <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-blue-600 dark:text-blue-300" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">No services found</h3>
-          <p className="text-slate-600 mb-6">Create service templates for quick use in proposals and itineraries</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">No services found</h3>
+          <p className="text-muted-foreground mb-6">
+            Create service templates for quick use in proposals and itineraries
+          </p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredServices.map(service => (
-            <Card key={service.id} className="p-6 bg-white hover:shadow-xl transition-shadow group">
+          {filteredServices.map((service) => (
+            <Card key={service.id} className="p-6 bg-card hover:shadow-xl transition-shadow group">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
-                  <Badge variant="outline" className="mb-2">{getCategoryName(service.category_id)}</Badge>
-                  <h3 className="text-xl font-bold text-slate-900">{service.name}</h3>
+                  <Badge variant="outline" className="mb-2">
+                    {getCategoryName(service.category_id)}
+                  </Badge>
+                  <h3 className="text-xl font-bold text-foreground">{service.name}</h3>
                   {service.supplier_ids?.length > 0 && (
                     <div className="flex items-center gap-1 mt-1">
-                      <Users className="w-3 h-3 text-slate-400" />
-                      <span className="text-xs text-slate-600">{service.supplier_ids.length} supplier(s)</span>
+                      <Users className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{service.supplier_ids.length} supplier(s)</span>
                     </div>
                   )}
                 </div>
@@ -362,54 +393,50 @@ export default function ServiceLibrary() {
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(service.id)}>
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
                   </Button>
                 </div>
               </div>
 
               {service.description && (
-                <p className="text-slate-600 text-sm mb-3 line-clamp-2">{service.description}</p>
+                <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{service.description}</p>
               )}
 
               <div className="space-y-2 text-sm">
                 {service.meeting_point && (
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="w-4 h-4" />
                     <span className="truncate">{service.meeting_point}</span>
                     {service.meeting_point_map_url && (
                       <a href={service.meeting_point_map_url} target="_blank" rel="noopener noreferrer">
-                        <Map className="w-4 h-4 text-blue-600" />
+                        <Map className="w-4 h-4 text-blue-600 dark:text-blue-300" />
                       </a>
                     )}
                   </div>
                 )}
                 {service.meeting_time && (
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="w-4 h-4" />
                     {service.meeting_time}
                   </div>
                 )}
                 {service.duration && (
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="w-4 h-4" />
                     Duration: {service.duration}
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 pt-4 border-t border-slate-200 flex justify-between items-center">
+              <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
                 <div className="flex flex-wrap gap-2">
-                  {service.files?.length > 0 && (
-                    <Badge variant="secondary">{service.files.length} files</Badge>
-                  )}
+                  {service.files?.length > 0 && <Badge variant="secondary">{service.files.length} files</Badge>}
                   {service.points_of_interest?.length > 0 && (
                     <Badge variant="secondary">{service.points_of_interest.length} POIs</Badge>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="font-bold text-green-700">
-                    ${service.base_price?.toFixed(2)}
-                  </div>
+                  <div className="font-bold text-green-700 dark:text-green-300">${service.base_price?.toFixed(2)}</div>
                   <Button size="sm" variant="outline" onClick={() => openBookingModal(service)}>
                     <Send className="w-3 h-3 mr-1" /> Book
                   </Button>
@@ -439,35 +466,66 @@ export default function ServiceLibrary() {
               <TabsContent value="basic" className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label>Category *</Label>
-                  <Select value={formData.category_id} onValueChange={(v) => setFormData({ ...formData, category_id: v })} required>
-                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <Select
+                    value={formData.category_id}
+                    onValueChange={(v) => setFormData({ ...formData, category_id: v })}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Service Name *</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Description</Label>
-                  <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Duration</Label>
-                    <Input value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} placeholder="e.g., 2 hours" />
+                    <Input
+                      value={formData.duration}
+                      onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                      placeholder="e.g., 2 hours"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Price Unit</Label>
-                    <Select value={formData.price_unit} onValueChange={(v) => setFormData({ ...formData, price_unit: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select
+                      value={formData.price_unit}
+                      onValueChange={(v) => setFormData({ ...formData, price_unit: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(UNIT_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                        {Object.entries(UNIT_LABELS).map(([k, v]) => (
+                          <SelectItem key={k} value={k}>
+                            {v}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -476,12 +534,19 @@ export default function ServiceLibrary() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Base Price</Label>
-                    <Input type="number" step="0.01" value={formData.base_price} onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })} />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.base_price}
+                      onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Currency</Label>
                     <Select value={formData.currency} onValueChange={(v) => setFormData({ ...formData, currency: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="USD">USD</SelectItem>
                         <SelectItem value="EUR">EUR</SelectItem>
@@ -493,46 +558,54 @@ export default function ServiceLibrary() {
 
                 <div className="space-y-2">
                   <Label>What's Included</Label>
-                  <Textarea value={formData.included} onChange={(e) => setFormData({ ...formData, included: e.target.value })} rows={2} />
+                  <Textarea
+                    value={formData.included}
+                    onChange={(e) => setFormData({ ...formData, included: e.target.value })}
+                    rows={2}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>What's Not Included</Label>
-                  <Textarea value={formData.not_included} onChange={(e) => setFormData({ ...formData, not_included: e.target.value })} rows={2} />
+                  <Textarea
+                    value={formData.not_included}
+                    onChange={(e) => setFormData({ ...formData, not_included: e.target.value })}
+                    rows={2}
+                  />
                 </div>
               </TabsContent>
 
               <TabsContent value="suppliers" className="space-y-4 pt-4">
                 <Label>Select Suppliers for this Service</Label>
                 <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
-                  {suppliers.map(supplier => {
+                  {suppliers.map((supplier) => {
                     const isSelected = (formData.supplier_ids || []).includes(supplier.id);
                     const contact = getSupplierContact(supplier.id);
                     return (
-                      <div key={supplier.id} className={`p-3 border rounded-lg ${isSelected ? 'border-blue-300 bg-blue-50' : 'border-slate-200'}`}>
+                      <div
+                        key={supplier.id}
+                        className={`p-3 border rounded-lg ${isSelected ? 'border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40' : 'border-border'}`}
+                      >
                         <div className="flex items-center gap-3">
-                          <Checkbox 
-                            checked={isSelected}
-                            onCheckedChange={() => toggleSupplier(supplier.id)}
-                          />
+                          <Checkbox checked={isSelected} onCheckedChange={() => toggleSupplier(supplier.id)} />
                           <div className="flex-1">
                             <div className="font-medium">{supplier.name}</div>
-                            <div className="text-sm text-slate-600">{supplier.email}</div>
+                            <div className="text-sm text-muted-foreground">{supplier.email}</div>
                           </div>
                         </div>
                         {isSelected && (
                           <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-2">
-                            <Input 
+                            <Input
                               placeholder="Contact Name"
                               value={contact.contact_name || ''}
                               onChange={(e) => updateSupplierContact(supplier.id, 'contact_name', e.target.value)}
                             />
-                            <Input 
+                            <Input
                               placeholder="Contact Email"
                               value={contact.contact_email || ''}
                               onChange={(e) => updateSupplierContact(supplier.id, 'contact_email', e.target.value)}
                             />
-                            <Input 
+                            <Input
                               placeholder="Contact Phone"
                               value={contact.contact_phone || ''}
                               onChange={(e) => updateSupplierContact(supplier.id, 'contact_phone', e.target.value)}
@@ -548,15 +621,27 @@ export default function ServiceLibrary() {
               <TabsContent value="meeting" className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label>Meeting Point Address</Label>
-                  <Input value={formData.meeting_point} onChange={(e) => setFormData({ ...formData, meeting_point: e.target.value })} placeholder="Full address" />
+                  <Input
+                    value={formData.meeting_point}
+                    onChange={(e) => setFormData({ ...formData, meeting_point: e.target.value })}
+                    placeholder="Full address"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Meeting Time</Label>
-                  <Input value={formData.meeting_time} onChange={(e) => setFormData({ ...formData, meeting_time: e.target.value })} placeholder="e.g., 09:00 AM" />
+                  <Input
+                    value={formData.meeting_time}
+                    onChange={(e) => setFormData({ ...formData, meeting_time: e.target.value })}
+                    placeholder="e.g., 09:00 AM"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Map URL (Google Maps, etc.)</Label>
-                  <Input value={formData.meeting_point_map_url} onChange={(e) => setFormData({ ...formData, meeting_point_map_url: e.target.value })} placeholder="https://maps.google.com/..." />
+                  <Input
+                    value={formData.meeting_point_map_url}
+                    onChange={(e) => setFormData({ ...formData, meeting_point_map_url: e.target.value })}
+                    placeholder="https://maps.google.com/..."
+                  />
                 </div>
               </TabsContent>
 
@@ -564,26 +649,39 @@ export default function ServiceLibrary() {
                 <div className="space-y-3">
                   <Label>Points of Interest</Label>
                   {formData.points_of_interest.map((poi, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+                    <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium">{poi.name}</div>
-                        {poi.description && <div className="text-sm text-slate-600">{poi.description}</div>}
+                        {poi.description && <div className="text-sm text-muted-foreground">{poi.description}</div>}
                       </div>
                       {poi.map_url && (
                         <a href={poi.map_url} target="_blank" rel="noopener noreferrer">
-                          <Map className="w-4 h-4 text-blue-600" />
+                          <Map className="w-4 h-4 text-blue-600 dark:text-blue-300" />
                         </a>
                       )}
                       <Button type="button" variant="ghost" size="icon" onClick={() => removePoi(index)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
                       </Button>
                     </div>
                   ))}
                   <div className="grid grid-cols-3 gap-2">
-                    <Input value={newPoi.name} onChange={(e) => setNewPoi({ ...newPoi, name: e.target.value })} placeholder="POI Name" />
-                    <Input value={newPoi.description} onChange={(e) => setNewPoi({ ...newPoi, description: e.target.value })} placeholder="Description" />
+                    <Input
+                      value={newPoi.name}
+                      onChange={(e) => setNewPoi({ ...newPoi, name: e.target.value })}
+                      placeholder="POI Name"
+                    />
+                    <Input
+                      value={newPoi.description}
+                      onChange={(e) => setNewPoi({ ...newPoi, description: e.target.value })}
+                      placeholder="Description"
+                    />
                     <div className="flex flex-wrap gap-2">
-                      <Input value={newPoi.map_url} onChange={(e) => setNewPoi({ ...newPoi, map_url: e.target.value })} placeholder="Map URL" className="flex-1" />
+                      <Input
+                        value={newPoi.map_url}
+                        onChange={(e) => setNewPoi({ ...newPoi, map_url: e.target.value })}
+                        placeholder="Map URL"
+                        className="flex-1"
+                      />
                       <Button type="button" onClick={addPoi} variant="outline" size="icon">
                         <Plus className="w-4 h-4" />
                       </Button>
@@ -596,13 +694,18 @@ export default function ServiceLibrary() {
                 <div className="space-y-3">
                   <Label>Attached Files</Label>
                   {formData.files.map((file, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                      <FileText className="w-4 h-4 text-slate-600" />
-                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="flex-1 text-blue-600 hover:underline">
+                    <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                      <FileText className="w-4 h-4 text-muted-foreground" />
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 text-blue-600 dark:text-blue-300 hover:underline"
+                      >
                         {file.name}
                       </a>
                       <Button type="button" variant="ghost" size="icon" onClick={() => removeFile(index)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
                       </Button>
                     </div>
                   ))}
@@ -614,20 +717,33 @@ export default function ServiceLibrary() {
                 <div className="space-y-3">
                   <Label>Related Links</Label>
                   {formData.links.map((link, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                      <LinkIcon className="w-4 h-4 text-slate-600" />
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex-1 text-blue-600 hover:underline">
+                    <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                      <LinkIcon className="w-4 h-4 text-muted-foreground" />
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 text-blue-600 dark:text-blue-300 hover:underline"
+                      >
                         {link.title}
                       </a>
-                      <ExternalLink className="w-4 h-4 text-slate-400" />
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
                       <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
                       </Button>
                     </div>
                   ))}
                   <div className="flex flex-wrap gap-2">
-                    <Input value={newLink.title} onChange={(e) => setNewLink({ ...newLink, title: e.target.value })} placeholder="Link Title" />
-                    <Input value={newLink.url} onChange={(e) => setNewLink({ ...newLink, url: e.target.value })} placeholder="URL" />
+                    <Input
+                      value={newLink.title}
+                      onChange={(e) => setNewLink({ ...newLink, title: e.target.value })}
+                      placeholder="Link Title"
+                    />
+                    <Input
+                      value={newLink.url}
+                      onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+                      placeholder="URL"
+                    />
                     <Button type="button" onClick={addLink} variant="outline" size="icon">
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -637,7 +753,9 @@ export default function ServiceLibrary() {
             </Tabs>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={closeModal}>
+                Cancel
+              </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
                 {editingService ? 'Update' : 'Create'} Service
               </Button>
@@ -651,10 +769,16 @@ export default function ServiceLibrary() {
           <DialogHeader>
             <DialogTitle>Create Service Category</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); createCategoryMutation.mutate(newCategory); }} className="space-y-4 mt-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createCategoryMutation.mutate(newCategory);
+            }}
+            className="space-y-4 mt-4"
+          >
             <div className="space-y-2">
               <Label>Category Name *</Label>
-              <Input 
+              <Input
                 value={newCategory.name}
                 onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
                 required
@@ -662,7 +786,7 @@ export default function ServiceLibrary() {
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea 
+              <Textarea
                 value={newCategory.description}
                 onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
                 rows={2}
@@ -670,7 +794,7 @@ export default function ServiceLibrary() {
             </div>
             <div className="space-y-2">
               <Label>Color</Label>
-              <Input 
+              <Input
                 type="color"
                 value={newCategory.color}
                 onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
@@ -678,8 +802,12 @@ export default function ServiceLibrary() {
               />
             </div>
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setCategoryModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Create Category</Button>
+              <Button type="button" variant="outline" onClick={() => setCategoryModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Create Category
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -687,9 +815,12 @@ export default function ServiceLibrary() {
 
       {/* Booking Request Modal */}
       {selectedServiceForBooking && (
-        <ServiceBookingRequest 
+        <ServiceBookingRequest
           open={bookingModalOpen}
-          onClose={() => { setBookingModalOpen(false); setSelectedServiceForBooking(null); }}
+          onClose={() => {
+            setBookingModalOpen(false);
+            setSelectedServiceForBooking(null);
+          }}
           service={selectedServiceForBooking}
           tripId={''}
           supplierId={''}

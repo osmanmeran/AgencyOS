@@ -17,14 +17,27 @@ import { parseISO, isBefore } from 'date-fns';
 import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
-const CURRENCIES = { USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' };
+const CURRENCIES = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  TRY: '₺',
+  AED: 'د.إ',
+  SAR: '﷼',
+  EGP: 'E£',
+  MAD: 'MAD',
+  JPY: '¥',
+  CHF: 'CHF',
+  CAD: 'CA$',
+  AUD: 'A$',
+};
 
 export default function CreateInvoice() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const preselectedTripId = searchParams.get('tripId');
-  
+
   const [formData, setFormData] = useState({
     invoice_number: `INV-${Date.now()}`,
     client_id: '',
@@ -37,39 +50,47 @@ export default function CreateInvoice() {
     currency: 'USD',
     notes: '',
     payment_terms: 'Due within 30 days',
-    status: 'draft'
+    status: 'draft',
   });
 
-  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clients'],
-    queryFn: () => db.entities.Client.list()
-  }));
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clients'],
+      queryFn: () => db.entities.Client.list(),
+    })
+  );
 
-  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['proposals'],
-    queryFn: () => db.entities.Proposal.list()
-  }));
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['proposals'],
+      queryFn: () => db.entities.Proposal.list(),
+    })
+  );
 
-  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['trips'],
-    queryFn: () => db.entities.Trip.list()
-  }));
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['trips'],
+      queryFn: () => db.entities.Trip.list(),
+    })
+  );
 
-  const { data: appSettings } = /** @type {any} */ (useQuery({
-    queryKey: ['appSettings'],
-    queryFn: async () => {
-      const all = await db.entities.AppSettings.list();
-      return all[0] || {};
-    }
-  }));
+  const { data: appSettings } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['appSettings'],
+      queryFn: async () => {
+        const all = await db.entities.AppSettings.list();
+        return all[0] || {};
+      },
+    })
+  );
 
   // Init defaults from app settings on mount
   useEffect(() => {
     if (appSettings) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         payment_terms: appSettings.default_payment_terms || prev.payment_terms,
-        notes: appSettings.default_invoice_notes || prev.notes
+        notes: appSettings.default_invoice_notes || prev.notes,
       }));
     }
   }, [appSettings]);
@@ -79,81 +100,81 @@ export default function CreateInvoice() {
 
   // Filter for approved/confirmed and ongoing reservations only
   const today = new Date();
-  const eligibleReservations = trips.filter(trip => {
+  const eligibleReservations = trips.filter((trip) => {
     const endDate = parseISO(trip.end_date);
     const isOngoing = !isBefore(endDate, today);
-    const isApproved = trip.status === 'confirmed' || trip.status === 'in_progress' || trip.proposal_status === 'confirmed';
+    const isApproved =
+      trip.status === 'confirmed' || trip.status === 'in_progress' || trip.proposal_status === 'confirmed';
     return isOngoing && isApproved;
   });
 
-  const createMutation = /** @type {any} */ (useMutation({
-    mutationFn: async (/** @type {any} */ data) => {
-      const invoice = await db.entities.Invoice.create(data);
-      
-      // Update client balance
-      const client = clients.find(c => c.id === data.client_id);
-      if (client) {
-        await db.entities.Client.update(client.id, {
-          ...client,
-          total_owed: (client.total_owed || 0) + data.total_amount
-        });
-      }
-      
-      return invoice;
-    },
-    onSuccess: (invoice) => {
-      showSuccess('Invoice created');
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      navigate(createPageUrl(`InvoiceDetails?id=${invoice.id}`));
-    },
-    onError: (error) => showError('Failed to create invoice', error.message)
-  }));
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: async (/** @type {any} */ data) => {
+        const invoice = await db.entities.Invoice.create(data);
+
+        // Update client balance
+        const client = clients.find((c) => c.id === data.client_id);
+        if (client) {
+          await db.entities.Client.update(client.id, {
+            ...client,
+            total_owed: (client.total_owed || 0) + data.total_amount,
+          });
+        }
+
+        return invoice;
+      },
+      onSuccess: (invoice) => {
+        showSuccess('Invoice created');
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['clients'] });
+        navigate(createPageUrl(`InvoiceDetails?id=${invoice.id}`));
+      },
+      onError: (error) => showError('Failed to create invoice', error.message),
+    })
+  );
 
   const addLineItem = () => {
     setFormData({
       ...formData,
-      line_items: [
-        ...formData.line_items,
-        { description: '', quantity: 1, unit_price: 0, amount: 0 }
-      ]
+      line_items: [...formData.line_items, { description: '', quantity: 1, unit_price: 0, amount: 0 }],
     });
   };
 
   const updateLineItem = (index, field, value) => {
     const items = [...formData.line_items];
     items[index][field] = value;
-    
+
     if (field === 'quantity' || field === 'unit_price') {
       items[index].amount = items[index].quantity * items[index].unit_price;
     }
-    
+
     setFormData({ ...formData, line_items: items });
   };
 
   const removeLineItem = (index) => {
     setFormData({
       ...formData,
-      line_items: formData.line_items.filter((_, i) => i !== index)
+      line_items: formData.line_items.filter((_, i) => i !== index),
     });
   };
 
   const loadFromProposal = (proposalId) => {
-    const proposal = proposals.find(p => p.id === proposalId);
+    const proposal = proposals.find((p) => p.id === proposalId);
     if (proposal && proposal.services) {
-      const lineItems = proposal.services.map(service => ({
+      const lineItems = proposal.services.map((service) => ({
         description: service.name + (service.description ? ` - ${service.description}` : ''),
         quantity: service.quantity || 1,
         unit_price: service.cost || 0,
-        amount: (service.quantity || 1) * (service.cost || 0)
+        amount: (service.quantity || 1) * (service.cost || 0),
       }));
-      
+
       setFormData({
         ...formData,
         proposal_id: proposalId,
         client_id: proposal.client_id || formData.client_id,
         trip_id: proposal.trip_id || formData.trip_id,
-        line_items: lineItems
+        line_items: lineItems,
       });
     }
   };
@@ -162,7 +183,7 @@ export default function CreateInvoice() {
     const qty = parseInt(svc.quantity) || 1;
     if (svc.unit === 'per_night' || svc.unit === 'per_day') {
       if (svc.start_date && svc.end_date) {
-        const days = Math.max(1, Math.round((+(new Date(svc.end_date)) - +(new Date(svc.start_date))) / 86400000));
+        const days = Math.max(1, Math.round((+new Date(svc.end_date) - +new Date(svc.start_date)) / 86400000));
         return qty * days;
       }
       return qty;
@@ -171,19 +192,19 @@ export default function CreateInvoice() {
   };
 
   const handleReservationSelect = (tripId) => {
-    const trip = trips.find(t => t.id === tripId);
-    const lineItems = (trip?.services || []).map(s => ({
+    const trip = trips.find((t) => t.id === tripId);
+    const lineItems = (trip?.services || []).map((s) => ({
       description: `${s.name}${s.category ? ` (${s.category})` : ''}`,
       quantity: effQty(s),
       unit_price: parseFloat(s.selling_price) || 0,
-      amount: effQty(s) * (parseFloat(s.selling_price) || 0)
+      amount: effQty(s) * (parseFloat(s.selling_price) || 0),
     }));
-    setFormData({ 
-      ...formData, 
+    setFormData({
+      ...formData,
       trip_id: tripId,
       client_id: trip?.client_id || formData.client_id,
       line_items: lineItems,
-      currency: trip?.selling_currency || 'USD'
+      currency: trip?.selling_currency || 'USD',
     });
   };
 
@@ -201,7 +222,7 @@ export default function CreateInvoice() {
       total_amount: totalAmount,
       amount_due: totalAmount,
       amount_paid: 0,
-      currency: formData.currency || 'USD'
+      currency: formData.currency || 'USD',
     });
   };
 
@@ -215,19 +236,19 @@ export default function CreateInvoice() {
       </Link>
 
       <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Create Invoice</h1>
-        <p className="text-slate-600">Generate a new invoice for a client</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Create Invoice</h1>
+        <p className="text-muted-foreground">Generate a new invoice for a client</p>
       </div>
 
       {eligibleReservations.length === 0 && (
-        <Card className="p-6 bg-amber-50 border-amber-200">
+        <Card className="p-6 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-300 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-amber-900">No eligible reservations</h3>
-              <p className="text-amber-700 text-sm mt-1">
-                Invoices can only be created for ongoing and approved reservations. 
-                Please confirm a reservation first before creating an invoice.
+              <h3 className="font-semibold text-amber-900 dark:text-amber-300">No eligible reservations</h3>
+              <p className="text-amber-700 dark:text-amber-300 text-sm mt-1">
+                Invoices can only be created for ongoing and approved reservations. Please confirm a reservation first
+                before creating an invoice.
               </p>
             </div>
           </div>
@@ -235,8 +256,8 @@ export default function CreateInvoice() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card className="p-6 bg-white shadow-md">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Invoice Details</h2>
+        <Card className="p-6 bg-card shadow-md">
+          <h2 className="text-xl font-bold text-foreground mb-4">Invoice Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="invoice_number">Invoice Number *</Label>
@@ -247,7 +268,7 @@ export default function CreateInvoice() {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="trip">Reservation * (must be approved & ongoing)</Label>
               <Select value={formData.trip_id} onValueChange={handleReservationSelect} required>
@@ -255,25 +276,31 @@ export default function CreateInvoice() {
                   <SelectValue placeholder="Select reservation" />
                 </SelectTrigger>
                 <SelectContent>
-                  {eligibleReservations.map(t => (
+                  {eligibleReservations.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
-                      {t.reference_number ? `${t.reference_number} - ` : ''}{t.name} ({t.status})
+                      {t.reference_number ? `${t.reference_number} - ` : ''}
+                      {t.name} ({t.status})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-slate-500">Only approved and ongoing reservations are shown</p>
+              <p className="text-xs text-muted-foreground">Only approved and ongoing reservations are shown</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <Select value={formData.currency || 'USD'} onValueChange={(v) => setFormData({ ...formData, currency: v })}>
+              <Select
+                value={formData.currency || 'USD'}
+                onValueChange={(v) => setFormData({ ...formData, currency: v })}
+              >
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(CURRENCIES).map(cur => (
-                    <SelectItem key={cur} value={cur}>{CURRENCIES[cur]} {cur}</SelectItem>
+                  {Object.keys(CURRENCIES).map((cur) => (
+                    <SelectItem key={cur} value={cur}>
+                      {CURRENCIES[cur]} {cur}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -281,18 +308,24 @@ export default function CreateInvoice() {
 
             <div className="space-y-2">
               <Label htmlFor="client">Client *</Label>
-              <Select value={formData.client_id} onValueChange={(v) => setFormData({ ...formData, client_id: v })} required>
+              <Select
+                value={formData.client_id}
+                onValueChange={(v) => setFormData({ ...formData, client_id: v })}
+                required
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="proposal">Link to Proposal (Optional)</Label>
               <Select value={formData.proposal_id} onValueChange={loadFromProposal}>
@@ -301,13 +334,17 @@ export default function CreateInvoice() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>None</SelectItem>
-                  {proposals.filter(p => p.status === 'approved').map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
-                  ))}
+                  {proposals
+                    .filter((p) => p.status === 'approved')
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.title}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="issue_date">Issue Date *</Label>
               <Input
@@ -331,9 +368,9 @@ export default function CreateInvoice() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white shadow-md">
+        <Card className="p-6 bg-card shadow-md">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-slate-900">Line Items</h2>
+            <h2 className="text-xl font-bold text-foreground">Line Items</h2>
             <Button type="button" onClick={addLineItem} variant="outline" size="sm">
               <Plus className="w-4 h-4 mr-2" />
               Add Item
@@ -342,7 +379,7 @@ export default function CreateInvoice() {
 
           <div className="space-y-4">
             {formData.line_items.map((item, index) => (
-              <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 bg-slate-50 rounded-lg">
+              <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 bg-muted rounded-lg">
                 <div className="col-span-5">
                   <Input
                     placeholder="Description"
@@ -368,32 +405,38 @@ export default function CreateInvoice() {
                   />
                 </div>
                 <div className="col-span-2 flex items-center">
-                  <div className="font-bold">{cs}{item.amount.toFixed(2)}</div>
+                  <div className="font-bold">
+                    {cs}
+                    {item.amount.toFixed(2)}
+                  </div>
                 </div>
                 <div className="col-span-1">
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeLineItem(index)}>
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
                   </Button>
                 </div>
               </div>
             ))}
 
             {formData.line_items.length === 0 && (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No line items. Click "Add Item" to add invoice items.
               </div>
             )}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-200">
+          <div className="mt-6 pt-6 border-t border-border">
             <div className="max-w-sm ml-auto space-y-3">
               <div className="flex justify-between text-lg">
-                <span className="text-slate-600">Subtotal:</span>
-                <span className="font-semibold">{cs}{subtotal.toFixed(2)}</span>
+                <span className="text-muted-foreground">Subtotal:</span>
+                <span className="font-semibold">
+                  {cs}
+                  {subtotal.toFixed(2)}
+                </span>
               </div>
-              
+
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-slate-600">Tax Rate (%):</span>
+                <span className="text-muted-foreground">Tax Rate (%):</span>
                 <Input
                   type="number"
                   step="0.01"
@@ -402,22 +445,28 @@ export default function CreateInvoice() {
                   className="w-24 text-right"
                 />
               </div>
-              
+
               <div className="flex justify-between text-lg">
-                <span className="text-slate-600">Tax Amount:</span>
-                <span className="font-semibold">{cs}{taxAmount.toFixed(2)}</span>
+                <span className="text-muted-foreground">Tax Amount:</span>
+                <span className="font-semibold">
+                  {cs}
+                  {taxAmount.toFixed(2)}
+                </span>
               </div>
-              
+
               <div className="flex justify-between text-2xl font-bold border-t-2 pt-3">
                 <span>Total:</span>
-                <span className="text-green-700">{cs}{totalAmount.toFixed(2)}</span>
+                <span className="text-green-700 dark:text-green-300">
+                  {cs}
+                  {totalAmount.toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 bg-white shadow-md">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Additional Information</h2>
+        <Card className="p-6 bg-card shadow-md">
+          <h2 className="text-xl font-bold text-foreground mb-4">Additional Information</h2>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="payment_terms">Payment Terms</Label>
@@ -442,12 +491,20 @@ export default function CreateInvoice() {
 
         <div className="flex justify-end gap-3">
           <Link to={createPageUrl('Revenue')}>
-            <Button type="button" variant="outline">Cancel</Button>
+            <Button type="button" variant="outline">
+              Cancel
+            </Button>
           </Link>
-          <Button 
-            type="submit" 
-            className="bg-blue-600 hover:bg-blue-700" 
-            disabled={createMutation.isPending || !formData.client_id || !formData.trip_id || formData.line_items.length === 0 || eligibleReservations.length === 0}
+          <Button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={
+              createMutation.isPending ||
+              !formData.client_id ||
+              !formData.trip_id ||
+              formData.line_items.length === 0 ||
+              eligibleReservations.length === 0
+            }
           >
             {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
           </Button>

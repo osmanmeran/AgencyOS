@@ -35,18 +35,20 @@ export default function CreateClient() {
     payment_method: 'credit_card',
     notes: '',
     status: 'active',
-    portal_access: false
+    portal_access: false,
   });
 
-  const createMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.Client.create(data),
-    onSuccess: (/** @type {any} */ newClient) => {
-      showSuccess('Client created');
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      navigate(createPageUrl(`ClientDetails?id=${newClient.id}`));
-    },
-    onError: (error) => showError('Failed to create client', error.message)
-  }));
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.Client.create(data),
+      onSuccess: (/** @type {any} */ newClient) => {
+        showSuccess('Client created');
+        queryClient.invalidateQueries({ queryKey: ['clients'] });
+        navigate(createPageUrl(`ClientDetails?id=${newClient.id}`));
+      },
+      onError: (error) => showError('Failed to create client', error.message),
+    })
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -63,13 +65,13 @@ export default function CreateClient() {
       </Link>
 
       <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Add New Client</h1>
-        <p className="text-slate-600">Create a new client profile</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Add New Client</h1>
+        <p className="text-muted-foreground">Create a new client profile</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card className="p-6 bg-white shadow-md">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Basic Information</h2>
+        <Card className="p-6 bg-card shadow-md">
+          <h2 className="text-xl font-bold text-foreground mb-4">Basic Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name *</Label>
@@ -82,7 +84,10 @@ export default function CreateClient() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="age_category">Age Category *</Label>
-              <Select value={formData.age_category} onValueChange={(v) => setFormData({ ...formData, age_category: v })}>
+              <Select
+                value={formData.age_category}
+                onValueChange={(v) => setFormData({ ...formData, age_category: v })}
+              >
                 <SelectTrigger id="age_category">
                   <SelectValue />
                 </SelectTrigger>
@@ -151,8 +156,8 @@ export default function CreateClient() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white shadow-md">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Address Details</h2>
+        <Card className="p-6 bg-card shadow-md">
+          <h2 className="text-xl font-bold text-foreground mb-4">Address Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="address">Address</Label>
@@ -181,8 +186,8 @@ export default function CreateClient() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white shadow-md">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Billing Information</h2>
+        <Card className="p-6 bg-card shadow-md">
+          <h2 className="text-xl font-bold text-foreground mb-4">Billing Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="invoice_address">Invoice Address</Label>
@@ -204,7 +209,10 @@ export default function CreateClient() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="payment_method">Preferred Payment Method</Label>
-              <Select value={formData.payment_method} onValueChange={(v) => setFormData({ ...formData, payment_method: v })}>
+              <Select
+                value={formData.payment_method}
+                onValueChange={(v) => setFormData({ ...formData, payment_method: v })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -221,8 +229,8 @@ export default function CreateClient() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white shadow-md">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Client Settings</h2>
+        <Card className="p-6 bg-card shadow-md">
+          <h2 className="text-xl font-bold text-foreground mb-4">Client Settings</h2>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
@@ -264,7 +272,9 @@ export default function CreateClient() {
 
         <div className="flex justify-end gap-3">
           <Link to={createPageUrl('ClientCRM')}>
-            <Button type="button" variant="outline">Cancel</Button>
+            <Button type="button" variant="outline">
+              Cancel
+            </Button>
           </Link>
           <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
             {createMutation.isPending ? 'Creating...' : 'Create Client'}

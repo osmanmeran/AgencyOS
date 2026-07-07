@@ -20,7 +20,20 @@ import { getCatalog, submitQuote } from '@/lib/b2bApi';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import LocationSearch from '@/components/services/LocationSearch';
 
-const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' };
+const CURRENCY_SYMBOLS = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  TRY: '₺',
+  AED: 'د.إ',
+  SAR: '﷼',
+  EGP: 'E£',
+  MAD: 'MAD',
+  JPY: '¥',
+  CHF: 'CHF',
+  CAD: 'CA$',
+  AUD: 'A$',
+};
 const sym = (cur) => CURRENCY_SYMBOLS[cur] || `${cur} `;
 
 const AGE_CATEGORIES = [
@@ -32,20 +45,59 @@ const AGE_CATEGORIES = [
 const NIGHT_UNITS = ['per_night', 'per_day'];
 const FIXED_UNITS = ['per_group', 'flat_rate'];
 const HOTEL_TREATMENTS = ['Room Only', 'Bed & Breakfast', 'Half Board', 'Full Board', 'All Inclusive'];
-const TRANSFER_TYPES = ['Airport Pickup', 'Airport Drop-off', 'Point to Point', 'Hotel to Hotel', 'Port Transfer', 'City Transfer'];
+const TRANSFER_TYPES = [
+  'Airport Pickup',
+  'Airport Drop-off',
+  'Point to Point',
+  'Hotel to Hotel',
+  'Port Transfer',
+  'City Transfer',
+];
 
 const rid = (p) => `${p}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-const newPassenger = () => ({ id: rid('pax'), name: '', age_category: 'adult', date_of_birth: '', passport_number: '', phone: '', email: '', is_contact: false });
+const newPassenger = () => ({
+  id: rid('pax'),
+  name: '',
+  age_category: 'adult',
+  date_of_birth: '',
+  passport_number: '',
+  phone: '',
+  email: '',
+  is_contact: false,
+});
 const newRoom = () => ({ id: rid('room'), type: 'double', passengers: [newPassenger(), newPassenger()] });
 const newLine = () => ({
-  _key: rid('line'), pricing_id: '', service_name: '', unit: '', min_quantity: 1, quantity: 1,
-  supplier_id: '', room_occupancy: '',
-  start_date: '', end_date: '', room_type: '', hotel_treatment: '',
-  pickup_location: '', dropoff_location: '', flight_number: '', transfer_type: '',
-  service_date: '', service_time: '', duration: '', details: '',
+  _key: rid('line'),
+  pricing_id: '',
+  service_name: '',
+  unit: '',
+  min_quantity: 1,
+  quantity: 1,
+  supplier_id: '',
+  room_occupancy: '',
+  start_date: '',
+  end_date: '',
+  room_type: '',
+  hotel_treatment: '',
+  pickup_location: '',
+  dropoff_location: '',
+  flight_number: '',
+  transfer_type: '',
+  service_date: '',
+  service_time: '',
+  duration: '',
+  details: '',
 });
 
-const OCCUPANCY_LABELS = { single: 'Single', double: 'Double', twin: 'Twin', triple: 'Triple', quad: 'Quad', family: 'Family', extra_bed: 'Extra bed' };
+const OCCUPANCY_LABELS = {
+  single: 'Single',
+  double: 'Double',
+  twin: 'Twin',
+  triple: 'Triple',
+  quad: 'Quad',
+  family: 'Family',
+  extra_bed: 'Extra bed',
+};
 
 function isLodgingCategory(name) {
   const c = (name || '').toLowerCase();
@@ -60,7 +112,8 @@ function isLodgingCategory(name) {
 function isRateValidOn(rate, date) {
   if (rate.season_type === 'all_year') return true;
   if (!date) return false;
-  if (rate.season_type === 'custom') return !!rate.season_start && !!rate.season_end && date >= rate.season_start && date <= rate.season_end;
+  if (rate.season_type === 'custom')
+    return !!rate.season_start && !!rate.season_end && date >= rate.season_start && date <= rate.season_end;
   return false;
 }
 
@@ -74,7 +127,7 @@ function isRateValidOn(rate, date) {
 function resolveRoomRate(candidates, date) {
   if (candidates.length === 0) return { rate: null, candidates: [] };
   if (candidates.length === 1) return { rate: candidates[0], candidates };
-  const valid = date ? candidates.filter(r => isRateValidOn(r, date)) : [];
+  const valid = date ? candidates.filter((r) => isRateValidOn(r, date)) : [];
   if (valid.length === 1) return { rate: valid[0], candidates };
   return { rate: null, candidates: valid.length > 0 ? valid : candidates };
 }
@@ -106,27 +159,62 @@ function lineTotal(line, unitPrice) {
 function PaxRow({ pax, onChange, onSetContact }) {
   const set = (field, value) => onChange({ ...pax, [field]: value });
   return (
-    <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+    <div className="p-3 bg-card border border-border rounded-lg space-y-2">
       <div className="flex flex-wrap gap-2">
-        <Input className="flex-1 min-w-[160px]" placeholder="Full name" value={pax.name} onChange={e => set('name', e.target.value)} />
-        <Select value={pax.age_category} onValueChange={v => set('age_category', v)}>
-          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-          <SelectContent>{AGE_CATEGORIES.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}</SelectContent>
+        <Input
+          className="flex-1 min-w-[160px]"
+          placeholder="Full name"
+          value={pax.name}
+          onChange={(e) => set('name', e.target.value)}
+        />
+        <Select value={pax.age_category} onValueChange={(v) => set('age_category', v)}>
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {AGE_CATEGORIES.map((a) => (
+              <SelectItem key={a.value} value={a.value}>
+                {a.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
         <button
           type="button"
           onClick={onSetContact}
-          className={`px-3 rounded-lg text-xs font-medium border flex items-center gap-1 ${pax.is_contact ? 'bg-green-50 border-green-300 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
+          className={`px-3 rounded-lg text-xs font-medium border flex items-center gap-1 ${pax.is_contact ? 'bg-green-50 dark:bg-green-950/40 border-green-300 dark:border-green-800 text-green-700 dark:text-green-300' : 'bg-muted border-border text-muted-foreground'}`}
           title="Main contact"
         >
-          <Star className="w-3.5 h-3.5" fill={pax.is_contact ? 'currentColor' : 'none'} />Contact
+          <Star className="w-3.5 h-3.5" fill={pax.is_contact ? 'currentColor' : 'none'} />
+          Contact
         </button>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Input className="flex-1 min-w-[130px]" type="date" title="Date of birth" value={pax.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} />
-        <Input className="flex-1 min-w-[130px]" placeholder="Passport #" value={pax.passport_number} onChange={e => set('passport_number', e.target.value)} />
-        <Input className="flex-1 min-w-[130px]" placeholder="Phone" value={pax.phone} onChange={e => set('phone', e.target.value)} />
-        <Input className="flex-1 min-w-[160px]" placeholder="Email" value={pax.email} onChange={e => set('email', e.target.value)} />
+        <Input
+          className="flex-1 min-w-[130px]"
+          type="date"
+          title="Date of birth"
+          value={pax.date_of_birth}
+          onChange={(e) => set('date_of_birth', e.target.value)}
+        />
+        <Input
+          className="flex-1 min-w-[130px]"
+          placeholder="Passport #"
+          value={pax.passport_number}
+          onChange={(e) => set('passport_number', e.target.value)}
+        />
+        <Input
+          className="flex-1 min-w-[130px]"
+          placeholder="Phone"
+          value={pax.phone}
+          onChange={(e) => set('phone', e.target.value)}
+        />
+        <Input
+          className="flex-1 min-w-[160px]"
+          placeholder="Email"
+          value={pax.email}
+          onChange={(e) => set('email', e.target.value)}
+        />
       </div>
     </div>
   );
@@ -144,22 +232,31 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect,
   const [supplierId, setSupplierId] = useState('');
 
   useEffect(() => {
-    if (!open) { setCategory(''); setLocation(''); setSupplierId(''); }
+    if (!open) {
+      setCategory('');
+      setLocation('');
+      setSupplierId('');
+    }
   }, [open]);
-  useEffect(() => { setLocation(''); setSupplierId(''); }, [category]);
-  useEffect(() => { setSupplierId(''); }, [location]);
+  useEffect(() => {
+    setLocation('');
+    setSupplierId('');
+  }, [category]);
+  useEffect(() => {
+    setSupplierId('');
+  }, [location]);
 
   const categoryItems = useMemo(
-    () => category ? services.filter(s => (s.category_name || 'Other services') === category) : [],
-    [services, category]
+    () => (category ? services.filter((s) => (s.category_name || 'Other services') === category) : []),
+    [services, category],
   );
   const locationItems = useMemo(
-    () => location ? categoryItems.filter(s => locationOf(s) === location) : [],
-    [categoryItems, location]
+    () => (location ? categoryItems.filter((s) => locationOf(s) === location) : []),
+    [categoryItems, location],
   );
   const supplierItems = useMemo(
-    () => supplierId ? locationItems.filter(s => s.supplier_id === supplierId) : [],
-    [locationItems, supplierId]
+    () => (supplierId ? locationItems.filter((s) => s.supplier_id === supplierId) : []),
+    [locationItems, supplierId],
   );
 
   const categoryOptions = useMemo(() => {
@@ -183,7 +280,8 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect,
   const supplierOptions = useMemo(() => {
     const bySupplier = new Map();
     for (const s of locationItems) {
-      if (!bySupplier.has(s.supplier_id)) bySupplier.set(s.supplier_id, { name: s.supplier_name || 'Unknown', count: 0 });
+      if (!bySupplier.has(s.supplier_id))
+        bySupplier.set(s.supplier_id, { name: s.supplier_name || 'Unknown', count: 0 });
       bySupplier.get(s.supplier_id).count += 1;
     }
     return [...bySupplier.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name));
@@ -212,94 +310,115 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect,
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Choose a service</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Choose a service</DialogTitle>
+        </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-500">Category</Label>
+            <Label className="text-xs text-muted-foreground">Category</Label>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
               <SelectContent>
                 {categoryOptions.map(([name, count]) => (
-                  <SelectItem key={name} value={name}>{name} ({count})</SelectItem>
+                  <SelectItem key={name} value={name}>
+                    {name} ({count})
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {category && (
-            locationOptions.length ? (
+          {category &&
+            (locationOptions.length ? (
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">Location</Label>
+                <Label className="text-xs text-muted-foreground">Location</Label>
                 <Select value={location} onValueChange={setLocation}>
-                  <SelectTrigger><SelectValue placeholder="Select a location" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a location" />
+                  </SelectTrigger>
                   <SelectContent>
                     {locationOptions.map(([loc, count]) => (
-                      <SelectItem key={loc} value={loc}>{loc} ({count})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400 text-center py-4">No services in this category</p>
-            )
-          )}
-
-          {location && (
-            supplierOptions.length ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">Supplier</Label>
-                <Select value={supplierId} onValueChange={setSupplierId}>
-                  <SelectTrigger><SelectValue placeholder="Select a supplier" /></SelectTrigger>
-                  <SelectContent>
-                    {supplierOptions.map(([id, info]) => (
-                      <SelectItem key={id} value={id}>{info.name} ({info.count})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400 text-center py-4">No suppliers in this location</p>
-            )
-          )}
-
-          {supplierId && isLodgingCat && (
-            roomOptions.length ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">Room type</Label>
-                <Select onValueChange={pickRoom}>
-                  <SelectTrigger><SelectValue placeholder="Select a room type" /></SelectTrigger>
-                  <SelectContent>
-                    {roomOptions.map(([occ, count]) => (
-                      <SelectItem key={occ} value={occ}>{OCCUPANCY_LABELS[occ] || occ} ({count} rate{count === 1 ? '' : 's'})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-slate-400">The exact rate is picked from check-in date once you enter it.</p>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400 text-center py-4">No room types for this supplier</p>
-            )
-          )}
-
-          {supplierId && !isLodgingCat && (
-            supplierItems.length ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-500">Service</Label>
-                <Select onValueChange={pick}>
-                  <SelectTrigger><SelectValue placeholder="Select a service" /></SelectTrigger>
-                  <SelectContent>
-                    {supplierItems.map(s => (
-                      <SelectItem key={s.pricing_id} value={s.pricing_id}>
-                        {s.name} — {sym(currency)}{s.unit_price.toFixed(2)} {(s.unit || '').replace('per_', '/ ')}
+                      <SelectItem key={loc} value={loc}>
+                        {loc} ({count})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             ) : (
-              <p className="text-sm text-slate-400 text-center py-4">No services for this supplier</p>
-            )
-          )}
+              <p className="text-sm text-muted-foreground text-center py-4">No services in this category</p>
+            ))}
+
+          {location &&
+            (supplierOptions.length ? (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Supplier</Label>
+                <Select value={supplierId} onValueChange={setSupplierId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supplierOptions.map(([id, info]) => (
+                      <SelectItem key={id} value={id}>
+                        {info.name} ({info.count})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No suppliers in this location</p>
+            ))}
+
+          {supplierId &&
+            isLodgingCat &&
+            (roomOptions.length ? (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Room type</Label>
+                <Select onValueChange={pickRoom}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a room type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roomOptions.map(([occ, count]) => (
+                      <SelectItem key={occ} value={occ}>
+                        {OCCUPANCY_LABELS[occ] || occ} ({count} rate{count === 1 ? '' : 's'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  The exact rate is picked from check-in date once you enter it.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No room types for this supplier</p>
+            ))}
+
+          {supplierId &&
+            !isLodgingCat &&
+            (supplierItems.length ? (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Service</Label>
+                <Select onValueChange={pick}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supplierItems.map((s) => (
+                      <SelectItem key={s.pricing_id} value={s.pricing_id}>
+                        {s.name} — {sym(currency)}
+                        {s.unit_price.toFixed(2)} {(s.unit || '').replace('per_', '/ ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No services for this supplier</p>
+            ))}
         </div>
       </DialogContent>
     </Dialog>
@@ -321,7 +440,11 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
   // date fields (needed to resolve it) render.
   const isLodging = !!line.room_occupancy || isLodgingCategory(catName);
   const isTransfer = catName.includes('transfer');
-  const isGuided = catName.includes('tour') || catName.includes('guide') || catName.includes('excursion') || catName.includes('activity');
+  const isGuided =
+    catName.includes('tour') ||
+    catName.includes('guide') ||
+    catName.includes('excursion') ||
+    catName.includes('activity');
   const isNightly = NIGHT_UNITS.includes(line.unit);
   const isFixed = FIXED_UNITS.includes(line.unit);
   const nights = nightsBetween(line.start_date, line.end_date);
@@ -331,14 +454,15 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
   // Every rate tier for the chosen supplier + room type, and which one (if
   // any) unambiguously applies to the current check-in date.
   const roomCandidates = useMemo(
-    () => (line.room_occupancy && line.supplier_id)
-      ? services.filter(s => s.supplier_id === line.supplier_id && s.occupancy === line.room_occupancy)
-      : [],
-    [services, line.supplier_id, line.room_occupancy]
+    () =>
+      line.room_occupancy && line.supplier_id
+        ? services.filter((s) => s.supplier_id === line.supplier_id && s.occupancy === line.room_occupancy)
+        : [],
+    [services, line.supplier_id, line.room_occupancy],
   );
   const { rate: resolvedRate, candidates: rateOptions } = useMemo(
     () => resolveRoomRate(roomCandidates, line.start_date),
-    [roomCandidates, line.start_date]
+    [roomCandidates, line.start_date],
   );
 
   // Keep pricing_id in sync with whichever rate the check-in date resolves
@@ -348,13 +472,18 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
   useEffect(() => {
     if (!line.room_occupancy) return;
     if (resolvedRate && line.pricing_id !== resolvedRate.pricing_id) {
-      onChange({ ...line, pricing_id: resolvedRate.pricing_id, service_name: resolvedRate.name, unit: resolvedRate.unit });
+      onChange({
+        ...line,
+        pricing_id: resolvedRate.pricing_id,
+        service_name: resolvedRate.name,
+        unit: resolvedRate.unit,
+      });
       return;
     }
     if (!resolvedRate && line.pricing_id) {
       const stillValid = line.start_date
-        ? roomCandidates.some(c => c.pricing_id === line.pricing_id && isRateValidOn(c, line.start_date))
-        : roomCandidates.some(c => c.pricing_id === line.pricing_id);
+        ? roomCandidates.some((c) => c.pricing_id === line.pricing_id && isRateValidOn(c, line.start_date))
+        : roomCandidates.some((c) => c.pricing_id === line.pricing_id);
       if (!stillValid) onChange({ ...line, pricing_id: '' });
     }
   }, [resolvedRate?.pricing_id, roomCandidates, line.room_occupancy, line.pricing_id, line.start_date]);
@@ -389,49 +518,67 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
   const set = (field, value) => onChange({ ...line, [field]: value });
 
   return (
-    <div className="border border-slate-200 rounded-lg bg-slate-50 p-4 space-y-3">
+    <div className="border border-border rounded-lg bg-muted p-4 space-y-3">
       <div className="flex flex-wrap gap-3 items-start">
         {svc ? (
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="flex-1 min-w-[220px] flex items-center gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 transition-colors text-left"
+            className="flex-1 min-w-[220px] flex items-center gap-3 px-3 py-2.5 bg-card border border-border rounded-lg hover:border-blue-300 dark:hover:border-blue-800 transition-colors text-left"
           >
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-blue-600 font-medium">{svc.category_name || 'Other'}</div>
-              <div className="text-sm font-semibold text-slate-800 truncate">{svc.name}</div>
+              <div className="text-xs text-blue-600 dark:text-blue-300 font-medium">{svc.category_name || 'Other'}</div>
+              <div className="text-sm font-semibold text-foreground truncate">{svc.name}</div>
             </div>
-            <Pencil className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <Pencil className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           </button>
         ) : line.room_occupancy ? (
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="flex-1 min-w-[220px] flex items-center gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 transition-colors text-left"
+            className="flex-1 min-w-[220px] flex items-center gap-3 px-3 py-2.5 bg-card border border-border rounded-lg hover:border-blue-300 dark:hover:border-blue-800 transition-colors text-left"
           >
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-blue-600 font-medium">{OCCUPANCY_LABELS[line.room_occupancy] || line.room_occupancy}</div>
-              <div className="text-sm font-medium text-slate-500">
-                {line.start_date ? 'Multiple rates match these dates — pick one below' : 'Enter check-in date to find the rate'}
+              <div className="text-xs text-blue-600 dark:text-blue-300 font-medium">
+                {OCCUPANCY_LABELS[line.room_occupancy] || line.room_occupancy}
+              </div>
+              <div className="text-sm font-medium text-muted-foreground">
+                {line.start_date
+                  ? 'Multiple rates match these dates — pick one below'
+                  : 'Enter check-in date to find the rate'}
               </div>
             </div>
-            <Pencil className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <Pencil className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           </button>
         ) : (
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="flex-1 min-w-[220px] h-[70px] flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="flex-1 min-w-[220px] h-[70px] flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg text-muted-foreground hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
           >
-            <Plus className="w-4 h-4" />Choose a service
+            <Plus className="w-4 h-4" />
+            Choose a service
           </button>
         )}
-        <Button type="button" variant="ghost" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50" onClick={onRemove}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40"
+          onClick={onRemove}
+        >
           <Trash2 className="w-4 h-4" />
         </Button>
       </div>
 
-      <ServicePickerDialog open={pickerOpen} onOpenChange={setPickerOpen} services={services} currency={currency} onSelect={pickService} onSelectRoom={pickRoom} />
+      <ServicePickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        services={services}
+        currency={currency}
+        onSelect={pickService}
+        onSelectRoom={pickRoom}
+      />
 
       {(line.pricing_id || line.room_occupancy) && (
         <>
@@ -439,48 +586,77 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
             {isNightly ? (
               <>
                 <div className="space-y-1">
-                  <Label className="text-xs text-slate-500">Check-in</Label>
-                  <Input type="date" className="w-40" value={line.start_date} onChange={e => set('start_date', e.target.value)} />
+                  <Label className="text-xs text-muted-foreground">Check-in</Label>
+                  <Input
+                    type="date"
+                    className="w-40"
+                    value={line.start_date}
+                    onChange={(e) => set('start_date', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-slate-500">Check-out</Label>
-                  <Input type="date" className="w-40" value={line.end_date} onChange={e => set('end_date', e.target.value)} />
+                  <Label className="text-xs text-muted-foreground">Check-out</Label>
+                  <Input
+                    type="date"
+                    className="w-40"
+                    value={line.end_date}
+                    onChange={(e) => set('end_date', e.target.value)}
+                  />
                 </div>
               </>
             ) : (
               <div className="space-y-1">
-                <Label className="text-xs text-slate-500">Date</Label>
-                <Input type="date" className="w-40" value={line.service_date} onChange={e => set('service_date', e.target.value)} />
+                <Label className="text-xs text-muted-foreground">Date</Label>
+                <Input
+                  type="date"
+                  className="w-40"
+                  value={line.service_date}
+                  onChange={(e) => set('service_date', e.target.value)}
+                />
               </div>
             )}
             {!isFixed && (
               <div className="space-y-1">
-                <Label className="text-xs text-slate-500">{isNightly ? 'Rooms / units' : 'Quantity'}</Label>
-                <Input type="number" min={line.min_quantity || 1} className="w-28" value={line.quantity}
-                  onChange={e => set('quantity', Math.max(line.min_quantity || 1, parseInt(e.target.value) || 1))} />
+                <Label className="text-xs text-muted-foreground">{isNightly ? 'Rooms / units' : 'Quantity'}</Label>
+                <Input
+                  type="number"
+                  min={line.min_quantity || 1}
+                  className="w-28"
+                  value={line.quantity}
+                  onChange={(e) => set('quantity', Math.max(line.min_quantity || 1, parseInt(e.target.value) || 1))}
+                />
               </div>
             )}
             {isNightly && nights > 0 && (
-              <div className="flex items-end text-xs text-slate-500 pb-2">{nights} night{nights !== 1 ? 's' : ''}</div>
+              <div className="flex items-end text-xs text-muted-foreground pb-2">
+                {nights} night{nights !== 1 ? 's' : ''}
+              </div>
             )}
           </div>
 
           {line.room_occupancy && !line.pricing_id && (
             <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">Rate</Label>
+              <Label className="text-xs text-muted-foreground">Rate</Label>
               {rateOptions.length ? (
-                <Select onValueChange={pricing_id => set('pricing_id', pricing_id)}>
-                  <SelectTrigger><SelectValue placeholder={line.start_date ? 'Multiple rates match — choose one' : 'Select dates, or choose a rate'} /></SelectTrigger>
+                <Select onValueChange={(pricing_id) => set('pricing_id', pricing_id)}>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        line.start_date ? 'Multiple rates match — choose one' : 'Select dates, or choose a rate'
+                      }
+                    />
+                  </SelectTrigger>
                   <SelectContent>
-                    {rateOptions.map(r => (
+                    {rateOptions.map((r) => (
                       <SelectItem key={r.pricing_id} value={r.pricing_id}>
-                        {r.name} — {sym(currency)}{r.unit_price.toFixed(2)} {(r.unit || '').replace('per_', '/ ')}
+                        {r.name} — {sym(currency)}
+                        {r.unit_price.toFixed(2)} {(r.unit || '').replace('per_', '/ ')}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               ) : (
-                <p className="text-xs text-red-500">No rate is available for this room type.</p>
+                <p className="text-xs text-red-500 dark:text-red-300">No rate is available for this room type.</p>
               )}
             </div>
           )}
@@ -488,14 +664,26 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
           {isLodging && (
             <div className="flex flex-wrap gap-3">
               <div className="space-y-1 flex-1 min-w-[160px]">
-                <Label className="text-xs text-slate-500">Room type</Label>
-                <Input placeholder="e.g. Double" value={line.room_type} onChange={e => set('room_type', e.target.value)} />
+                <Label className="text-xs text-muted-foreground">Room type</Label>
+                <Input
+                  placeholder="e.g. Double"
+                  value={line.room_type}
+                  onChange={(e) => set('room_type', e.target.value)}
+                />
               </div>
               <div className="space-y-1 flex-1 min-w-[160px]">
-                <Label className="text-xs text-slate-500">Meal plan</Label>
-                <Select value={line.hotel_treatment} onValueChange={v => set('hotel_treatment', v)}>
-                  <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
-                  <SelectContent>{HOTEL_TREATMENTS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                <Label className="text-xs text-muted-foreground">Meal plan</Label>
+                <Select value={line.hotel_treatment} onValueChange={(v) => set('hotel_treatment', v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Optional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HOTEL_TREATMENTS.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -503,41 +691,96 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
 
           {isTransfer && (
             <div className="flex flex-wrap gap-3">
-              <Input className="flex-1 min-w-[150px]" placeholder="Pickup location" value={line.pickup_location} onChange={e => set('pickup_location', e.target.value)} />
-              <Input className="flex-1 min-w-[150px]" placeholder="Drop-off location" value={line.dropoff_location} onChange={e => set('dropoff_location', e.target.value)} />
+              <Input
+                className="flex-1 min-w-[150px]"
+                placeholder="Pickup location"
+                value={line.pickup_location}
+                onChange={(e) => set('pickup_location', e.target.value)}
+              />
+              <Input
+                className="flex-1 min-w-[150px]"
+                placeholder="Drop-off location"
+                value={line.dropoff_location}
+                onChange={(e) => set('dropoff_location', e.target.value)}
+              />
               <div className="space-y-1 min-w-[160px]">
-                <Select value={line.transfer_type} onValueChange={v => set('transfer_type', v)}>
-                  <SelectTrigger><SelectValue placeholder="Transfer type (optional)" /></SelectTrigger>
-                  <SelectContent>{TRANSFER_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                <Select value={line.transfer_type} onValueChange={(v) => set('transfer_type', v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Transfer type (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TRANSFER_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
-              <Input className="w-36" placeholder="Flight no. (optional)" value={line.flight_number} onChange={e => set('flight_number', e.target.value)} />
-              <Input type="time" className="w-32" title="Pickup time" value={line.service_time} onChange={e => set('service_time', e.target.value)} />
+              <Input
+                className="w-36"
+                placeholder="Flight no. (optional)"
+                value={line.flight_number}
+                onChange={(e) => set('flight_number', e.target.value)}
+              />
+              <Input
+                type="time"
+                className="w-32"
+                title="Pickup time"
+                value={line.service_time}
+                onChange={(e) => set('service_time', e.target.value)}
+              />
             </div>
           )}
 
           {isGuided && (
             <div className="flex flex-wrap gap-3">
-              <Input className="flex-1 min-w-[150px]" placeholder="Duration (e.g. Half day, 4 hours)" value={line.duration} onChange={e => set('duration', e.target.value)} />
-              <Input type="time" className="w-32" title="Start time" value={line.service_time} onChange={e => set('service_time', e.target.value)} />
+              <Input
+                className="flex-1 min-w-[150px]"
+                placeholder="Duration (e.g. Half day, 4 hours)"
+                value={line.duration}
+                onChange={(e) => set('duration', e.target.value)}
+              />
+              <Input
+                type="time"
+                className="w-32"
+                title="Start time"
+                value={line.service_time}
+                onChange={(e) => set('service_time', e.target.value)}
+              />
             </div>
           )}
 
           {!isLodging && !isTransfer && !isGuided && (
             <div className="flex flex-wrap gap-3">
-              <Input type="time" className="w-32" title="Time (optional)" value={line.service_time} onChange={e => set('service_time', e.target.value)} />
+              <Input
+                type="time"
+                className="w-32"
+                title="Time (optional)"
+                value={line.service_time}
+                onChange={(e) => set('service_time', e.target.value)}
+              />
             </div>
           )}
 
-          <Textarea rows={2} placeholder="Extra details for this service (optional)" value={line.details} onChange={e => set('details', e.target.value)} />
+          <Textarea
+            rows={2}
+            placeholder="Extra details for this service (optional)"
+            value={line.details}
+            onChange={(e) => set('details', e.target.value)}
+          />
 
           {line.pricing_id && (
             <div className="flex items-center justify-between text-sm pt-1">
-              <span className="text-slate-500">
-                {sym(currency)}{unitPrice.toFixed(2)} {line.unit?.replace('per_', '/ ')}
+              <span className="text-muted-foreground">
+                {sym(currency)}
+                {unitPrice.toFixed(2)} {line.unit?.replace('per_', '/ ')}
                 {isNightly && nights > 0 ? ` · ${nights} night${nights !== 1 ? 's' : ''}` : ''}
               </span>
-              <span className="font-semibold text-green-700">{sym(currency)}{lineTotal(line, unitPrice).toFixed(2)}</span>
+              <span className="font-semibold text-green-700 dark:text-green-300">
+                {sym(currency)}
+                {lineTotal(line, unitPrice).toFixed(2)}
+              </span>
             </div>
           )}
         </>
@@ -559,110 +802,137 @@ export default function ClientQuoteBuilder() {
   const actAsClientId = useActAsClientId();
 
   useEffect(() => {
-    db.auth.me().then(async (me) => {
-      let resolved = null;
-      // Staff previewing the portal "as" a client (via "View portal as
-      // client" on a CRM record) have no client_id of their own — resolve
-      // the chosen client instead, same as ClientPortal does. Submitting is
-      // still blocked server-side for staff; see isStaffPreview below.
-      const asClientId = getActAsClientId();
-      if (asClientId && me.user_tier !== 'client') {
-        resolved = await db.entities.Client.get(asClientId).catch(() => null);
-        setIsStaffPreview(true);
-      } else {
-        setIsStaffPreview(false);
-        if (me.client_id) resolved = await db.entities.Client.get(me.client_id).catch(() => null);
-        if (!resolved && me.email) {
-          const list = await db.entities.Client.filter({ email: me.email });
-          resolved = list[0] || null;
+    db.auth
+      .me()
+      .then(async (me) => {
+        let resolved = null;
+        // Staff previewing the portal "as" a client (via "View portal as
+        // client" on a CRM record) have no client_id of their own — resolve
+        // the chosen client instead, same as ClientPortal does. Submitting is
+        // still blocked server-side for staff; see isStaffPreview below.
+        const asClientId = getActAsClientId();
+        if (asClientId && me.user_tier !== 'client') {
+          resolved = await db.entities.Client.get(asClientId).catch(() => null);
+          setIsStaffPreview(true);
+        } else {
+          setIsStaffPreview(false);
+          if (me.client_id) resolved = await db.entities.Client.get(me.client_id).catch(() => null);
+          if (!resolved && me.email) {
+            const list = await db.entities.Client.filter({ email: me.email });
+            resolved = list[0] || null;
+          }
         }
-      }
-      setClient(resolved);
-      setClientLoaded(true);
-    }).catch(() => setClientLoaded(true));
+        setClient(resolved);
+        setClientLoaded(true);
+      })
+      .catch(() => setClientLoaded(true));
   }, [actAsClientId]);
 
   const currency = client?.preferred_currency || 'USD';
 
-  const { data: catalog, isLoading: catLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['b2bCatalog'],
-    queryFn: getCatalog,
-    enabled: !!client,
-  }));
+  const { data: catalog, isLoading: catLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['b2bCatalog'],
+      queryFn: getCatalog,
+      enabled: !!client,
+    })
+  );
 
   // All available services, filterable by category/location/supplier in the
   // picker. unit_price already has the client's markup applied and is
   // already converted to their preferred currency (both computed server-side).
   const services = catalog?.items || [];
-  const servicesById = useMemo(() => new Map(services.map(s => [s.pricing_id, s])), [services]);
+  const servicesById = useMemo(() => new Map(services.map((s) => [s.pricing_id, s])), [services]);
 
   // Rooms & passengers
   const setRoomOccupancy = (roomId, count) => {
     const typeMap = { 1: 'single', 2: 'double', 3: 'triple', 4: 'quad' };
-    setRooms(prev => prev.map(r => {
-      if (r.id !== roomId) return r;
-      const cur = r.passengers;
-      let passengers;
-      if (count > cur.length) passengers = [...cur, ...Array.from({ length: count - cur.length }, () => newPassenger())];
-      else if (count < cur.length) passengers = cur.slice(0, count);
-      else passengers = cur;
-      return { ...r, type: typeMap[count] || 'double', passengers };
-    }));
+    setRooms((prev) =>
+      prev.map((r) => {
+        if (r.id !== roomId) return r;
+        const cur = r.passengers;
+        let passengers;
+        if (count > cur.length)
+          passengers = [...cur, ...Array.from({ length: count - cur.length }, () => newPassenger())];
+        else if (count < cur.length) passengers = cur.slice(0, count);
+        else passengers = cur;
+        return { ...r, type: typeMap[count] || 'double', passengers };
+      }),
+    );
   };
-  const addRoom = () => setRooms(prev => [...prev, newRoom()]);
-  const removeRoom = (roomId) => setRooms(prev => (prev.length <= 1 ? prev : prev.filter(r => r.id !== roomId)));
-  const updatePax = (roomId, paxId, updated) => setRooms(prev => prev.map(r => r.id === roomId ? { ...r, passengers: r.passengers.map(p => p.id === paxId ? updated : p) } : r));
-  const setContact = (roomId, paxId) => setRooms(prev => prev.map(r => ({ ...r, passengers: r.passengers.map(p => ({ ...p, is_contact: r.id === roomId && p.id === paxId })) })));
+  const addRoom = () => setRooms((prev) => [...prev, newRoom()]);
+  const removeRoom = (roomId) => setRooms((prev) => (prev.length <= 1 ? prev : prev.filter((r) => r.id !== roomId)));
+  const updatePax = (roomId, paxId, updated) =>
+    setRooms((prev) =>
+      prev.map((r) =>
+        r.id === roomId ? { ...r, passengers: r.passengers.map((p) => (p.id === paxId ? updated : p)) } : r,
+      ),
+    );
+  const setContact = (roomId, paxId) =>
+    setRooms((prev) =>
+      prev.map((r) => ({
+        ...r,
+        passengers: r.passengers.map((p) => ({ ...p, is_contact: r.id === roomId && p.id === paxId })),
+      })),
+    );
 
-  const allPassengers = rooms.flatMap(r => r.passengers.map(p => ({ ...p, room_id: r.id, room_type: r.type })));
+  const allPassengers = rooms.flatMap((r) => r.passengers.map((p) => ({ ...p, room_id: r.id, room_type: r.type })));
 
   // Lines
-  const addLine = () => setLines(prev => [...prev, newLine()]);
-  const updateLine = (key, updated) => setLines(prev => prev.map(l => l._key === key ? updated : l));
-  const removeLine = (key) => setLines(prev => (prev.length <= 1 ? [newLine()] : prev.filter(l => l._key !== key)));
+  const addLine = () => setLines((prev) => [...prev, newLine()]);
+  const updateLine = (key, updated) => setLines((prev) => prev.map((l) => (l._key === key ? updated : l)));
+  const removeLine = (key) => setLines((prev) => (prev.length <= 1 ? [newLine()] : prev.filter((l) => l._key !== key)));
 
-  const validLines = lines.filter(l => l.pricing_id);
-  const total = useMemo(() => validLines.reduce((sum, l) => {
-    const unitPrice = servicesById.get(l.pricing_id)?.unit_price || 0;
-    return sum + lineTotal(l, unitPrice);
-  }, 0), [validLines, servicesById]);
+  const validLines = lines.filter((l) => l.pricing_id);
+  const total = useMemo(
+    () =>
+      validLines.reduce((sum, l) => {
+        const unitPrice = servicesById.get(l.pricing_id)?.unit_price || 0;
+        return sum + lineTotal(l, unitPrice);
+      }, 0),
+    [validLines, servicesById],
+  );
 
-  const submitMutation = /** @type {any} */ (useMutation({
-    mutationFn: () => submitQuote({
-      title: trip.title || 'Quote request',
-      destination: trip.destination,
-      start_date: trip.start_date,
-      end_date: trip.end_date,
-      notes: trip.notes,
-      passengers: allPassengers,
-      items: validLines.map(l => ({
-        pricing_id: l.pricing_id,
-        quantity: l.quantity || 1,
-        start_date: l.start_date || l.service_date || undefined,
-        end_date: l.end_date || l.service_date || undefined,
-        room_type: l.room_type || undefined,
-        pickup_location: l.pickup_location || undefined,
-        dropoff_location: l.dropoff_location || undefined,
-        flight_number: l.flight_number || undefined,
-        service_time: l.service_time || undefined,
-        details: [l.hotel_treatment, l.transfer_type, l.duration, l.details].filter(Boolean).join(' · ') || undefined,
-      })),
-    }),
-    onSuccess: (quote) => {
-      showSuccess('Quote request submitted');
-      queryClient.invalidateQueries({ queryKey: ['myQuotes'] });
-      navigate(createPageUrl(`ClientQuoteDetails?id=${quote.id}`));
-    },
-    onError: (error) => showError('Failed to submit quote request', error.message),
-  }));
+  const submitMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () =>
+        submitQuote({
+          title: trip.title || 'Quote request',
+          destination: trip.destination,
+          start_date: trip.start_date,
+          end_date: trip.end_date,
+          notes: trip.notes,
+          passengers: allPassengers,
+          items: validLines.map((l) => ({
+            pricing_id: l.pricing_id,
+            quantity: l.quantity || 1,
+            start_date: l.start_date || l.service_date || undefined,
+            end_date: l.end_date || l.service_date || undefined,
+            room_type: l.room_type || undefined,
+            pickup_location: l.pickup_location || undefined,
+            dropoff_location: l.dropoff_location || undefined,
+            flight_number: l.flight_number || undefined,
+            service_time: l.service_time || undefined,
+            details:
+              [l.hotel_treatment, l.transfer_type, l.duration, l.details].filter(Boolean).join(' · ') || undefined,
+          })),
+        }),
+      onSuccess: (quote) => {
+        showSuccess('Quote request submitted');
+        queryClient.invalidateQueries({ queryKey: ['myQuotes'] });
+        navigate(createPageUrl(`ClientQuoteDetails?id=${quote.id}`));
+      },
+      onError: (error) => showError('Failed to submit quote request', error.message),
+    })
+  );
 
   if (!clientLoaded || (client && catLoading)) return <SkeletonCard />;
 
   if (!client) {
     return (
       <Card className="max-w-md mx-auto p-8 text-center mt-10">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Account not ready</h2>
-        <p className="text-slate-600">Your client account is being set up. Please contact your travel agent.</p>
+        <h2 className="text-xl font-bold text-foreground mb-2">Account not ready</h2>
+        <p className="text-muted-foreground">Your client account is being set up. Please contact your travel agent.</p>
       </Card>
     );
   }
@@ -670,66 +940,105 @@ export default function ClientQuoteBuilder() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Request a Quote</h1>
-        <p className="text-slate-500 mt-1 flex items-center gap-2">
+        <h1 className="text-3xl font-bold text-foreground">Request a Quote</h1>
+        <p className="text-muted-foreground mt-1 flex items-center gap-2">
           Build your trip and send it to us for pricing
-          <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
             <ArrowRightLeft className="w-3 h-3" /> Prices in {currency}
           </span>
         </p>
       </div>
 
       {/* Trip details */}
-      <Card className="p-6 bg-white shadow-md">
-        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" />Trip Details</h2>
+      <Card className="p-6 bg-card shadow-md">
+        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-300" />
+          Trip Details
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2 md:col-span-2">
             <Label>Trip title</Label>
-            <Input value={trip.title} onChange={e => setTrip({ ...trip, title: e.target.value })} placeholder="e.g. Summer in Cappadocia" />
+            <Input
+              value={trip.title}
+              onChange={(e) => setTrip({ ...trip, title: e.target.value })}
+              placeholder="e.g. Summer in Cappadocia"
+            />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Destination</Label>
             <LocationSearch
               value={trip.destination}
-              onChange={v => setTrip({ ...trip, destination: v })}
+              onChange={(v) => setTrip({ ...trip, destination: v })}
               placeholder="e.g. Istanbul & Cappadocia"
             />
           </div>
           <div className="space-y-2">
             <Label>Start date</Label>
-            <Input type="date" value={trip.start_date} onChange={e => setTrip({ ...trip, start_date: e.target.value })} />
+            <Input
+              type="date"
+              value={trip.start_date}
+              onChange={(e) => setTrip({ ...trip, start_date: e.target.value })}
+            />
           </div>
           <div className="space-y-2">
             <Label>End date</Label>
-            <Input type="date" value={trip.end_date} onChange={e => setTrip({ ...trip, end_date: e.target.value })} />
+            <Input type="date" value={trip.end_date} onChange={(e) => setTrip({ ...trip, end_date: e.target.value })} />
           </div>
         </div>
       </Card>
 
       {/* Rooms & passengers */}
-      <Card className="p-6 bg-white shadow-md">
+      <Card className="p-6 bg-card shadow-md">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Users className="w-4 h-4 text-blue-600" />Rooms & Passengers</h2>
-          <Button type="button" size="sm" variant="outline" onClick={addRoom}><Plus className="w-4 h-4 mr-1" />Add room</Button>
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Users className="w-4 h-4 text-blue-600 dark:text-blue-300" />
+            Rooms & Passengers
+          </h2>
+          <Button type="button" size="sm" variant="outline" onClick={addRoom}>
+            <Plus className="w-4 h-4 mr-1" />
+            Add room
+          </Button>
         </div>
         <div className="space-y-4">
           {rooms.map((room, ri) => (
-            <div key={room.id} className="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2 bg-slate-100 border-b border-slate-200">
+            <div key={room.id} className="border border-border rounded-lg bg-muted overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-muted border-b border-border">
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold text-slate-700 text-sm">Room {ri + 1}</span>
-                  <Select value={String(room.passengers.length)} onValueChange={v => setRoomOccupancy(room.id, parseInt(v))}>
-                    <SelectTrigger className="w-32 h-8 text-xs bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>{[1, 2, 3, 4].map(n => <SelectItem key={n} value={String(n)}>{n} Person{n > 1 ? 's' : ''}</SelectItem>)}</SelectContent>
+                  <span className="font-semibold text-foreground text-sm">Room {ri + 1}</span>
+                  <Select
+                    value={String(room.passengers.length)}
+                    onValueChange={(v) => setRoomOccupancy(room.id, parseInt(v))}
+                  >
+                    <SelectTrigger className="w-32 h-8 text-xs bg-card">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4].map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n} Person{n > 1 ? 's' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
-                <Button type="button" size="sm" variant="ghost" className="h-7 text-red-500 hover:text-red-700" onClick={() => removeRoom(room.id)}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-red-500 dark:text-red-300 hover:text-red-700 dark:hover:text-red-300"
+                  onClick={() => removeRoom(room.id)}
+                >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
               <div className="p-3 space-y-2">
-                {room.passengers.map(pax => (
-                  <PaxRow key={pax.id} pax={pax} onChange={u => updatePax(room.id, pax.id, u)} onSetContact={() => setContact(room.id, pax.id)} />
+                {room.passengers.map((pax) => (
+                  <PaxRow
+                    key={pax.id}
+                    pax={pax}
+                    onChange={(u) => updatePax(room.id, pax.id, u)}
+                    onSetContact={() => setContact(room.id, pax.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -738,42 +1047,81 @@ export default function ClientQuoteBuilder() {
       </Card>
 
       {/* Services */}
-      <Card className="p-6 bg-white shadow-md">
+      <Card className="p-6 bg-card shadow-md">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Building className="w-4 h-4 text-blue-600" />Services</h2>
-          <Button type="button" size="sm" variant="outline" onClick={addLine} disabled={services.length === 0}><Plus className="w-4 h-4 mr-1" />Add service</Button>
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Building className="w-4 h-4 text-blue-600 dark:text-blue-300" />
+            Services
+          </h2>
+          <Button type="button" size="sm" variant="outline" onClick={addLine} disabled={services.length === 0}>
+            <Plus className="w-4 h-4 mr-1" />
+            Add service
+          </Button>
         </div>
         {services.length === 0 ? (
-          <p className="text-slate-500 text-center py-6">No services are available in your portal yet. Please contact your travel agent.</p>
+          <p className="text-muted-foreground text-center py-6">
+            No services are available in your portal yet. Please contact your travel agent.
+          </p>
         ) : (
           <div className="space-y-4">
-            {lines.map(line => (
-              <ServiceLineCard key={line._key} line={line} services={services} servicesById={servicesById} currency={currency}
-                onChange={u => updateLine(line._key, u)} onRemove={() => removeLine(line._key)} />
+            {lines.map((line) => (
+              <ServiceLineCard
+                key={line._key}
+                line={line}
+                services={services}
+                servicesById={servicesById}
+                currency={currency}
+                onChange={(u) => updateLine(line._key, u)}
+                onRemove={() => removeLine(line._key)}
+              />
             ))}
           </div>
         )}
       </Card>
 
       {/* Notes + summary */}
-      <Card className="p-6 bg-white shadow-md">
+      <Card className="p-6 bg-card shadow-md">
         <div className="space-y-2 mb-4">
           <Label>Notes (optional)</Label>
-          <Textarea rows={3} value={trip.notes} onChange={e => setTrip({ ...trip, notes: e.target.value })} placeholder="Anything else we should know..." />
+          <Textarea
+            rows={3}
+            value={trip.notes}
+            onChange={(e) => setTrip({ ...trip, notes: e.target.value })}
+            placeholder="Anything else we should know..."
+          />
         </div>
         <Separator className="mb-4" />
         <div className="flex items-center justify-between mb-4">
-          <span className="text-lg font-bold text-slate-900">Estimated total</span>
-          <span className="text-2xl font-bold text-green-700">{sym(currency)}{total.toFixed(2)}</span>
+          <span className="text-lg font-bold text-foreground">Estimated total</span>
+          <span className="text-2xl font-bold text-green-700 dark:text-green-300">
+            {sym(currency)}
+            {total.toFixed(2)}
+          </span>
         </div>
-        <p className="text-xs text-slate-400 mb-4">This is an estimate in {currency}. Your final quote is confirmed by our team after review.</p>
+        <p className="text-xs text-muted-foreground mb-4">
+          This is an estimate in {currency}. Your final quote is confirmed by our team after review.
+        </p>
         {isStaffPreview ? (
-          <p className="text-center text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg py-2.5">
+          <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">
             Staff preview is read-only — sign in as the client to submit a quote request.
           </p>
         ) : (
-          <Button className="w-full bg-blue-600 hover:bg-blue-700" disabled={validLines.length === 0 || submitMutation.isPending} onClick={() => submitMutation.mutate()}>
-            {submitMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : <><Send className="w-4 h-4 mr-2" />Submit Quote Request</>}
+          <Button
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            disabled={validLines.length === 0 || submitMutation.isPending}
+            onClick={() => submitMutation.mutate()}
+          >
+            {submitMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Submit Quote Request
+              </>
+            )}
           </Button>
         )}
       </Card>

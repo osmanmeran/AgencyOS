@@ -63,9 +63,9 @@ export default function TestingArea() {
   if (!user || (user.user_tier !== 'admin' && user.role !== 'admin')) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <Shield className="w-16 h-16 text-slate-300 mb-4" />
-        <h2 className="text-xl font-semibold text-slate-600">Admin Access Required</h2>
-        <p className="text-slate-400 mt-2">This area is restricted to administrators.</p>
+        <Shield className="w-16 h-16 text-muted-foreground mb-4" />
+        <h2 className="text-xl font-semibold text-muted-foreground">Admin Access Required</h2>
+        <p className="text-muted-foreground mt-2">This area is restricted to administrators.</p>
       </div>
     );
   }
@@ -75,7 +75,7 @@ export default function TestingArea() {
       <div className="flex items-start justify-between">
         <div>
           <h3 className="font-semibold text-lg">{title}</h3>
-          {description && <p className="text-sm text-slate-500 mt-1">{description}</p>}
+          {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
         </div>
         {action && (
           <Button size="sm" variant="outline" onClick={() => runTest(testKey, action)} disabled={loading[testKey]}>
@@ -91,7 +91,7 @@ export default function TestingArea() {
       {children}
       {results[testKey] && (
         <div
-          className={`rounded-lg p-3 text-sm font-mono ${results[testKey].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}
+          className={`rounded-lg p-3 text-sm font-mono ${results[testKey].status === 'pass' ? 'bg-green-50 dark:bg-green-950/40 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'}`}
         >
           <div className="flex items-center gap-1 mb-1">
             {results[testKey].status === 'pass' ? (
@@ -111,12 +111,12 @@ export default function TestingArea() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="bg-amber-100 p-2.5 rounded-xl">
-          <Shield className="w-6 h-6 text-amber-700" />
+        <div className="bg-amber-100 dark:bg-amber-900/40 p-2.5 rounded-xl">
+          <Shield className="w-6 h-6 text-amber-700 dark:text-amber-300" />
         </div>
         <div>
           <h1 className="text-2xl font-bold">Testing Area</h1>
-          <p className="text-sm text-slate-500">Admin-only tools for testing and verifying system features</p>
+          <p className="text-sm text-muted-foreground">Admin-only tools for testing and verifying system features</p>
         </div>
       </div>
 
@@ -139,7 +139,7 @@ export default function TestingArea() {
                 return data;
               }}
             >
-              <div className="flex items-center gap-2 text-sm text-slate-600">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="w-4 h-4" />
                 Sends a test email using the configured SMTP provider
               </div>
@@ -155,7 +155,7 @@ export default function TestingArea() {
                 return data;
               }}
             >
-              <div className="flex items-center gap-2 text-sm text-slate-600">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <FileText className="w-4 h-4" />
                 Generates a sample proposal PDF
               </div>
@@ -181,7 +181,7 @@ export default function TestingArea() {
                 return data;
               }}
             >
-              <div className="flex items-center gap-2 text-sm text-slate-600">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Upload className="w-4 h-4" />
                 Uploads a small test file and returns the document record
               </div>
@@ -194,7 +194,7 @@ export default function TestingArea() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-semibold text-lg">Create Test Users</h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Provision temporary users for each tier to test permission boundaries
                 </p>
               </div>
@@ -220,7 +220,7 @@ export default function TestingArea() {
             </div>
             {results['createTestUsers'] && (
               <div
-                className={`rounded-lg p-3 text-sm font-mono ${results['createTestUsers'].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}
+                className={`rounded-lg p-3 text-sm font-mono ${results['createTestUsers'].status === 'pass' ? 'bg-green-50 dark:bg-green-950/40 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'}`}
               >
                 <pre className="whitespace-pre-wrap text-xs">
                   {JSON.stringify(results['createTestUsers'].data, null, 2)}
@@ -262,7 +262,7 @@ export default function TestingArea() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-semibold text-lg">Clean Up Test Users</h3>
-                <p className="text-sm text-slate-500 mt-1">Remove all test users created in the testing area</p>
+                <p className="text-sm text-muted-foreground mt-1">Remove all test users created in the testing area</p>
               </div>
               <Button
                 size="sm"
@@ -286,7 +286,7 @@ export default function TestingArea() {
             </div>
             {results['cleanupTestUsers'] && (
               <div
-                className={`rounded-lg p-3 text-sm font-mono mt-4 ${results['cleanupTestUsers'].status === 'pass' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}
+                className={`rounded-lg p-3 text-sm font-mono mt-4 ${results['cleanupTestUsers'].status === 'pass' ? 'bg-green-50 dark:bg-green-950/40 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'}`}
               >
                 <pre className="whitespace-pre-wrap text-xs">
                   {JSON.stringify(results['cleanupTestUsers'].data, null, 2)}
@@ -308,7 +308,7 @@ export default function TestingArea() {
                 return data;
               }}
             >
-              <div className="flex items-center gap-2 text-sm text-slate-600">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Database className="w-4 h-4" />
                 Verifies DB connectivity and applied migrations
               </div>
@@ -333,7 +333,7 @@ export default function TestingArea() {
                 return { endpoints: results };
               }}
             >
-              <div className="flex items-center gap-2 text-sm text-slate-600">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <RefreshCw className="w-4 h-4" />
                 Pings key API routes to verify they respond
               </div>

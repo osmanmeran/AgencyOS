@@ -16,18 +16,53 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  ArrowLeft, Plus, MapPin, Clock, Trash2, Edit2, CalendarDays,
-  Building2, Star, Search, ChevronLeft, ChevronRight, Plane, Hotel,
-  Car, Activity, Utensils, Camera, X, Check
+  ArrowLeft,
+  Plus,
+  MapPin,
+  Clock,
+  Trash2,
+  Edit2,
+  CalendarDays,
+  Building2,
+  Star,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Plane,
+  Hotel,
+  Car,
+  Activity,
+  Utensils,
+  Camera,
+  X,
+  Check,
 } from 'lucide-react';
 
 const CATEGORY_ICONS = {
-  flight: { icon: Plane, color: 'bg-sky-100 text-sky-700 border-sky-200' },
-  hotel: { icon: Hotel, color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  transfer: { icon: Car, color: 'bg-slate-100 text-slate-600 border-slate-200' },
-  activity: { icon: Activity, color: 'bg-green-100 text-green-700 border-green-200' },
-  restaurant: { icon: Utensils, color: 'bg-rose-100 text-rose-700 border-rose-200' },
-  sightseeing: { icon: Camera, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  flight: {
+    icon: Plane,
+    color: 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+  },
+  hotel: {
+    icon: Hotel,
+    color:
+      'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+  },
+  transfer: { icon: Car, color: 'bg-muted text-muted-foreground border-border' },
+  activity: {
+    icon: Activity,
+    color:
+      'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
+  },
+  restaurant: {
+    icon: Utensils,
+    color: 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+  },
+  sightseeing: {
+    icon: Camera,
+    color:
+      'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+  },
 };
 
 function detectCategory(title = '', desc = '') {
@@ -35,15 +70,24 @@ function detectCategory(title = '', desc = '') {
   if (t.includes('flight') || t.includes('airport')) return 'flight';
   if (t.includes('hotel') || t.includes('check-in') || t.includes('resort')) return 'hotel';
   if (t.includes('transfer') || t.includes('taxi') || t.includes('pickup')) return 'transfer';
-  if (t.includes('lunch') || t.includes('dinner') || t.includes('restaurant') || t.includes('breakfast')) return 'restaurant';
+  if (t.includes('lunch') || t.includes('dinner') || t.includes('restaurant') || t.includes('breakfast'))
+    return 'restaurant';
   if (t.includes('tour') || t.includes('museum') || t.includes('sightseeing')) return 'sightseeing';
   return 'activity';
 }
 
 const EMPTY_FORM = {
-  title: '', date: '', time: '', location: '',
-  description: '', supplier_id: '', service_id: '',
-  pricing_id: '', quantity: 1, cost: '', supplier_cost: ''
+  title: '',
+  date: '',
+  time: '',
+  location: '',
+  description: '',
+  supplier_id: '',
+  service_id: '',
+  pricing_id: '',
+  quantity: 1,
+  cost: '',
+  supplier_cost: '',
 };
 
 export default function ItineraryBuilder() {
@@ -56,32 +100,56 @@ export default function ItineraryBuilder() {
   const [_selectedDay, setSelectedDay] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['trips'], queryFn: () => db.entities.Trip.list('-start_date') }));
-  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list() }));
-  const { data: allServices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierServices'], queryFn: () => db.entities.SupplierService.list() }));
-  const { data: allPricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierPricings'], queryFn: () => db.entities.SupplierPricing.list() }));
-  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({ queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list() }));
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({ queryKey: ['trips'], queryFn: () => db.entities.Trip.list('-start_date') })
+  );
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({ queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list() })
+  );
+  const { data: allServices = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({ queryKey: ['supplierServices'], queryFn: () => db.entities.SupplierService.list() })
+  );
+  const { data: allPricings = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({ queryKey: ['supplierPricings'], queryFn: () => db.entities.SupplierPricing.list() })
+  );
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({ queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list() })
+  );
 
-  const selectedTrip = trips.find(t => t.id === selectedTripId);
+  const selectedTrip = trips.find((t) => t.id === selectedTripId);
 
-  const { data: events = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['itineraryEvents', selectedTripId],
-    queryFn: () => db.entities.ItineraryEvent.filter({ trip_id: selectedTripId }),
-    enabled: !!selectedTripId
-  }));
+  const { data: events = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['itineraryEvents', selectedTripId],
+      queryFn: () => db.entities.ItineraryEvent.filter({ trip_id: selectedTripId }),
+      enabled: !!selectedTripId,
+    })
+  );
 
-  const createMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.ItineraryEvent.create({ ...data, trip_id: selectedTripId }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] }); closeModal(); }
-  }));
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ItineraryEvent.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] }); closeModal(); }
-  }));
-  const deleteMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ id) => db.entities.ItineraryEvent.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] })
-  }));
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.ItineraryEvent.create({ ...data, trip_id: selectedTripId }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] });
+        closeModal();
+      },
+    })
+  );
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ItineraryEvent.update(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] });
+        closeModal();
+      },
+    })
+  );
+  const deleteMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ id) => db.entities.ItineraryEvent.delete(id),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itineraryEvents', selectedTripId] }),
+    })
+  );
 
   // Days of trip
   const tripDays = useMemo(() => {
@@ -106,7 +174,7 @@ export default function ItineraryBuilder() {
   const filteredSuppliers = useMemo(() => {
     if (!supplierSearch.trim()) return suppliers.slice(0, 20);
     const q = supplierSearch.toLowerCase();
-    return suppliers.filter(s => s.name?.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q));
+    return suppliers.filter((s) => s.name?.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q));
   }, [suppliers, supplierSearch]);
 
   const openAddModal = (date) => {
@@ -130,9 +198,9 @@ export default function ItineraryBuilder() {
       pricing_id: event.pricing_id || '',
       quantity: event.quantity || 1,
       cost: event.cost || '',
-      supplier_cost: event.supplier_cost || ''
+      supplier_cost: event.supplier_cost || '',
     });
-    const supplier = suppliers.find(s => s.id === event.supplier_id);
+    const supplier = suppliers.find((s) => s.id === event.supplier_id);
     setSupplierSearch(supplier?.name || '');
     setModalOpen(true);
   };
@@ -145,9 +213,9 @@ export default function ItineraryBuilder() {
   };
 
   const selectSupplier = (supplier) => {
-    const supplierServices = allServices.filter(s => s.supplier_id === supplier.id);
+    const supplierServices = allServices.filter((s) => s.supplier_id === supplier.id);
     const location = supplier.city || supplier.address || '';
-    setFormData(f => ({
+    setFormData((f) => ({
       ...f,
       supplier_id: supplier.id,
       location: f.location || location,
@@ -159,16 +227,23 @@ export default function ItineraryBuilder() {
   };
 
   const handlePricingChange = (pricingId) => {
-    const pricing = allPricings.find(p => p.id === pricingId);
+    const pricing = allPricings.find((p) => p.id === pricingId);
     if (pricing) {
-      const cp = pricing.client_price > 0 ? pricing.client_price : pricing.base_price * (1 + (pricing.markup_percentage || 0) / 100);
-      setFormData(/** @type {any} */ (f => ({
-        ...f,
-        pricing_id: pricingId,
-        supplier_id: f.supplier_id || pricing.supplier_id,
-        supplier_cost: pricing.base_price * (f.quantity || 1),
-        cost: cp * (f.quantity || 1)
-      })));
+      const cp =
+        pricing.client_price > 0
+          ? pricing.client_price
+          : pricing.base_price * (1 + (pricing.markup_percentage || 0) / 100);
+      setFormData(
+        /** @type {any} */ (
+          (f) => ({
+            ...f,
+            pricing_id: pricingId,
+            supplier_id: f.supplier_id || pricing.supplier_id,
+            supplier_cost: pricing.base_price * (f.quantity || 1),
+            cost: cp * (f.quantity || 1),
+          })
+        ),
+      );
     }
   };
 
@@ -177,16 +252,16 @@ export default function ItineraryBuilder() {
     const data = {
       ...formData,
       cost: formData.cost ? parseFloat(formData.cost) : undefined,
-      supplier_cost: formData.supplier_cost ? parseFloat(formData.supplier_cost) : undefined
+      supplier_cost: formData.supplier_cost ? parseFloat(formData.supplier_cost) : undefined,
     };
     if (editingEvent) updateMutation.mutate({ id: editingEvent.id, data });
     else createMutation.mutate(data);
   };
 
-  const selectedSupplier = suppliers.find(s => s.id === formData.supplier_id);
-  const supplierServices = allServices.filter(s => s.supplier_id === formData.supplier_id);
-  const supplierPricings = allPricings.filter(p => p.supplier_id === formData.supplier_id && p.is_active !== false);
-  const supplierCategory = selectedSupplier ? categories.find(c => c.id === selectedSupplier.category_id) : null;
+  const selectedSupplier = suppliers.find((s) => s.id === formData.supplier_id);
+  const supplierServices = allServices.filter((s) => s.supplier_id === formData.supplier_id);
+  const supplierPricings = allPricings.filter((p) => p.supplier_id === formData.supplier_id && p.is_active !== false);
+  const supplierCategory = selectedSupplier ? categories.find((c) => c.id === selectedSupplier.category_id) : null;
 
   return (
     <div className="space-y-6">
@@ -194,29 +269,38 @@ export default function ItineraryBuilder() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <Link to={createPageUrl('Reservations')}>
-            <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <CalendarDays className="w-6 h-6 text-blue-600" />
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <CalendarDays className="w-6 h-6 text-blue-600 dark:text-blue-300" />
               Itinerary Builder
             </h1>
-            <p className="text-slate-500 text-sm">Map out daily events linked to your supplier database</p>
+            <p className="text-muted-foreground text-sm">Map out daily events linked to your supplier database</p>
           </div>
         </div>
 
         <div className="w-80">
-          <Select value={selectedTripId} onValueChange={(v) => { setSelectedTripId(v); setDayOffset(0); }}>
-            <SelectTrigger className="bg-white shadow-sm">
+          <Select
+            value={selectedTripId}
+            onValueChange={(v) => {
+              setSelectedTripId(v);
+              setDayOffset(0);
+            }}
+          >
+            <SelectTrigger className="bg-card shadow-sm">
               <SelectValue placeholder="Select a trip to plan..." />
             </SelectTrigger>
             <SelectContent>
-              {trips.map(t => (
+              {trips.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
                   <div className="flex flex-col">
                     <span className="font-medium">{t.name}</span>
-                    <span className="text-xs text-slate-500">
-                      {t.destination} · {format(parseISO(t.start_date), 'MMM d')}–{format(parseISO(t.end_date), 'MMM d, yyyy')}
+                    <span className="text-xs text-muted-foreground">
+                      {t.destination} · {format(parseISO(t.start_date), 'MMM d')}–
+                      {format(parseISO(t.end_date), 'MMM d, yyyy')}
                     </span>
                   </div>
                 </SelectItem>
@@ -229,31 +313,38 @@ export default function ItineraryBuilder() {
       {!selectedTrip ? (
         <div className="flex items-center justify-center py-32">
           <div className="text-center">
-            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-blue-50 dark:bg-blue-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
               <CalendarDays className="w-10 h-10 text-blue-400" />
             </div>
-            <h2 className="text-xl font-bold text-slate-700 mb-2">Select a trip to get started</h2>
-            <p className="text-slate-500 max-w-sm text-sm">Choose a trip from the dropdown to start building a day-by-day itinerary with supplier-linked events.</p>
+            <h2 className="text-xl font-bold text-foreground mb-2">Select a trip to get started</h2>
+            <p className="text-muted-foreground max-w-sm text-sm">
+              Choose a trip from the dropdown to start building a day-by-day itinerary with supplier-linked events.
+            </p>
           </div>
         </div>
       ) : (
         <>
           {/* Trip info bar */}
-          <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <Card className="p-4 bg-gradient-to-r from-blue-50 dark:from-blue-950/40 to-indigo-50 dark:to-indigo-950/40 border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-blue-700 font-semibold">
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-semibold">
                   <MapPin className="w-4 h-4" />
                   {selectedTrip.destination}
                 </div>
-                <div className="flex items-center gap-1.5 text-blue-600 text-sm">
+                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-300 text-sm">
                   <Clock className="w-3.5 h-3.5" />
-                  {format(parseISO(selectedTrip.start_date), 'MMM d')} – {format(parseISO(selectedTrip.end_date), 'MMM d, yyyy')}
-                  <span className="text-blue-400">· {tripDays.length} day{tripDays.length !== 1 ? 's' : ''}</span>
+                  {format(parseISO(selectedTrip.start_date), 'MMM d')} –{' '}
+                  {format(parseISO(selectedTrip.end_date), 'MMM d, yyyy')}
+                  <span className="text-blue-400">
+                    · {tripDays.length} day{tripDays.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200">{selectedTrip.status}</Badge>
+                <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  {selectedTrip.status}
+                </Badge>
               </div>
-              <div className="text-sm text-blue-600 font-medium">
+              <div className="text-sm text-blue-600 dark:text-blue-300 font-medium">
                 {events.length} event{events.length !== 1 ? 's' : ''} planned
               </div>
             </div>
@@ -262,7 +353,8 @@ export default function ItineraryBuilder() {
           {/* Day columns navigator */}
           <div className="flex items-center gap-2">
             <Button
-              variant="outline" size="icon"
+              variant="outline"
+              size="icon"
               onClick={() => setDayOffset(Math.max(0, dayOffset - 1))}
               disabled={dayOffset === 0}
             >
@@ -272,7 +364,9 @@ export default function ItineraryBuilder() {
             <div className="flex-1 grid gap-3" style={{ gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)` }}>
               {visibleDays.map((day, idx) => {
                 const dateKey = format(day, 'yyyy-MM-dd');
-                const dayEvents = (eventsByDate[dateKey] || []).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+                const dayEvents = (eventsByDate[dateKey] || []).sort((a, b) =>
+                  (a.time || '').localeCompare(b.time || ''),
+                );
                 const dayNum = dayOffset + idx + 1;
 
                 return (
@@ -294,52 +388,62 @@ export default function ItineraryBuilder() {
                     </div>
 
                     {/* Events */}
-                    <div className="flex-1 bg-slate-50 rounded-b-xl border border-t-0 border-slate-200 p-2 space-y-2">
+                    <div className="flex-1 bg-muted rounded-b-xl border border-t-0 border-border p-2 space-y-2">
                       {dayEvents.length === 0 ? (
                         <button
                           onClick={() => openAddModal(day)}
-                          className="w-full h-full min-h-[80px] border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-colors text-xs"
+                          className="w-full h-full min-h-[80px] border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors text-xs"
                         >
                           <Plus className="w-4 h-4" />
                           Add event
                         </button>
                       ) : (
                         <>
-                          {dayEvents.map(event => {
+                          {dayEvents.map((event) => {
                             const cat = detectCategory(event.title, event.description);
                             const catConfig = CATEGORY_ICONS[cat];
                             const CatIcon = catConfig.icon;
-                            const supplier = suppliers.find(s => s.id === event.supplier_id);
+                            const supplier = suppliers.find((s) => s.id === event.supplier_id);
                             return (
                               <div
                                 key={event.id}
-                                className="bg-white rounded-lg border border-slate-200 p-2.5 shadow-sm group hover:border-blue-300 hover:shadow-md transition-all"
+                                className="bg-card rounded-lg border border-border p-2.5 shadow-sm group hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-md transition-all"
                               >
                                 <div className="flex items-start justify-between gap-1 mb-1">
                                   <div className={`p-1 rounded-md ${catConfig.color}`}>
                                     <CatIcon className="w-3 h-3" />
                                   </div>
                                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openEditModal(event)} className="p-1 hover:text-blue-600 text-slate-400 rounded">
+                                    <button
+                                      onClick={() => openEditModal(event)}
+                                      className="p-1 hover:text-blue-600 dark:hover:text-blue-300 text-muted-foreground rounded"
+                                    >
                                       <Edit2 className="w-3 h-3" />
                                     </button>
-                                    <button onClick={() => deleteMutation.mutate(event.id)} className="p-1 hover:text-red-500 text-slate-400 rounded">
+                                    <button
+                                      onClick={() => deleteMutation.mutate(event.id)}
+                                      className="p-1 hover:text-red-500 dark:hover:text-red-300 text-muted-foreground rounded"
+                                    >
                                       <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 </div>
                                 {event.time && (
-                                  <div className="text-xs text-blue-600 font-medium mb-0.5">{event.time}</div>
+                                  <div className="text-xs text-blue-600 dark:text-blue-300 font-medium mb-0.5">
+                                    {event.time}
+                                  </div>
                                 )}
-                                <div className="text-xs font-semibold text-slate-800 leading-tight line-clamp-2">{event.title}</div>
+                                <div className="text-xs font-semibold text-foreground leading-tight line-clamp-2">
+                                  {event.title}
+                                </div>
                                 {event.location && (
-                                  <div className="flex items-center gap-0.5 text-slate-400 text-xs mt-1 truncate">
+                                  <div className="flex items-center gap-0.5 text-muted-foreground text-xs mt-1 truncate">
                                     <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
                                     <span className="truncate">{event.location}</span>
                                   </div>
                                 )}
                                 {supplier && (
-                                  <div className="flex items-center gap-0.5 text-xs text-blue-500 mt-1 truncate">
+                                  <div className="flex items-center gap-0.5 text-xs text-blue-500 dark:text-blue-300 mt-1 truncate">
                                     <Building2 className="w-2.5 h-2.5 flex-shrink-0" />
                                     <span className="truncate">{supplier.name}</span>
                                   </div>
@@ -349,7 +453,7 @@ export default function ItineraryBuilder() {
                           })}
                           <button
                             onClick={() => openAddModal(day)}
-                            className="w-full border border-dashed border-slate-300 rounded-lg py-1.5 flex items-center justify-center gap-1 text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-colors text-xs"
+                            className="w-full border border-dashed border-border rounded-lg py-1.5 flex items-center justify-center gap-1 text-muted-foreground hover:border-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors text-xs"
                           >
                             <Plus className="w-3 h-3" /> Add
                           </button>
@@ -362,7 +466,8 @@ export default function ItineraryBuilder() {
             </div>
 
             <Button
-              variant="outline" size="icon"
+              variant="outline"
+              size="icon"
               onClick={() => setDayOffset(Math.min(tripDays.length - VISIBLE, dayOffset + 1))}
               disabled={dayOffset + VISIBLE >= tripDays.length}
             >
@@ -377,7 +482,7 @@ export default function ItineraryBuilder() {
                 <button
                   key={i}
                   onClick={() => setDayOffset(i * VISIBLE)}
-                  className={`w-2 h-2 rounded-full transition-colors ${Math.floor(dayOffset / VISIBLE) === i ? 'bg-blue-600' : 'bg-slate-300'}`}
+                  className={`w-2 h-2 rounded-full transition-colors ${Math.floor(dayOffset / VISIBLE) === i ? 'bg-blue-600' : 'bg-muted-foreground/40'}`}
                 />
               ))}
             </div>
@@ -386,72 +491,99 @@ export default function ItineraryBuilder() {
           {/* Full itinerary summary */}
           {events.length > 0 && (
             <Card className="p-5">
-              <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-blue-600" />
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-blue-600 dark:text-blue-300" />
                 Full Itinerary Summary
               </h3>
               <div className="space-y-5">
-                {Object.keys(eventsByDate).sort().map((dateKey, idx) => {
-                  const dayEvents = eventsByDate[dateKey].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-                  return (
-                    <div key={dateKey}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-semibold text-white bg-blue-600 px-2.5 py-1 rounded-full">
-                          Day {idx + 1} · {format(parseISO(dateKey), 'EEE, MMM d')}
-                        </span>
-                        <div className="flex-1 h-px bg-slate-100" />
-                      </div>
-                      <div className="space-y-2 ml-2 pl-4 border-l-2 border-blue-100">
-                        {dayEvents.map(event => {
-                          const supplier = suppliers.find(s => s.id === event.supplier_id);
-                          const cat = detectCategory(event.title, event.description);
-                          const catConfig = CATEGORY_ICONS[cat];
-                          const CatIcon = catConfig.icon;
-                          return (
-                            <div key={event.id} className="flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-slate-50 group">
-                              <div className={`p-1.5 rounded-lg mt-0.5 ${catConfig.color}`}>
-                                <CatIcon className="w-3.5 h-3.5" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  {event.time && <span className="text-xs text-blue-600 font-medium">{event.time}</span>}
-                                  <span className="font-medium text-sm text-slate-800">{event.title}</span>
+                {Object.keys(eventsByDate)
+                  .sort()
+                  .map((dateKey, idx) => {
+                    const dayEvents = eventsByDate[dateKey].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+                    return (
+                      <div key={dateKey}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-semibold text-white bg-blue-600 px-2.5 py-1 rounded-full">
+                            Day {idx + 1} · {format(parseISO(dateKey), 'EEE, MMM d')}
+                          </span>
+                          <div className="flex-1 h-px bg-muted" />
+                        </div>
+                        <div className="space-y-2 ml-2 pl-4 border-l-2 border-blue-100">
+                          {dayEvents.map((event) => {
+                            const supplier = suppliers.find((s) => s.id === event.supplier_id);
+                            const cat = detectCategory(event.title, event.description);
+                            const catConfig = CATEGORY_ICONS[cat];
+                            const CatIcon = catConfig.icon;
+                            return (
+                              <div
+                                key={event.id}
+                                className="flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-muted group"
+                              >
+                                <div className={`p-1.5 rounded-lg mt-0.5 ${catConfig.color}`}>
+                                  <CatIcon className="w-3.5 h-3.5" />
                                 </div>
-                                {event.location && (
-                                  <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
-                                    <MapPin className="w-3 h-3" />{event.location}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {event.time && (
+                                      <span className="text-xs text-blue-600 dark:text-blue-300 font-medium">
+                                        {event.time}
+                                      </span>
+                                    )}
+                                    <span className="font-medium text-sm text-foreground">{event.title}</span>
+                                  </div>
+                                  {event.location && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                                      <MapPin className="w-3 h-3" />
+                                      {event.location}
+                                    </div>
+                                  )}
+                                  {supplier && (
+                                    <div className="flex items-center gap-1 text-xs text-blue-500 dark:text-blue-300 mt-0.5">
+                                      <Building2 className="w-3 h-3" />
+                                      {supplier.name}
+                                    </div>
+                                  )}
+                                  {event.description && (
+                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                      {event.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => openEditModal(event)}
+                                    className="p-1 hover:text-blue-600 dark:hover:text-blue-300 text-muted-foreground rounded text-xs"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => deleteMutation.mutate(event.id)}
+                                    className="p-1 hover:text-red-500 dark:hover:text-red-300 text-muted-foreground rounded"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                {(event.cost || event.supplier_cost) && (
+                                  <div className="text-right text-xs flex-shrink-0">
+                                    {event.cost && (
+                                      <div className="font-semibold text-green-600 dark:text-green-300">
+                                        ${parseFloat(event.cost).toFixed(0)}
+                                      </div>
+                                    )}
+                                    {event.supplier_cost && (
+                                      <div className="text-muted-foreground">
+                                        cost: ${parseFloat(event.supplier_cost).toFixed(0)}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
-                                {supplier && (
-                                  <div className="flex items-center gap-1 text-xs text-blue-500 mt-0.5">
-                                    <Building2 className="w-3 h-3" />{supplier.name}
-                                  </div>
-                                )}
-                                {event.description && (
-                                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{event.description}</p>
-                                )}
                               </div>
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => openEditModal(event)} className="p-1 hover:text-blue-600 text-slate-400 rounded text-xs">
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button onClick={() => deleteMutation.mutate(event.id)} className="p-1 hover:text-red-500 text-slate-400 rounded">
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                              {(event.cost || event.supplier_cost) && (
-                                <div className="text-right text-xs flex-shrink-0">
-                                  {event.cost && <div className="font-semibold text-green-600">${parseFloat(event.cost).toFixed(0)}</div>}
-                                  {event.supplier_cost && <div className="text-slate-400">cost: ${parseFloat(event.supplier_cost).toFixed(0)}</div>}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </Card>
           )}
@@ -463,7 +595,7 @@ export default function ItineraryBuilder() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-blue-600" />
+              <CalendarDays className="w-5 h-5 text-blue-600 dark:text-blue-300" />
               {editingEvent ? 'Edit Event' : 'Add Event'}
               {formData.date && (
                 <Badge variant="outline" className="ml-2 font-normal">
@@ -480,7 +612,7 @@ export default function ItineraryBuilder() {
                 <Label>Event Title *</Label>
                 <Input
                   value={formData.title}
-                  onChange={e => setFormData(f => ({ ...f, title: e.target.value }))}
+                  onChange={(e) => setFormData((f) => ({ ...f, title: e.target.value }))}
                   placeholder="e.g. Airport Transfer, Guided City Tour..."
                   required
                 />
@@ -490,7 +622,7 @@ export default function ItineraryBuilder() {
                 <Input
                   type="time"
                   value={formData.time}
-                  onChange={e => setFormData(f => ({ ...f, time: e.target.value }))}
+                  onChange={(e) => setFormData((f) => ({ ...f, time: e.target.value }))}
                 />
               </div>
             </div>
@@ -501,7 +633,7 @@ export default function ItineraryBuilder() {
               <Input
                 type="date"
                 value={formData.date}
-                onChange={e => setFormData(f => ({ ...f, date: e.target.value }))}
+                onChange={(e) => setFormData((f) => ({ ...f, date: e.target.value }))}
                 min={selectedTrip?.start_date}
                 max={selectedTrip?.end_date}
                 required
@@ -511,24 +643,46 @@ export default function ItineraryBuilder() {
             {/* Supplier Picker */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-blue-500" />
+                <Building2 className="w-3.5 h-3.5 text-blue-500 dark:text-blue-300" />
                 Link Supplier (Optional)
               </Label>
 
               {selectedSupplier ? (
-                <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <div className="flex-1">
-                    <div className="font-semibold text-slate-800 text-sm">{selectedSupplier.name}</div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                      {supplierCategory && <span className="text-blue-600">{supplierCategory.name}</span>}
-                      {selectedSupplier.city && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{selectedSupplier.city}</span>}
-                      {selectedSupplier.rating && <span className="flex items-center gap-0.5"><Star className="w-2.5 h-2.5 text-amber-500" />{selectedSupplier.rating}</span>}
+                    <div className="font-semibold text-foreground text-sm">{selectedSupplier.name}</div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                      {supplierCategory && (
+                        <span className="text-blue-600 dark:text-blue-300">{supplierCategory.name}</span>
+                      )}
+                      {selectedSupplier.city && (
+                        <span className="flex items-center gap-0.5">
+                          <MapPin className="w-2.5 h-2.5" />
+                          {selectedSupplier.city}
+                        </span>
+                      )}
+                      {selectedSupplier.rating && (
+                        <span className="flex items-center gap-0.5">
+                          <Star className="w-2.5 h-2.5 text-amber-500 dark:text-amber-300" />
+                          {selectedSupplier.rating}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => { setFormData(f => ({ ...f, supplier_id: '', service_id: '', pricing_id: '', cost: '', supplier_cost: '' })); setSupplierSearch(''); }}
-                    className="text-slate-400 hover:text-red-500 transition-colors"
+                    onClick={() => {
+                      setFormData((f) => ({
+                        ...f,
+                        supplier_id: '',
+                        service_id: '',
+                        pricing_id: '',
+                        cost: '',
+                        supplier_cost: '',
+                      }));
+                      setSupplierSearch('');
+                    }}
+                    className="text-muted-foreground hover:text-red-500 dark:hover:text-red-300 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -536,36 +690,43 @@ export default function ItineraryBuilder() {
               ) : (
                 <div className="space-y-2">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       value={supplierSearch}
-                      onChange={e => setSupplierSearch(e.target.value)}
+                      onChange={(e) => setSupplierSearch(e.target.value)}
                       placeholder="Search suppliers by name or city..."
                       className="pl-9"
                     />
                   </div>
                   {supplierSearch && (
-                    <div className="border border-slate-200 rounded-lg max-h-40 overflow-y-auto bg-white shadow-lg">
+                    <div className="border border-border rounded-lg max-h-40 overflow-y-auto bg-card shadow-lg">
                       {filteredSuppliers.length === 0 ? (
-                        <div className="p-3 text-center text-sm text-slate-500">No suppliers found</div>
-                      ) : filteredSuppliers.map(s => {
-                        const cat = categories.find(c => c.id === s.category_id);
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => selectSupplier(s)}
-                            className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors border-b border-slate-100 last:border-0"
-                          >
-                            <div className="font-medium text-slate-800 text-sm">{s.name}</div>
-                            <div className="flex gap-3 text-xs text-slate-500 mt-0.5">
-                              {cat && <span className="text-blue-600">{cat.name}</span>}
-                              {s.city && <span>{s.city}</span>}
-                              {s.rating && <span className="flex items-center gap-0.5"><Star className="w-2.5 h-2.5 text-amber-400" />{s.rating}</span>}
-                            </div>
-                          </button>
-                        );
-                      })}
+                        <div className="p-3 text-center text-sm text-muted-foreground">No suppliers found</div>
+                      ) : (
+                        filteredSuppliers.map((s) => {
+                          const cat = categories.find((c) => c.id === s.category_id);
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => selectSupplier(s)}
+                              className="w-full text-left px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors border-b border-border last:border-0"
+                            >
+                              <div className="font-medium text-foreground text-sm">{s.name}</div>
+                              <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
+                                {cat && <span className="text-blue-600 dark:text-blue-300">{cat.name}</span>}
+                                {s.city && <span>{s.city}</span>}
+                                {s.rating && (
+                                  <span className="flex items-center gap-0.5">
+                                    <Star className="w-2.5 h-2.5 text-amber-400" />
+                                    {s.rating}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
                     </div>
                   )}
                 </div>
@@ -578,12 +739,19 @@ export default function ItineraryBuilder() {
                 {supplierServices.length > 0 && (
                   <div className="space-y-1.5">
                     <Label>Service</Label>
-                    <Select value={formData.service_id} onValueChange={v => setFormData(f => ({ ...f, service_id: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger>
+                    <Select
+                      value={formData.service_id}
+                      onValueChange={(v) => setFormData((f) => ({ ...f, service_id: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select service" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={null}>None</SelectItem>
-                        {supplierServices.map(s => (
-                          <SelectItem key={s.id} value={s.id}>{s.service_name}</SelectItem>
+                        {supplierServices.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.service_name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -593,10 +761,12 @@ export default function ItineraryBuilder() {
                   <div className="space-y-1.5">
                     <Label>Price Tier</Label>
                     <Select value={formData.pricing_id} onValueChange={handlePricingChange}>
-                      <SelectTrigger><SelectValue placeholder="Select pricing" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select pricing" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={null}>None</SelectItem>
-                        {supplierPricings.map(p => (
+                        {supplierPricings.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
                             {p.name} — ${p.base_price} {p.unit ? `/ ${p.unit.replace('_', ' ')}` : ''}
                           </SelectItem>
@@ -613,7 +783,7 @@ export default function ItineraryBuilder() {
               <Label>Location</Label>
               <Input
                 value={formData.location}
-                onChange={e => setFormData(f => ({ ...f, location: e.target.value }))}
+                onChange={(e) => setFormData((f) => ({ ...f, location: e.target.value }))}
                 placeholder="Address or venue"
               />
             </div>
@@ -623,47 +793,52 @@ export default function ItineraryBuilder() {
               <Label>Description</Label>
               <Textarea
                 value={formData.description}
-                onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
+                onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))}
                 placeholder="Details about this event..."
                 rows={3}
               />
             </div>
 
             {/* Pricing */}
-            <div className="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <div className="grid grid-cols-3 gap-3 bg-muted p-4 rounded-lg border border-border">
               <div className="space-y-1.5">
                 <Label>Qty / Pax</Label>
                 <Input
-                  type="number" min="1"
+                  type="number"
+                  min="1"
                   value={formData.quantity}
-                  onChange={e => setFormData(f => ({ ...f, quantity: parseInt(e.target.value) || 1 }))}
+                  onChange={(e) => setFormData((f) => ({ ...f, quantity: parseInt(e.target.value) || 1 }))}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-slate-600">Supplier Cost</Label>
+                <Label className="text-muted-foreground">Supplier Cost</Label>
                 <Input
-                  type="number" step="0.01"
+                  type="number"
+                  step="0.01"
                   value={formData.supplier_cost}
-                  onChange={e => setFormData(f => ({ ...f, supplier_cost: e.target.value }))}
+                  onChange={(e) => setFormData((f) => ({ ...f, supplier_cost: e.target.value }))}
                   placeholder="0.00"
                 />
-                <p className="text-xs text-slate-400">What you pay</p>
+                <p className="text-xs text-muted-foreground">What you pay</p>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-blue-700">Client Price</Label>
+                <Label className="text-blue-700 dark:text-blue-300">Client Price</Label>
                 <Input
-                  type="number" step="0.01"
+                  type="number"
+                  step="0.01"
                   value={formData.cost}
-                  onChange={e => setFormData(f => ({ ...f, cost: e.target.value }))}
+                  onChange={(e) => setFormData((f) => ({ ...f, cost: e.target.value }))}
                   placeholder="0.00"
-                  className="border-blue-300"
+                  className="border-blue-300 dark:border-blue-800"
                 />
-                <p className="text-xs text-slate-400">What you charge</p>
+                <p className="text-xs text-muted-foreground">What you charge</p>
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={closeModal}>
+                Cancel
+              </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
                 <Check className="w-4 h-4 mr-1" />
                 {editingEvent ? 'Update Event' : 'Add Event'}

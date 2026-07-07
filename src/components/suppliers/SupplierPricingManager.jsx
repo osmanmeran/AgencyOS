@@ -13,24 +13,53 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, DollarSign, Calendar, Tag, Layers, Scan, Loader2, FileUp, ImageIcon, X, Star, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Plus,
+  Edit,
+  Trash2,
+  DollarSign,
+  Calendar,
+  Tag,
+  Layers,
+  Scan,
+  Loader2,
+  FileUp,
+  ImageIcon,
+  X,
+  Star,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
 import { showError, showSuccess } from '@/lib/toast';
 
 const SEASON_COLORS = {
-  all_year: 'bg-gray-100 text-gray-800',
-  high_season: 'bg-red-100 text-red-800',
-  low_season: 'bg-green-100 text-green-800',
-  peak: 'bg-orange-100 text-orange-800',
-  custom: 'bg-purple-100 text-purple-800'
+  all_year: 'bg-muted text-foreground',
+  high_season: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
+  low_season: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  peak: 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300',
+  custom: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
 };
 
 // Gates whether a price tier shows up in the B2B client catalog — suppliers
 // can self-submit pricing via their portal (always starts 'pending'), so
 // staff need a way to review and approve it here before clients see it.
 const APPROVAL_STATUS = {
-  pending: { label: 'Pending Approval', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  approved: { label: 'Approved', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800', icon: AlertCircle }
+  pending: {
+    label: 'Pending Approval',
+    color: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300',
+    icon: Clock,
+  },
+  approved: {
+    label: 'Approved',
+    color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+    icon: CheckCircle,
+  },
+  rejected: {
+    label: 'Rejected',
+    color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
+    icon: AlertCircle,
+  },
 };
 
 const UNIT_LABELS = {
@@ -41,7 +70,7 @@ const UNIT_LABELS = {
   per_day: 'Per Day',
   per_group: 'Per Group',
   per_car: 'Per Car',
-  flat_rate: 'Flat Rate'
+  flat_rate: 'Flat Rate',
 };
 
 const OCCUPANCY_OPTIONS = [
@@ -57,17 +86,21 @@ const OCCUPANCY_OPTIONS = [
 export default function SupplierPricingManager({ supplierId }) {
   const queryClient = useQueryClient();
 
-  const { data: supplier } = /** @type {any} */ (useQuery({
-    queryKey: ['supplier', supplierId],
-    queryFn: () => db.entities.Supplier.get(supplierId),
-    enabled: !!supplierId
-  }));
+  const { data: supplier } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplier', supplierId],
+      queryFn: () => db.entities.Supplier.get(supplierId),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: supplierCategory } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierCategory', supplier?.category_id],
-    queryFn: () => db.entities.SupplierCategory.get(supplier.category_id),
-    enabled: !!supplier?.category_id
-  }));
+  const { data: supplierCategory } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierCategory', supplier?.category_id],
+      queryFn: () => db.entities.SupplierCategory.get(supplier.category_id),
+      enabled: !!supplier?.category_id,
+    })
+  );
 
   const isHotel = supplierCategory?.name?.toLowerCase().includes('hotel');
   const isTransfer = supplierCategory?.name?.toLowerCase().includes('transfer');
@@ -85,16 +118,32 @@ export default function SupplierPricingManager({ supplierId }) {
   const [ocrFile, setOcrFile] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrSelectedRows, setOcrSelectedRows] = useState([]);
-  
+
   const [subcatForm, setSubcatForm] = useState({ name: '', description: '', sort_order: 0 });
 
   const freshPricingForm = () => ({
-    name: '', description: '', subcategory_id: '', service_id: '',
-    base_price: 0, client_price: 0, currency: defaultCurrency, unit: defaultUnit,
-    season_type: 'all_year', season_start: '', season_end: '',
-    min_quantity: 1, max_quantity: '', markup_percentage: 0, notes: '', is_active: true,
-    occupancy: '', pricing_type: 'individual', min_group_size: 12, car_capacity: '',
-    image_url: '', is_featured: false,
+    name: '',
+    description: '',
+    subcategory_id: '',
+    service_id: '',
+    base_price: 0,
+    client_price: 0,
+    currency: defaultCurrency,
+    unit: defaultUnit,
+    season_type: 'all_year',
+    season_start: '',
+    season_end: '',
+    min_quantity: 1,
+    max_quantity: '',
+    markup_percentage: 0,
+    notes: '',
+    is_active: true,
+    occupancy: '',
+    pricing_type: 'individual',
+    min_group_size: 12,
+    car_capacity: '',
+    image_url: '',
+    is_featured: false,
     // Staff creating a price tier directly here is the review step — only
     // pricing submitted by suppliers through their own portal starts pending.
     approval_status: 'approved',
@@ -108,73 +157,90 @@ export default function SupplierPricingManager({ supplierId }) {
     setImageUploading(true);
     try {
       const { file_url } = await db.integrations.Core.UploadFile({ file });
-      setPricingForm(f => ({ ...f, image_url: file_url }));
+      setPricingForm((f) => ({ ...f, image_url: file_url }));
     } catch (err) {
       showError('Failed to upload photo', err.message);
     }
     setImageUploading(false);
   };
 
-  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierSubcategories', supplierId],
-    queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
-    enabled: !!supplierId
-  }));
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierSubcategories', supplierId],
+      queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierPricings', supplierId],
-    queryFn: () => db.entities.SupplierPricing.filter({ supplier_id: supplierId }),
-    enabled: !!supplierId
-  }));
-
+  const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierPricings', supplierId],
+      queryFn: () => db.entities.SupplierPricing.filter({ supplier_id: supplierId }),
+      enabled: !!supplierId,
+    })
+  );
 
   // Subcategory mutations
-  const createSubcatMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.SupplierSubcategory.create({ ...data, supplier_id: supplierId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
-      setSubcatModalOpen(false);
-      setSubcatForm({ name: '', description: '', sort_order: 0 });
-    }
-  }));
+  const createSubcatMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) =>
+        db.entities.SupplierSubcategory.create({ ...data, supplier_id: supplierId }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
+        setSubcatModalOpen(false);
+        setSubcatForm({ name: '', description: '', sort_order: 0 });
+      },
+    })
+  );
 
-  const updateSubcatMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierSubcategory.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
-      setSubcatModalOpen(false);
-      setEditingSubcat(null);
-    }
-  }));
+  const updateSubcatMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) =>
+        db.entities.SupplierSubcategory.update(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
+        setSubcatModalOpen(false);
+        setEditingSubcat(null);
+      },
+    })
+  );
 
-  const deleteSubcatMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ id) => db.entities.SupplierSubcategory.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] })
-  }));
+  const deleteSubcatMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ id) => db.entities.SupplierSubcategory.delete(id),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] }),
+    })
+  );
 
   // Pricing mutations
-  const createPricingMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.SupplierPricing.create({ ...data, supplier_id: supplierId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
-      setPricingModalOpen(false);
-      resetPricingForm();
-    }
-  }));
+  const createPricingMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.SupplierPricing.create({ ...data, supplier_id: supplierId }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
+        setPricingModalOpen(false);
+        resetPricingForm();
+      },
+    })
+  );
 
-  const updatePricingMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierPricing.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
-      setPricingModalOpen(false);
-      setEditingPricing(null);
-    }
-  }));
+  const updatePricingMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierPricing.update(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
+        setPricingModalOpen(false);
+        setEditingPricing(null);
+      },
+    })
+  );
 
-  const deletePricingMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ id) => db.entities.SupplierPricing.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] })
-  }));
+  const deletePricingMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ id) => db.entities.SupplierPricing.delete(id),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] }),
+    })
+  );
 
   const resetPricingForm = () => {
     setPricingForm(freshPricingForm());
@@ -194,18 +260,26 @@ export default function SupplierPricingManager({ supplierId }) {
   const openPricingModal = (pricing = null) => {
     if (pricing) {
       setEditingPricing(pricing);
-      const computedClientPrice = pricing.client_price != null 
-        ? pricing.client_price 
-        : pricing.base_price * (1 + (pricing.markup_percentage || 0) / 100);
+      const computedClientPrice =
+        pricing.client_price != null
+          ? pricing.client_price
+          : pricing.base_price * (1 + (pricing.markup_percentage || 0) / 100);
       setPricingForm({
-        name: pricing.name, description: pricing.description || '',
-        subcategory_id: pricing.subcategory_id || '', service_id: pricing.service_id || '',
-        base_price: pricing.base_price, client_price: computedClientPrice,
+        name: pricing.name,
+        description: pricing.description || '',
+        subcategory_id: pricing.subcategory_id || '',
+        service_id: pricing.service_id || '',
+        base_price: pricing.base_price,
+        client_price: computedClientPrice,
         currency: pricing.currency || 'USD',
-        unit: pricing.unit || 'per_person', season_type: pricing.season_type || 'all_year',
-        season_start: pricing.season_start || '', season_end: pricing.season_end || '',
-        min_quantity: pricing.min_quantity || 1, max_quantity: pricing.max_quantity || '',
-        markup_percentage: pricing.markup_percentage || 0, notes: pricing.notes || '',
+        unit: pricing.unit || 'per_person',
+        season_type: pricing.season_type || 'all_year',
+        season_start: pricing.season_start || '',
+        season_end: pricing.season_end || '',
+        min_quantity: pricing.min_quantity || 1,
+        max_quantity: pricing.max_quantity || '',
+        markup_percentage: pricing.markup_percentage || 0,
+        notes: pricing.notes || '',
         is_active: pricing.is_active !== false,
         occupancy: pricing.occupancy || '',
         pricing_type: pricing.pricing_type || 'individual',
@@ -241,9 +315,9 @@ export default function SupplierPricingManager({ supplierId }) {
     }
   };
 
-  const getSubcategoryName = (id) => subcategories.find(s => s.id === id)?.name || '';
-//   const getServiceName = (id) => services.find(s => s.id === id)?.service_name || '';
-  const getOccupancyLabel = (val) => OCCUPANCY_OPTIONS.find(o => o.value === val)?.label || '';
+  const getSubcategoryName = (id) => subcategories.find((s) => s.id === id)?.name || '';
+  //   const getServiceName = (id) => services.find(s => s.id === id)?.service_name || '';
+  const getOccupancyLabel = (val) => OCCUPANCY_OPTIONS.find((o) => o.value === val)?.label || '';
 
   // Auto-generate name from subcategory + occupancy + season for hotels
   useEffect(() => {
@@ -252,18 +326,33 @@ export default function SupplierPricingManager({ supplierId }) {
     const subcatName = getSubcategoryName(pricingForm.subcategory_id);
     if (subcatName) parts.push(subcatName);
     if (isHotel && pricingForm.occupancy) {
-      parts.push(getOccupancyLabel(pricingForm.occupancy).replace(/\(.*\)/, '').trim());
+      parts.push(
+        getOccupancyLabel(pricingForm.occupancy)
+          .replace(/\(.*\)/, '')
+          .trim(),
+      );
     }
     const seasonLabel = {
-      all_year: '', high_season: 'High Season', low_season: 'Low Season',
-      peak: 'Peak', custom: pricingForm.season_start && pricingForm.season_end
-        ? `${pricingForm.season_start} ${pricingForm.season_end}` : ''
+      all_year: '',
+      high_season: 'High Season',
+      low_season: 'Low Season',
+      peak: 'Peak',
+      custom:
+        pricingForm.season_start && pricingForm.season_end
+          ? `${pricingForm.season_start} ${pricingForm.season_end}`
+          : '',
     }[pricingForm.season_type];
     if (seasonLabel) parts.push(seasonLabel);
     if (parts.length > 0) {
-      setPricingForm(f => ({ ...f, name: parts.join(' - ') }));
+      setPricingForm((f) => ({ ...f, name: parts.join(' - ') }));
     }
-  }, [pricingForm.subcategory_id, pricingForm.occupancy, pricingForm.season_type, pricingForm.season_start, pricingForm.season_end]);
+  }, [
+    pricingForm.subcategory_id,
+    pricingForm.occupancy,
+    pricingForm.season_type,
+    pricingForm.season_start,
+    pricingForm.season_end,
+  ]);
 
   const clientPrice = (pricing) => {
     if (pricing.client_price != null && pricing.client_price > 0) return pricing.client_price;
@@ -312,10 +401,10 @@ export default function SupplierPricingManager({ supplierId }) {
   };
 
   return (
-    <Card className="p-6 bg-white shadow-md">
+    <Card className="p-6 bg-card shadow-md">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-green-600" />
+        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-green-600 dark:text-green-300" />
           Pricing Management
         </h2>
       </div>
@@ -342,34 +431,36 @@ export default function SupplierPricingManager({ supplierId }) {
           </div>
 
           {subcategories.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-8 text-muted-foreground">
               No subcategories yet. Create subcategories to organize your services.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {subcategories.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(subcat => (
-                <Card key={subcat.id} className="p-4 bg-slate-50 group hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold text-slate-900">{subcat.name}</h3>
-                      {subcat.description && (
-                        <p className="text-sm text-slate-600 mt-1">{subcat.description}</p>
-                      )}
-                      <div className="text-xs text-slate-400 mt-2">
-                        {pricings.filter(p => p.subcategory_id === subcat.id).length} price tiers
+              {subcategories
+                .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                .map((subcat) => (
+                  <Card key={subcat.id} className="p-4 bg-muted group hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-foreground">{subcat.name}</h3>
+                        {subcat.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{subcat.description}</p>
+                        )}
+                        <div className="text-xs text-muted-foreground mt-2">
+                          {pricings.filter((p) => p.subcategory_id === subcat.id).length} price tiers
+                        </div>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => openSubcatModal(subcat)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteSubcatMutation.mutate(subcat.id)}>
+                          <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => openSubcatModal(subcat)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteSubcatMutation.mutate(subcat.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))}
             </div>
           )}
         </TabsContent>
@@ -403,7 +494,16 @@ export default function SupplierPricingManager({ supplierId }) {
               </Button>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => { setOcrModalOpen(true); setOcrFile(null); setOcrResult(null); }} size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+              <Button
+                onClick={() => {
+                  setOcrModalOpen(true);
+                  setOcrFile(null);
+                  setOcrResult(null);
+                }}
+                size="sm"
+                variant="outline"
+                className="border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
+              >
                 <Scan className="w-4 h-4 mr-2" />
                 OCR Import
               </Button>
@@ -415,109 +515,129 @@ export default function SupplierPricingManager({ supplierId }) {
           </div>
 
           {(() => {
-            const filtered = pricings.filter(p => {
+            const filtered = pricings.filter((p) => {
               if (pricingTypeFilter === 'all') return true;
               return (p.pricing_type || 'individual') === pricingTypeFilter;
             });
             return filtered.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-muted-foreground">
                 {pricingTypeFilter === 'all'
                   ? 'No price tiers yet. Add pricing with different rates for seasons and categories.'
                   : `No ${pricingTypeFilter} pricing tiers yet. Click "Add Price Tier" to create one.`}
               </div>
             ) : (
               <div className="space-y-4">
-                {filtered.map(pricing => (
-                <Card key={pricing.id} className={`p-4 group hover:shadow-md transition-shadow ${!pricing.is_active ? 'opacity-50' : ''}`}>
-                  <div className="flex justify-between items-start gap-4">
-                    {pricing.image_url ? (
-                      <img src={pricing.image_url} alt={pricing.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-slate-200" />
-                    ) : (
-                      <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 border border-slate-200">
-                        <ImageIcon className="w-6 h-6 text-slate-300" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-slate-900">{pricing.name}</h3>
-                        {pricing.is_featured && (
-                          <Star className="w-4 h-4 text-amber-500 fill-amber-500 flex-shrink-0" />
-                        )}
-                        <Badge className={SEASON_COLORS[pricing.season_type]}>
-                          {pricing.season_type?.replace('_', ' ')}
-                        </Badge>
-                        {pricing.subcategory_id && (
-                          <Badge variant="outline">{getSubcategoryName(pricing.subcategory_id)}</Badge>
-                        )}
-                        {pricing.occupancy && (
-                          <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">{getOccupancyLabel(pricing.occupancy)}</Badge>
-                        )}
-                        {(pricing.pricing_type || 'individual') === 'group' && (
-                          <Badge className="bg-purple-100 text-purple-800 border-purple-200">
-                            Group (min {pricing.min_group_size || 12} pax)
-                          </Badge>
-                        )}
-                        {!pricing.is_active && <Badge variant="secondary">Inactive</Badge>}
-                        {(() => {
-                          const config = APPROVAL_STATUS[pricing.approval_status] || APPROVAL_STATUS.pending;
-                          const Icon = config.icon;
-                          return (
-                            <Badge className={config.color}>
-                              <Icon className="w-3 h-3 mr-1" />
-                              {config.label}
-                            </Badge>
-                          );
-                        })()}
-                      </div>
-                      {pricing.description && <p className="text-sm text-slate-600 mb-2">{pricing.description}</p>}
-                      <div className="flex flex-wrap gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4 text-green-600" />
-                          <span className="font-bold text-green-700">{pricing.currency} {pricing.base_price.toFixed(2)}</span>
-                          <span className="text-slate-500">({UNIT_LABELS[pricing.unit]})</span>
+                {filtered.map((pricing) => (
+                  <Card
+                    key={pricing.id}
+                    className={`p-4 group hover:shadow-md transition-shadow ${!pricing.is_active ? 'opacity-50' : ''}`}
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      {pricing.image_url ? (
+                        <img
+                          src={pricing.image_url}
+                          alt={pricing.name}
+                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-border"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                          <ImageIcon className="w-6 h-6 text-muted-foreground" />
                         </div>
-                        {pricing.unit === 'per_car' && pricing.car_capacity && (
-                          <span className="text-xs text-slate-500">up to {pricing.car_capacity} pax/car</span>
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-foreground">{pricing.name}</h3>
+                          {pricing.is_featured && (
+                            <Star className="w-4 h-4 text-amber-500 dark:text-amber-300 fill-amber-500 flex-shrink-0" />
+                          )}
+                          <Badge className={SEASON_COLORS[pricing.season_type]}>
+                            {pricing.season_type?.replace('_', ' ')}
+                          </Badge>
+                          {pricing.subcategory_id && (
+                            <Badge variant="outline">{getSubcategoryName(pricing.subcategory_id)}</Badge>
+                          )}
+                          {pricing.occupancy && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                            >
+                              {getOccupancyLabel(pricing.occupancy)}
+                            </Badge>
+                          )}
+                          {(pricing.pricing_type || 'individual') === 'group' && (
+                            <Badge className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                              Group (min {pricing.min_group_size || 12} pax)
+                            </Badge>
+                          )}
+                          {!pricing.is_active && <Badge variant="secondary">Inactive</Badge>}
+                          {(() => {
+                            const config = APPROVAL_STATUS[pricing.approval_status] || APPROVAL_STATUS.pending;
+                            const Icon = config.icon;
+                            return (
+                              <Badge className={config.color}>
+                                <Icon className="w-3 h-3 mr-1" />
+                                {config.label}
+                              </Badge>
+                            );
+                          })()}
+                        </div>
+                        {pricing.description && (
+                          <p className="text-sm text-muted-foreground mb-2">{pricing.description}</p>
                         )}
-                        {pricing.markup_percentage > 0 && (
-                          <div className="text-slate-600">
-                            Client: <span className="font-semibold text-blue-600">${clientPrice(pricing).toFixed(2)}</span>
-                            <span className="text-xs ml-1">(+{pricing.markup_percentage}%)</span>
+                        <div className="flex flex-wrap gap-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4 text-green-600 dark:text-green-300" />
+                            <span className="font-bold text-green-700 dark:text-green-300">
+                              {pricing.currency} {pricing.base_price.toFixed(2)}
+                            </span>
+                            <span className="text-muted-foreground">({UNIT_LABELS[pricing.unit]})</span>
                           </div>
+                          {pricing.unit === 'per_car' && pricing.car_capacity && (
+                            <span className="text-xs text-muted-foreground">up to {pricing.car_capacity} pax/car</span>
+                          )}
+                          {pricing.markup_percentage > 0 && (
+                            <div className="text-muted-foreground">
+                              Client:{' '}
+                              <span className="font-semibold text-blue-600 dark:text-blue-300">
+                                ${clientPrice(pricing).toFixed(2)}
+                              </span>
+                              <span className="text-xs ml-1">(+{pricing.markup_percentage}%)</span>
+                            </div>
+                          )}
+                          {pricing.season_type === 'custom' && pricing.season_start && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Calendar className="w-4 h-4" />
+                              {pricing.season_start} - {pricing.season_end}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {pricing.approval_status !== 'approved' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Approve for B2B catalog"
+                            onClick={() => {
+                              updatePricingMutation.mutate({ id: pricing.id, data: { approval_status: 'approved' } });
+                              showSuccess('Price tier approved', 'Now visible in the B2B client catalog');
+                            }}
+                          >
+                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-300" />
+                          </Button>
                         )}
-                        {pricing.season_type === 'custom' && pricing.season_start && (
-                          <div className="flex items-center gap-1 text-slate-500">
-                            <Calendar className="w-4 h-4" />
-                            {pricing.season_start} - {pricing.season_end}
-                          </div>
-                        )}
+                        <Button variant="ghost" size="icon" onClick={() => openPricingModal(pricing)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deletePricingMutation.mutate(pricing.id)}>
+                          <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {pricing.approval_status !== 'approved' && (
-                        <Button
-                          variant="ghost" size="icon"
-                          title="Approve for B2B catalog"
-                          onClick={() => {
-                            updatePricingMutation.mutate({ id: pricing.id, data: { approval_status: 'approved' } });
-                            showSuccess('Price tier approved', 'Now visible in the B2B client catalog');
-                          }}
-                        >
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="icon" onClick={() => openPricingModal(pricing)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deletePricingMutation.mutate(pricing.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          );
+                  </Card>
+                ))}
+              </div>
+            );
           })()}
         </TabsContent>
       </Tabs>
@@ -558,7 +678,9 @@ export default function SupplierPricingManager({ supplierId }) {
               />
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setSubcatModalOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setSubcatModalOpen(false)}>
+                Cancel
+              </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
                 {editingSubcat ? 'Update' : 'Create'}
               </Button>
@@ -587,11 +709,20 @@ export default function SupplierPricingManager({ supplierId }) {
               </div>
               <div className="space-y-2">
                 <Label>Subcategory</Label>
-                <Select value={pricingForm.subcategory_id} onValueChange={(v) => setPricingForm({ ...pricingForm, subcategory_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger>
+                <Select
+                  value={pricingForm.subcategory_id}
+                  onValueChange={(v) => setPricingForm({ ...pricingForm, subcategory_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subcategory" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
-                    {subcategories.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    {subcategories.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -610,24 +741,28 @@ export default function SupplierPricingManager({ supplierId }) {
               <Label>Photo (shown in the B2B client catalog)</Label>
               {pricingForm.image_url ? (
                 <div className="relative w-32 h-32">
-                  <img src={pricingForm.image_url} alt="" className="w-32 h-32 rounded-lg object-cover border border-slate-200" />
+                  <img
+                    src={pricingForm.image_url}
+                    alt=""
+                    className="w-32 h-32 rounded-lg object-cover border border-border"
+                  />
                   <button
                     type="button"
                     onClick={() => setPricingForm({ ...pricingForm, image_url: '' })}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full border border-slate-200 shadow flex items-center justify-center hover:bg-red-50"
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-card rounded-full border border-border shadow flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-950/40"
                   >
-                    <X className="w-3.5 h-3.5 text-red-500" />
+                    <X className="w-3.5 h-3.5 text-red-500 dark:text-red-300" />
                   </button>
                 </div>
               ) : (
                 <label className="cursor-pointer inline-block">
-                  <div className="w-32 h-32 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-1 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                  <div className="w-32 h-32 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors">
                     {imageUploading ? (
-                      <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+                      <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
                     ) : (
                       <>
-                        <ImageIcon className="w-6 h-6 text-slate-400" />
-                        <span className="text-xs text-slate-500">Upload photo</span>
+                        <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Upload photo</span>
                       </>
                     )}
                   </div>
@@ -645,23 +780,32 @@ export default function SupplierPricingManager({ supplierId }) {
             <div className="grid grid-cols-2 gap-4 items-end">
               <div className="space-y-2">
                 <Label>B2B Approval Status</Label>
-                <Select value={pricingForm.approval_status} onValueChange={(v) => setPricingForm({ ...pricingForm, approval_status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={pricingForm.approval_status}
+                  onValueChange={(v) => setPricingForm({ ...pricingForm, approval_status: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Pending Approval</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-slate-500">Only "Approved" tiers are visible in the B2B client catalog.</p>
+                <p className="text-xs text-muted-foreground">
+                  Only "Approved" tiers are visible in the B2B client catalog.
+                </p>
               </div>
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 cursor-pointer h-fit">
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/50 cursor-pointer h-fit">
                 <Switch
                   checked={pricingForm.is_featured}
                   onCheckedChange={(v) => setPricingForm({ ...pricingForm, is_featured: v })}
                 />
-                <span className="flex items-center gap-1.5 text-sm text-slate-700">
-                  <Star className={`w-4 h-4 ${pricingForm.is_featured ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
+                <span className="flex items-center gap-1.5 text-sm text-foreground">
+                  <Star
+                    className={`w-4 h-4 ${pricingForm.is_featured ? 'text-amber-500 dark:text-amber-300 fill-amber-500' : 'text-muted-foreground'}`}
+                  />
                   Feature in carousel
                 </span>
               </label>
@@ -670,8 +814,13 @@ export default function SupplierPricingManager({ supplierId }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Currency</Label>
-                <Select value={pricingForm.currency} onValueChange={(v) => setPricingForm({ ...pricingForm, currency: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={pricingForm.currency}
+                  onValueChange={(v) => setPricingForm({ ...pricingForm, currency: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="USD">USD</SelectItem>
                     <SelectItem value="EUR">EUR</SelectItem>
@@ -684,19 +833,27 @@ export default function SupplierPricingManager({ supplierId }) {
               <div className="space-y-2">
                 <Label>Unit</Label>
                 <Select value={pricingForm.unit} onValueChange={(v) => setPricingForm({ ...pricingForm, unit: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(UNIT_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    {Object.entries(UNIT_LABELS).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>
+                        {v}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg border border-border">
               <div className="space-y-2">
-                <Label className="text-slate-700 font-semibold">Supplier Price (Cost) *</Label>
+                <Label className="text-foreground font-semibold">Supplier Price (Cost) *</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">{pricingForm.currency}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    {pricingForm.currency}
+                  </span>
                   <Input
                     type="number"
                     step="0.01"
@@ -709,32 +866,40 @@ export default function SupplierPricingManager({ supplierId }) {
                     required
                   />
                 </div>
-                <p className="text-xs text-slate-500">What you pay the supplier</p>
+                <p className="text-xs text-muted-foreground">What you pay the supplier</p>
               </div>
               <div className="space-y-2">
-                <Label className="text-blue-700 font-semibold">Client Price (Sell) *</Label>
+                <Label className="text-blue-700 dark:text-blue-300 font-semibold">Client Price (Sell) *</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">{pricingForm.currency}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    {pricingForm.currency}
+                  </span>
                   <Input
                     type="number"
                     step="0.01"
-                    className="pl-12 border-blue-300 focus:ring-blue-400"
+                    className="pl-12 border-blue-300 dark:border-blue-800 focus:ring-blue-400"
                     value={pricingForm.client_price}
                     onChange={(e) => {
                       const client = parseFloat(e.target.value) || 0;
-                      const markup = pricingForm.base_price > 0
-                        ? ((client - pricingForm.base_price) / pricingForm.base_price) * 100
-                        : 0;
-                      setPricingForm({ ...pricingForm, client_price: client, markup_percentage: Math.round(markup * 100) / 100 });
+                      const markup =
+                        pricingForm.base_price > 0
+                          ? ((client - pricingForm.base_price) / pricingForm.base_price) * 100
+                          : 0;
+                      setPricingForm({
+                        ...pricingForm,
+                        client_price: client,
+                        markup_percentage: Math.round(markup * 100) / 100,
+                      });
                     }}
                     required
                   />
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   What you charge the client
                   {pricingForm.base_price > 0 && pricingForm.client_price > 0 && (
-                    <span className="ml-1 font-medium text-blue-600">
-                      ({pricingForm.markup_percentage > 0 ? '+' : ''}{pricingForm.markup_percentage.toFixed(1)}% margin)
+                    <span className="ml-1 font-medium text-blue-600 dark:text-blue-300">
+                      ({pricingForm.markup_percentage > 0 ? '+' : ''}
+                      {pricingForm.markup_percentage.toFixed(1)}% margin)
                     </span>
                   )}
                 </p>
@@ -744,8 +909,13 @@ export default function SupplierPricingManager({ supplierId }) {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Season Type</Label>
-                <Select value={pricingForm.season_type} onValueChange={(v) => setPricingForm({ ...pricingForm, season_type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={pricingForm.season_type}
+                  onValueChange={(v) => setPricingForm({ ...pricingForm, season_type: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all_year">All Year</SelectItem>
                     <SelectItem value="high_season">High Season</SelectItem>
@@ -780,18 +950,27 @@ export default function SupplierPricingManager({ supplierId }) {
             {isHotel && (
               <div className="space-y-2">
                 <Label>Occupancy</Label>
-                <Select value={pricingForm.occupancy} onValueChange={(v) => {
-                  const occ = OCCUPANCY_OPTIONS.find(o => o.value === v);
-                  setPricingForm({
-                    ...pricingForm,
-                    occupancy: v,
-                    min_quantity: occ ? occ.minPax : 1,
-                    max_quantity: occ ? String(occ.maxPax) : '',
-                  });
-                }}>
-                  <SelectTrigger><SelectValue placeholder="Select occupancy..." /></SelectTrigger>
+                <Select
+                  value={pricingForm.occupancy}
+                  onValueChange={(v) => {
+                    const occ = OCCUPANCY_OPTIONS.find((o) => o.value === v);
+                    setPricingForm({
+                      ...pricingForm,
+                      occupancy: v,
+                      min_quantity: occ ? occ.minPax : 1,
+                      max_quantity: occ ? String(occ.maxPax) : '',
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select occupancy..." />
+                  </SelectTrigger>
                   <SelectContent>
-                    {OCCUPANCY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    {OCCUPANCY_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -799,8 +978,13 @@ export default function SupplierPricingManager({ supplierId }) {
 
             <div className="space-y-2">
               <Label>Pricing Type</Label>
-              <Select value={pricingForm.pricing_type} onValueChange={(v) => setPricingForm({ ...pricingForm, pricing_type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={pricingForm.pricing_type}
+                onValueChange={(v) => setPricingForm({ ...pricingForm, pricing_type: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="individual">Individual</SelectItem>
                   <SelectItem value="group">Group</SelectItem>
@@ -817,7 +1001,9 @@ export default function SupplierPricingManager({ supplierId }) {
                   value={pricingForm.min_group_size}
                   onChange={(e) => setPricingForm({ ...pricingForm, min_group_size: parseInt(e.target.value) || 12 })}
                 />
-                <p className="text-xs text-slate-500">Minimum number of people for this group rate (default: 12)</p>
+                <p className="text-xs text-muted-foreground">
+                  Minimum number of people for this group rate (default: 12)
+                </p>
               </div>
             )}
 
@@ -831,7 +1017,7 @@ export default function SupplierPricingManager({ supplierId }) {
                   onChange={(e) => setPricingForm({ ...pricingForm, car_capacity: e.target.value })}
                   placeholder="e.g., 4"
                 />
-                <p className="text-xs text-slate-500">Maximum number of passengers per vehicle</p>
+                <p className="text-xs text-muted-foreground">Maximum number of passengers per vehicle</p>
               </div>
             )}
 
@@ -865,7 +1051,9 @@ export default function SupplierPricingManager({ supplierId }) {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setPricingModalOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setPricingModalOpen(false)}>
+                Cancel
+              </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
                 {editingPricing ? 'Update' : 'Create'}
               </Button>
@@ -875,30 +1063,41 @@ export default function SupplierPricingManager({ supplierId }) {
       </Dialog>
 
       {/* OCR Import Modal */}
-      <Dialog open={ocrModalOpen} onOpenChange={(v) => { setOcrModalOpen(v); if (!v) { setOcrFile(null); setOcrResult(null); } }}>
+      <Dialog
+        open={ocrModalOpen}
+        onOpenChange={(v) => {
+          setOcrModalOpen(v);
+          if (!v) {
+            setOcrFile(null);
+            setOcrResult(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Scan className="w-5 h-5 text-purple-600" />
+              <Scan className="w-5 h-5 text-purple-600 dark:text-purple-300" />
               OCR Import Pricing
             </DialogTitle>
           </DialogHeader>
 
           {!ocrResult ? (
             <div className="space-y-4 mt-4">
-              <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                 {ocrFile ? (
                   <div className="space-y-3">
-                    <FileUp className="w-12 h-12 text-green-500 mx-auto" />
-                    <p className="font-medium text-slate-900">{ocrFile.name}</p>
-                    <p className="text-sm text-slate-500">{(ocrFile.size / 1024).toFixed(1)} KB</p>
-                    <Button variant="outline" onClick={() => setOcrFile(null)}>Choose Different File</Button>
+                    <FileUp className="w-12 h-12 text-green-500 dark:text-green-300 mx-auto" />
+                    <p className="font-medium text-foreground">{ocrFile.name}</p>
+                    <p className="text-sm text-muted-foreground">{(ocrFile.size / 1024).toFixed(1)} KB</p>
+                    <Button variant="outline" onClick={() => setOcrFile(null)}>
+                      Choose Different File
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <FileUp className="w-12 h-12 text-slate-400 mx-auto" />
-                    <p className="text-slate-600">Upload a pricing table image or PDF</p>
-                    <p className="text-sm text-slate-400">Supports JPG, PNG, PDF (up to 20MB)</p>
+                    <FileUp className="w-12 h-12 text-muted-foreground mx-auto" />
+                    <p className="text-muted-foreground">Upload a pricing table image or PDF</p>
+                    <p className="text-sm text-muted-foreground">Supports JPG, PNG, PDF (up to 20MB)</p>
                     <label className="cursor-pointer">
                       <Button variant="outline" className="relative">
                         Choose File
@@ -914,74 +1113,99 @@ export default function SupplierPricingManager({ supplierId }) {
                 )}
               </div>
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setOcrModalOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setOcrModalOpen(false)}>
+                  Cancel
+                </Button>
                 <Button
                   onClick={handleOcrUpload}
                   disabled={!ocrFile || ocrLoading}
                   className="bg-purple-600 hover:bg-purple-700"
                 >
                   {ocrLoading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing OCR...</>
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing OCR...
+                    </>
                   ) : (
-                    <><Scan className="w-4 h-4 mr-2" />Extract Pricing</>
+                    <>
+                      <Scan className="w-4 h-4 mr-2" />
+                      Extract Pricing
+                    </>
                   )}
                 </Button>
               </div>
             </div>
           ) : ocrResult.error ? (
             <div className="space-y-4 mt-4">
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
                 <p className="font-semibold">OCR Error</p>
                 <p className="text-sm mt-1">{ocrResult.error}</p>
                 {ocrResult.raw && (
-                  <pre className="mt-2 p-2 bg-red-100 rounded text-xs max-h-40 overflow-auto">{ocrResult.raw}</pre>
+                  <pre className="mt-2 p-2 bg-red-100 dark:bg-red-900/40 rounded text-xs max-h-40 overflow-auto">
+                    {ocrResult.raw}
+                  </pre>
                 )}
               </div>
               <div className="flex justify-end">
-                <Button variant="outline" onClick={() => { setOcrResult(null); setOcrFile(null); }}>Try Again</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setOcrResult(null);
+                    setOcrFile(null);
+                  }}
+                >
+                  Try Again
+                </Button>
               </div>
             </div>
           ) : (
             <div className="space-y-4 mt-4">
               {/* Raw OCR Text */}
-              <details className="border border-slate-200 rounded-lg">
-                <summary className="px-4 py-2 bg-slate-50 cursor-pointer text-sm font-medium text-slate-700">
+              <details className="border border-border rounded-lg">
+                <summary className="px-4 py-2 bg-muted cursor-pointer text-sm font-medium text-foreground">
                   Raw OCR Text ({ocrResult.text?.length || 0} chars)
                 </summary>
-                <pre className="p-4 text-xs text-slate-600 max-h-60 overflow-auto whitespace-pre-wrap font-mono">{ocrResult.text}</pre>
+                <pre className="p-4 text-xs text-muted-foreground max-h-60 overflow-auto whitespace-pre-wrap font-mono">
+                  {ocrResult.text}
+                </pre>
               </details>
 
               {/* Parsed Rows */}
               {ocrResult.parsed?.rows?.length > 0 ? (
                 <div>
-                  <h4 className="font-semibold text-slate-900 mb-2">
+                  <h4 className="font-semibold text-foreground mb-2">
                     Detected Pricing ({ocrResult.parsed.rows.length} rows)
                   </h4>
                   <div className="space-y-2">
                     {ocrResult.parsed.rows.map((row, idx) => (
-                      <label key={idx} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${ocrSelectedRows.includes(idx) ? 'bg-purple-50 border-purple-300' : 'bg-slate-50 border-slate-200'}`}>
+                      <label
+                        key={idx}
+                        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${ocrSelectedRows.includes(idx) ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800' : 'bg-muted border-border'}`}
+                      >
                         <input
                           type="checkbox"
                           checked={ocrSelectedRows.includes(idx)}
                           onChange={() => {
-                            setOcrSelectedRows(prev =>
-                              prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+                            setOcrSelectedRows((prev) =>
+                              prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx],
                             );
                           }}
                           className="mt-1"
                         />
                         <div className="flex-1">
-                          <span className="font-medium text-slate-900">{row.name}</span>
+                          <span className="font-medium text-foreground">{row.name}</span>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {row.prices.map((p, pi) => (
-                              <span key={pi} className="text-xs bg-white px-2 py-1 rounded border text-slate-700">
+                              <span key={pi} className="text-xs bg-card px-2 py-1 rounded border text-foreground">
                                 {p.currency} {p.price.toFixed(2)}
                                 {p.season ? ` (${p.season})` : ''}
                               </span>
                             ))}
                           </div>
                           {row.occupancy && (
-                            <span className="text-xs text-slate-500 mt-1 block">Occupancy: {getOccupancyLabel(String(row.occupancy))}</span>
+                            <span className="text-xs text-muted-foreground mt-1 block">
+                              Occupancy: {getOccupancyLabel(String(row.occupancy))}
+                            </span>
                           )}
                         </div>
                       </label>
@@ -989,14 +1213,19 @@ export default function SupplierPricingManager({ supplierId }) {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-700">
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-700 dark:text-amber-300">
                   <p className="font-semibold">No pricing data detected</p>
-                  <p className="text-sm mt-1">The OCR extracted text but could not identify pricing rows. Try a clearer image or enter prices manually.</p>
+                  <p className="text-sm mt-1">
+                    The OCR extracted text but could not identify pricing rows. Try a clearer image or enter prices
+                    manually.
+                  </p>
                 </div>
               )}
 
               <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button variant="outline" onClick={() => setOcrModalOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setOcrModalOpen(false)}>
+                  Cancel
+                </Button>
                 <Button
                   onClick={handleOcrImport}
                   disabled={ocrSelectedRows.length === 0}

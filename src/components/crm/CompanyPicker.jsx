@@ -21,19 +21,19 @@ export default function CompanyPicker({ value, companyName, onChange }) {
   const [creating, setCreating] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: companies = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['companies'],
-    queryFn: () => db.entities.Company.list('name')
-  }));
+  const { data: companies = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['companies'],
+      queryFn: () => db.entities.Company.list('name'),
+    })
+  );
 
-  const selected = companies.find(c => c.id === value);
+  const selected = companies.find((c) => c.id === value);
   const label = selected?.name || companyName || '';
 
   const q = query.trim().toLowerCase();
-  const filtered = q
-    ? companies.filter(c => c.name?.toLowerCase().includes(q))
-    : companies;
-  const exactExists = companies.some(c => c.name?.trim().toLowerCase() === q);
+  const filtered = q ? companies.filter((c) => c.name?.toLowerCase().includes(q)) : companies;
+  const exactExists = companies.some((c) => c.name?.trim().toLowerCase() === q);
 
   const select = (company) => {
     onChange({ company_id: company.id, company: company.name });
@@ -72,12 +72,12 @@ export default function CompanyPicker({ value, companyName, onChange }) {
             className="h-8 text-sm justify-between font-normal flex-1 min-w-0"
           >
             <span className="flex items-center gap-1.5 min-w-0">
-              <Building className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-              <span className={`truncate ${label ? 'text-slate-800' : 'text-slate-400'}`}>
+              <Building className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              <span className={`truncate ${label ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {label || 'No company'}
               </span>
             </span>
-            <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-0 w-[--radix-popover-trigger-width] min-w-[240px]" align="start">
@@ -86,10 +86,10 @@ export default function CompanyPicker({ value, companyName, onChange }) {
             <CommandList>
               {filtered.length === 0 && !query && <CommandEmpty>No companies yet.</CommandEmpty>}
               <CommandGroup>
-                {filtered.map(company => (
+                {filtered.map((company) => (
                   <CommandItem key={company.id} value={company.id} onSelect={() => select(company)}>
                     <Check className={`w-3.5 h-3.5 mr-2 ${value === company.id ? 'opacity-100' : 'opacity-0'}`} />
-                    <Building className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                    <Building className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                     <span className="truncate">{company.name}</span>
                   </CommandItem>
                 ))}
@@ -97,7 +97,7 @@ export default function CompanyPicker({ value, companyName, onChange }) {
               {query.trim() && !exactExists && (
                 <CommandGroup>
                   <CommandItem value={`__create__${query}`} onSelect={createAndSelect} disabled={creating}>
-                    <Plus className="w-3.5 h-3.5 mr-2 text-blue-500" />
+                    <Plus className="w-3.5 h-3.5 mr-2 text-blue-500 dark:text-blue-300" />
                     <span>{creating ? 'Creating…' : `Create "${query.trim()}"`}</span>
                   </CommandItem>
                 </CommandGroup>
@@ -107,7 +107,14 @@ export default function CompanyPicker({ value, companyName, onChange }) {
         </PopoverContent>
       </Popover>
       {label && (
-        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-slate-400 hover:text-slate-600" onClick={clear} title="Clear company">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-muted-foreground"
+          onClick={clear}
+          title="Clear company"
+        >
           <X className="w-3.5 h-3.5" />
         </Button>
       )}

@@ -22,11 +22,11 @@ import { createPageUrl } from '../utils';
 import { usePermissions } from '@/components/permissions/PermissionContext';
 
 const STATUS_COLORS = {
-  submitted: 'bg-blue-100 text-blue-800',
-  reviewing: 'bg-amber-100 text-amber-800',
-  quoted: 'bg-purple-100 text-purple-800',
-  accepted: 'bg-green-100 text-green-800',
-  declined: 'bg-red-100 text-red-800',
+  submitted: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+  reviewing: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300',
+  quoted: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
+  accepted: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  declined: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
 };
 
 const STATUS_FILTERS = ['all', 'submitted', 'reviewing', 'quoted', 'accepted', 'declined'];
@@ -40,12 +40,14 @@ export default function QuoteRequests() {
   const [responseStatus, setResponseStatus] = useState('reviewing');
   const [responseNotes, setResponseNotes] = useState('');
 
-  const { data: quotes = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['allQuoteRequests'],
-    queryFn: () => db.entities.QuoteRequest.list('-created_date'),
-  }));
+  const { data: quotes = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allQuoteRequests'],
+      queryFn: () => db.entities.QuoteRequest.list('-created_date'),
+    })
+  );
 
-  const filtered = statusFilter === 'all' ? quotes : quotes.filter(q => q.status === statusFilter);
+  const filtered = statusFilter === 'all' ? quotes : quotes.filter((q) => q.status === statusFilter);
 
   const openQuote = (quote) => {
     setSelected(quote);
@@ -53,15 +55,17 @@ export default function QuoteRequests() {
     setResponseNotes(quote.response_notes || '');
   };
 
-  const respondMutation = /** @type {any} */ (useMutation({
-    mutationFn: () => respondToQuote(selected.id, { status: responseStatus, response_notes: responseNotes }),
-    onSuccess: () => {
-      showSuccess('Quote updated', 'The client has been notified by email.');
-      queryClient.invalidateQueries({ queryKey: ['allQuoteRequests'] });
-      setSelected(null);
-    },
-    onError: (error) => showError('Failed to update quote', error.message),
-  }));
+  const respondMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () => respondToQuote(selected.id, { status: responseStatus, response_notes: responseNotes }),
+      onSuccess: () => {
+        showSuccess('Quote updated', 'The client has been notified by email.');
+        queryClient.invalidateQueries({ queryKey: ['allQuoteRequests'] });
+        setSelected(null);
+      },
+      onError: (error) => showError('Failed to update quote', error.message),
+    })
+  );
 
   if (isLoading) {
     return <SkeletonTable />;
@@ -70,15 +74,15 @@ export default function QuoteRequests() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-1 flex items-center gap-2">
-          <ClipboardList className="text-blue-600 w-7 h-7" />
+        <h1 className="text-3xl font-bold text-foreground mb-1 flex items-center gap-2">
+          <ClipboardList className="text-blue-600 dark:text-blue-300 w-7 h-7" />
           Quote Requests
         </h1>
-        <p className="text-slate-500 text-sm">Review and respond to B2B quote requests submitted by clients</p>
+        <p className="text-muted-foreground text-sm">Review and respond to B2B quote requests submitted by clients</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {STATUS_FILTERS.map(s => (
+        {STATUS_FILTERS.map((s) => (
           <Button
             key={s}
             size="sm"
@@ -86,34 +90,39 @@ export default function QuoteRequests() {
             className={statusFilter === s ? 'bg-blue-600 hover:bg-blue-700' : ''}
             onClick={() => setStatusFilter(s)}
           >
-            {s === 'all' ? `All (${quotes.length})` : `${s} (${quotes.filter(q => q.status === s).length})`}
+            {s === 'all' ? `All (${quotes.length})` : `${s} (${quotes.filter((q) => q.status === s).length})`}
           </Button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <Card className="p-12 text-center bg-white">
-          <p className="text-slate-500">No quote requests {statusFilter !== 'all' ? `with status "${statusFilter}"` : 'yet'}.</p>
+        <Card className="p-12 text-center bg-card">
+          <p className="text-muted-foreground">
+            No quote requests {statusFilter !== 'all' ? `with status "${statusFilter}"` : 'yet'}.
+          </p>
         </Card>
       ) : (
         <div className="space-y-3">
-          {filtered.map(quote => (
+          {filtered.map((quote) => (
             <Card
               key={quote.id}
-              className="p-5 bg-white shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+              className="p-5 bg-card shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-800 transition-all cursor-pointer"
               onClick={() => openQuote(quote)}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-slate-900">{quote.title}</h3>
-                    <Badge className={STATUS_COLORS[quote.status] || 'bg-gray-100 text-gray-800'}>{quote.status}</Badge>
+                    <h3 className="font-semibold text-foreground">{quote.title}</h3>
+                    <Badge className={STATUS_COLORS[quote.status] || 'bg-muted text-foreground'}>{quote.status}</Badge>
                   </div>
-                  <p className="text-sm text-slate-500 mt-1">
-                    {quote.client_name} · {quote.items?.length || 0} item{quote.items?.length === 1 ? '' : 's'} · Requested {format(parseISO(quote.created_date), 'MMM d, yyyy')}
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {quote.client_name} · {quote.items?.length || 0} item{quote.items?.length === 1 ? '' : 's'} ·
+                    Requested {format(parseISO(quote.created_date), 'MMM d, yyyy')}
                   </p>
                 </div>
-                <div className="font-bold text-green-700 ml-4">{formatCurrency(quote.total || 0, quote.currency)}</div>
+                <div className="font-bold text-green-700 dark:text-green-300 ml-4">
+                  {formatCurrency(quote.total || 0, quote.currency)}
+                </div>
               </div>
             </Card>
           ))}
@@ -127,16 +136,19 @@ export default function QuoteRequests() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   {selected.title}
-                  <Badge className={STATUS_COLORS[selected.status] || 'bg-gray-100 text-gray-800'}>{selected.status}</Badge>
+                  <Badge className={STATUS_COLORS[selected.status] || 'bg-muted text-foreground'}>
+                    {selected.status}
+                  </Badge>
                 </DialogTitle>
               </DialogHeader>
 
               <div className="space-y-4 mt-2">
-                <div className="text-sm text-slate-600">
-                  <span className="font-medium text-slate-900">{selected.client_name}</span> · Requested {format(parseISO(selected.created_date), 'MMM d, yyyy')}
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{selected.client_name}</span> · Requested{' '}
+                  {format(parseISO(selected.created_date), 'MMM d, yyyy')}
                 </div>
 
-                {(selected.destination || selected.start_date || (selected.passengers?.length > 0)) && (
+                {(selected.destination || selected.start_date || selected.passengers?.length > 0) && (
                   <div className="pb-2 border-b">
                     <QuoteTripInfo quote={selected} />
                   </div>
@@ -144,31 +156,41 @@ export default function QuoteRequests() {
 
                 <div className="space-y-2">
                   {(selected.items || []).map((item, i) => (
-                    <div key={i} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/50">
+                    <div
+                      key={i}
+                      className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border bg-muted/50"
+                    >
                       <div className="flex items-start gap-3 min-w-0">
                         {item.image_url && (
                           <img src={item.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
                         )}
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-slate-800 truncate">{item.service_name}</div>
-                          <div className="text-xs text-slate-500">{item.supplier_name} · {formatCurrency(item.unit_price, selected.currency)} × {item.quantity}</div>
+                          <div className="text-sm font-medium text-foreground truncate">{item.service_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.supplier_name} · {formatCurrency(item.unit_price, selected.currency)} ×{' '}
+                            {item.quantity}
+                          </div>
                           <QuoteLineExtras item={item} />
                         </div>
                       </div>
-                      <div className="font-semibold text-green-700 text-sm flex-shrink-0">{formatCurrency(item.line_total, selected.currency)}</div>
+                      <div className="font-semibold text-green-700 dark:text-green-300 text-sm flex-shrink-0">
+                        {formatCurrency(item.line_total, selected.currency)}
+                      </div>
                     </div>
                   ))}
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="font-bold text-slate-900">Total</span>
-                  <span className="font-bold text-green-700 text-lg">{formatCurrency(selected.total || 0, selected.currency)}</span>
+                  <span className="font-bold text-foreground">Total</span>
+                  <span className="font-bold text-green-700 dark:text-green-300 text-lg">
+                    {formatCurrency(selected.total || 0, selected.currency)}
+                  </span>
                 </div>
 
                 {selected.notes && (
                   <div className="text-sm">
-                    <span className="font-medium text-slate-700">Client notes: </span>
-                    <span className="text-slate-600">{selected.notes}</span>
+                    <span className="font-medium text-foreground">Client notes: </span>
+                    <span className="text-muted-foreground">{selected.notes}</span>
                   </div>
                 )}
 
@@ -177,22 +199,26 @@ export default function QuoteRequests() {
                     {selected.converted_trip_id ? (
                       <Button
                         variant="outline"
-                        className="w-full gap-2 text-green-700 border-green-300 hover:bg-green-50"
+                        className="w-full gap-2 text-green-700 dark:text-green-300 border-green-300 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/40"
                         onClick={() => navigate(createPageUrl(`ReservationDetails?id=${selected.converted_trip_id}`))}
                       >
-                        <ArrowRightCircle className="w-4 h-4" />View Reservation
+                        <ArrowRightCircle className="w-4 h-4" />
+                        View Reservation
                       </Button>
-                    ) : hasPermission('create_trips') && (
-                      <Button
-                        className="w-full gap-2 bg-purple-600 hover:bg-purple-700"
-                        onClick={() => {
-                          const quoteId = selected.id;
-                          setSelected(null);
-                          navigate(createPageUrl(`CreateReservation?fromQuote=${quoteId}`));
-                        }}
-                      >
-                        <ArrowRightCircle className="w-4 h-4" />Convert to Reservation
-                      </Button>
+                    ) : (
+                      hasPermission('create_trips') && (
+                        <Button
+                          className="w-full gap-2 bg-purple-600 hover:bg-purple-700"
+                          onClick={() => {
+                            const quoteId = selected.id;
+                            setSelected(null);
+                            navigate(createPageUrl(`CreateReservation?fromQuote=${quoteId}`));
+                          }}
+                        >
+                          <ArrowRightCircle className="w-4 h-4" />
+                          Convert to Reservation
+                        </Button>
+                      )
                     )}
                   </div>
                 )}
@@ -201,7 +227,9 @@ export default function QuoteRequests() {
                   <div className="space-y-2">
                     <Label>Set status</Label>
                     <Select value={responseStatus} onValueChange={setResponseStatus}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="reviewing">Reviewing</SelectItem>
                         <SelectItem value="quoted">Quoted</SelectItem>
@@ -220,7 +248,9 @@ export default function QuoteRequests() {
                     />
                   </div>
                   <div className="flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => setSelected(null)}>
+                      Cancel
+                    </Button>
                     <Button
                       className="bg-blue-600 hover:bg-blue-700"
                       disabled={respondMutation.isPending}

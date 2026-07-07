@@ -13,13 +13,33 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  ArrowLeft, Mail, Phone, MapPin, CreditCard, FileText,
-  DollarSign, Plus, Upload, Download, Plane, Star, Edit, Globe, XCircle, RotateCcw, Eye
+  ArrowLeft,
+  Mail,
+  Phone,
+  MapPin,
+  CreditCard,
+  FileText,
+  DollarSign,
+  Plus,
+  Upload,
+  Download,
+  Plane,
+  Star,
+  Edit,
+  Globe,
+  XCircle,
+  RotateCcw,
+  Eye,
 } from 'lucide-react';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
 import { usePermissions } from '../components/permissions/PermissionContext';
@@ -33,17 +53,17 @@ import ClientTasksPanel from '../components/clients/ClientTasksPanel';
 import LocationSearch from '@/components/services/LocationSearch';
 
 const STATUS_COLORS = {
-active: 'bg-green-100 text-green-800',
-inactive: 'bg-gray-100 text-gray-800',
-vip: 'bg-purple-100 text-purple-800',
-cancelled: 'bg-red-100 text-red-800'
+  active: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  inactive: 'bg-muted text-foreground',
+  vip: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
+  cancelled: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
 };
 
 const PAYMENT_STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  completed: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800',
-  refunded: 'bg-orange-100 text-orange-800'
+  pending: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300',
+  completed: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  failed: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
+  refunded: 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300',
 };
 
 export default function ClientDetails() {
@@ -70,63 +90,75 @@ export default function ClientDetails() {
     payment_method: 'credit_card',
     transaction_id: '',
     status: 'completed',
-    notes: ''
+    notes: '',
   });
   const queryClient = useQueryClient();
 
-  const { data: client, isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['client', clientId],
-    queryFn: () => db.entities.Client.get(clientId),
-    enabled: !!clientId
-  }));
+  const { data: client, isLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['client', clientId],
+      queryFn: () => db.entities.Client.get(clientId),
+      enabled: !!clientId,
+    })
+  );
 
-  const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clientPayments', clientId],
-    queryFn: () => db.entities.ClientPayment.filter({ client_id: clientId }, '-payment_date'),
-    enabled: !!clientId
-  }));
+  const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientPayments', clientId],
+      queryFn: () => db.entities.ClientPayment.filter({ client_id: clientId }, '-payment_date'),
+      enabled: !!clientId,
+    })
+  );
 
-  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clientProposals', clientId],
-    queryFn: () => db.entities.Proposal.filter({ client_id: clientId }),
-    enabled: !!clientId
-  }));
+  const { data: proposals = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientProposals', clientId],
+      queryFn: () => db.entities.Proposal.filter({ client_id: clientId }),
+      enabled: !!clientId,
+    })
+  );
 
-  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clientTrips', clientId],
-    queryFn: () => db.entities.Trip.filter({ client_id: clientId }),
-    enabled: !!clientId
-  }));
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientTrips', clientId],
+      queryFn: () => db.entities.Trip.filter({ client_id: clientId }),
+      enabled: !!clientId,
+    })
+  );
 
-  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clientInvoices', clientId],
-    queryFn: () => db.entities.Invoice.filter({ client_id: clientId }),
-    enabled: !!clientId
-  }));
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientInvoices', clientId],
+      queryFn: () => db.entities.Invoice.filter({ client_id: clientId }),
+      enabled: !!clientId,
+    })
+  );
 
-  const addPaymentMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.ClientPayment.create({ ...data, client_id: clientId }),
-    onSuccess: async (/** @type {any} */ payment) => {
-      showSuccess('Payment added');
-      const newTotal = (client.total_paid || 0) + payment.amount;
-      await db.entities.Client.update(clientId, {
-        ...client,
-        total_paid: newTotal
-      });
-      queryClient.invalidateQueries({ queryKey: ['clientPayments', clientId] });
-      queryClient.invalidateQueries({ queryKey: ['client', clientId] });
-      setPaymentModalOpen(false);
-      setPaymentFormData({
-        amount: '',
-        payment_date: new Date().toISOString().split('T')[0],
-        payment_method: 'credit_card',
-        transaction_id: '',
-        status: 'completed',
-        notes: ''
-      });
-    },
-    onError: (error) => showError('Failed to add payment', error.message)
-  }));
+  const addPaymentMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.ClientPayment.create({ ...data, client_id: clientId }),
+      onSuccess: async (/** @type {any} */ payment) => {
+        showSuccess('Payment added');
+        const newTotal = (client.total_paid || 0) + payment.amount;
+        await db.entities.Client.update(clientId, {
+          ...client,
+          total_paid: newTotal,
+        });
+        queryClient.invalidateQueries({ queryKey: ['clientPayments', clientId] });
+        queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+        setPaymentModalOpen(false);
+        setPaymentFormData({
+          amount: '',
+          payment_date: new Date().toISOString().split('T')[0],
+          payment_method: 'credit_card',
+          transaction_id: '',
+          status: 'completed',
+          notes: '',
+        });
+      },
+      onError: (error) => showError('Failed to add payment', error.message),
+    })
+  );
 
   const handleFileUpload = async (e, paymentId) => {
     const file = e.target.files[0];
@@ -135,10 +167,10 @@ export default function ClientDetails() {
     setUploadingReceipt(true);
     try {
       const { file_url } = await db.integrations.Core.UploadFile({ file });
-      const payment = payments.find(p => p.id === paymentId);
+      const payment = payments.find((p) => p.id === paymentId);
       await db.entities.ClientPayment.update(paymentId, {
         ...payment,
-        receipt_url: file_url
+        receipt_url: file_url,
       });
       queryClient.invalidateQueries({ queryKey: ['clientPayments', clientId] });
     } finally {
@@ -146,36 +178,42 @@ export default function ClientDetails() {
     }
   };
 
-  const updateClientMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => {
-      return db.entities.Client.update(clientId, data);
-    },
-    onSuccess: () => {
-      showSuccess('Client updated');
-      queryClient.invalidateQueries({ queryKey: ['client', clientId] });
-      setEditModalOpen(false);
-    },
-    onError: (error) => showError('Failed to update client', error.message)
-  }));
+  const updateClientMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => {
+        return db.entities.Client.update(clientId, data);
+      },
+      onSuccess: () => {
+        showSuccess('Client updated');
+        queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+        setEditModalOpen(false);
+      },
+      onError: (error) => showError('Failed to update client', error.message),
+    })
+  );
 
-  const cancelClientMutation = /** @type {any} */ (useMutation({
-    mutationFn: () => db.entities.Client.update(clientId, { status: 'cancelled' }),
-    onSuccess: () => {
-      showSuccess('Client cancelled');
-      queryClient.invalidateQueries({ queryKey: ['client', clientId] });
-      setCancelDialogOpen(false);
-    },
-    onError: (error) => showError('Failed to cancel client', error.message)
-  }));
+  const cancelClientMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () => db.entities.Client.update(clientId, { status: 'cancelled' }),
+      onSuccess: () => {
+        showSuccess('Client cancelled');
+        queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+        setCancelDialogOpen(false);
+      },
+      onError: (error) => showError('Failed to cancel client', error.message),
+    })
+  );
 
-  const reactivateClientMutation = /** @type {any} */ (useMutation({
-    mutationFn: () => db.entities.Client.update(clientId, { status: 'active' }),
-    onSuccess: () => {
-      showSuccess('Client reactivated');
-      queryClient.invalidateQueries({ queryKey: ['client', clientId] });
-    },
-    onError: (error) => showError('Failed to reactivate client', error.message)
-  }));
+  const reactivateClientMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () => db.entities.Client.update(clientId, { status: 'active' }),
+      onSuccess: () => {
+        showSuccess('Client reactivated');
+        queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+      },
+      onError: (error) => showError('Failed to reactivate client', error.message),
+    })
+  );
 
   const openEditModal = () => {
     setEditForm({
@@ -203,9 +241,7 @@ export default function ClientDetails() {
     setEditModalOpen(true);
   };
 
-  const totalPaid = payments
-    .filter(p => p.status === 'completed')
-    .reduce((sum, p) => sum + p.amount, 0);
+  const totalPaid = payments.filter((p) => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
 
   if (isLoading) {
     return <SkeletonCard />;
@@ -225,29 +261,36 @@ export default function ClientDetails() {
       </Link>
 
       {/* Client Header */}
-      <Card className="p-8 bg-white shadow-lg">
+      <Card className="p-8 bg-card shadow-lg">
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-start gap-4">
-            <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-3xl font-bold text-blue-600">
-                {client.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+            <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+              <span className="text-3xl font-bold text-blue-600 dark:text-blue-300">
+                {client.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .substring(0, 2)
+                  .toUpperCase()}
               </span>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
                 {client.name}
-                {client.status === 'vip' && <Star className="w-6 h-6 text-purple-600 fill-purple-600" />}
+                {client.status === 'vip' && (
+                  <Star className="w-6 h-6 text-purple-600 dark:text-purple-300 fill-purple-600" />
+                )}
               </h1>
-              {client.company && (
-                <p className="text-lg text-slate-600 mb-2">{client.company}</p>
-              )}
-              <Badge className={STATUS_COLORS[client.status]}>
-                {client.status}
-              </Badge>
+              {client.company && <p className="text-lg text-muted-foreground mb-2">{client.company}</p>}
+              <Badge className={STATUS_COLORS[client.status]}>{client.status}</Badge>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={viewPortalAsClient} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+            <Button
+              onClick={viewPortalAsClient}
+              variant="outline"
+              className="border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+            >
               <Eye className="w-4 h-4 mr-2" /> View portal as client
             </Button>
             {hasPermission('modify_clients') && (
@@ -256,11 +299,19 @@ export default function ClientDetails() {
                   <Edit className="w-4 h-4 mr-2" /> Edit Client
                 </Button>
                 {client.status === 'cancelled' ? (
-                  <Button onClick={() => reactivateClientMutation.mutate()} variant="outline" className="border-green-300 text-green-700 hover:bg-green-50">
+                  <Button
+                    onClick={() => reactivateClientMutation.mutate()}
+                    variant="outline"
+                    className="border-green-300 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-950/40"
+                  >
                     <RotateCcw className="w-4 h-4 mr-2" /> Reactivate
                   </Button>
                 ) : (
-                  <Button onClick={() => setCancelDialogOpen(true)} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+                  <Button
+                    onClick={() => setCancelDialogOpen(true)}
+                    variant="outline"
+                    className="border-red-300 dark:border-red-800 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40"
+                  >
                     <XCircle className="w-4 h-4 mr-2" /> Cancel Client
                   </Button>
                 )}
@@ -272,32 +323,38 @@ export default function ClientDetails() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-3">
             {client.email && (
-              <div className="flex items-center gap-2 text-slate-700">
-                <Mail className="w-4 h-4 text-slate-500" />
-                <a href={`mailto:${client.email}`} className="hover:text-blue-600">
+              <div className="flex items-center gap-2 text-foreground">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                <a href={`mailto:${client.email}`} className="hover:text-blue-600 dark:hover:text-blue-300">
                   {client.email}
                 </a>
               </div>
             )}
             {client.phone && (
-              <div className="flex items-center gap-2 text-slate-700">
-                <Phone className="w-4 h-4 text-slate-500" />
+              <div className="flex items-center gap-2 text-foreground">
+                <Phone className="w-4 h-4 text-muted-foreground" />
                 <div>
-                  <a href={`tel:${client.phone}`} className="hover:text-blue-600">{client.phone}</a>
-                  <span className="ml-1 text-xs text-slate-400">(principale)</span>
+                  <a href={`tel:${client.phone}`} className="hover:text-blue-600 dark:hover:text-blue-300">
+                    {client.phone}
+                  </a>
+                  <span className="ml-1 text-xs text-muted-foreground">(principale)</span>
                 </div>
               </div>
             )}
             {client.phone_secondary && (
-              <div className="flex items-center gap-2 text-slate-700">
-                <Phone className="w-4 h-4 text-slate-400" />
-                <a href={`tel:${client.phone_secondary}`} className="hover:text-blue-600">{client.phone_secondary}</a>
+              <div className="flex items-center gap-2 text-foreground">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                <a href={`tel:${client.phone_secondary}`} className="hover:text-blue-600 dark:hover:text-blue-300">
+                  {client.phone_secondary}
+                </a>
               </div>
             )}
             {client.age_category && (
-              <div className="flex items-center gap-2 text-slate-700">
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
-                  {{ adult: 'Adult', children: 'Children (3–11.99 years)', infant: 'Infant (0–2.99 years)' }[client.age_category] || client.age_category}
+              <div className="flex items-center gap-2 text-foreground">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
+                  {{ adult: 'Adult', children: 'Children (3–11.99 years)', infant: 'Infant (0–2.99 years)' }[
+                    client.age_category
+                  ] || client.age_category}
                 </span>
               </div>
             )}
@@ -305,12 +362,14 @@ export default function ClientDetails() {
 
           <div className="space-y-3">
             {client.address && (
-              <div className="flex items-start gap-2 text-slate-700">
-                <MapPin className="w-4 h-4 text-slate-500 mt-1" />
+              <div className="flex items-start gap-2 text-foreground">
+                <MapPin className="w-4 h-4 text-muted-foreground mt-1" />
                 <div>
                   <div>{client.address}</div>
                   {client.city && client.country && (
-                    <div className="text-sm">{client.city}, {client.country}</div>
+                    <div className="text-sm">
+                      {client.city}, {client.country}
+                    </div>
                   )}
                 </div>
               </div>
@@ -319,20 +378,27 @@ export default function ClientDetails() {
 
           <div className="space-y-3">
             {client.website && (
-              <div className="flex items-center gap-2 text-slate-700">
-                <Globe className="w-4 h-4 text-slate-500" />
-                <a href={client.website.startsWith('http') ? client.website : `https://${client.website}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 truncate">{client.website}</a>
+              <div className="flex items-center gap-2 text-foreground">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <a
+                  href={client.website.startsWith('http') ? client.website : `https://${client.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-blue-600 dark:hover:text-blue-300 truncate"
+                >
+                  {client.website}
+                </a>
               </div>
             )}
             {client.payment_method && (
-              <div className="flex items-center gap-2 text-slate-700">
-                <CreditCard className="w-4 h-4 text-slate-500" />
+              <div className="flex items-center gap-2 text-foreground">
+                <CreditCard className="w-4 h-4 text-muted-foreground" />
                 <span className="capitalize">{client.payment_method.replace('_', ' ')}</span>
               </div>
             )}
             {client.passport_number && (
-              <div className="flex items-center gap-2 text-slate-700">
-                <FileText className="w-4 h-4 text-slate-500" />
+              <div className="flex items-center gap-2 text-foreground">
+                <FileText className="w-4 h-4 text-muted-foreground" />
                 Passport: {client.passport_number}
               </div>
             )}
@@ -368,7 +434,7 @@ export default function ClientDetails() {
       </div>
 
       <Tabs defaultValue="payments" className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
+        <TabsList className="bg-card border border-border p-1 flex-wrap h-auto">
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="proposals">Proposals</TabsTrigger>
@@ -387,28 +453,26 @@ export default function ClientDetails() {
           </div>
 
           {payments.length === 0 ? (
-            <Card className="p-12 text-center bg-white">
-              <p className="text-slate-600">No payments recorded</p>
+            <Card className="p-12 text-center bg-card">
+              <p className="text-muted-foreground">No payments recorded</p>
             </Card>
           ) : (
             <div className="space-y-4">
-              {payments.map(payment => (
-                <Card key={payment.id} className="p-6 bg-white hover:shadow-md transition-shadow">
+              {payments.map((payment) => (
+                <Card key={payment.id} className="p-6 bg-card hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="text-2xl font-bold text-green-700">
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-300">
                           ${payment.amount.toFixed(2)}
                         </div>
-                        <Badge className={PAYMENT_STATUS_COLORS[payment.status]}>
-                          {payment.status}
-                        </Badge>
+                        <Badge className={PAYMENT_STATUS_COLORS[payment.status]}>{payment.status}</Badge>
                       </div>
-                      <div className="text-sm text-slate-600 space-y-1">
+                      <div className="text-sm text-muted-foreground space-y-1">
                         <div>Date: {format(new Date(payment.payment_date), 'MMM d, yyyy')}</div>
                         <div className="capitalize">Method: {payment.payment_method.replace('_', ' ')}</div>
                         {payment.transaction_id && <div>Transaction: {payment.transaction_id}</div>}
-                        {payment.notes && <div className="mt-2 text-slate-700">{payment.notes}</div>}
+                        {payment.notes && <div className="mt-2 text-foreground">{payment.notes}</div>}
                       </div>
                     </div>
                     <div className="flex flex-col gap-2">
@@ -450,29 +514,39 @@ export default function ClientDetails() {
         {/* Invoices Tab */}
         <TabsContent value="invoices">
           {invoices.length === 0 ? (
-            <Card className="p-12 text-center bg-white">
-              <p className="text-slate-600">No invoices for this client</p>
+            <Card className="p-12 text-center bg-card">
+              <p className="text-muted-foreground">No invoices for this client</p>
             </Card>
           ) : (
             <div className="space-y-4">
-              {invoices.map(invoice => (
+              {invoices.map((invoice) => (
                 <Link key={invoice.id} to={createPageUrl(`InvoiceDetails?id=${invoice.id}`)}>
-                  <Card className="p-6 bg-white hover:shadow-xl transition-shadow cursor-pointer">
+                  <Card className="p-6 bg-card hover:shadow-xl transition-shadow cursor-pointer">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 mb-1">{invoice.invoice_number}</h3>
-                        <div className="text-sm text-slate-600">
+                        <h3 className="font-bold text-lg text-foreground mb-1">{invoice.invoice_number}</h3>
+                        <div className="text-sm text-muted-foreground">
                           <div>Issued: {format(new Date(invoice.issue_date), 'MMM d, yyyy')}</div>
                           <div>Due: {format(new Date(invoice.due_date), 'MMM d, yyyy')}</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <Badge className={invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}>
+                        <Badge
+                          className={
+                            invoice.status === 'paid'
+                              ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300'
+                              : 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300'
+                          }
+                        >
                           {invoice.status}
                         </Badge>
-                        <div className="font-bold text-green-700 mt-2">${invoice.total_amount.toFixed(2)}</div>
+                        <div className="font-bold text-green-700 dark:text-green-300 mt-2">
+                          ${invoice.total_amount.toFixed(2)}
+                        </div>
                         {invoice.amount_due > 0 && (
-                          <div className="text-sm text-orange-600">Due: ${invoice.amount_due.toFixed(2)}</div>
+                          <div className="text-sm text-orange-600 dark:text-orange-300">
+                            Due: ${invoice.amount_due.toFixed(2)}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -486,23 +560,31 @@ export default function ClientDetails() {
         {/* Proposals Tab */}
         <TabsContent value="proposals">
           {proposals.length === 0 ? (
-            <Card className="p-12 text-center bg-white">
-              <p className="text-slate-600">No proposals for this client</p>
+            <Card className="p-12 text-center bg-card">
+              <p className="text-muted-foreground">No proposals for this client</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {proposals.map(proposal => (
+              {proposals.map((proposal) => (
                 <Link key={proposal.id} to={createPageUrl(`ProposalDetails?id=${proposal.id}`)}>
-                  <Card className="p-6 bg-white hover:shadow-xl transition-shadow cursor-pointer">
-                    <h3 className="font-bold text-lg text-slate-900 mb-2">{proposal.title}</h3>
-                    <div className="text-sm text-slate-600 mb-3">
+                  <Card className="p-6 bg-card hover:shadow-xl transition-shadow cursor-pointer">
+                    <h3 className="font-bold text-lg text-foreground mb-2">{proposal.title}</h3>
+                    <div className="text-sm text-muted-foreground mb-3">
                       {proposal.destination && <div>Destination: {proposal.destination}</div>}
                     </div>
                     <div className="flex justify-between items-center flex-wrap gap-2">
-                      <Badge className={proposal.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
+                      <Badge
+                        className={
+                          proposal.status === 'accepted'
+                            ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300'
+                            : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
+                        }
+                      >
                         {proposal.status}
                       </Badge>
-                      <div className="font-bold text-green-700">${(proposal.total_cost || 0).toFixed(2)}</div>
+                      <div className="font-bold text-green-700 dark:text-green-300">
+                        ${(proposal.total_cost || 0).toFixed(2)}
+                      </div>
                     </div>
                   </Card>
                 </Link>
@@ -514,19 +596,19 @@ export default function ClientDetails() {
         {/* Trips Tab */}
         <TabsContent value="trips">
           {trips.length === 0 ? (
-            <Card className="p-12 text-center bg-white">
-              <p className="text-slate-600">No trips allocated to this client</p>
+            <Card className="p-12 text-center bg-card">
+              <p className="text-muted-foreground">No trips allocated to this client</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {trips.map(trip => (
+              {trips.map((trip) => (
                 <Link key={trip.id} to={createPageUrl(`ReservationDetails?id=${trip.id}`)}>
-                  <Card className="p-6 bg-white hover:shadow-xl transition-shadow cursor-pointer">
+                  <Card className="p-6 bg-card hover:shadow-xl transition-shadow cursor-pointer">
                     <div className="flex items-center gap-3 mb-3">
-                      <Plane className="w-5 h-5 text-blue-600" />
-                      <h3 className="font-bold text-lg text-slate-900">{trip.name}</h3>
+                      <Plane className="w-5 h-5 text-blue-600 dark:text-blue-300" />
+                      <h3 className="font-bold text-lg text-foreground">{trip.name}</h3>
                     </div>
-                    <div className="text-sm text-slate-600">
+                    <div className="text-sm text-muted-foreground">
                       <div>{trip.destination}</div>
                       <div className="mt-2">
                         {format(new Date(trip.start_date), 'MMM d')} - {format(new Date(trip.end_date), 'MMM d, yyyy')}
@@ -556,16 +638,31 @@ export default function ClientDetails() {
           <DialogHeader>
             <DialogTitle>Edit Client</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); updateClientMutation.mutate(editForm); }} className="space-y-4 mt-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              updateClientMutation.mutate(editForm);
+            }}
+            className="space-y-4 mt-4"
+          >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Name *</Label>
-                <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label>Age Category</Label>
-                <Select value={editForm.age_category} onValueChange={(v) => setEditForm({ ...editForm, age_category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={editForm.age_category}
+                  onValueChange={(v) => setEditForm({ ...editForm, age_category: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="adult">Adult</SelectItem>
                     <SelectItem value="children">Children (3–11.99 years)</SelectItem>
@@ -575,31 +672,51 @@ export default function ClientDetails() {
               </div>
               <div className="space-y-2">
                 <Label>Primary Contact *</Label>
-                <Input type="tel" placeholder="+1 555 000 0000" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} required />
+                <Input
+                  type="tel"
+                  placeholder="+1 555 000 0000"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label>Secondary Contact</Label>
-                <Input type="tel" placeholder="+1 555 000 0000" value={editForm.phone_secondary || ''} onChange={(e) => setEditForm({ ...editForm, phone_secondary: e.target.value })} />
+                <Input
+                  type="tel"
+                  placeholder="+1 555 000 0000"
+                  value={editForm.phone_secondary || ''}
+                  onChange={(e) => setEditForm({ ...editForm, phone_secondary: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                <Input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Company</Label>
-                <Input value={editForm.company} onChange={(e) => setEditForm({ ...editForm, company: e.target.value })} />
+                <Input
+                  value={editForm.company}
+                  onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>
                 <LocationSearch
                   value={editForm.address}
                   onChange={(v) => setEditForm({ ...editForm, address: v })}
-                  onSelect={(item) => setEditForm(prev => ({
-                    ...prev,
-                    address: item.label,
-                    city: prev.city || item.city,
-                    country: prev.country || item.country,
-                  }))}
+                  onSelect={(item) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      address: item.label,
+                      city: prev.city || item.city,
+                      country: prev.country || item.country,
+                    }))
+                  }
                   placeholder="Search address (OpenStreetMap)..."
                 />
               </div>
@@ -609,15 +726,25 @@ export default function ClientDetails() {
               </div>
               <div className="space-y-2">
                 <Label>Country</Label>
-                <Input value={editForm.country} onChange={(e) => setEditForm({ ...editForm, country: e.target.value })} />
+                <Input
+                  value={editForm.country}
+                  onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Passport Number</Label>
-                <Input value={editForm.passport_number} onChange={(e) => setEditForm({ ...editForm, passport_number: e.target.value })} />
+                <Input
+                  value={editForm.passport_number}
+                  onChange={(e) => setEditForm({ ...editForm, passport_number: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Date of Birth</Label>
-                <Input type="date" value={editForm.date_of_birth} onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })} />
+                <Input
+                  type="date"
+                  value={editForm.date_of_birth}
+                  onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Tax ID</Label>
@@ -626,7 +753,9 @@ export default function ClientDetails() {
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
@@ -637,8 +766,13 @@ export default function ClientDetails() {
               </div>
               <div className="space-y-2">
                 <Label>Payment Method</Label>
-                <Select value={editForm.payment_method} onValueChange={(v) => setEditForm({ ...editForm, payment_method: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={editForm.payment_method}
+                  onValueChange={(v) => setEditForm({ ...editForm, payment_method: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="credit_card">Credit Card</SelectItem>
                     <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
@@ -651,34 +785,61 @@ export default function ClientDetails() {
               </div>
               <div className="space-y-2">
                 <Label>Portal Currency</Label>
-                <Select value={editForm.preferred_currency || 'USD'} onValueChange={(v) => setEditForm({ ...editForm, preferred_currency: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={editForm.preferred_currency || 'USD'}
+                  onValueChange={(v) => setEditForm({ ...editForm, preferred_currency: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'].map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    {['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'].map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-slate-400">Currency the client sees B2B prices in (auto-converted).</p>
+                <p className="text-xs text-muted-foreground">
+                  Currency the client sees B2B prices in (auto-converted).
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Default Markup %</Label>
-                <Input type="number" min="0" max="200" step="0.5" value={editForm.default_markup ?? 0}
-                  onChange={(e) => setEditForm({ ...editForm, default_markup: parseFloat(e.target.value) || 0 })} />
-                <p className="text-xs text-slate-400">Applied to supplier pricing for this client's quotes.</p>
+                <Input
+                  type="number"
+                  min="0"
+                  max="200"
+                  step="0.5"
+                  value={editForm.default_markup ?? 0}
+                  onChange={(e) => setEditForm({ ...editForm, default_markup: parseFloat(e.target.value) || 0 })}
+                />
+                <p className="text-xs text-muted-foreground">Applied to supplier pricing for this client's quotes.</p>
               </div>
             </div>
             <div className="space-y-2">
               <Label>Invoice Address</Label>
-              <Textarea value={editForm.invoice_address} onChange={(e) => setEditForm({ ...editForm, invoice_address: e.target.value })} rows={2} />
+              <Textarea
+                value={editForm.invoice_address}
+                onChange={(e) => setEditForm({ ...editForm, invoice_address: e.target.value })}
+                rows={2}
+              />
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>
-              <Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={3} />
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                rows={3}
+              />
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Save Changes</Button>
+              <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Save Changes
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -690,13 +851,16 @@ export default function ClientDetails() {
           <DialogHeader>
             <DialogTitle>Add Payment</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            addPaymentMutation.mutate({
-              ...paymentFormData,
-              amount: parseFloat(paymentFormData.amount)
-            });
-          }} className="space-y-4 mt-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              addPaymentMutation.mutate({
+                ...paymentFormData,
+                amount: parseFloat(paymentFormData.amount),
+              });
+            }}
+            className="space-y-4 mt-4"
+          >
             <div className="space-y-2">
               <Label htmlFor="amount">Amount *</Label>
               <Input
@@ -722,7 +886,10 @@ export default function ClientDetails() {
 
             <div className="space-y-2">
               <Label htmlFor="payment_method">Payment Method</Label>
-              <Select value={paymentFormData.payment_method} onValueChange={(v) => setPaymentFormData({ ...paymentFormData, payment_method: v })}>
+              <Select
+                value={paymentFormData.payment_method}
+                onValueChange={(v) => setPaymentFormData({ ...paymentFormData, payment_method: v })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -773,7 +940,8 @@ export default function ClientDetails() {
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Client?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will mark <strong>{client?.name}</strong> as cancelled. They will no longer appear as active in the system. You can reactivate them at any time.
+              This will mark <strong>{client?.name}</strong> as cancelled. They will no longer appear as active in the
+              system. You can reactivate them at any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

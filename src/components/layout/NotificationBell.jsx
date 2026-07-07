@@ -22,11 +22,11 @@ const TYPE_ICONS = {
 };
 
 const TYPE_COLORS = {
-  info: 'text-blue-500 bg-blue-100',
-  success: 'text-green-500 bg-green-100',
-  warning: 'text-amber-500 bg-amber-100',
-  error: 'text-red-500 bg-red-100',
-  quote_request: 'text-blue-600 bg-blue-100',
+  info: 'text-blue-500 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40',
+  success: 'text-green-500 dark:text-green-300 bg-green-100 dark:bg-green-900/40',
+  warning: 'text-amber-500 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40',
+  error: 'text-red-500 dark:text-red-300 bg-red-100 dark:bg-red-900/40',
+  quote_request: 'text-blue-600 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40',
 };
 
 async function api(path, opts = {}) {
@@ -51,8 +51,8 @@ export default function NotificationBell() {
     acquireRealtime();
     const unsubscribe = onRealtimeMessage((data) => {
       if (data.type === 'notification') {
-        setNotifications(prev => [data.notification, ...prev]);
-        setUnread(prev => prev + 1);
+        setNotifications((prev) => [data.notification, ...prev]);
+        setUnread((prev) => prev + 1);
       }
     });
     return () => {
@@ -66,23 +66,33 @@ export default function NotificationBell() {
       const { notifications: list, unread: count } = await api('/api/notifications?limit=20');
       setNotifications(list);
       setUnread(count);
-    } catch { /* ignore */ } finally { setLoading(false); }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function markAllRead() {
     try {
       await api('/api/notifications/read-all', { method: 'POST' });
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnread(0);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   async function handleClick(n) {
     setOpen(false);
     if (!n.read) {
-      setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
-      setUnread(prev => Math.max(0, prev - 1));
-      try { await api(`/api/notifications/${n.id}/read`, { method: 'PATCH' }); } catch { /* ignore */ }
+      setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+      setUnread((prev) => Math.max(0, prev - 1));
+      try {
+        await api(`/api/notifications/${n.id}/read`, { method: 'PATCH' });
+      } catch {
+        /* ignore */
+      }
     }
     if (n.data?.url) navigate(n.data.url);
   }
@@ -112,24 +122,33 @@ export default function NotificationBell() {
         <ScrollArea className="h-[400px]">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-8 text-sm text-slate-400">No notifications</div>
+            <div className="text-center py-8 text-sm text-muted-foreground">No notifications</div>
           ) : (
-            notifications.map(n => {
+            notifications.map((n) => {
               const Icon = TYPE_ICONS[n.type] || Info;
               const colorClass = TYPE_COLORS[n.type] || TYPE_COLORS.info;
               return (
-                <DropdownMenuItem key={n.id} onClick={() => handleClick(n)} className={`flex items-start gap-3 px-4 py-3 cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                <DropdownMenuItem
+                  key={n.id}
+                  onClick={() => handleClick(n)}
+                  className={`flex items-start gap-3 px-4 py-3 cursor-pointer ${!n.read ? 'bg-blue-50/50 dark:bg-blue-950/50' : ''}`}
+                >
                   <div className={`p-1.5 rounded-full ${colorClass} mt-0.5`}>
                     <Icon className="w-3.5 h-3.5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-800 truncate">{n.title}</p>
-                    {n.message && <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>}
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      {new Date(n.created_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
+                    {n.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>}
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(n.created_date).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </p>
                   </div>
                   {!n.read && <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />}

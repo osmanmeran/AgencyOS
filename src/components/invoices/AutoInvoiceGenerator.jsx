@@ -16,21 +16,21 @@ const MILESTONES = [
     key: 'deposit',
     label: 'Deposit (30%)',
     description: 'Initial deposit invoice',
-    percentage: 0.30,
+    percentage: 0.3,
     dueDays: 7,
   },
   {
     key: 'midpoint',
     label: 'Mid-payment (40%)',
     description: 'Mid-trip payment invoice',
-    percentage: 0.40,
+    percentage: 0.4,
     dueDays: 14,
   },
   {
     key: 'final',
     label: 'Final Balance (30%)',
     description: 'Final balance invoice',
-    percentage: 0.30,
+    percentage: 0.3,
     dueDays: 3,
   },
   {
@@ -50,63 +50,63 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
 
   const totalAmount = trip.final_price || trip.total_expenses || 0;
 
-  const existingMilestoneKeys = existingInvoices
-    .map(inv => inv.milestone_key)
-    .filter(Boolean);
+  const existingMilestoneKeys = existingInvoices.map((inv) => inv.milestone_key).filter(Boolean);
 
-  const generateMutation = /** @type {any} */ (useMutation({
-    mutationFn: async (/** @type {any} */ milestone) => {
-      const amount = parseFloat((totalAmount * milestone.percentage).toFixed(2));
-      const issueDate = new Date().toISOString().split('T')[0];
-      const dueDate = addDays(new Date(), milestone.dueDays).toISOString().split('T')[0];
-      const invoiceNumber = `INV-${trip.reference_number || trip.id.slice(0, 6).toUpperCase()}-${milestone.key.toUpperCase()}-${Date.now().toString().slice(-4)}`;
+  const generateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: async (/** @type {any} */ milestone) => {
+        const amount = parseFloat((totalAmount * milestone.percentage).toFixed(2));
+        const issueDate = new Date().toISOString().split('T')[0];
+        const dueDate = addDays(new Date(), milestone.dueDays).toISOString().split('T')[0];
+        const invoiceNumber = `INV-${trip.reference_number || trip.id.slice(0, 6).toUpperCase()}-${milestone.key.toUpperCase()}-${Date.now().toString().slice(-4)}`;
 
-      const lineItems = [
-        {
-          description: `${trip.name} – ${milestone.description}`,
-          quantity: 1,
-          unit_price: amount,
-          amount,
-        },
-      ];
+        const lineItems = [
+          {
+            description: `${trip.name} – ${milestone.description}`,
+            quantity: 1,
+            unit_price: amount,
+            amount,
+          },
+        ];
 
-      const invoice = await db.entities.Invoice.create({
-        invoice_number: invoiceNumber,
-        client_id: trip.client_id,
-        trip_id: trip.id,
-        issue_date: issueDate,
-        due_date: dueDate,
-        line_items: lineItems,
-        subtotal: amount,
-        tax_rate: 0,
-        tax_amount: 0,
-        total_amount: amount,
-        amount_paid: 0,
-        amount_due: amount,
-        status: 'draft',
-        milestone_key: milestone.key,
-        notes: `Auto-generated ${milestone.label} invoice for reservation ${trip.reference_number || trip.name}.`,
-        payment_terms: settings?.default_payment_terms || 'Due within 30 days',
-      });
-
-      // Notify client by email
-      if (client?.email) {
-        await db.integrations.Core.SendEmail({
-          to: client.email,
-          subject: `Invoice ${invoiceNumber} – ${trip.name}`,
-          body: `Dear ${client.name},\n\nPlease find attached your invoice ${invoiceNumber} for the amount of $${amount.toFixed(2)}.\n\nDue date: ${format(new Date(dueDate), 'MMM d, yyyy')}\n\nThank you for choosing us.\n\nBest regards,\n${settings?.invoice_header?.company_name || 'TravelPro'}`,
+        const invoice = await db.entities.Invoice.create({
+          invoice_number: invoiceNumber,
+          client_id: trip.client_id,
+          trip_id: trip.id,
+          issue_date: issueDate,
+          due_date: dueDate,
+          line_items: lineItems,
+          subtotal: amount,
+          tax_rate: 0,
+          tax_amount: 0,
+          total_amount: amount,
+          amount_paid: 0,
+          amount_due: amount,
+          status: 'draft',
+          milestone_key: milestone.key,
+          notes: `Auto-generated ${milestone.label} invoice for reservation ${trip.reference_number || trip.name}.`,
+          payment_terms: settings?.default_payment_terms || 'Due within 30 days',
         });
-      }
 
-      return invoice;
-    },
-    onSuccess: (invoice) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['tripInvoices'] });
-      setOpen(false);
-      navigate(createPageUrl(`InvoiceDetails?id=${invoice.id}`));
-    },
-  }));
+        // Notify client by email
+        if (client?.email) {
+          await db.integrations.Core.SendEmail({
+            to: client.email,
+            subject: `Invoice ${invoiceNumber} – ${trip.name}`,
+            body: `Dear ${client.name},\n\nPlease find attached your invoice ${invoiceNumber} for the amount of $${amount.toFixed(2)}.\n\nDue date: ${format(new Date(dueDate), 'MMM d, yyyy')}\n\nThank you for choosing us.\n\nBest regards,\n${settings?.invoice_header?.company_name || 'TravelPro'}`,
+          });
+        }
+
+        return invoice;
+      },
+      onSuccess: (invoice) => {
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['tripInvoices'] });
+        setOpen(false);
+        navigate(createPageUrl(`InvoiceDetails?id=${invoice.id}`));
+      },
+    })
+  );
 
   if (!totalAmount) return null;
 
@@ -115,7 +115,7 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
       <Button
         onClick={() => setOpen(true)}
         variant="outline"
-        className="border-purple-400 text-purple-700 hover:bg-purple-50"
+        className="border-purple-400 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
       >
         <Zap className="w-4 h-4 mr-2" />
         Auto-Generate Invoice
@@ -125,19 +125,19 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-purple-600" />
+              <Zap className="w-5 h-5 text-purple-600 dark:text-purple-300" />
               Auto-Generate Invoice
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
-            <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">
+            <div className="bg-muted rounded-lg p-3 text-sm text-foreground">
               <span className="font-semibold">Trip total:</span> ${totalAmount.toFixed(2)}
               {client && <span className="ml-4 font-semibold">Client:</span>}
               {client && <span className="ml-1">{client.name}</span>}
             </div>
 
-            <p className="text-sm text-slate-600">Select a billing milestone to auto-generate an invoice:</p>
+            <p className="text-sm text-muted-foreground">Select a billing milestone to auto-generate an invoice:</p>
 
             <div className="space-y-2">
               {MILESTONES.map((m) => {
@@ -150,22 +150,25 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
                     onClick={() => setSelected(m)}
                     className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                       alreadyExists
-                        ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
+                        ? 'border-border bg-muted opacity-50 cursor-not-allowed'
                         : isSelected
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-slate-200 hover:border-purple-300 hover:bg-purple-50/50'
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/40'
+                          : 'border-border hover:border-purple-300 dark:hover:border-purple-800 hover:bg-purple-50/50 dark:hover:bg-purple-950/50'
                     }`}
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="font-semibold text-slate-900">{m.label}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{m.description} · Due in {m.dueDays} days</div>
+                        <div className="font-semibold text-foreground">{m.label}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {m.description} · Due in {m.dueDays} days
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">${(totalAmount * m.percentage).toFixed(2)}</span>
+                        <span className="font-bold text-foreground">${(totalAmount * m.percentage).toFixed(2)}</span>
                         {alreadyExists && (
-                          <Badge className="bg-green-100 text-green-800 text-xs">
-                            <CheckCircle className="w-3 h-3 mr-1" />Done
+                          <Badge className="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 text-xs">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Done
                           </Badge>
                         )}
                       </div>
@@ -176,23 +179,31 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
             </div>
 
             {client?.email && (
-              <div className="flex items-center gap-2 text-xs text-slate-500 bg-blue-50 rounded p-2">
-                <CheckCircle className="w-3 h-3 text-blue-500" />
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/40 rounded p-2">
+                <CheckCircle className="w-3 h-3 text-blue-500 dark:text-blue-300" />
                 Invoice notification will be emailed to {client.email}
               </div>
             )}
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
               <Button
                 onClick={() => generateMutation.mutate(selected)}
                 disabled={!selected || generateMutation.isPending}
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 {generateMutation.isPending ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
                 ) : (
-                  <><Zap className="w-4 h-4 mr-2" />Generate Invoice</>
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Generate Invoice
+                  </>
                 )}
               </Button>
             </div>

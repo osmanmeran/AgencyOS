@@ -13,15 +13,19 @@ import { showSuccess, showError } from '@/lib/toast';
 import { format } from 'date-fns';
 
 const COLUMNS = [
-  { id: 'pending', label: 'Pending', color: 'bg-amber-50 border-amber-200' },
-  { id: 'in_progress', label: 'In Progress', color: 'bg-blue-50 border-blue-200' },
-  { id: 'done', label: 'Done', color: 'bg-green-50 border-green-200' },
+  { id: 'pending', label: 'Pending', color: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
+  {
+    id: 'in_progress',
+    label: 'In Progress',
+    color: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800',
+  },
+  { id: 'done', label: 'Done', color: 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800' },
 ];
 
 const PRIORITY_COLORS = {
-  high: 'text-red-600 bg-red-50 border-red-200',
-  medium: 'text-amber-600 bg-amber-50 border-amber-200',
-  low: 'text-slate-600 bg-slate-50 border-slate-200',
+  high: 'text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800',
+  medium: 'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
+  low: 'text-muted-foreground bg-muted border-border',
 };
 
 export default function TaskBoard() {
@@ -29,43 +33,64 @@ export default function TaskBoard() {
   const [newTask, setNewTask] = useState({ title: '', client_id: '', priority: 'medium', due_date: '' });
   const queryClient = useQueryClient();
 
-  const { data: tasks = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clientTasks'],
-    queryFn: () => db.entities.ClientTask.list(),
-  }));
+  const { data: tasks = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientTasks'],
+      queryFn: () => db.entities.ClientTask.list(),
+    })
+  );
 
-  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clients'],
-    queryFn: () => db.entities.Client.list(),
-  }));
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clients'],
+      queryFn: () => db.entities.Client.list(),
+    })
+  );
 
-  const createTask = /** @type {any} */ (useMutation({
-    mutationFn: data => db.entities.ClientTask.create(data),
-    onSuccess: () => { showSuccess('Task created'); queryClient.invalidateQueries({ queryKey: ['clientTasks'] }); setNewTaskOpen(false); setNewTask({ title: '', client_id: '', priority: 'medium', due_date: '' }); },
-    onError: (error) => showError('Failed to create task', error.message)
-  }));
+  const createTask = /** @type {any} */ (
+    useMutation({
+      mutationFn: (data) => db.entities.ClientTask.create(data),
+      onSuccess: () => {
+        showSuccess('Task created');
+        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+        setNewTaskOpen(false);
+        setNewTask({ title: '', client_id: '', priority: 'medium', due_date: '' });
+      },
+      onError: (error) => showError('Failed to create task', error.message),
+    })
+  );
 
-  const updateTask = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ClientTask.update(id, data),
-    onSuccess: () => { showSuccess('Task updated'); queryClient.invalidateQueries({ queryKey: ['clientTasks'] }); },
-    onError: (error) => showError('Failed to update task', error.message)
-  }));
+  const updateTask = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ClientTask.update(id, data),
+      onSuccess: () => {
+        showSuccess('Task updated');
+        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+      },
+      onError: (error) => showError('Failed to update task', error.message),
+    })
+  );
 
-  const deleteTask = /** @type {any} */ (useMutation({
-    mutationFn: id => db.entities.ClientTask.delete(id),
-    onSuccess: () => { showSuccess('Task deleted'); queryClient.invalidateQueries({ queryKey: ['clientTasks'] }); },
-    onError: (error) => showError('Failed to delete task', error.message)
-  }));
+  const deleteTask = /** @type {any} */ (
+    useMutation({
+      mutationFn: (id) => db.entities.ClientTask.delete(id),
+      onSuccess: () => {
+        showSuccess('Task deleted');
+        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+      },
+      onError: (error) => showError('Failed to delete task', error.message),
+    })
+  );
 
-  const columns = COLUMNS.map(col => ({
+  const columns = COLUMNS.map((col) => ({
     ...col,
-    tasks: tasks.filter(t => t.status === col.id),
+    tasks: tasks.filter((t) => t.status === col.id),
   }));
 
-  const onDragEnd = result => {
+  const onDragEnd = (result) => {
     if (!result.destination) return;
     const { draggableId, destination } = result;
-    const task = tasks.find(t => t.id === draggableId);
+    const task = tasks.find((t) => t.id === draggableId);
     if (!task) return;
     if (task.status === destination.droppableId && result.source.index === destination.index) return;
     updateTask.mutate({ id: draggableId, data: { ...task, status: destination.droppableId } });
@@ -75,12 +100,12 @@ export default function TaskBoard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-100 p-2.5 rounded-xl">
-            <ListCheck className="w-6 h-6 text-indigo-700" />
+          <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2.5 rounded-xl">
+            <ListCheck className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Task Board</h1>
-            <p className="text-sm text-slate-500">Manage client tasks and reminders</p>
+            <p className="text-sm text-muted-foreground">Manage client tasks and reminders</p>
           </div>
         </div>
         <Dialog open={newTaskOpen} onOpenChange={setNewTaskOpen}>
@@ -90,25 +115,48 @@ export default function TaskBoard() {
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>New Task</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>New Task</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3 mt-2">
-              <Input placeholder="Task title" value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
-              <Select value={newTask.client_id} onValueChange={v => setNewTask({ ...newTask, client_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select client (optional)" /></SelectTrigger>
+              <Input
+                placeholder="Task title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+              />
+              <Select value={newTask.client_id} onValueChange={(v) => setNewTask({ ...newTask, client_id: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client (optional)" />
+                </SelectTrigger>
                 <SelectContent>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <Select value={newTask.priority} onValueChange={v => setNewTask({ ...newTask, priority: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={newTask.priority} onValueChange={(v) => setNewTask({ ...newTask, priority: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
-              <Input type="date" value={newTask.due_date} onChange={e => setNewTask({ ...newTask, due_date: e.target.value })} placeholder="Due date" />
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => createTask.mutate({ ...newTask, status: 'pending' })} disabled={!newTask.title}>
+              <Input
+                type="date"
+                value={newTask.due_date}
+                onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                placeholder="Due date"
+              />
+              <Button
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => createTask.mutate({ ...newTask, status: 'pending' })}
+                disabled={!newTask.title}
+              >
                 Create Task
               </Button>
             </div>
@@ -118,56 +166,67 @@ export default function TaskBoard() {
 
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {columns.map(col => (
+          {columns.map((col) => (
             <div key={col.id} className={`rounded-xl border ${col.color} p-3`}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-sm">{col.label}</h3>
-                <span className="text-xs text-slate-400 bg-white px-2 py-0.5 rounded-full border">{col.tasks.length}</span>
+                <span className="text-xs text-muted-foreground bg-card px-2 py-0.5 rounded-full border">
+                  {col.tasks.length}
+                </span>
               </div>
               <Droppable droppableId={col.id}>
                 {(provided, snapshot) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps} className={`space-y-2 min-h-[200px] ${snapshot.isDraggingOver ? 'bg-white/50 rounded-lg' : ''}`}>
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`space-y-2 min-h-[200px] ${snapshot.isDraggingOver ? 'bg-card/50 rounded-lg' : ''}`}
+                  >
                     {col.tasks.map((task, index) => (
                       <Draggable key={task.id} draggableId={task.id} index={index}>
                         {(provided, snapshot) => {
                           const p = /** @type {any} */ (provided);
                           return (
-                          <div
-                            ref={p.innerRef}
-                            {...p.draggableProps}
-                            {...p.dragHandleProps}
-                            className={`bg-white rounded-lg border border-slate-200 p-3 shadow-sm ${
-                              snapshot.isDragging ? 'shadow-lg rotate-2' : ''
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="text-sm font-medium">{task.title}</p>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 -mt-0.5 -mr-1" onClick={() => deleteTask.mutate(task.id)}>
-                                <MoreHorizontal className="w-3 h-3 text-slate-300" />
-                              </Button>
-                            </div>
-                            {task.description && (
-                              <p className="text-xs text-slate-500 mt-1 line-clamp-2">{task.description}</p>
-                            )}
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                              <Badge className={`text-[10px] ${PRIORITY_COLORS[task.priority] || 'bg-slate-100'}`}>
-                                {task.priority}
-                              </Badge>
-                              {task.due_date && (
-                                <span className="flex items-center gap-1 text-[10px] text-slate-400">
-                                  <CalendarIcon className="w-3 h-3" />
-                                  {format(new Date(task.due_date), 'MMM d')}
-                                </span>
+                            <div
+                              ref={p.innerRef}
+                              {...p.draggableProps}
+                              {...p.dragHandleProps}
+                              className={`bg-card rounded-lg border border-border p-3 shadow-sm ${
+                                snapshot.isDragging ? 'shadow-lg rotate-2' : ''
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-sm font-medium">{task.title}</p>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 -mt-0.5 -mr-1"
+                                  onClick={() => deleteTask.mutate(task.id)}
+                                >
+                                  <MoreHorizontal className="w-3 h-3 text-muted-foreground" />
+                                </Button>
+                              </div>
+                              {task.description && (
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
                               )}
-                              {task.client_id && (
-                                <span className="text-[10px] text-slate-400 truncate max-w-24">
-                                  {clients.find(c => c.id === task.client_id)?.name || ''}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                <Badge className={`text-[10px] ${PRIORITY_COLORS[task.priority] || 'bg-muted'}`}>
+                                  {task.priority}
+                                </Badge>
+                                {task.due_date && (
+                                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <CalendarIcon className="w-3 h-3" />
+                                    {format(new Date(task.due_date), 'MMM d')}
+                                  </span>
+                                )}
+                                {task.client_id && (
+                                  <span className="text-[10px] text-muted-foreground truncate max-w-24">
+                                    {clients.find((c) => c.id === task.client_id)?.name || ''}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      }}
+                          );
+                        }}
                       </Draggable>
                     ))}
                     {provided.placeholder}

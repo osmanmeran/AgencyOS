@@ -38,29 +38,28 @@ export default function PaymentLinkPanel({ invoice, client }) {
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 space-y-3">
+    <div className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-indigo-50 dark:to-indigo-950/40 border border-blue-200 dark:border-blue-800 rounded-xl p-5 space-y-3">
       <div className="flex items-center gap-2">
         <div className="bg-blue-600 p-1.5 rounded-lg">
           <CreditCard className="w-4 h-4 text-white" />
         </div>
-        <h3 className="font-semibold text-slate-900">Online Payment</h3>
-        <Badge className="bg-blue-100 text-blue-800 text-xs">Simulated</Badge>
+        <h3 className="font-semibold text-foreground">Online Payment</h3>
+        <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs">Simulated</Badge>
       </div>
 
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted-foreground">
         Share this signed link with <strong>{client?.name || 'the client'}</strong> to collect the payment of{' '}
         <strong>${invoice.amount_due?.toFixed(2)}</strong> online.
       </p>
 
       <div className="flex gap-2">
-        <Input
-          readOnly
-          value={paymentLink}
-          className="text-xs bg-white font-mono"
-          onClick={(e) => e.target.select()}
-        />
+        <Input readOnly value={paymentLink} className="text-xs bg-card font-mono" onClick={(e) => e.target.select()} />
         <Button onClick={handleCopy} variant="outline" size="icon" className="shrink-0">
-          {copied ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+          {copied ? (
+            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-300" />
+          ) : (
+            <Copy className="w-4 h-4" />
+          )}
         </Button>
       </div>
 
@@ -71,8 +70,9 @@ export default function PaymentLinkPanel({ invoice, client }) {
         </Button>
       </div>
 
-      <p className="text-xs text-slate-400 text-center">
-        💡 Token includes signed payload (amount, ref) — tamper-proof. Connect a payment gateway (e.g. Stripe) to process real online payments.
+      <p className="text-xs text-muted-foreground text-center">
+        💡 Token includes signed payload (amount, ref) — tamper-proof. Connect a payment gateway (e.g. Stripe) to
+        process real online payments.
       </p>
     </div>
   );

@@ -23,23 +23,27 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
     client_id: '',
     activities: [],
     notes: '',
-    image_url: ''
+    image_url: '',
   });
   const [activityInput, setActivityInput] = useState('');
   const [passengers, setPassengers] = useState([newPassenger()]);
 
-  const { data: settings } = /** @type {any} */ (useQuery({
-    queryKey: ['appSettings'],
-    queryFn: async () => {
-      const all = await db.entities.AppSettings.list();
-      return all[0] || { departments: [] };
-    }
-  }));
+  const { data: settings } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['appSettings'],
+      queryFn: async () => {
+        const all = await db.entities.AppSettings.list();
+        return all[0] || { departments: [] };
+      },
+    })
+  );
 
-  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clients'],
-    queryFn: () => db.entities.Client.list()
-  }));
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clients'],
+      queryFn: () => db.entities.Client.list(),
+    })
+  );
 
   const departments = settings?.departments || [];
 
@@ -53,7 +57,7 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
     const counters = await db.entities.ReferenceCounter.filter({
       department: department || 'general',
       year,
-      month
+      month,
     });
 
     let counter = 1;
@@ -70,11 +74,21 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const referenceNumber = await generateReferenceNumber(formData.department);
-    const filledPassengers = passengers.filter(p => p.name.trim());
+    const filledPassengers = passengers.filter((p) => p.name.trim());
     onSubmit({ ...formData, reference_number: referenceNumber, passengers: filledPassengers });
 
     // Reset
-    setFormData({ name: '', destination: '', start_date: '', end_date: '', department: '', client_id: '', activities: [], notes: '', image_url: '' });
+    setFormData({
+      name: '',
+      destination: '',
+      start_date: '',
+      end_date: '',
+      department: '',
+      client_id: '',
+      activities: [],
+      notes: '',
+      image_url: '',
+    });
     setPassengers([newPassenger()]);
     setActivityInput('');
   };
@@ -90,18 +104,18 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
     setFormData({ ...formData, activities: formData.activities.filter((_, i) => i !== index) });
   };
 
-  const addPassenger = () => setPassengers(prev => [...prev, newPassenger()]);
+  const addPassenger = () => setPassengers((prev) => [...prev, newPassenger()]);
 
   const updatePassenger = (idx, field, value) => {
-    setPassengers(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
+    setPassengers((prev) => prev.map((p, i) => (i === idx ? { ...p, [field]: value } : p)));
   };
 
   const setContact = (idx) => {
-    setPassengers(prev => prev.map((p, i) => ({ ...p, is_contact: i === idx })));
+    setPassengers((prev) => prev.map((p, i) => ({ ...p, is_contact: i === idx })));
   };
 
   const removePassenger = (idx) => {
-    setPassengers(prev => {
+    setPassengers((prev) => {
       const updated = prev.filter((_, i) => i !== idx);
       // If removed was contact, clear contact
       if (prev[idx].is_contact && updated.length > 0) updated[0].is_contact = true;
@@ -109,7 +123,7 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
     });
   };
 
-  const filledPassengers = passengers.filter(p => p.name.trim());
+  const filledPassengers = passengers.filter((p) => p.name.trim());
   const previewRef = formData.department
     ? `${settings?.reference_format?.prefix || 'TRP'}-${formData.department.slice(0, 3).toUpperCase()}-YYMM-XXXX`
     : `${settings?.reference_format?.prefix || 'TRP'}-GEN-YYMM-XXXX`;
@@ -125,22 +139,32 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
 
         <form onSubmit={handleSubmit} className="space-y-5 mt-4">
           {/* Reference Number Preview */}
-          <div className="p-3 bg-blue-50 rounded-lg flex items-center gap-2">
-            <Hash className="w-4 h-4 text-blue-600" />
-            <span className="text-sm text-blue-700">Reference: </span>
-            <span className="font-mono font-semibold text-blue-900">{previewRef}</span>
-            <span className="text-xs text-blue-600 ml-auto">(auto-generated)</span>
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg flex items-center gap-2">
+            <Hash className="w-4 h-4 text-blue-600 dark:text-blue-300" />
+            <span className="text-sm text-blue-700 dark:text-blue-300">Reference: </span>
+            <span className="font-mono font-semibold text-blue-900 dark:text-blue-300">{previewRef}</span>
+            <span className="text-xs text-blue-600 dark:text-blue-300 ml-auto">(auto-generated)</span>
           </div>
 
           {/* Trip Name & Destination */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Trip Name *</Label>
-              <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Summer Adventure" required />
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Summer Adventure"
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label>Destination *</Label>
-              <Input value={formData.destination} onChange={(e) => setFormData({ ...formData, destination: e.target.value })} placeholder="Bali, Indonesia" required />
+              <Input
+                value={formData.destination}
+                onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                placeholder="Bali, Indonesia"
+                required
+              />
             </div>
           </div>
 
@@ -148,19 +172,35 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Start Date *</Label>
-              <Input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} required />
+              <Input
+                type="date"
+                value={formData.start_date}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label>End Date *</Label>
-              <Input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} required />
+              <Input
+                type="date"
+                value={formData.end_date}
+                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label>Department</Label>
               <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v })}>
-                <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>General</SelectItem>
-                  {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                  {departments.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -169,11 +209,20 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
           {/* Client - Required */}
           <div className="space-y-2">
             <Label>Client *</Label>
-            <Select value={formData.client_id} onValueChange={(v) => setFormData({ ...formData, client_id: v })} required>
-              <SelectTrigger><SelectValue placeholder="Select a client from database" /></SelectTrigger>
+            <Select
+              value={formData.client_id}
+              onValueChange={(v) => setFormData({ ...formData, client_id: v })}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a client from database" />
+              </SelectTrigger>
               <SelectContent>
-                {clients.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}{c.email ? ` — ${c.email}` : ''}</SelectItem>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                    {c.email ? ` — ${c.email}` : ''}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -183,8 +232,8 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2 text-base font-semibold">
-                <Users className="w-4 h-4 text-blue-600" />
-                Passengers ({passengers.filter(p => p.name.trim()).length})
+                <Users className="w-4 h-4 text-blue-600 dark:text-blue-300" />
+                Passengers ({passengers.filter((p) => p.name.trim()).length})
               </Label>
               <Button type="button" onClick={addPassenger} size="sm" variant="outline">
                 <Plus className="w-3.5 h-3.5 mr-1" /> Add Passenger
@@ -193,32 +242,33 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
 
             <div className="space-y-2">
               {passengers.map((pax, idx) => (
-                <div key={pax.id} className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50">
+                <div key={pax.id} className="flex items-center gap-2 p-3 rounded-lg border border-border bg-muted">
                   <div className="flex-1">
                     <Input
                       value={pax.name}
                       onChange={(e) => updatePassenger(idx, 'name', e.target.value)}
                       placeholder={`Passenger ${idx + 1} full name`}
-                      className="bg-white"
+                      className="bg-card"
                     />
                   </div>
 
                   {/* Room with */}
-                  {filledPassengers.filter(p => p.id !== pax.id && p.name.trim()).length > 0 && (
+                  {filledPassengers.filter((p) => p.id !== pax.id && p.name.trim()).length > 0 && (
                     <div className="w-40">
-                      <Select
-                        value={pax.room_with || ''}
-                        onValueChange={(v) => updatePassenger(idx, 'room_with', v)}
-                      >
-                        <SelectTrigger className="bg-white h-9 text-xs">
-                          <BedDouble className="w-3 h-3 mr-1 text-slate-400 flex-shrink-0" />
+                      <Select value={pax.room_with || ''} onValueChange={(v) => updatePassenger(idx, 'room_with', v)}>
+                        <SelectTrigger className="bg-card h-9 text-xs">
+                          <BedDouble className="w-3 h-3 mr-1 text-muted-foreground flex-shrink-0" />
                           <SelectValue placeholder="Rooms with..." />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value={null}>Single / TBD</SelectItem>
-                          {filledPassengers.filter(p => p.id !== pax.id && p.name.trim()).map(p => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                          ))}
+                          {filledPassengers
+                            .filter((p) => p.id !== pax.id && p.name.trim())
+                            .map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -229,13 +279,17 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
                     type="button"
                     onClick={() => setContact(idx)}
                     title={pax.is_contact ? 'Contact passenger' : 'Set as contact'}
-                    className={`p-1.5 rounded-md transition-colors flex-shrink-0 ${pax.is_contact ? 'bg-amber-100 text-amber-600' : 'text-slate-300 hover:text-amber-400'}`}
+                    className={`p-1.5 rounded-md transition-colors flex-shrink-0 ${pax.is_contact ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300' : 'text-muted-foreground hover:text-amber-400'}`}
                   >
                     <Star className="w-4 h-4" fill={pax.is_contact ? 'currentColor' : 'none'} />
                   </button>
 
                   {passengers.length > 1 && (
-                    <button type="button" onClick={() => removePassenger(idx)} className="text-slate-400 hover:text-red-500 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => removePassenger(idx)}
+                      className="text-muted-foreground hover:text-red-500 dark:hover:text-red-300 flex-shrink-0"
+                    >
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -243,15 +297,15 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
               ))}
             </div>
 
-            {passengers.some(p => p.name.trim()) && !passengers.some(p => p.is_contact) && (
-              <p className="text-xs text-amber-600 flex items-center gap-1">
+            {passengers.some((p) => p.name.trim()) && !passengers.some((p) => p.is_contact) && (
+              <p className="text-xs text-amber-600 dark:text-amber-300 flex items-center gap-1">
                 <Star className="w-3 h-3" /> Click the star icon to set a contact passenger
               </p>
             )}
-            {passengers.some(p => p.is_contact) && (
-              <p className="text-xs text-green-600 flex items-center gap-1">
+            {passengers.some((p) => p.is_contact) && (
+              <p className="text-xs text-green-600 dark:text-green-300 flex items-center gap-1">
                 <Star className="w-3 h-3" fill="currentColor" />
-                Contact: <strong>{passengers.find(p => p.is_contact)?.name}</strong>
+                Contact: <strong>{passengers.find((p) => p.is_contact)?.name}</strong>
               </p>
             )}
           </div>
@@ -273,9 +327,16 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
             {formData.activities.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.activities.map((activity, idx) => (
-                  <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-sm"
+                  >
                     {activity}
-                    <button type="button" onClick={() => removeActivity(idx)} className="hover:bg-blue-200 rounded-full p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => removeActivity(idx)}
+                      className="hover:bg-blue-200 rounded-full p-0.5"
+                    >
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -287,22 +348,29 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
           {/* Cover Image */}
           <div className="space-y-2">
             <Label>Cover Image URL</Label>
-            <Input value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} placeholder="https://images.unsplash.com/..." />
+            <Input
+              value={formData.image_url}
+              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+              placeholder="https://images.unsplash.com/..."
+            />
           </div>
 
           {/* Notes */}
           <div className="space-y-2">
             <Label>Notes</Label>
-            <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Any additional details..." rows={3} />
+            <Textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Any additional details..."
+              rows={3}
+            />
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={!formData.client_id}
-            >
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={!formData.client_id}>
               Create Trip
             </Button>
           </div>

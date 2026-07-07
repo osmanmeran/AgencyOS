@@ -33,11 +33,11 @@ export default function PassengerFieldsRow({ passenger, onChange, onRemove, show
   };
 
   return (
-    <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+    <div className="p-3 bg-card border border-border rounded-lg space-y-2">
       <div className="flex items-center gap-2">
         <Input
           value={passenger.name || ''}
-          onChange={e => set('name', e.target.value)}
+          onChange={(e) => set('name', e.target.value)}
           placeholder="Nome passeggero…"
           className="flex-1 h-9 text-sm"
         />
@@ -46,13 +46,17 @@ export default function PassengerFieldsRow({ passenger, onChange, onRemove, show
             type="button"
             onClick={onSetContact}
             title={passenger.is_contact ? 'Contatto della prenotazione' : 'Imposta come contatto'}
-            className={`p-1.5 rounded-md transition-colors flex-shrink-0 ${passenger.is_contact ? 'bg-amber-100 text-amber-600' : 'text-slate-300 hover:text-amber-400'}`}
+            className={`p-1.5 rounded-md transition-colors flex-shrink-0 ${passenger.is_contact ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300' : 'text-muted-foreground hover:text-amber-400'}`}
           >
             <Star className="w-4 h-4" fill={passenger.is_contact ? 'currentColor' : 'none'} />
           </button>
         )}
         {onRemove && (
-          <button type="button" onClick={onRemove} className="p-1.5 text-red-400 hover:text-red-600 flex-shrink-0">
+          <button
+            type="button"
+            onClick={onRemove}
+            className="p-1.5 text-red-400 hover:text-red-600 dark:hover:text-red-300 flex-shrink-0"
+          >
             <Trash2 className="w-4 h-4" />
           </button>
         )}
@@ -69,29 +73,50 @@ export default function PassengerFieldsRow({ passenger, onChange, onRemove, show
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <div>
-          <Label className="text-[11px] text-slate-500 mb-0.5 block">Età</Label>
-          <Select value={passenger.age_category || 'adult'} onValueChange={v => set('age_category', v)}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Età</Label>
+          <Select value={passenger.age_category || 'adult'} onValueChange={(v) => set('age_category', v)}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {AGE_CATEGORIES.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+              {AGE_CATEGORIES.map((a) => (
+                <SelectItem key={a.value} value={a.value}>
+                  {a.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label className="text-[11px] text-slate-500 mb-0.5 block">Telefono</Label>
-          <Input value={passenger.phone || ''} onChange={e => set('phone', e.target.value)} className="h-8 text-xs" />
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Telefono</Label>
+          <Input value={passenger.phone || ''} onChange={(e) => set('phone', e.target.value)} className="h-8 text-xs" />
         </div>
         <div>
-          <Label className="text-[11px] text-slate-500 mb-0.5 block">Email</Label>
-          <Input type="email" value={passenger.email || ''} onChange={e => set('email', e.target.value)} className="h-8 text-xs" />
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Email</Label>
+          <Input
+            type="email"
+            value={passenger.email || ''}
+            onChange={(e) => set('email', e.target.value)}
+            className="h-8 text-xs"
+          />
         </div>
         <div>
-          <Label className="text-[11px] text-slate-500 mb-0.5 block">Data di nascita</Label>
-          <Input type="date" value={passenger.date_of_birth || ''} onChange={e => set('date_of_birth', e.target.value)} className="h-8 text-xs" />
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Data di nascita</Label>
+          <Input
+            type="date"
+            value={passenger.date_of_birth || ''}
+            onChange={(e) => set('date_of_birth', e.target.value)}
+            className="h-8 text-xs"
+          />
         </div>
         <div className="col-span-2 md:col-span-4">
-          <Label className="text-[11px] text-slate-500 mb-0.5 block">Numero pratica</Label>
-          <Input value={passenger.numero_pratica || ''} onChange={e => set('numero_pratica', e.target.value)} placeholder="Facoltativo" className="h-8 text-xs" />
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Numero pratica</Label>
+          <Input
+            value={passenger.numero_pratica || ''}
+            onChange={(e) => set('numero_pratica', e.target.value)}
+            placeholder="Facoltativo"
+            className="h-8 text-xs"
+          />
         </div>
       </div>
     </div>

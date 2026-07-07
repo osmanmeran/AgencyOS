@@ -15,11 +15,11 @@ import { Plus, FileText, Calendar, Edit, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
 const STATUS_COLORS = {
-  submitted: 'bg-blue-100 text-blue-800',
-  under_review: 'bg-orange-100 text-orange-800',
-  approved: 'bg-green-100 text-green-800',
-  paid: 'bg-emerald-100 text-emerald-800',
-  rejected: 'bg-red-100 text-red-800'
+  submitted: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+  under_review: 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300',
+  approved: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  paid: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300',
+  rejected: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
 };
 
 export default function SupplierInvoices({ supplierId }) {
@@ -32,78 +32,88 @@ export default function SupplierInvoices({ supplierId }) {
     amount: '',
     issue_date: new Date().toISOString().split('T')[0],
     due_date: '',
-    notes: ''
+    notes: '',
   });
   const [invoiceFile, setInvoiceFile] = useState(null);
 
-  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierInvoices', supplierId],
-    queryFn: () => db.entities.SupplierInvoice.filter({ supplier_id: supplierId }, '-created_date'),
-    enabled: !!supplierId
-  }));
+  const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierInvoices', supplierId],
+      queryFn: () => db.entities.SupplierInvoice.filter({ supplier_id: supplierId }, '-created_date'),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierBookings', supplierId],
-    queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }),
-    enabled: !!supplierId
-  }));
+  const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierBookings', supplierId],
+      queryFn: () => db.entities.BookingRequest.filter({ supplier_id: supplierId }),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['trips'],
-    queryFn: () => db.entities.Trip.list()
-  }));
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['trips'],
+      queryFn: () => db.entities.Trip.list(),
+    })
+  );
 
-  const createMutation = /** @type {any} */ (useMutation({
-    mutationFn: async (/** @type {any} */ data) => {
-      let fileUrl = '';
-      if (invoiceFile) {
-        const { file_url } = await db.integrations.Core.UploadFile({ file: invoiceFile });
-        fileUrl = file_url;
-      }
-      const invoiceNumber = `SINV-${Date.now().toString().slice(-8)}`;
-      const createData = {
-        supplier_id: supplierId,
-        invoice_number: invoiceNumber,
-        amount: parseFloat(data.amount),
-        issue_date: data.issue_date,
-        status: 'submitted'
-      };
-      if (data.trip_id) createData.trip_id = data.trip_id;
-      if (data.booking_request_id) createData.booking_request_id = data.booking_request_id;
-      if (data.due_date) createData.due_date = data.due_date;
-      if (data.notes) createData.notes = data.notes;
-      if (fileUrl) createData.file_url = fileUrl;
-      return db.entities.SupplierInvoice.create(createData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierInvoices', supplierId] });
-      closeModal();
-    }
-  }));
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: async (/** @type {any} */ data) => {
+        let fileUrl = '';
+        if (invoiceFile) {
+          const { file_url } = await db.integrations.Core.UploadFile({ file: invoiceFile });
+          fileUrl = file_url;
+        }
+        const invoiceNumber = `SINV-${Date.now().toString().slice(-8)}`;
+        const createData = {
+          supplier_id: supplierId,
+          invoice_number: invoiceNumber,
+          amount: parseFloat(data.amount),
+          issue_date: data.issue_date,
+          status: 'submitted',
+        };
+        if (data.trip_id) createData.trip_id = data.trip_id;
+        if (data.booking_request_id) createData.booking_request_id = data.booking_request_id;
+        if (data.due_date) createData.due_date = data.due_date;
+        if (data.notes) createData.notes = data.notes;
+        if (fileUrl) createData.file_url = fileUrl;
+        return db.entities.SupplierInvoice.create(createData);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierInvoices', supplierId] });
+        closeModal();
+      },
+    })
+  );
 
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: async (/** @type {any} */ { id, /** @type {any} */ data }) => {
-      let fileUrl = data.file_url || '';
-      if (invoiceFile) {
-        const { file_url } = await db.integrations.Core.UploadFile({ file: invoiceFile });
-        fileUrl = file_url;
-      }
-      const updateData = {
-        amount: parseFloat(data.amount),
-        issue_date: data.issue_date
-      };
-      if (data.trip_id) updateData.trip_id = data.trip_id;
-      if (data.booking_request_id) updateData.booking_request_id = data.booking_request_id;
-      if (data.due_date) updateData.due_date = data.due_date;
-      if (data.notes) updateData.notes = data.notes;
-      if (fileUrl) updateData.file_url = fileUrl;
-      return db.entities.SupplierInvoice.update(id, updateData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplierInvoices', supplierId] });
-      closeModal();
-    }
-  }));
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: async (/** @type {any} */ { id, /** @type {any} */ data }) => {
+        let fileUrl = data.file_url || '';
+        if (invoiceFile) {
+          const { file_url } = await db.integrations.Core.UploadFile({ file: invoiceFile });
+          fileUrl = file_url;
+        }
+        const updateData = {
+          amount: parseFloat(data.amount),
+          issue_date: data.issue_date,
+        };
+        if (data.trip_id) updateData.trip_id = data.trip_id;
+        if (data.booking_request_id) updateData.booking_request_id = data.booking_request_id;
+        if (data.due_date) updateData.due_date = data.due_date;
+        if (data.notes) updateData.notes = data.notes;
+        if (fileUrl) updateData.file_url = fileUrl;
+        return db.entities.SupplierInvoice.update(id, updateData);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierInvoices', supplierId] });
+        closeModal();
+      },
+    })
+  );
 
   const openModal = (invoice = null) => {
     if (invoice) {
@@ -114,7 +124,7 @@ export default function SupplierInvoices({ supplierId }) {
         amount: invoice.amount?.toString() || '',
         issue_date: invoice.issue_date || new Date().toISOString().split('T')[0],
         due_date: invoice.due_date || '',
-        notes: invoice.notes || ''
+        notes: invoice.notes || '',
       });
     } else {
       setSelectedInvoice(null);
@@ -124,7 +134,7 @@ export default function SupplierInvoices({ supplierId }) {
         amount: '',
         issue_date: new Date().toISOString().split('T')[0],
         due_date: '',
-        notes: ''
+        notes: '',
       });
     }
     setInvoiceFile(null);
@@ -146,9 +156,9 @@ export default function SupplierInvoices({ supplierId }) {
     }
   };
 
-  const confirmedBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+  const confirmedBookings = bookings.filter((b) => b.status === 'confirmed' || b.status === 'completed');
 
-  const getTrip = (id) => trips.find(t => t.id === id);
+  const getTrip = (id) => trips.find((t) => t.id === id);
 
   return (
     <div className="space-y-4">
@@ -160,27 +170,27 @@ export default function SupplierInvoices({ supplierId }) {
 
       {invoices.length === 0 ? (
         <Card className="p-12 text-center">
-          <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-slate-900 mb-2">No invoices submitted</h3>
-          <p className="text-slate-600">Submit invoices for your completed services</p>
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-foreground mb-2">No invoices submitted</h3>
+          <p className="text-muted-foreground">Submit invoices for your completed services</p>
         </Card>
       ) : (
-        invoices.map(invoice => {
+        invoices.map((invoice) => {
           const trip = getTrip(invoice.trip_id);
           return (
-            <Card key={invoice.id} className="p-6 bg-white">
+            <Card key={invoice.id} className="p-6 bg-card">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-bold text-slate-900">{invoice.invoice_number}</h3>
+                    <h3 className="text-lg font-bold text-foreground">{invoice.invoice_number}</h3>
                     <Badge className={STATUS_COLORS[invoice.status]}>{invoice.status?.replace('_', ' ')}</Badge>
                   </div>
-                  {trip && (
-                    <p className="text-sm text-slate-500">Trip: {trip.reference_number || trip.name}</p>
-                  )}
+                  {trip && <p className="text-sm text-muted-foreground">Trip: {trip.reference_number || trip.name}</p>}
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="text-2xl font-bold text-green-700">${invoice.amount?.toFixed(2)}</div>
+                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                    ${invoice.amount?.toFixed(2)}
+                  </div>
                   {invoice.status === 'submitted' && (
                     <Button variant="ghost" size="icon" onClick={() => openModal(invoice)}>
                       <Edit className="w-4 h-4" />
@@ -191,26 +201,28 @@ export default function SupplierInvoices({ supplierId }) {
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>Issued: {format(new Date(invoice.issue_date), 'MMM d, yyyy')}</span>
                 </div>
                 {invoice.due_date && (
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span>Due: {format(new Date(invoice.due_date), 'MMM d, yyyy')}</span>
                   </div>
                 )}
                 {invoice.file_url && (
-                  <a href={invoice.file_url} target="_blank" rel="noopener noreferrer" 
-                     className="text-blue-600 hover:underline flex items-center gap-1">
+                  <a
+                    href={invoice.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-300 hover:underline flex items-center gap-1"
+                  >
                     <Eye className="w-4 h-4" /> View Invoice
                   </a>
                 )}
               </div>
 
-              {invoice.notes && (
-                <p className="text-slate-600 text-sm mt-3 pt-3 border-t">{invoice.notes}</p>
-              )}
+              {invoice.notes && <p className="text-muted-foreground text-sm mt-3 pt-3 border-t">{invoice.notes}</p>}
             </Card>
           );
         })
@@ -226,11 +238,14 @@ export default function SupplierInvoices({ supplierId }) {
             <div className="space-y-2">
               <Label>Link to Trip</Label>
               <Select value={formData.trip_id} onValueChange={(v) => setFormData({ ...formData, trip_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select trip" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select trip" />
+                </SelectTrigger>
                 <SelectContent>
-                  {trips.map(t => (
+                  {trips.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
-                      {t.reference_number ? `${t.reference_number} - ` : ''}{t.name}
+                      {t.reference_number ? `${t.reference_number} - ` : ''}
+                      {t.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -239,11 +254,16 @@ export default function SupplierInvoices({ supplierId }) {
 
             <div className="space-y-2">
               <Label>Related Booking (Optional)</Label>
-              <Select value={formData.booking_request_id} onValueChange={(v) => setFormData({ ...formData, booking_request_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select booking" /></SelectTrigger>
+              <Select
+                value={formData.booking_request_id}
+                onValueChange={(v) => setFormData({ ...formData, booking_request_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select booking" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>None</SelectItem>
-                  {confirmedBookings.map(b => (
+                  {confirmedBookings.map((b) => (
                     <SelectItem key={b.id} value={b.id}>
                       {b.reference_number || b.id.slice(-6)} - {format(new Date(b.service_date), 'MMM d')}
                     </SelectItem>
@@ -255,9 +275,9 @@ export default function SupplierInvoices({ supplierId }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Amount *</Label>
-                <Input 
-                  type="number" 
-                  step="0.01" 
+                <Input
+                  type="number"
+                  step="0.01"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   required
@@ -265,8 +285,8 @@ export default function SupplierInvoices({ supplierId }) {
               </div>
               <div className="space-y-2">
                 <Label>Issue Date *</Label>
-                <Input 
-                  type="date" 
+                <Input
+                  type="date"
                   value={formData.issue_date}
                   onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
                   required
@@ -276,8 +296,8 @@ export default function SupplierInvoices({ supplierId }) {
 
             <div className="space-y-2">
               <Label>Due Date</Label>
-              <Input 
-                type="date" 
+              <Input
+                type="date"
                 value={formData.due_date}
                 onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
               />
@@ -285,16 +305,12 @@ export default function SupplierInvoices({ supplierId }) {
 
             <div className="space-y-2">
               <Label>Upload Invoice (PDF)</Label>
-              <Input 
-                type="file" 
-                accept=".pdf"
-                onChange={(e) => setInvoiceFile(e.target.files[0])}
-              />
+              <Input type="file" accept=".pdf" onChange={(e) => setInvoiceFile(e.target.files[0])} />
             </div>
 
             <div className="space-y-2">
               <Label>Notes</Label>
-              <Textarea 
+              <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
@@ -302,7 +318,9 @@ export default function SupplierInvoices({ supplierId }) {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={closeModal}>
+                Cancel
+              </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
                 {selectedInvoice ? 'Update Invoice' : 'Submit Invoice'}
               </Button>

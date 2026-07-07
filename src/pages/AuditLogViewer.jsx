@@ -5,16 +5,29 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { History, Search, RefreshCw, Loader2, FileText, User, LogIn, Upload, FileDown, Trash2, Edit3, Mail } from 'lucide-react';
+import {
+  History,
+  Search,
+  RefreshCw,
+  Loader2,
+  FileText,
+  User,
+  LogIn,
+  Upload,
+  FileDown,
+  Trash2,
+  Edit3,
+  Mail,
+} from 'lucide-react';
 
 const ACTION_ICONS = {
-  create: { icon: FileText, color: 'text-green-600 bg-green-100' },
-  update: { icon: Edit3, color: 'text-blue-600 bg-blue-100' },
-  delete: { icon: Trash2, color: 'text-red-600 bg-red-100' },
-  login: { icon: LogIn, color: 'text-purple-600 bg-purple-100' },
-  email_sent: { icon: Mail, color: 'text-cyan-600 bg-cyan-100' },
-  pdf_generated: { icon: FileDown, color: 'text-amber-600 bg-amber-100' },
-  upload: { icon: Upload, color: 'text-indigo-600 bg-indigo-100' },
+  create: { icon: FileText, color: 'text-green-600 dark:text-green-300 bg-green-100 dark:bg-green-900/40' },
+  update: { icon: Edit3, color: 'text-blue-600 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40' },
+  delete: { icon: Trash2, color: 'text-red-600 dark:text-red-300 bg-red-100 dark:bg-red-900/40' },
+  login: { icon: LogIn, color: 'text-purple-600 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40' },
+  email_sent: { icon: Mail, color: 'text-cyan-600 dark:text-cyan-300 bg-cyan-100 dark:bg-cyan-900/40' },
+  pdf_generated: { icon: FileDown, color: 'text-amber-600 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40' },
+  upload: { icon: Upload, color: 'text-indigo-600 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/40' },
 };
 
 async function api(path, opts = {}) {
@@ -27,10 +40,19 @@ async function api(path, opts = {}) {
   return res.json();
 }
 
-const ENTITY_TYPE_OPTIONS = ['', 'auth', 'entities', 'notifications', 'documents', 'proposal', 'booking', 'invoice', 'email'];
+const ENTITY_TYPE_OPTIONS = [
+  '',
+  'auth',
+  'entities',
+  'notifications',
+  'documents',
+  'proposal',
+  'booking',
+  'invoice',
+  'email',
+];
 
 export default function AuditLogViewer() {
-
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterEntity, setFilterEntity] = useState('');
@@ -48,10 +70,17 @@ export default function AuditLogViewer() {
       params.set('limit', '100');
       const { logs: data } = await api(`/api/audit/logs?${params}`);
       setLogs(data);
-    } catch (_) { /* ignore */ } finally { setLoading(false); setSearching(false); }
+    } catch (_) {
+      /* ignore */
+    } finally {
+      setLoading(false);
+      setSearching(false);
+    }
   };
 
-  useEffect(() => { loadLogs(); }, []);
+  useEffect(() => {
+    loadLogs();
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -67,11 +96,18 @@ export default function AuditLogViewer() {
             <History className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Audit Trail</h1>
-            <p className="text-sm text-slate-500">Track all state-changing actions across the system</p>
+            <h1 className="text-2xl font-bold text-foreground">Audit Trail</h1>
+            <p className="text-sm text-muted-foreground">Track all state-changing actions across the system</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => { loadLogs(); }} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            loadLogs();
+          }}
+          disabled={loading}
+        >
           <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} /> Refresh
         </Button>
       </div>
@@ -79,33 +115,41 @@ export default function AuditLogViewer() {
       <Card className="p-4">
         <form onSubmit={handleSearch} className="flex flex-wrap gap-3 items-end">
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Entity Type</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Entity Type</label>
             <Select value={filterEntity} onValueChange={setFilterEntity}>
-              <SelectTrigger className="w-40"><SelectValue placeholder="All types" /></SelectTrigger>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All types" />
+              </SelectTrigger>
               <SelectContent>
-                {ENTITY_TYPE_OPTIONS.map(t => (
-                  <SelectItem key={t} value={t}>{t || 'All types'}</SelectItem>
+                {ENTITY_TYPE_OPTIONS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t || 'All types'}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Action</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Action</label>
             <Select value={filterAction} onValueChange={setFilterAction}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="All actions" /></SelectTrigger>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="All actions" />
+              </SelectTrigger>
               <SelectContent>
-                {['', 'create', 'update', 'delete', 'login', 'email_sent', 'pdf_generated', 'upload'].map(a => (
-                  <SelectItem key={a} value={a}>{a || 'All actions'}</SelectItem>
+                {['', 'create', 'update', 'delete', 'login', 'email_sent', 'pdf_generated', 'upload'].map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {a || 'All actions'}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">User ID</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">User ID</label>
             <Input
               placeholder="Filter by user..."
               value={filterUser}
-              onChange={e => setFilterUser(e.target.value)}
+              onChange={(e) => setFilterUser(e.target.value)}
               className="w-40 h-10"
             />
           </div>
@@ -120,48 +164,61 @@ export default function AuditLogViewer() {
         <ScrollArea className="h-[600px]">
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-slate-300" />
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-16 text-sm text-slate-400">No audit logs found</div>
+            <div className="text-center py-16 text-sm text-muted-foreground">No audit logs found</div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {logs.map(log => {
-                const ac = ACTION_ICONS[log.action] || { icon: History, color: 'text-slate-600 bg-slate-100' };
+              {logs.map((log) => {
+                const ac = ACTION_ICONS[log.action] || { icon: History, color: 'text-muted-foreground bg-muted' };
                 const Icon = ac.icon;
                 return (
-                  <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors">
+                  <div key={log.id} className="p-4 hover:bg-muted transition-colors">
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded-full ${ac.color} mt-0.5`}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className="text-xs capitalize">{log.action}</Badge>
-                          {log.entity_type && <Badge variant="secondary" className="text-xs">{log.entity_type}</Badge>}
-                          {log.entity_id && <span className="text-xs font-mono text-slate-400">#{log.entity_id}</span>}
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {log.action}
+                          </Badge>
+                          {log.entity_type && (
+                            <Badge variant="secondary" className="text-xs">
+                              {log.entity_type}
+                            </Badge>
+                          )}
+                          {log.entity_id && (
+                            <span className="text-xs font-mono text-muted-foreground">#{log.entity_id}</span>
+                          )}
                         </div>
-                        <div className="mt-1 text-sm text-slate-600">
+                        <div className="mt-1 text-sm text-muted-foreground">
                           {log.user_name && (
                             <span className="inline-flex items-center gap-1 mr-3">
                               <User className="w-3 h-3" /> {log.user_name}
                             </span>
                           )}
-                          {log.ip && <span className="text-xs text-slate-400">IP: {log.ip}</span>}
+                          {log.ip && <span className="text-xs text-muted-foreground">IP: {log.ip}</span>}
                         </div>
                         {log.changes && Object.keys(log.changes).length > 0 && (
-                          <div className="mt-2 text-xs font-mono bg-slate-50 rounded p-2 border border-slate-200 overflow-x-auto">
+                          <div className="mt-2 text-xs font-mono bg-muted rounded p-2 border border-border overflow-x-auto">
                             {Object.entries(log.changes).map(([k, v]) => (
                               <div key={k} className="flex flex-wrap gap-2">
-                                <span className="text-slate-500 font-semibold min-w-[100px]">{k}:</span>
-                                <span className="text-slate-700">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
+                                <span className="text-muted-foreground font-semibold min-w-[100px]">{k}:</span>
+                                <span className="text-foreground">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
                               </div>
                             ))}
                           </div>
                         )}
-                        <p className="text-[10px] text-slate-400 mt-1">
+                        <p className="text-[10px] text-muted-foreground mt-1">
                           {new Date(log.created_date).toLocaleString(undefined, {
-                            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
                           })}
                         </p>
                       </div>

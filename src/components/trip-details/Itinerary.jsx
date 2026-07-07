@@ -28,50 +28,64 @@ export default function Itinerary({ tripId, trip, events }) {
     subcategory_id: '',
     quantity: 1,
     cost: '',
-    supplier_cost: ''
+    supplier_cost: '',
   });
   const queryClient = useQueryClient();
 
-  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['suppliers'],
-    queryFn: () => db.entities.Supplier.list()
-  }));
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['suppliers'],
+      queryFn: () => db.entities.Supplier.list(),
+    })
+  );
 
-  const { data: allServices = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierServices'],
-    queryFn: () => db.entities.SupplierService.list()
-  }));
+  const { data: allServices = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierServices'],
+      queryFn: () => db.entities.SupplierService.list(),
+    })
+  );
 
-  const { data: allPricings = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierPricings'],
-    queryFn: () => db.entities.SupplierPricing.list()
-  }));
+  const { data: allPricings = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierPricings'],
+      queryFn: () => db.entities.SupplierPricing.list(),
+    })
+  );
 
-  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierSubcategories'],
-    queryFn: () => db.entities.SupplierSubcategory.list()
-  }));
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
 
-  const createMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.ItineraryEvent.create({ ...data, trip_id: tripId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] });
-      closeModal();
-    }
-  }));
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.ItineraryEvent.create({ ...data, trip_id: tripId }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] });
+        closeModal();
+      },
+    })
+  );
 
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ItineraryEvent.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] });
-      closeModal();
-    }
-  }));
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ItineraryEvent.update(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] });
+        closeModal();
+      },
+    })
+  );
 
-  const deleteMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ id) => db.entities.ItineraryEvent.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] })
-  }));
+  const deleteMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ id) => db.entities.ItineraryEvent.delete(id),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itineraryEvents', tripId] }),
+    })
+  );
 
   const openModal = (event = null) => {
     if (event) {
@@ -88,7 +102,7 @@ export default function Itinerary({ tripId, trip, events }) {
         subcategory_id: event.subcategory_id || '',
         quantity: event.quantity || 1,
         cost: event.cost || '',
-        supplier_cost: event.supplier_cost || ''
+        supplier_cost: event.supplier_cost || '',
       });
     } else {
       setEditingEvent(null);
@@ -104,7 +118,7 @@ export default function Itinerary({ tripId, trip, events }) {
         subcategory_id: '',
         quantity: 1,
         cost: '',
-        supplier_cost: ''
+        supplier_cost: '',
       });
     }
     setModalOpen(true);
@@ -116,7 +130,7 @@ export default function Itinerary({ tripId, trip, events }) {
   };
 
   const handlePricingChange = (pricingId) => {
-    const pricing = allPricings.find(p => p.id === pricingId);
+    const pricing = allPricings.find((p) => p.id === pricingId);
     if (pricing) {
       const cp = getClientPrice(pricing);
       setFormData({
@@ -125,7 +139,7 @@ export default function Itinerary({ tripId, trip, events }) {
         supplier_id: pricing.supplier_id,
         subcategory_id: pricing.subcategory_id || '',
         supplier_cost: String(pricing.base_price * (formData.quantity || 1)),
-        cost: String(cp * (formData.quantity || 1))
+        cost: String(cp * (formData.quantity || 1)),
       });
     } else {
       setFormData({ ...formData, pricing_id: '', supplier_cost: '' });
@@ -138,14 +152,14 @@ export default function Itinerary({ tripId, trip, events }) {
   };
 
   const handleQuantityChange = (qty) => {
-    const pricing = allPricings.find(p => p.id === formData.pricing_id);
+    const pricing = allPricings.find((p) => p.id === formData.pricing_id);
     if (pricing) {
       const cp = getClientPrice(pricing);
       setFormData({
         ...formData,
         quantity: qty,
         supplier_cost: String(pricing.base_price * qty),
-        cost: String(cp * qty)
+        cost: String(cp * qty),
       });
     } else {
       setFormData({ ...formData, quantity: qty });
@@ -157,7 +171,7 @@ export default function Itinerary({ tripId, trip, events }) {
     const data = {
       ...formData,
       cost: formData.cost ? parseFloat(formData.cost) : undefined,
-      supplier_cost: formData.supplier_cost ? parseFloat(formData.supplier_cost) : undefined
+      supplier_cost: formData.supplier_cost ? parseFloat(formData.supplier_cost) : undefined,
     };
     if (editingEvent) {
       updateMutation.mutate({ id: editingEvent.id, data });
@@ -188,12 +202,12 @@ export default function Itinerary({ tripId, trip, events }) {
 
       {/* Timeline */}
       {sortedDates.length === 0 ? (
-        <Card className="p-12 text-center bg-white shadow-md">
-          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Clock className="w-8 h-8 text-blue-600" />
+        <Card className="p-12 text-center bg-card shadow-md">
+          <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-8 h-8 text-blue-600 dark:text-blue-300" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">No events yet</h3>
-          <p className="text-slate-600 mb-6">Start building your itinerary</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">No events yet</h3>
+          <p className="text-muted-foreground mb-6">Start building your itinerary</p>
           <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
             Add First Event
@@ -201,43 +215,41 @@ export default function Itinerary({ tripId, trip, events }) {
         </Card>
       ) : (
         <div className="space-y-8">
-          {sortedDates.map(date => (
+          {sortedDates.map((date) => (
             <div key={date} className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md">
                   {format(parseISO(date), 'EEE, MMM d')}
                 </div>
-                <div className="flex-1 h-px bg-slate-200" />
+                <div className="flex-1 h-px bg-muted" />
               </div>
 
-              <div className="space-y-3 ml-4 border-l-2 border-blue-200 pl-6">
-                {groupedEvents[date].map(event => {
-                  const supplier = suppliers.find(s => s.id === event.supplier_id);
-                  const service = allServices.find(s => s.id === event.service_id);
+              <div className="space-y-3 ml-4 border-l-2 border-blue-200 dark:border-blue-800 pl-6">
+                {groupedEvents[date].map((event) => {
+                  const supplier = suppliers.find((s) => s.id === event.supplier_id);
+                  const service = allServices.find((s) => s.id === event.service_id);
                   return (
-                    <Card key={event.id} className="p-5 bg-white shadow-md hover:shadow-lg transition-shadow group">
+                    <Card key={event.id} className="p-5 bg-card shadow-md hover:shadow-lg transition-shadow group">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             {event.time && (
-                              <span className="text-sm font-medium text-blue-600 flex items-center gap-1">
+                              <span className="text-sm font-medium text-blue-600 dark:text-blue-300 flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {event.time}
                               </span>
                             )}
-                            <h4 className="font-semibold text-slate-900 text-lg">{event.title}</h4>
+                            <h4 className="font-semibold text-foreground text-lg">{event.title}</h4>
                           </div>
                           {event.location && (
-                            <div className="flex items-center gap-1 text-slate-600 text-sm mb-2">
+                            <div className="flex items-center gap-1 text-muted-foreground text-sm mb-2">
                               <MapPin className="w-4 h-4" />
                               {event.location}
                             </div>
                           )}
-                          {event.description && (
-                            <p className="text-slate-600 text-sm">{event.description}</p>
-                          )}
+                          {event.description && <p className="text-muted-foreground text-sm">{event.description}</p>}
                           {supplier && (
-                            <p className="text-sm text-blue-600 mt-2">
+                            <p className="text-sm text-blue-600 dark:text-blue-300 mt-2">
                               Supplier: {supplier.name}
                               {service && ` - ${service.service_name}`}
                             </p>
@@ -247,10 +259,12 @@ export default function Itinerary({ tripId, trip, events }) {
                           {(event.cost || event.supplier_cost) && (
                             <div className="text-right">
                               {event.supplier_cost && (
-                                <div className="text-xs text-slate-500">Cost: {parseFloat(event.supplier_cost).toFixed(2)}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  Cost: {parseFloat(event.supplier_cost).toFixed(2)}
+                                </div>
                               )}
                               {event.cost && (
-                                <span className="text-green-600 font-semibold flex items-center gap-1">
+                                <span className="text-green-600 dark:text-green-300 font-semibold flex items-center gap-1">
                                   <DollarSign className="w-4 h-4" />
                                   {parseFloat(event.cost).toFixed(2)}
                                 </span>
@@ -263,7 +277,7 @@ export default function Itinerary({ tripId, trip, events }) {
                             onClick={() => openModal(event)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <Edit className="w-4 h-4 text-slate-600" />
+                            <Edit className="w-4 h-4 text-muted-foreground" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -271,7 +285,7 @@ export default function Itinerary({ tripId, trip, events }) {
                             onClick={() => deleteMutation.mutate(event.id)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <Trash2 className="w-4 h-4 text-red-500" />
+                            <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
                           </Button>
                         </div>
                       </div>
@@ -346,14 +360,19 @@ export default function Itinerary({ tripId, trip, events }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="supplier">Supplier (Optional)</Label>
-                <Select value={formData.supplier_id} onValueChange={(v) => setFormData({ ...formData, supplier_id: v })}>
+                <Select
+                  value={formData.supplier_id}
+                  onValueChange={(v) => setFormData({ ...formData, supplier_id: v })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
-                    {suppliers.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -366,22 +385,27 @@ export default function Itinerary({ tripId, trip, events }) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
-                    {allPricings.filter(p => p.is_active !== false && (!formData.supplier_id || p.supplier_id === formData.supplier_id)).map(p => {
-                      const supplier = suppliers.find(s => s.id === p.supplier_id);
-                      const subcat = subcategories.find(s => s.id === p.subcategory_id);
-                      const clientPrice = p.base_price * (1 + (p.markup_percentage || 0) / 100);
-                      return (
-                        <SelectItem key={p.id} value={p.id}>
-                          {supplier?.name} - {p.name} {subcat ? `(${subcat.name})` : ''} ${clientPrice.toFixed(2)}
-                        </SelectItem>
-                      );
-                    })}
+                    {allPricings
+                      .filter(
+                        (p) =>
+                          p.is_active !== false && (!formData.supplier_id || p.supplier_id === formData.supplier_id),
+                      )
+                      .map((p) => {
+                        const supplier = suppliers.find((s) => s.id === p.supplier_id);
+                        const subcat = subcategories.find((s) => s.id === p.subcategory_id);
+                        const clientPrice = p.base_price * (1 + (p.markup_percentage || 0) / 100);
+                        return (
+                          <SelectItem key={p.id} value={p.id}>
+                            {supplier?.name} - {p.name} {subcat ? `(${subcat.name})` : ''} ${clientPrice.toFixed(2)}
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg border border-border">
               <div className="space-y-2">
                 <Label htmlFor="quantity">Quantity / Pax</Label>
                 <Input
@@ -393,7 +417,9 @@ export default function Itinerary({ tripId, trip, events }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supplier_cost" className="text-slate-700 font-semibold">Supplier Cost</Label>
+                <Label htmlFor="supplier_cost" className="text-foreground font-semibold">
+                  Supplier Cost
+                </Label>
                 <Input
                   id="supplier_cost"
                   type="number"
@@ -402,10 +428,12 @@ export default function Itinerary({ tripId, trip, events }) {
                   onChange={(e) => setFormData({ ...formData, supplier_cost: e.target.value })}
                   placeholder="0.00"
                 />
-                <p className="text-xs text-slate-500">What you pay</p>
+                <p className="text-xs text-muted-foreground">What you pay</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cost" className="text-blue-700 font-semibold">Client Price</Label>
+                <Label htmlFor="cost" className="text-blue-700 dark:text-blue-300 font-semibold">
+                  Client Price
+                </Label>
                 <Input
                   id="cost"
                   type="number"
@@ -413,9 +441,9 @@ export default function Itinerary({ tripId, trip, events }) {
                   value={formData.cost}
                   onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
                   placeholder="0.00"
-                  className="border-blue-300"
+                  className="border-blue-300 dark:border-blue-800"
                 />
-                <p className="text-xs text-slate-500">What you charge</p>
+                <p className="text-xs text-muted-foreground">What you charge</p>
               </div>
             </div>
 

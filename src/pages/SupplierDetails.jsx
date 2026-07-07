@@ -11,7 +11,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { ArrowLeft, Mail, Phone, Globe, MapPin, Star, Edit, Send, CalendarDays, Search, ExternalLink, Check, Loader2, Store } from 'lucide-react';
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  Globe,
+  MapPin,
+  Star,
+  Edit,
+  Send,
+  CalendarDays,
+  Search,
+  ExternalLink,
+  Check,
+  Loader2,
+  Store,
+} from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import SupplierServices from '../components/suppliers/SupplierServices';
@@ -39,43 +54,49 @@ export default function SupplierDetails() {
   const canModify = hasPermission('modify_suppliers');
   const canModifyBasic = hasPermission('modify_suppliers_basic');
 
+  const { data: supplier, isLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplier', supplierId],
+      queryFn: () => db.entities.Supplier.get(supplierId),
+      enabled: !!supplierId,
+    })
+  );
 
-  const { data: supplier, isLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['supplier', supplierId],
-    queryFn: () => db.entities.Supplier.get(supplierId),
-    enabled: !!supplierId
-  }));
+  const { data: category } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['category', supplier?.category_id],
+      queryFn: () => db.entities.SupplierCategory.get(supplier.category_id),
+      enabled: !!supplier?.category_id,
+    })
+  );
 
-  const { data: category } = /** @type {any} */ (useQuery({
-    queryKey: ['category', supplier?.category_id],
-    queryFn: () => db.entities.SupplierCategory.get(supplier.category_id),
-    enabled: !!supplier?.category_id
-  }));
-
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.Supplier.update(supplierId, {
-      name: data.name,
-      category_id: supplier.category_id,
-      contact_person: data.contact_person || '',
-      email: data.email || '',
-      phone: data.phone || '',
-      website: data.website || '',
-      address: data.address || '',
-      city: data.city || '',
-      area: data.area || '',
-      pricing_info: data.pricing_info || '',
-      notes: data.notes || '',
-      rating: data.rating || supplier.rating,
-      show_in_portal: !!data.show_in_portal,
-      custom_fields: data.custom_fields || supplier.custom_fields || {},
-    }),
-    onSuccess: () => {
-      showSuccess('Supplier updated');
-      queryClient.invalidateQueries({ queryKey: ['supplier', supplierId] });
-      setEditModalOpen(false);
-    },
-    onError: (error) => showError('Failed to update supplier', error.message)
-  }));
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) =>
+        db.entities.Supplier.update(supplierId, {
+          name: data.name,
+          category_id: supplier.category_id,
+          contact_person: data.contact_person || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          website: data.website || '',
+          address: data.address || '',
+          city: data.city || '',
+          area: data.area || '',
+          pricing_info: data.pricing_info || '',
+          notes: data.notes || '',
+          rating: data.rating || supplier.rating,
+          show_in_portal: !!data.show_in_portal,
+          custom_fields: data.custom_fields || supplier.custom_fields || {},
+        }),
+      onSuccess: () => {
+        showSuccess('Supplier updated');
+        queryClient.invalidateQueries({ queryKey: ['supplier', supplierId] });
+        setEditModalOpen(false);
+      },
+      onError: (error) => showError('Failed to update supplier', error.message),
+    })
+  );
 
   const openEditModal = () => {
     setEditForm({
@@ -125,7 +146,9 @@ export default function SupplierDetails() {
       city: editForm.city || supplier.city || '',
       area: editForm.area || supplier.area || '',
       pricing_info: editForm.pricing_info || supplier.pricing_info || '',
-      notes: result.description ? `[From web] ${result.description}\n\n${editForm.notes || supplier.notes || ''}` : (editForm.notes || supplier.notes || ''),
+      notes: result.description
+        ? `[From web] ${result.description}\n\n${editForm.notes || supplier.notes || ''}`
+        : editForm.notes || supplier.notes || '',
       rating: result.rating || editForm.rating || supplier.rating || 5,
       show_in_portal: editForm.show_in_portal ?? !!supplier.show_in_portal,
     });
@@ -150,11 +173,11 @@ export default function SupplierDetails() {
         </Button>
       </Link>
 
-      <Card className="p-8 bg-white shadow-lg">
+      <Card className="p-8 bg-card shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-3xl font-bold text-slate-900">{supplier.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground">{supplier.name}</h1>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => setBookingFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
                   <CalendarDays className="w-4 h-4 mr-2" /> New Booking
@@ -169,7 +192,14 @@ export default function SupplierDetails() {
                     <Edit className="w-4 h-4 mr-2" /> Edit
                   </Button>
                 )}
-                <Button onClick={() => { setWebSearchOpen(true); handleWebSearch(); }} variant="outline" className="border-purple-300 text-purple-600 hover:bg-purple-50">
+                <Button
+                  onClick={() => {
+                    setWebSearchOpen(true);
+                    handleWebSearch();
+                  }}
+                  variant="outline"
+                  className="border-purple-300 dark:border-purple-800 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
+                >
                   <Search className="w-4 h-4 mr-2" /> Search Web
                 </Button>
               </div>
@@ -180,37 +210,40 @@ export default function SupplierDetails() {
                   className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold"
                   style={{
                     backgroundColor: `${category.color}20`,
-                    color: category.color
+                    color: category.color,
                   }}
                 >
                   {category.name}
                 </span>
               )}
               {supplier.show_in_portal && (
-                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
+                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
                   <Store className="w-3.5 h-3.5" /> In client portal
                 </span>
               )}
             </div>
-            
+
             {supplier.rating && (
               <div className="flex items-center gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
                     className={`w-5 h-5 ${
-                      i < supplier.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300'
+                      i < supplier.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
                     }`}
                   />
                 ))}
               </div>
             )}
 
-            <div className="space-y-3 text-slate-700">
+            <div className="space-y-3 text-foreground">
               {supplier.city && (
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-slate-500" />
-                  <span>{supplier.city}{supplier.area ? ` — ${supplier.area}` : ''}</span>
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <span>
+                    {supplier.city}
+                    {supplier.area ? ` — ${supplier.area}` : ''}
+                  </span>
                 </div>
               )}
               {supplier.contact_person && (
@@ -218,53 +251,58 @@ export default function SupplierDetails() {
                   <span className="font-medium">Contact Person:</span> {supplier.contact_person}
                 </div>
               )}
-              
+
               {supplier.email && (
                 <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-slate-500" />
-                  <a href={`mailto:${supplier.email}`} className="hover:text-blue-600">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <a href={`mailto:${supplier.email}`} className="hover:text-blue-600 dark:hover:text-blue-300">
                     {supplier.email}
                   </a>
                 </div>
               )}
-              
+
               {supplier.phone && (
                 <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-slate-500" />
-                  <a href={`tel:${supplier.phone}`} className="hover:text-blue-600">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  <a href={`tel:${supplier.phone}`} className="hover:text-blue-600 dark:hover:text-blue-300">
                     {supplier.phone}
                   </a>
                 </div>
               )}
-              
+
               {supplier.website && (
                 <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-slate-500" />
-                  <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <a
+                    href={supplier.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-blue-600 dark:hover:text-blue-300"
+                  >
                     {supplier.website}
                   </a>
                 </div>
               )}
-              
+
               {supplier.address && (
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-slate-500" />
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
                   {supplier.address}
                 </div>
               )}
             </div>
 
             {supplier.pricing_info && (
-              <Card className="mt-6 p-4 bg-green-50 border-green-200">
-                <h3 className="font-semibold text-green-900 mb-2">Pricing Information</h3>
-                <p className="text-slate-700 text-sm whitespace-pre-wrap">{supplier.pricing_info}</p>
+              <Card className="mt-6 p-4 bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800">
+                <h3 className="font-semibold text-green-900 dark:text-green-300 mb-2">Pricing Information</h3>
+                <p className="text-foreground text-sm whitespace-pre-wrap">{supplier.pricing_info}</p>
               </Card>
             )}
 
             {supplier.notes && (
-              <Card className="mt-4 p-4 bg-slate-50">
-                <h3 className="font-semibold text-slate-900 mb-2">Notes</h3>
-                <p className="text-slate-700 text-sm whitespace-pre-wrap">{supplier.notes}</p>
+              <Card className="mt-4 p-4 bg-muted">
+                <h3 className="font-semibold text-foreground mb-2">Notes</h3>
+                <p className="text-foreground text-sm whitespace-pre-wrap">{supplier.notes}</p>
               </Card>
             )}
           </div>
@@ -283,19 +321,36 @@ export default function SupplierDetails() {
           <DialogHeader>
             <DialogTitle>Edit Supplier</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(editForm); }} className="space-y-4 mt-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              updateMutation.mutate(editForm);
+            }}
+            className="space-y-4 mt-4"
+          >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Name *</Label>
-                <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label>Contact Person</Label>
-                <Input value={editForm.contact_person} onChange={(e) => setEditForm({ ...editForm, contact_person: e.target.value })} />
+                <Input
+                  value={editForm.contact_person}
+                  onChange={(e) => setEditForm({ ...editForm, contact_person: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                <Input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Phone</Label>
@@ -303,11 +358,17 @@ export default function SupplierDetails() {
               </div>
               <div className="space-y-2">
                 <Label>Website</Label>
-                <Input value={editForm.website} onChange={(e) => setEditForm({ ...editForm, website: e.target.value })} />
+                <Input
+                  value={editForm.website}
+                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>
-                <Input value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
+                <Input
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>City</Label>
@@ -319,15 +380,27 @@ export default function SupplierDetails() {
               </div>
               <div className="space-y-2">
                 <Label>Rating</Label>
-                <select value={editForm.rating} onChange={(e) => setEditForm({ ...editForm, rating: parseInt(e.target.value) })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                  {[5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{r} Stars</option>)}
+                <select
+                  value={editForm.rating}
+                  onChange={(e) => setEditForm({ ...editForm, rating: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                >
+                  {[5, 4, 3, 2, 1].map((r) => (
+                    <option key={r} value={r}>
+                      {r} Stars
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
-            <div className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 p-3">
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
               <div>
-                <Label className="flex items-center gap-2"><Store className="w-4 h-4 text-blue-600" /> Show in client portal</Label>
-                <p className="text-xs text-slate-500 mt-1">When on, this supplier appears in the client travel shop (only its approved services are shown).</p>
+                <Label className="flex items-center gap-2">
+                  <Store className="w-4 h-4 text-blue-600 dark:text-blue-300" /> Show in client portal
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  When on, this supplier appears in the client travel shop (only its approved services are shown).
+                </p>
               </div>
               <Switch
                 checked={!!editForm.show_in_portal}
@@ -336,16 +409,33 @@ export default function SupplierDetails() {
             </div>
             <div className="space-y-2">
               <Label>Pricing Information</Label>
-              <Textarea value={editForm.pricing_info} onChange={(e) => setEditForm({ ...editForm, pricing_info: e.target.value })} rows={3} />
+              <Textarea
+                value={editForm.pricing_info}
+                onChange={(e) => setEditForm({ ...editForm, pricing_info: e.target.value })}
+                rows={3}
+              />
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>
-              <Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={3} />
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                rows={3}
+              />
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>
+                Cancel
+              </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : 'Save Changes'}
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
               </Button>
             </div>
           </form>
@@ -365,7 +455,12 @@ export default function SupplierDetails() {
       <BookingEmailSender
         open={bookingEmailOpen}
         onClose={() => setBookingEmailOpen(false)}
-        booking={{ reference_number: 'NEW', service_date: new Date().toISOString().split('T')[0], num_guests: 1, service_details: '' }}
+        booking={{
+          reference_number: 'NEW',
+          service_date: new Date().toISOString().split('T')[0],
+          num_guests: 1,
+          service_details: '',
+        }}
         supplier={supplier}
         trip={null}
         client={null}
@@ -376,73 +471,86 @@ export default function SupplierDetails() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Search className="w-5 h-5 text-purple-600" />
+              <Search className="w-5 h-5 text-purple-600 dark:text-purple-300" />
               Web Results for "{supplier.name}"
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4 space-y-4">
             {webSearchLoading && (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-purple-600 mr-3" />
-                <span className="text-slate-600">Searching the web...</span>
+                <Loader2 className="w-6 h-6 animate-spin text-purple-600 dark:text-purple-300 mr-3" />
+                <span className="text-muted-foreground">Searching the web...</span>
               </div>
             )}
             {webSearchError && !webSearchLoading && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+              <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm">
                 {webSearchError}
               </div>
             )}
-            {!webSearchLoading && webResults.map((result, idx) => (
-              <div key={idx} className="border border-slate-200 rounded-xl p-5 hover:border-purple-300 transition-colors">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-slate-900">{result.name}</h3>
-                    <span className="text-xs text-slate-400 uppercase tracking-wide">{result.source}</span>
+            {!webSearchLoading &&
+              webResults.map((result, idx) => (
+                <div
+                  key={idx}
+                  className="border border-border rounded-xl p-5 hover:border-purple-300 dark:hover:border-purple-800 transition-colors"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-foreground">{result.name}</h3>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wide">{result.source}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="bg-purple-600 hover:bg-purple-700 flex-shrink-0 ml-4"
+                      onClick={() => applyWebResult(result)}
+                    >
+                      <Check className="w-3.5 h-3.5 mr-1" /> Apply Data
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    className="bg-purple-600 hover:bg-purple-700 flex-shrink-0 ml-4"
-                    onClick={() => applyWebResult(result)}
-                  >
-                    <Check className="w-3.5 h-3.5 mr-1" /> Apply Data
-                  </Button>
+                  {result.address && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                      {result.address}
+                    </div>
+                  )}
+                  {result.phone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                      {result.phone}
+                    </div>
+                  )}
+                  {result.website && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                      <a
+                        href={result.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-300 hover:underline truncate"
+                      >
+                        {result.website} <ExternalLink className="w-3 h-3 inline" />
+                      </a>
+                    </div>
+                  )}
+                  {result.email && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                      {result.email}
+                    </div>
+                  )}
+                  {result.rating > 0 && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
+                      <Star className="w-3.5 h-3.5 text-yellow-500 dark:text-yellow-300 fill-yellow-500" />
+                      {result.rating}/5
+                    </div>
+                  )}
+                  {result.description && (
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{result.description}</p>
+                  )}
                 </div>
-                {result.address && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600 mb-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />{result.address}
-                  </div>
-                )}
-                {result.phone && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600 mb-1">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" />{result.phone}
-                  </div>
-                )}
-                {result.website && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600 mb-1">
-                    <Globe className="w-3.5 h-3.5 text-slate-400" />
-                    <a href={result.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
-                      {result.website} <ExternalLink className="w-3 h-3 inline" />
-                    </a>
-                  </div>
-                )}
-                {result.email && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600 mb-1">
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />{result.email}
-                  </div>
-                )}
-                {result.rating > 0 && (
-                  <div className="flex items-center gap-1 text-sm text-slate-600 mb-1">
-                    <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{result.rating}/5
-                  </div>
-                )}
-                {result.description && (
-                  <p className="text-sm text-slate-600 mt-2 line-clamp-3">{result.description}</p>
-                )}
-              </div>
-            ))}
+              ))}
             {!webSearchLoading && !webSearchError && webResults.length === 0 && (
-              <div className="text-center py-12 text-slate-500">
-                <Search className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+              <div className="text-center py-12 text-muted-foreground">
+                <Search className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                 <p>No results found. Try searching with a different name or city.</p>
               </div>
             )}

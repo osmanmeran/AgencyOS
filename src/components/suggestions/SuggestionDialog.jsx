@@ -58,14 +58,14 @@ export default function SuggestionDialog({ open, onOpenChange }) {
     onOpenChange(false);
   };
 
-//   const TypeIcon = TYPES.find(t => t.value === type)?.icon || Lightbulb;
+  //   const TypeIcon = TYPES.find(t => t.value === type)?.icon || Lightbulb;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-amber-500" />
+            <Lightbulb className="w-5 h-5 text-amber-500 dark:text-amber-300" />
             {submitted ? 'Thank You!' : 'Suggest an Improvement'}
           </DialogTitle>
           {!submitted && (
@@ -77,19 +77,21 @@ export default function SuggestionDialog({ open, onOpenChange }) {
 
         {submitted ? (
           <div className="text-center py-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-300" />
             </div>
             <p className="font-medium text-lg">Suggestion Submitted</p>
-            <p className="text-sm text-slate-500 mt-1">Our team will review it. Thank you for your input!</p>
-            <Button variant="outline" className="mt-4" onClick={handleClose}>Close</Button>
+            <p className="text-sm text-muted-foreground mt-1">Our team will review it. Thank you for your input!</p>
+            <Button variant="outline" className="mt-4" onClick={handleClose}>
+              Close
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Type</label>
+              <label className="text-sm font-medium text-foreground">Type</label>
               <div className="grid grid-cols-2 gap-2">
-                {TYPES.map(t => {
+                {TYPES.map((t) => {
                   const Icon = t.icon;
                   const active = type === t.value;
                   return (
@@ -99,11 +101,13 @@ export default function SuggestionDialog({ open, onOpenChange }) {
                       onClick={() => setType(t.value)}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm transition-all ${
                         active
-                          ? 'bg-blue-50 border-blue-300 text-blue-700'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300'
+                          : 'bg-card border-border text-muted-foreground hover:bg-muted'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+                      <Icon
+                        className={`w-4 h-4 ${active ? 'text-blue-600 dark:text-blue-300' : 'text-muted-foreground'}`}
+                      />
                       {t.label}
                     </button>
                   );
@@ -111,17 +115,31 @@ export default function SuggestionDialog({ open, onOpenChange }) {
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Title *</label>
-              <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="Brief summary of your suggestion" />
+              <label className="text-sm font-medium text-foreground">Title *</label>
+              <Input
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Brief summary of your suggestion"
+              />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Description</label>
-              <Textarea rows={4} value={description} onChange={e => setDescription(e.target.value)}
+              <label className="text-sm font-medium text-foreground">Description</label>
+              <Textarea
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your suggestion in detail. What problem does it solve? How should it work?"
               />
             </div>
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={!title.trim() || sending}>
-              {sending ? 'Submitting...' : <><SendHorizontal className="w-4 h-4 mr-2" /> Submit Suggestion</>}
+              {sending ? (
+                'Submitting...'
+              ) : (
+                <>
+                  <SendHorizontal className="w-4 h-4 mr-2" /> Submit Suggestion
+                </>
+              )}
             </Button>
           </form>
         )}

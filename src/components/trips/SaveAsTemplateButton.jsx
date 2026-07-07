@@ -23,7 +23,7 @@ export default function SaveAsTemplateButton({ trip, services = [] }) {
     if (!templateName.trim()) return;
     setSaving(true);
 
-    const templateServices = (trip.services || services).map(s => ({
+    const templateServices = (trip.services || services).map((s) => ({
       supplier_id: s.supplier_id || '',
       name: s.name || '',
       description: s.description || '',
@@ -34,9 +34,7 @@ export default function SaveAsTemplateButton({ trip, services = [] }) {
 
     const startDate = trip.start_date ? new Date(trip.start_date) : null;
     const endDate = trip.end_date ? new Date(trip.end_date) : null;
-    const durationDays = startDate && endDate
-      ? Math.ceil((+endDate - +startDate) / (1000 * 60 * 60 * 24))
-      : null;
+    const durationDays = startDate && endDate ? Math.ceil((+endDate - +startDate) / (1000 * 60 * 60 * 24)) : null;
 
     await db.entities.ProposalTemplate.create({
       name: templateName.trim(),
@@ -69,32 +67,42 @@ export default function SaveAsTemplateButton({ trip, services = [] }) {
             <DialogTitle>Save as Proposal Template</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <p className="text-sm text-slate-500">
-              This will save <strong>{trip.destination || trip.name}</strong>'s destination, services, and pricing as a reusable template for future proposals.
+            <p className="text-sm text-muted-foreground">
+              This will save <strong>{trip.destination || trip.name}</strong>'s destination, services, and pricing as a
+              reusable template for future proposals.
             </p>
             <div className="space-y-2">
               <Label>Template Name</Label>
               <Input
                 value={templateName}
-                onChange={e => setTemplateName(e.target.value)}
+                onChange={(e) => setTemplateName(e.target.value)}
                 placeholder="e.g. Bali 7-Day Package"
                 autoFocus
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
             <Button
               onClick={handleSave}
               disabled={saving || !templateName.trim() || saved}
               className="bg-blue-600 hover:bg-blue-700 gap-2"
             >
               {saved ? (
-                <><Check className="w-4 h-4" /> Saved!</>
+                <>
+                  <Check className="w-4 h-4" /> Saved!
+                </>
               ) : saving ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{' '}
+                  Saving...
+                </>
               ) : (
-                <><BookmarkPlus className="w-4 h-4" /> Save Template</>
+                <>
+                  <BookmarkPlus className="w-4 h-4" /> Save Template
+                </>
               )}
             </Button>
           </DialogFooter>

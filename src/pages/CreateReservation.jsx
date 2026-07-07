@@ -15,9 +15,26 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
 import {
-  ArrowLeft, Plus, Trash2, TrendingUp,
-  RefreshCw, ArrowRightLeft, BookOpen, Users, Star, Hash,
-  Building, User, Coffee, Plane, Map, Zap, Loader2, Check, Search, ClipboardCheck
+  ArrowLeft,
+  Plus,
+  Trash2,
+  TrendingUp,
+  RefreshCw,
+  ArrowRightLeft,
+  BookOpen,
+  Users,
+  Star,
+  Hash,
+  Building,
+  User,
+  Coffee,
+  Plane,
+  Map,
+  Zap,
+  Loader2,
+  Check,
+  Search,
+  ClipboardCheck,
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { showSuccess, showError } from '@/lib/toast';
@@ -31,17 +48,38 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { applyMarkup } from '@/lib/pricing';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
-const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ', SAR: '﷼', EGP: 'E£', MAD: 'MAD', JPY: '¥', CHF: 'CHF', CAD: 'CA$', AUD: 'A$' }[cur] || cur);
+const currSymbol = (cur) =>
+  ({
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    TRY: '₺',
+    AED: 'د.إ',
+    SAR: '﷼',
+    EGP: 'E£',
+    MAD: 'MAD',
+    JPY: '¥',
+    CHF: 'CHF',
+    CAD: 'CA$',
+    AUD: 'A$',
+  })[cur] || cur;
 
 const newPassenger = () => ({
-  id: `pax-${Date.now()}-${Math.random()}`, name: '', is_contact: false,
-  client_id: '', age_category: 'adult', phone: '', email: '', date_of_birth: '', numero_pratica: '',
+  id: `pax-${Date.now()}-${Math.random()}`,
+  name: '',
+  is_contact: false,
+  client_id: '',
+  age_category: 'adult',
+  phone: '',
+  email: '',
+  date_of_birth: '',
+  numero_pratica: '',
 });
 
 const newRoom = () => ({
   id: `room-${Date.now()}-${Math.random()}`,
   type: 'double',
-  passengers: [newPassenger(), newPassenger()]
+  passengers: [newPassenger(), newPassenger()],
 });
 
 const autoGenerateRooms = (count) => {
@@ -50,15 +88,33 @@ const autoGenerateRooms = (count) => {
   let remaining = count;
   while (remaining > 0) {
     let type = 'single';
-    if (remaining >= 2) { type = 'double'; remaining -= 2; }
-    else { type = 'single'; remaining -= 1; }
+    if (remaining >= 2) {
+      type = 'double';
+      remaining -= 2;
+    } else {
+      type = 'single';
+      remaining -= 1;
+    }
     const passengers = Array.from({ length: type === 'double' ? 2 : 1 }, () => newPassenger());
     rooms.push({ id: `room-${Date.now()}-${Math.random()}-${rooms.length}`, type, passengers });
   }
   return rooms;
 };
 
-const emptyService = () => ({ _key: `svc-${Date.now()}-${Math.random()}`, supplier_id: '', name: '', description: '', category: '', location: '', acquiring_price: '', selling_price: '', quantity: 1, unit: 'per_person', supplier_currency: 'USD', client_currency: 'USD' });
+const emptyService = () => ({
+  _key: `svc-${Date.now()}-${Math.random()}`,
+  supplier_id: '',
+  name: '',
+  description: '',
+  category: '',
+  location: '',
+  acquiring_price: '',
+  selling_price: '',
+  quantity: 1,
+  unit: 'per_person',
+  supplier_currency: 'USD',
+  client_currency: 'USD',
+});
 
 const sortByDate = (a, b) => {
   const aStart = a.start_date || '';
@@ -83,8 +139,13 @@ const SERVICE_TYPES = [
 ];
 
 const SERVICE_TYPE_ICONS = {
-  lodging: Building, transfers: ArrowRightLeft, guides: User,
-  restaurants: Coffee, transportation: Plane, guided_tours: Map, extra_activities: Zap
+  lodging: Building,
+  transfers: ArrowRightLeft,
+  guides: User,
+  restaurants: Coffee,
+  transportation: Plane,
+  guided_tours: Map,
+  extra_activities: Zap,
 };
 
 export default function CreateReservation() {
@@ -98,12 +159,19 @@ export default function CreateReservation() {
   const prefillAppliedRef = useRef(false);
 
   const [formData, setFormData] = useState({
-    name: '', destination: '', start_date: '', end_date: '',
-    department: '', client_id: '', client_name: '', client_email: '',
-    notes: '', terms_and_conditions:
+    name: '',
+    destination: '',
+    start_date: '',
+    end_date: '',
+    department: '',
+    client_id: '',
+    client_name: '',
+    client_email: '',
+    notes: '',
+    terms_and_conditions:
       'Payment terms: 50% deposit required upon booking confirmation, balance due 30 days prior to departure.\nCancellation policy: Cancellations made more than 60 days before departure receive 80% refund, 30-60 days receive 50% refund, less than 30 days no refund.',
     image_url: '',
-    internal_notes: ''
+    internal_notes: '',
   });
   const [serviceTypes, setServiceTypes] = useState([]);
   const [passengerCount, setPassengerCount] = useState(2);
@@ -116,22 +184,34 @@ export default function CreateReservation() {
   const [templateName, setTemplateName] = useState('');
   const [templateDesc, setTemplateDesc] = useState('');
 
-  const { data: templates = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['serviceTemplates'],
-    queryFn: () => db.entities.ServiceTemplate.list()
-  }));
+  const { data: templates = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['serviceTemplates'],
+      queryFn: () => db.entities.ServiceTemplate.list(),
+    })
+  );
 
-  const createTemplateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
-    onSuccess: () => { showSuccess('Template created'); queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] }); },
-    onError: (error) => showError('Failed to create template', error.message)
-  }));
+  const createTemplateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
+      onSuccess: () => {
+        showSuccess('Template created');
+        queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
+      },
+      onError: (error) => showError('Failed to create template', error.message),
+    })
+  );
 
-  const deleteTemplateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ id) => db.entities.ServiceTemplate.delete(id),
-    onSuccess: () => { showSuccess('Template deleted'); queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] }); },
-    onError: (error) => showError('Failed to delete template', error.message)
-  }));
+  const deleteTemplateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ id) => db.entities.ServiceTemplate.delete(id),
+      onSuccess: () => {
+        showSuccess('Template deleted');
+        queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
+      },
+      onError: (error) => showError('Failed to delete template', error.message),
+    })
+  );
   const [acquiringCurrency, setAcquiringCurrency] = useState('USD');
   const [sellingCurrency, setSellingCurrency] = useState('USD');
   const [exchangeRate, setExchangeRate] = useState(1);
@@ -141,23 +221,40 @@ export default function CreateReservation() {
   const [_addProviderForIndex, setAddProviderForIndex] = useState(null);
   const [newProvider, setNewProvider] = useState({ name: '', email: '', phone: '', city: '' });
 
-  const { data: settings } = /** @type {any} */ (useQuery({
-    queryKey: ['appSettings'],
-    queryFn: async () => { const all = await db.entities.AppSettings.list(); return all[0] || { departments: [] }; }
-  }));
-  const { refetch: refetchSuppliers } = /** @type {any} */ (useQuery({
-    queryKey: ['suppliers'], queryFn: () => db.entities.Supplier.list()
-  }));
-  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list()
-  }));
-  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery({
-    queryKey: ['clients'], queryFn: () => db.entities.Client.list()
-  }));
+  const { data: settings } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['appSettings'],
+      queryFn: async () => {
+        const all = await db.entities.AppSettings.list();
+        return all[0] || { departments: [] };
+      },
+    })
+  );
+  const { refetch: refetchSuppliers } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['suppliers'],
+      queryFn: () => db.entities.Supplier.list(),
+    })
+  );
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierCategories'],
+      queryFn: () => db.entities.SupplierCategory.list(),
+    })
+  );
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clients'],
+      queryFn: () => db.entities.Client.list(),
+    })
+  );
   const filteredClients = useMemo(() => {
     if (!clientSearch) return clients;
     const q = clientSearch.toLowerCase();
-    return clients.filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.company?.toLowerCase().includes(q));
+    return clients.filter(
+      (c) =>
+        c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.company?.toLowerCase().includes(q),
+    );
   }, [clients, clientSearch]);
   const { data: currentUser } = /** @type {any} */ (useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() }));
 
@@ -168,33 +265,39 @@ export default function CreateReservation() {
     }
   }, [currentUser, isEditing]);
 
-  const { data: editTrip, isLoading: editingLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['trip', editId],
-    queryFn: () => db.entities.Trip.get(editId),
-    enabled: isEditing
-  }));
+  const { data: editTrip, isLoading: editingLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['trip', editId],
+      queryFn: () => db.entities.Trip.get(editId),
+      enabled: isEditing,
+    })
+  );
 
-  const { data: sourceQuote, isLoading: quoteLoading } = /** @type {any} */ (useQuery({
-    queryKey: ['quoteRequest', fromQuoteId],
-    queryFn: () => db.entities.QuoteRequest.get(fromQuoteId),
-    enabled: isFromQuote
-  }));
+  const { data: sourceQuote, isLoading: quoteLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['quoteRequest', fromQuoteId],
+      queryFn: () => db.entities.QuoteRequest.get(fromQuoteId),
+      enabled: isFromQuote,
+    })
+  );
 
-  const { data: quotePricingLookup } = /** @type {any} */ (useQuery({
-    queryKey: ['quotePricingLookup', fromQuoteId],
-    queryFn: async () => {
-      const pricingIds = [...new Set((sourceQuote.items || []).map(i => i.pricing_id).filter(Boolean))];
-      const supplierIds = [...new Set((sourceQuote.items || []).map(i => i.supplier_id).filter(Boolean))];
-      const [pricingRows, supplierRows] = await Promise.all([
-        Promise.all(pricingIds.map(id => db.entities.SupplierPricing.get(id).catch(() => null))),
-        Promise.all(supplierIds.map(id => db.entities.Supplier.get(id).catch(() => null))),
-      ]);
-      const pricingById = Object.fromEntries(pricingRows.filter(Boolean).map(p => [p.id, p]));
-      const supplierById = Object.fromEntries(supplierRows.filter(Boolean).map(s => [s.id, s]));
-      return { pricingById, supplierById };
-    },
-    enabled: isFromQuote && !!sourceQuote
-  }));
+  const { data: quotePricingLookup } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['quotePricingLookup', fromQuoteId],
+      queryFn: async () => {
+        const pricingIds = [...new Set((sourceQuote.items || []).map((i) => i.pricing_id).filter(Boolean))];
+        const supplierIds = [...new Set((sourceQuote.items || []).map((i) => i.supplier_id).filter(Boolean))];
+        const [pricingRows, supplierRows] = await Promise.all([
+          Promise.all(pricingIds.map((id) => db.entities.SupplierPricing.get(id).catch(() => null))),
+          Promise.all(supplierIds.map((id) => db.entities.Supplier.get(id).catch(() => null))),
+        ]);
+        const pricingById = Object.fromEntries(pricingRows.filter(Boolean).map((p) => [p.id, p]));
+        const supplierById = Object.fromEntries(supplierRows.filter(Boolean).map((s) => [s.id, s]));
+        return { pricingById, supplierById };
+      },
+      enabled: isFromQuote && !!sourceQuote,
+    })
+  );
 
   // Prefill the blank form from a QuoteRequest's structured data (passengers,
   // items) once its supporting lookups (SupplierPricing/Supplier, for cost
@@ -209,12 +312,12 @@ export default function CreateReservation() {
     const quoteCurrency = sourceQuote.currency || 'USD';
     let missingPricing = false;
 
-    const prefilledServices = (sourceQuote.items || []).map(item => {
+    const prefilledServices = (sourceQuote.items || []).map((item) => {
       const pricing = pricingById[item.pricing_id];
       const supplier = supplierById[item.supplier_id];
       if (!pricing) missingPricing = true;
-      const categoryName = supplier ? (categories.find(c => c.id === supplier.category_id)?.name || '') : '';
-      const location = supplier ? (supplier.city || supplier.area || '') : '';
+      const categoryName = supplier ? categories.find((c) => c.id === supplier.category_id)?.name || '' : '';
+      const location = supplier ? supplier.city || supplier.area || '' : '';
       return {
         _key: `svc-${Date.now()}-${Math.random()}`,
         supplier_id: item.supplier_id || '',
@@ -230,7 +333,7 @@ export default function CreateReservation() {
         pickup_location: item.pickup_location || '',
         dropoff_location: item.dropoff_location || '',
         flight_number: item.flight_number || '',
-        acquiring_price: pricing ? (parseFloat(pricing.base_price) || 0) : 0,
+        acquiring_price: pricing ? parseFloat(pricing.base_price) || 0 : 0,
         supplier_currency: pricing?.currency || quoteCurrency,
         base_selling_price: item.unit_price || 0,
         selling_price: item.unit_price || 0,
@@ -240,11 +343,14 @@ export default function CreateReservation() {
     });
 
     if (missingPricing) {
-      showError('Some pricing data could not be found', 'Fill in the affected service costs manually before creating the reservation.');
+      showError(
+        'Some pricing data could not be found',
+        'Fill in the affected service costs manually before creating the reservation.',
+      );
     }
 
-    const client = clients.find(c => c.id === sourceQuote.client_id);
-    setFormData(prev => ({
+    const client = clients.find((c) => c.id === sourceQuote.client_id);
+    setFormData((prev) => ({
       ...prev,
       name: sourceQuote.title || prev.name,
       destination: sourceQuote.destination || prev.destination,
@@ -265,54 +371,73 @@ export default function CreateReservation() {
   }, [isFromQuote, isEditing, sourceQuote, quotePricingLookup, categories, clients]);
 
   const isDirty = useDirtyState(
-    { formData, serviceTypes, passengerCount, rooms, services, markupPct, acquiringCurrency, sellingCurrency, exchangeRate },
-    editTrip?.id
+    {
+      formData,
+      serviceTypes,
+      passengerCount,
+      rooms,
+      services,
+      markupPct,
+      acquiringCurrency,
+      sellingCurrency,
+      exchangeRate,
+    },
+    editTrip?.id,
   );
   useUnsavedChangesGuard(isDirty);
 
   const departments = settings?.departments || [];
 
-  const createMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.Trip.create(data),
-    onSuccess: (/** @type {any} */ created) => {
-      showSuccess('Reservation created');
-      queryClient.invalidateQueries({ queryKey: ['trips'] });
-      if (isFromQuote) {
-        db.entities.QuoteRequest.update(fromQuoteId, { converted_trip_id: created.id })
-          .then(() => queryClient.invalidateQueries({ queryKey: ['allQuoteRequests'] }))
-          .catch(err => showError('Reservation created, but failed to link the quote request', err.message));
-      }
-      navigate(createPageUrl(`ReservationDetails?id=${created.id}`));
-    },
-    onError: (error) => showError('Failed to create reservation', error.message)
-  }));
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.Trip.create(data),
+      onSuccess: (/** @type {any} */ created) => {
+        showSuccess('Reservation created');
+        queryClient.invalidateQueries({ queryKey: ['trips'] });
+        if (isFromQuote) {
+          db.entities.QuoteRequest.update(fromQuoteId, { converted_trip_id: created.id })
+            .then(() => queryClient.invalidateQueries({ queryKey: ['allQuoteRequests'] }))
+            .catch((err) => showError('Reservation created, but failed to link the quote request', err.message));
+        }
+        navigate(createPageUrl(`ReservationDetails?id=${created.id}`));
+      },
+      onError: (error) => showError('Failed to create reservation', error.message),
+    })
+  );
 
-  const updateMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.Trip.update(editId, data),
-    onSuccess: () => {
-      showSuccess('Reservation updated');
-      queryClient.invalidateQueries({ queryKey: ['trips'] });
-      queryClient.invalidateQueries({ queryKey: ['trip', editId] });
-      navigate(createPageUrl(`ReservationDetails?id=${editId}`));
-    },
-    onError: (error) => showError('Failed to update reservation', error.message)
-  }));
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.Trip.update(editId, data),
+      onSuccess: () => {
+        showSuccess('Reservation updated');
+        queryClient.invalidateQueries({ queryKey: ['trips'] });
+        queryClient.invalidateQueries({ queryKey: ['trip', editId] });
+        navigate(createPageUrl(`ReservationDetails?id=${editId}`));
+      },
+      onError: (error) => showError('Failed to update reservation', error.message),
+    })
+  );
 
-  const createSupplierMutation = /** @type {any} */ (useMutation({
-    mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
-    onSuccess: async (_created) => {
-      showSuccess('Supplier created');
-      await refetchSuppliers();
-      setAddProviderOpen(false);
-      setNewProvider({ name: '', email: '', phone: '', city: '' });
-      setAddProviderForIndex(null);
-    },
-    onError: (error) => showError('Failed to create supplier', error.message)
-  }));
+  const createSupplierMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
+      onSuccess: async (_created) => {
+        showSuccess('Supplier created');
+        await refetchSuppliers();
+        setAddProviderOpen(false);
+        setNewProvider({ name: '', email: '', phone: '', city: '' });
+        setAddProviderForIndex(null);
+      },
+      onError: (error) => showError('Failed to create supplier', error.message),
+    })
+  );
 
   // Exchange rate
   const fetchExchangeRate = async () => {
-    if (acquiringCurrency === sellingCurrency) { setExchangeRate(1); return; }
+    if (acquiringCurrency === sellingCurrency) {
+      setExchangeRate(1);
+      return;
+    }
     setLoadingRate(true);
     try {
       const res = await db.integrations.Core.GetExchangeRate(acquiringCurrency, sellingCurrency);
@@ -324,18 +449,31 @@ export default function CreateReservation() {
   };
 
   // Services
-  const addService = () => setServices(prev => [...prev, emptyService()].sort(sortByDate));
-  const addServiceFromLibrary = useCallback((serviceData) => {
-    const sellPrice = serviceData.selling_price ?? serviceData.acquiring_price ?? 0;
-    const convertedSelling = acquiringCurrency !== sellingCurrency ? (sellPrice * exchangeRate) : sellPrice;
-    const namedPax = rooms.reduce((sum, r) => sum + r.passengers.filter(p => p.name.trim()).length, 0);
-    setServices(prev => [...prev, { ...emptyService(), ...serviceData, selling_price: parseFloat(convertedSelling.toFixed(2)), quantity: namedPax || 1 }].sort(sortByDate));
-  }, [acquiringCurrency, sellingCurrency, exchangeRate, rooms]);
+  const addService = () => setServices((prev) => [...prev, emptyService()].sort(sortByDate));
+  const addServiceFromLibrary = useCallback(
+    (serviceData) => {
+      const sellPrice = serviceData.selling_price ?? serviceData.acquiring_price ?? 0;
+      const convertedSelling = acquiringCurrency !== sellingCurrency ? sellPrice * exchangeRate : sellPrice;
+      const namedPax = rooms.reduce((sum, r) => sum + r.passengers.filter((p) => p.name.trim()).length, 0);
+      setServices((prev) =>
+        [
+          ...prev,
+          {
+            ...emptyService(),
+            ...serviceData,
+            selling_price: parseFloat(convertedSelling.toFixed(2)),
+            quantity: namedPax || 1,
+          },
+        ].sort(sortByDate),
+      );
+    },
+    [acquiringCurrency, sellingCurrency, exchangeRate, rooms],
+  );
 
-  const removeService = (key) => setServices(prev => prev.filter(s => s._key !== key));
+  const removeService = (key) => setServices((prev) => prev.filter((s) => s._key !== key));
   const duplicateService = (key) => {
-    setServices(prev => {
-      const idx = prev.findIndex(s => s._key === key);
+    setServices((prev) => {
+      const idx = prev.findIndex((s) => s._key === key);
       if (idx === -1) return prev;
       const original = prev[idx];
       const copy = { ...JSON.parse(JSON.stringify(original)), _key: `svc-${Date.now()}-${Math.random()}` };
@@ -344,7 +482,7 @@ export default function CreateReservation() {
       return result.sort(sortByDate);
     });
   };
-//   const acqToSell = (price) => { const p = parseFloat(price) || 0; return acquiringCurrency === sellingCurrency ? p : p * exchangeRate; };
+  //   const acqToSell = (price) => { const p = parseFloat(price) || 0; return acquiringCurrency === sellingCurrency ? p : p * exchangeRate; };
 
   const passengersToRooms = (passengers) => {
     if (!passengers?.length) return [newRoom()];
@@ -358,7 +496,7 @@ export default function CreateReservation() {
       }
       roomMap[rid].passengers.push({ ...p });
     }
-    return roomOrder.map(rid => roomMap[rid]);
+    return roomOrder.map((rid) => roomMap[rid]);
   };
 
   useEffect(() => {
@@ -382,9 +520,10 @@ export default function CreateReservation() {
     setPassengerCount(loadedPax);
     setRooms(passengersToRooms(editTrip.passengers || []));
     const loadedServices = editTrip.services || [];
-    setServices(loadedServices.length > 0
-      ? loadedServices.map(s => ({ ...s, _key: s._key || `svc-${Date.now()}-${Math.random()}` })).sort(sortByDate)
-      : [emptyService()]
+    setServices(
+      loadedServices.length > 0
+        ? loadedServices.map((s) => ({ ...s, _key: s._key || `svc-${Date.now()}-${Math.random()}` })).sort(sortByDate)
+        : [emptyService()],
     );
     setAcquiringCurrency(editTrip.acquiring_currency || 'USD');
     setSellingCurrency(editTrip.selling_currency || 'USD');
@@ -397,7 +536,7 @@ export default function CreateReservation() {
     const qty = s.quantity || 1;
     if (s.unit === 'per_night' || s.unit === 'per_day') {
       if (s.start_date && s.end_date) {
-        const days = Math.max(1, Math.round((+(new Date(s.end_date)) - +(new Date(s.start_date))) / 86400000));
+        const days = Math.max(1, Math.round((+new Date(s.end_date) - +new Date(s.start_date)) / 86400000));
         return qty * days;
       }
       return qty;
@@ -426,15 +565,15 @@ export default function CreateReservation() {
 
   // Rooms / Passengers
   const addRoom = () => {
-    setRooms(prev => {
+    setRooms((prev) => {
       const cap = 2;
       const passengers = Array.from({ length: cap }, () => newPassenger());
       return [...prev, { id: `room-${Date.now()}-${Math.random()}`, type: 'double', passengers }];
     });
   };
   const removeRoom = (roomId) => {
-    setRooms(prev => {
-      const updated = prev.filter(r => r.id !== roomId);
+    setRooms((prev) => {
+      const updated = prev.filter((r) => r.id !== roomId);
       if (updated.length === 0) {
         const cap = 2;
         const passengers = Array.from({ length: cap }, () => newPassenger());
@@ -446,55 +585,86 @@ export default function CreateReservation() {
   const setRoomOccupancy = (roomId, count) => {
     const typeMap = { 1: 'single', 2: 'double', 3: 'triple', 4: 'quad' };
     const type = typeMap[count] || 'double';
-    setRooms(prev => prev.map(r => {
-      if (r.id !== roomId) return r;
-      const current = r.passengers;
-      let passengers;
-      if (count > current.length) {
-        passengers = [...current, ...Array.from({ length: count - current.length }, () => newPassenger())];
-      } else if (count < current.length) {
-        const kept = current.slice(0, count);
-        if (current.find(p => p.is_contact) && !kept.find(p => p.is_contact)) kept[kept.length - 1].is_contact = true;
-        passengers = kept;
-      } else {
-        passengers = current;
-      }
-      return { ...r, type, passengers };
-    }));
+    setRooms((prev) =>
+      prev.map((r) => {
+        if (r.id !== roomId) return r;
+        const current = r.passengers;
+        let passengers;
+        if (count > current.length) {
+          passengers = [...current, ...Array.from({ length: count - current.length }, () => newPassenger())];
+        } else if (count < current.length) {
+          const kept = current.slice(0, count);
+          if (current.find((p) => p.is_contact) && !kept.find((p) => p.is_contact))
+            kept[kept.length - 1].is_contact = true;
+          passengers = kept;
+        } else {
+          passengers = current;
+        }
+        return { ...r, type, passengers };
+      }),
+    );
   };
-  const updatePassenger = (roomId, paxId, updated) => setRooms(prev => prev.map(r => ({
-    ...r, passengers: r.passengers.map(p => p.id === paxId ? updated : p)
-  })));
-  const setContactInRoom = (roomId, paxId) => setRooms(prev => prev.map(r => ({
-    ...r, passengers: r.passengers.map(p => ({ ...p, is_contact: p.id === paxId }))
-  })));
+  const updatePassenger = (roomId, paxId, updated) =>
+    setRooms((prev) =>
+      prev.map((r) => ({
+        ...r,
+        passengers: r.passengers.map((p) => (p.id === paxId ? updated : p)),
+      })),
+    );
+  const setContactInRoom = (roomId, paxId) =>
+    setRooms((prev) =>
+      prev.map((r) => ({
+        ...r,
+        passengers: r.passengers.map((p) => ({ ...p, is_contact: p.id === paxId })),
+      })),
+    );
 
-  const allPassengers = rooms.flatMap(r => r.passengers.map(p => ({
-    ...p, room_id: r.id, room_type: r.type
-  })));
+  const allPassengers = rooms.flatMap((r) =>
+    r.passengers.map((p) => ({
+      ...p,
+      room_id: r.id,
+      room_type: r.type,
+    })),
+  );
   const derivedPax = rooms.reduce((sum, r) => sum + r.passengers.length, 0);
   const slotsValid = derivedPax === passengerCount;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const selectedClient = clients.find(c => c.id === formData.client_id);
-    const cleanServices = services.map(s => ({
-      _key: s._key, supplier_id: s.supplier_id, name: s.name, description: s.description,
-      category: s.category, location: s.location,
-      start_date: s.start_date, end_date: s.end_date,
-      unit: s.unit, quantity: s.quantity || 1,
+    const selectedClient = clients.find((c) => c.id === formData.client_id);
+    const cleanServices = services.map((s) => ({
+      _key: s._key,
+      supplier_id: s.supplier_id,
+      name: s.name,
+      description: s.description,
+      category: s.category,
+      location: s.location,
+      start_date: s.start_date,
+      end_date: s.end_date,
+      unit: s.unit,
+      quantity: s.quantity || 1,
       acquiring_price: parseFloat(s.acquiring_price) || 0,
       base_selling_price: parseFloat(s.base_selling_price ?? s.selling_price) || 0,
       selling_price: withMarkup(parseFloat(s.base_selling_price ?? s.selling_price) || 0),
       supplier_currency: s.supplier_currency || 'USD',
       client_currency: s.client_currency || 'USD',
-      hotel_treatment: s.hotel_treatment, room_type: s.room_type, room_occupancy: s.room_occupancy,
-      pickup_location: s.pickup_location, dropoff_location: s.dropoff_location,
-      departure_airport: s.departure_airport, arrival_airport: s.arrival_airport, flight_number: s.flight_number,
-      transfer_type: s.transfer_type, service_date: s.service_date,
-      departure_time: s.departure_time, pickup_time: s.pickup_time, transfer_flight_number: s.transfer_flight_number,
+      hotel_treatment: s.hotel_treatment,
+      room_type: s.room_type,
+      room_occupancy: s.room_occupancy,
+      pickup_location: s.pickup_location,
+      dropoff_location: s.dropoff_location,
+      departure_airport: s.departure_airport,
+      arrival_airport: s.arrival_airport,
+      flight_number: s.flight_number,
+      transfer_type: s.transfer_type,
+      service_date: s.service_date,
+      departure_time: s.departure_time,
+      pickup_time: s.pickup_time,
+      transfer_flight_number: s.transfer_flight_number,
       return_leg: s.return_leg?.enabled ? s.return_leg : undefined,
-      pricing_id: s.pricing_id, subcategory_id: s.subcategory_id, car_capacity: s.car_capacity,
+      pricing_id: s.pricing_id,
+      subcategory_id: s.subcategory_id,
+      car_capacity: s.car_capacity,
       booking_source: s.booking_source || 'direct',
       show_in_itinerary: s.show_in_itinerary,
     }));
@@ -516,13 +686,16 @@ export default function CreateReservation() {
       updateMutation.mutate({
         ...editTrip,
         ...baseData,
-        change_history: [...(editTrip.change_history || []), {
-          date: new Date().toISOString(),
-          changed_by: currentUser?.email || 'unknown',
-          changed_by_name: currentUser?.name || currentUser?.email || 'Unknown',
-          action: 'updated',
-          description: 'Reservation updated'
-        }]
+        change_history: [
+          ...(editTrip.change_history || []),
+          {
+            date: new Date().toISOString(),
+            changed_by: currentUser?.email || 'unknown',
+            changed_by_name: currentUser?.name || currentUser?.email || 'Unknown',
+            action: 'updated',
+            description: 'Reservation updated',
+          },
+        ],
       });
     } else {
       const referenceNumber = await generateReferenceNumber(formData.department, settings);
@@ -536,13 +709,15 @@ export default function CreateReservation() {
         created_by_name: currentUser?.name || currentUser?.email || 'Unknown',
         created_by_phone: currentUser?.phone || '',
         created_date: new Date().toISOString(),
-        change_history: [{
-          date: new Date().toISOString(),
-          changed_by: currentUser?.email || 'unknown',
-          changed_by_name: currentUser?.name || currentUser?.email || 'Unknown',
-          action: 'created',
-          description: 'Reservation created'
-        }]
+        change_history: [
+          {
+            date: new Date().toISOString(),
+            changed_by: currentUser?.email || 'unknown',
+            changed_by_name: currentUser?.name || currentUser?.email || 'Unknown',
+            action: 'created',
+            description: 'Reservation created',
+          },
+        ],
       });
     }
   };
@@ -558,102 +733,161 @@ export default function CreateReservation() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <Link to={createPageUrl('Reservations')}>
-        <Button variant="ghost" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Reservations</Button>
+        <Button variant="ghost" className="gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Reservations
+        </Button>
       </Link>
 
       <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">{isEditing ? 'Edit Reservation' : 'New Reservation'}</h1>
-          <p className="text-slate-500 mt-1">{isEditing ? 'Update reservation details, services, and pricing' : 'Fill in details, add services, then send to client or confirm directly'}</p>
+          <h1 className="text-3xl font-bold text-foreground">{isEditing ? 'Edit Reservation' : 'New Reservation'}</h1>
+          <p className="text-muted-foreground mt-1">
+            {isEditing
+              ? 'Update reservation details, services, and pricing'
+              : 'Fill in details, add services, then send to client or confirm directly'}
+          </p>
         </div>
-        <Button type="button" variant={showLibrary ? 'default' : 'outline'} onClick={() => setShowLibrary(v => !v)} className={showLibrary ? 'bg-blue-600 hover:bg-blue-700' : ''}>
-          <BookOpen className="w-4 h-4 mr-2" />{showLibrary ? 'Hide Library' : 'Service Library'}
+        <Button
+          type="button"
+          variant={showLibrary ? 'default' : 'outline'}
+          onClick={() => setShowLibrary((v) => !v)}
+          className={showLibrary ? 'bg-blue-600 hover:bg-blue-700' : ''}
+        >
+          <BookOpen className="w-4 h-4 mr-2" />
+          {showLibrary ? 'Hide Library' : 'Service Library'}
         </Button>
       </div>
 
       <div className="flex gap-6">
         {showLibrary && (
           <div className="w-72 flex-shrink-0">
-            <ServiceLibraryPanel numTravelers={passengerCount} acquiringCurrency={acquiringCurrency} _sellingCurrency={sellingCurrency} onAddService={addServiceFromLibrary} />
+            <ServiceLibraryPanel
+              numTravelers={passengerCount}
+              acquiringCurrency={acquiringCurrency}
+              _sellingCurrency={sellingCurrency}
+              onAddService={addServiceFromLibrary}
+            />
           </div>
         )}
 
         <div className="flex-1 min-w-0">
           <form onSubmit={handleSubmit} className="space-y-6">
-
             {/* Reference preview */}
-            <div className="p-3 bg-blue-50 rounded-lg flex items-center gap-2">
-              <Hash className="w-4 h-4 text-blue-600" />
-              <span className="text-sm text-blue-700">Reference:</span>
-              <span className="font-mono font-semibold text-blue-900">{previewRef}</span>
-              <span className="text-xs text-blue-500 ml-auto">{isEditing ? '(existing reference)' : '(auto-generated on save)'}</span>
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg flex items-center gap-2">
+              <Hash className="w-4 h-4 text-blue-600 dark:text-blue-300" />
+              <span className="text-sm text-blue-700 dark:text-blue-300">Reference:</span>
+              <span className="font-mono font-semibold text-blue-900 dark:text-blue-300">{previewRef}</span>
+              <span className="text-xs text-blue-500 dark:text-blue-300 ml-auto">
+                {isEditing ? '(existing reference)' : '(auto-generated on save)'}
+              </span>
             </div>
 
             {isFromQuote && sourceQuote && (
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                <span className="text-sm text-purple-800">
-                  Prefilled from Quote Request <strong>&ldquo;{sourceQuote.title}&rdquo;</strong> — review services and passenger details before creating.
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-lg flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-purple-600 dark:text-purple-300 flex-shrink-0" />
+                <span className="text-sm text-purple-800 dark:text-purple-300">
+                  Prefilled from Quote Request <strong>&ldquo;{sourceQuote.title}&rdquo;</strong> — review services and
+                  passenger details before creating.
                 </span>
               </div>
             )}
             {isFromQuote && (quoteLoading || !quotePricingLookup) && (
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg flex items-center gap-2 text-sm text-purple-700">
-                <Loader2 className="w-4 h-4 animate-spin" />Loading quote request data…
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-lg flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading quote request data…
               </div>
             )}
 
             {/* Basic Info */}
-            <Card className="p-6 bg-white shadow-md">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">Reservation Details</h2>
+            <Card className="p-6 bg-card shadow-md">
+              <h2 className="text-lg font-bold text-foreground mb-4">Reservation Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Reservation Name *</Label>
-                  <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Summer Adventure 2025" required />
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Summer Adventure 2025"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Destination *</Label>
-                  <Input value={formData.destination} onChange={e => setFormData({ ...formData, destination: e.target.value })} placeholder="Bali, Indonesia" required />
+                  <Input
+                    value={formData.destination}
+                    onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                    placeholder="Bali, Indonesia"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Start Date *</Label>
-                  <Input type="date" value={formData.start_date} onChange={e => setFormData({ ...formData, start_date: e.target.value })} required />
+                  <Input
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>End Date *</Label>
-                  <Input type="date" value={formData.end_date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} required />
+                  <Input
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Department</Label>
-                  <Select value={formData.department} onValueChange={v => setFormData({ ...formData, department: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <Select
+                    value={formData.department}
+                    onValueChange={(v) => setFormData({ ...formData, department: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={null}>General</SelectItem>
-                      {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                      {departments.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Cover Image URL</Label>
-                  <Input value={formData.image_url} onChange={e => setFormData({ ...formData, image_url: e.target.value })} placeholder="https://..." />
+                  <Input
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
             </Card>
 
             {/* Client */}
-            <Card className="p-6 bg-white shadow-md">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">Client *</h2>
+            <Card className="p-6 bg-card shadow-md">
+              <h2 className="text-lg font-bold text-foreground mb-4">Client *</h2>
               <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
                 <PopoverTrigger asChild>
                   <button
                     role="combobox"
                     aria-expanded={clientDropdownOpen}
-                    className="w-full flex items-center justify-between px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white hover:bg-slate-50 text-left"
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm border border-border rounded-lg bg-card hover:bg-muted text-left"
                   >
-                    {formData.client_id
-                      ? <span className="font-medium">{formData.client_name}{formData.client_email ? ` · ${formData.client_email}` : ''}</span>
-                      : <span className="text-slate-400">Select client from database</span>}
-                    <Search className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                    {formData.client_id ? (
+                      <span className="font-medium">
+                        {formData.client_name}
+                        {formData.client_email ? ` · ${formData.client_email}` : ''}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Select client from database</span>
+                    )}
+                    <Search className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -666,12 +900,17 @@ export default function CreateReservation() {
                     <CommandList>
                       <CommandEmpty>No clients found</CommandEmpty>
                       <CommandGroup>
-                        {filteredClients.map(c => (
+                        {filteredClients.map((c) => (
                           <CommandItem
                             key={c.id}
                             value={`${c.name} ${c.email || ''} ${c.company || ''}`}
                             onSelect={() => {
-                              setFormData({ ...formData, client_id: c.id, client_name: c.name || '', client_email: c.email || '' });
+                              setFormData({
+                                ...formData,
+                                client_id: c.id,
+                                client_name: c.name || '',
+                                client_email: c.email || '',
+                              });
                               setClientSearch('');
                               setClientDropdownOpen(false);
                             }}
@@ -681,7 +920,7 @@ export default function CreateReservation() {
                             />
                             <div>
                               <span className="font-medium">{c.name}</span>
-                              {c.email && <span className="text-slate-400 ml-1">— {c.email}</span>}
+                              {c.email && <span className="text-muted-foreground ml-1">— {c.email}</span>}
                             </div>
                           </CommandItem>
                         ))}
@@ -693,35 +932,41 @@ export default function CreateReservation() {
             </Card>
 
             {/* Service Types */}
-            <Card className="p-6 bg-white shadow-md">
+            <Card className="p-6 bg-card shadow-md">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-purple-600" />
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-purple-600 dark:text-purple-300" />
                   Service Types
                 </h2>
-                <span className="text-sm text-slate-500">{serviceTypes.length} selected</span>
+                <span className="text-sm text-muted-foreground">{serviceTypes.length} selected</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {SERVICE_TYPES.map(st => {
+                {SERVICE_TYPES.map((st) => {
                   const Icon = SERVICE_TYPE_ICONS[st.key];
                   const selected = serviceTypes.includes(st.key);
                   return (
                     <button
                       key={st.key}
                       type="button"
-                      onClick={() => setServiceTypes(prev =>
-                        prev.includes(st.key) ? prev.filter(k => k !== st.key) : [...prev, st.key]
-                      )}
+                      onClick={() =>
+                        setServiceTypes((prev) =>
+                          prev.includes(st.key) ? prev.filter((k) => k !== st.key) : [...prev, st.key],
+                        )
+                      }
                       className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left ${
                         selected
-                          ? 'border-purple-400 bg-purple-50 shadow-sm'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
+                          ? 'border-purple-400 bg-purple-50 dark:bg-purple-950/40 shadow-sm'
+                          : 'border-border bg-card hover:border-border'
                       }`}
                     >
-                      <div className={`p-2 rounded-lg ${selected ? 'bg-purple-200 text-purple-700' : 'bg-slate-100 text-slate-500'}`}>
+                      <div
+                        className={`p-2 rounded-lg ${selected ? 'bg-purple-200 text-purple-700 dark:text-purple-300' : 'bg-muted text-muted-foreground'}`}
+                      >
                         <Icon className="w-5 h-5" />
                       </div>
-                      <span className={`font-medium text-sm ${selected ? 'text-purple-900' : 'text-slate-700'}`}>
+                      <span
+                        className={`font-medium text-sm ${selected ? 'text-purple-900 dark:text-purple-300' : 'text-foreground'}`}
+                      >
                         {st.label}
                       </span>
                     </button>
@@ -731,51 +976,80 @@ export default function CreateReservation() {
             </Card>
 
             {/* Passenger Count + Rooms */}
-            <Card className="p-6 bg-white shadow-md">
+            <Card className="p-6 bg-card shadow-md">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-blue-600" />
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600 dark:text-blue-300" />
                   Rooms & Passengers
                 </h2>
                 <div className="flex items-center flex-wrap gap-4">
                   <div className="flex items-center gap-2">
-                    <Label className="text-sm text-slate-600 whitespace-nowrap">Rooms</Label>
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">Rooms</Label>
                     <div className="flex items-center gap-1">
-                      <Button type="button" size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => {
-                        if (rooms.length <= 1) return;
-                        setRooms(prev => prev.slice(0, -1));
-                      }}>−</Button>
-                      <span className="w-10 text-center font-bold text-lg text-slate-900">{rooms.length}</span>
-                      <Button type="button" size="sm" variant="outline" className="h-8 w-8 p-0" onClick={addRoom}>+</Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => {
+                          if (rooms.length <= 1) return;
+                          setRooms((prev) => prev.slice(0, -1));
+                        }}
+                      >
+                        −
+                      </Button>
+                      <span className="w-10 text-center font-bold text-lg text-foreground">{rooms.length}</span>
+                      <Button type="button" size="sm" variant="outline" className="h-8 w-8 p-0" onClick={addRoom}>
+                        +
+                      </Button>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Label className="text-sm text-slate-600 whitespace-nowrap">Passengers</Label>
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">Passengers</Label>
                     <div className="flex items-center gap-1">
-                      <Button type="button" size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => {
-                        const next = Math.max(1, passengerCount - 1);
-                        setPassengerCount(next);
-                        setRooms(autoGenerateRooms(next));
-                      }}>−</Button>
-                      <span className="w-10 text-center font-bold text-lg text-slate-900">{passengerCount}</span>
-                      <Button type="button" size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => {
-                        const next = passengerCount + 1;
-                        setPassengerCount(next);
-                        setRooms(autoGenerateRooms(next));
-                      }}>+</Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => {
+                          const next = Math.max(1, passengerCount - 1);
+                          setPassengerCount(next);
+                          setRooms(autoGenerateRooms(next));
+                        }}
+                      >
+                        −
+                      </Button>
+                      <span className="w-10 text-center font-bold text-lg text-foreground">{passengerCount}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => {
+                          const next = passengerCount + 1;
+                          setPassengerCount(next);
+                          setRooms(autoGenerateRooms(next));
+                        }}
+                      >
+                        +
+                      </Button>
                     </div>
                   </div>
                 </div>
               </div>
 
               {passengerCount > 0 && (
-                <div className={`mb-4 p-3 rounded-lg text-sm flex items-center gap-2 ${
-                  slotsValid ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
-                }`}>
+                <div
+                  className={`mb-4 p-3 rounded-lg text-sm flex items-center gap-2 ${
+                    slotsValid
+                      ? 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                      : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                  }`}
+                >
                   {slotsValid
                     ? `✓ ${passengerCount} passenger${passengerCount !== 1 ? 's' : ''} — ${rooms.length} room${rooms.length !== 1 ? 's' : ''}`
-                    : `⚠ ${derivedPax} slot${derivedPax !== 1 ? 's' : ''} across ${rooms.length} room${rooms.length !== 1 ? 's' : ''} — passenger count set to ${passengerCount}. Adjust rooms or occupancy to match.`
-                  }
+                    : `⚠ ${derivedPax} slot${derivedPax !== 1 ? 's' : ''} across ${rooms.length} room${rooms.length !== 1 ? 's' : ''} — passenger count set to ${passengerCount}. Adjust rooms or occupancy to match.`}
                 </div>
               )}
 
@@ -783,23 +1057,34 @@ export default function CreateReservation() {
                 {rooms.map((room, ri) => {
                   const roomTotalSlots = room.passengers.length;
                   return (
-                    <div key={room.id} className="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-2 bg-slate-100 border-b border-slate-200">
+                    <div key={room.id} className="border border-border rounded-lg bg-muted overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-2 bg-muted border-b border-border">
                         <div className="flex items-center gap-3">
-                          <span className="font-semibold text-slate-700 text-sm">Room {ri + 1}</span>
-                          <Select value={String(roomTotalSlots)} onValueChange={v => setRoomOccupancy(room.id, parseInt(v))}>
-                            <SelectTrigger className="w-36 h-8 text-xs bg-white">
+                          <span className="font-semibold text-foreground text-sm">Room {ri + 1}</span>
+                          <Select
+                            value={String(roomTotalSlots)}
+                            onValueChange={(v) => setRoomOccupancy(room.id, parseInt(v))}
+                          >
+                            <SelectTrigger className="w-36 h-8 text-xs bg-card">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {[1, 2, 3, 4].map(n => (
-                                <SelectItem key={n} value={String(n)}>{n} Person{n > 1 ? 's' : ''}</SelectItem>
+                              {[1, 2, 3, 4].map((n) => (
+                                <SelectItem key={n} value={String(n)}>
+                                  {n} Person{n > 1 ? 's' : ''}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Button type="button" size="sm" variant="ghost" onClick={() => removeRoom(room.id)} className="h-7 text-red-500 hover:text-red-700">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeRoom(room.id)}
+                            className="h-7 text-red-500 dark:text-red-300 hover:text-red-700 dark:hover:text-red-300"
+                          >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
@@ -819,41 +1104,89 @@ export default function CreateReservation() {
                   );
                 })}
               </div>
-              {rooms.some(r => r.passengers.some(p => p.is_contact)) && (
-                <p className="text-xs text-green-600 mt-3 flex items-center gap-1">
-                  <Star className="w-3 h-3" fill="currentColor" />Contact: <strong>{rooms.flatMap(r => r.passengers).find(p => p.is_contact)?.name}</strong>
+              {rooms.some((r) => r.passengers.some((p) => p.is_contact)) && (
+                <p className="text-xs text-green-600 dark:text-green-300 mt-3 flex items-center gap-1">
+                  <Star className="w-3 h-3" fill="currentColor" />
+                  Contact: <strong>{rooms.flatMap((r) => r.passengers).find((p) => p.is_contact)?.name}</strong>
                 </p>
               )}
             </Card>
 
             {/* Currency Settings */}
-            <Card className="p-5 bg-white shadow-md border-l-4 border-blue-500">
-              <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <ArrowRightLeft className="w-4 h-4 text-blue-600" />Currency Settings
+            <Card className="p-5 bg-card shadow-md border-l-4 border-blue-500">
+              <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+                <ArrowRightLeft className="w-4 h-4 text-blue-600 dark:text-blue-300" />
+                Currency Settings
               </h2>
               <div className="flex flex-wrap items-end gap-4">
                 <div className="space-y-2">
-                  <Label>Acquiring Currency <span className="text-red-500 text-xs">(what you pay)</span></Label>
-                  <Select value={acquiringCurrency} onValueChange={v => { setAcquiringCurrency(v); setExchangeRate(1); }}>
-                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                    <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <Label>
+                    Acquiring Currency <span className="text-red-500 dark:text-red-300 text-xs">(what you pay)</span>
+                  </Label>
+                  <Select
+                    value={acquiringCurrency}
+                    onValueChange={(v) => {
+                      setAcquiringCurrency(v);
+                      setExchangeRate(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
-                <ArrowRightLeft className="w-5 h-5 text-slate-400 mb-1" />
+                <ArrowRightLeft className="w-5 h-5 text-muted-foreground mb-1" />
                 <div className="space-y-2">
-                  <Label>Selling Currency <span className="text-green-600 text-xs">(what client pays)</span></Label>
-                  <Select value={sellingCurrency} onValueChange={v => { setSellingCurrency(v); setExchangeRate(1); }}>
-                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                    <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <Label>
+                    Selling Currency{' '}
+                    <span className="text-green-600 dark:text-green-300 text-xs">(what client pays)</span>
+                  </Label>
+                  <Select
+                    value={sellingCurrency}
+                    onValueChange={(v) => {
+                      setSellingCurrency(v);
+                      setExchangeRate(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
                 {acquiringCurrency !== sellingCurrency && (
                   <>
                     <div className="space-y-2">
                       <Label>Exchange Rate</Label>
-                      <Input type="number" step="0.0001" min="0.0001" value={exchangeRate} onChange={e => setExchangeRate(parseFloat(e.target.value) || 1)} className="w-32" />
+                      <Input
+                        type="number"
+                        step="0.0001"
+                        min="0.0001"
+                        value={exchangeRate}
+                        onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 1)}
+                        className="w-32"
+                      />
                     </div>
-                    <Button type="button" variant="outline" onClick={fetchExchangeRate} disabled={loadingRate} className="gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={fetchExchangeRate}
+                      disabled={loadingRate}
+                      className="gap-2"
+                    >
                       <RefreshCw className={`w-4 h-4 ${loadingRate ? 'animate-spin' : ''}`} />
                       {loadingRate ? 'Fetching...' : 'Live Rate'}
                     </Button>
@@ -863,23 +1196,30 @@ export default function CreateReservation() {
             </Card>
 
             {/* Services */}
-            <Card className="p-6 bg-white shadow-md">
+            <Card className="p-6 bg-card shadow-md">
               <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Services & Pricing</h2>
-                  <p className="text-sm text-slate-500">Acq. in <strong>{acquiringCurrency}</strong> · Sell in <strong>{sellingCurrency}</strong></p>
+                  <h2 className="text-lg font-bold text-foreground">Services & Pricing</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Acq. in <strong>{acquiringCurrency}</strong> · Sell in <strong>{sellingCurrency}</strong>
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" onClick={() => setTemplateOpen(true)} variant="outline" className="gap-2">
-                    <BookOpen className="w-4 h-4" />Templates
+                    <BookOpen className="w-4 h-4" />
+                    Templates
                   </Button>
-                  <Button type="button" onClick={addService} variant="outline"><Plus className="w-4 h-4 mr-2" />Add Service</Button>
+                  <Button type="button" onClick={addService} variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Service
+                  </Button>
                 </div>
               </div>
 
               <div className="space-y-4">
                 {services.map((service) => {
-                  const mergeSvc = (updated) => setServices(prev => prev.map(s => s._key === service._key ? { ...s, ...updated } : s));
+                  const mergeSvc = (updated) =>
+                    setServices((prev) => prev.map((s) => (s._key === service._key ? { ...s, ...updated } : s)));
                   return (
                     <ServiceLineEditor
                       key={service._key}
@@ -898,44 +1238,65 @@ export default function CreateReservation() {
 
               {/* Cost Summary */}
               {services.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-slate-200">
+                <div className="mt-8 pt-6 border-t border-border">
                   <div className="flex justify-end">
                     <div className="w-96 space-y-3">
                       {Object.entries(acquiringByCurrency).map(([cur, total]) => (
                         <div key={`acq-${cur}`} className="flex justify-between text-sm">
-                          <span className="text-slate-600">Cost ({cur})</span>
-                          <span className="font-semibold text-red-600">{currSymbol(cur)}{total.toFixed(2)}</span>
+                          <span className="text-muted-foreground">Cost ({cur})</span>
+                          <span className="font-semibold text-red-600 dark:text-red-300">
+                            {currSymbol(cur)}
+                            {total.toFixed(2)}
+                          </span>
                         </div>
                       ))}
                       {Object.entries(sellingByCurrency).map(([cur, total]) => (
                         <div key={`sell-${cur}`} className="flex justify-between text-sm">
-                          <span className="text-slate-600">Selling ({cur})</span>
-                          <span className="font-semibold text-green-700">{currSymbol(cur)}{total.toFixed(2)}</span>
+                          <span className="text-muted-foreground">Selling ({cur})</span>
+                          <span className="font-semibold text-green-700 dark:text-green-300">
+                            {currSymbol(cur)}
+                            {total.toFixed(2)}
+                          </span>
                         </div>
                       ))}
                       {!currenciesMixed && (
                         <>
                           <div className="flex justify-between items-center text-sm">
                             <div className="flex items-center gap-2">
-                              <TrendingUp className="w-4 h-4 text-orange-500" />
+                              <TrendingUp className="w-4 h-4 text-orange-500 dark:text-orange-300" />
                               <span className="font-medium">Markup</span>
-                              <Input type="number" min="0" max="200" step="0.5" value={markupPct} onChange={e => setMarkupPct(parseFloat(e.target.value) || 0)} className="w-16 h-7 text-xs text-center px-1" />
-                              <span className="text-slate-500 text-xs">%</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="200"
+                                step="0.5"
+                                value={markupPct}
+                                onChange={(e) => setMarkupPct(parseFloat(e.target.value) || 0)}
+                                className="w-16 h-7 text-xs text-center px-1"
+                              />
+                              <span className="text-muted-foreground text-xs">%</span>
                             </div>
-                            <span className="text-xs text-slate-400">Applied to each line</span>
+                            <span className="text-xs text-muted-foreground">Applied to each line</span>
                           </div>
                           <Separator />
                           <div className="flex justify-between text-sm">
-                            <span className="text-slate-600">Gross Margin</span>
-                            <span className={`font-semibold ${margin >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{margin.toFixed(1)}%</span>
+                            <span className="text-muted-foreground">Gross Margin</span>
+                            <span
+                              className={`font-semibold ${margin >= 0 ? 'text-blue-600 dark:text-blue-300' : 'text-red-600 dark:text-red-300'}`}
+                            >
+                              {margin.toFixed(1)}%
+                            </span>
                           </div>
                           <Separator />
                           <div className="flex justify-between items-center flex-wrap gap-2">
                             <div>
-                              <div className="text-lg font-bold text-slate-900">Total</div>
-                              <div className="text-xs text-slate-400">Client price ({sellingCurrency})</div>
+                              <div className="text-lg font-bold text-foreground">Total</div>
+                              <div className="text-xs text-muted-foreground">Client price ({sellingCurrency})</div>
                             </div>
-                            <div className="text-3xl font-bold text-green-700">{currSymbol(sellingCurrency)}{finalTotal.toFixed(2)}</div>
+                            <div className="text-3xl font-bold text-green-700 dark:text-green-300">
+                              {currSymbol(sellingCurrency)}
+                              {finalTotal.toFixed(2)}
+                            </div>
                           </div>
                         </>
                       )}
@@ -946,28 +1307,68 @@ export default function CreateReservation() {
             </Card>
 
             {/* Notes & Terms */}
-            <Card className="p-6 bg-white shadow-md">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">Notes & Terms</h2>
+            <Card className="p-6 bg-card shadow-md">
+              <h2 className="text-lg font-bold text-foreground mb-4">Notes & Terms</h2>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Notes</Label>
-                  <Textarea value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} rows={3} placeholder="Special notes for the client..." />
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={3}
+                    placeholder="Special notes for the client..."
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Terms & Conditions</Label>
-                  <Textarea value={formData.terms_and_conditions} onChange={e => setFormData({ ...formData, terms_and_conditions: e.target.value })} rows={4} />
+                  <Textarea
+                    value={formData.terms_and_conditions}
+                    onChange={(e) => setFormData({ ...formData, terms_and_conditions: e.target.value })}
+                    rows={4}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Internal Notes (staff only)</Label>
-                  <Textarea value={formData.internal_notes} onChange={e => setFormData({ ...formData, internal_notes: e.target.value })} rows={3} placeholder="Notes visible only to internal users..." className="border-amber-200 focus-visible:ring-amber-400" />
+                  <Label className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+                    Internal Notes (staff only)
+                  </Label>
+                  <Textarea
+                    value={formData.internal_notes}
+                    onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
+                    rows={3}
+                    placeholder="Notes visible only to internal users..."
+                    className="border-amber-200 dark:border-amber-800 focus-visible:ring-amber-400"
+                  />
                 </div>
               </div>
             </Card>
 
             <div className="flex justify-end gap-3 pb-8">
-              <Link to={createPageUrl('Reservations')}><Button type="button" variant="outline">Cancel</Button></Link>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={(createMutation.isPending || updateMutation.isPending) || !formData.client_id || (isFromQuote && (quoteLoading || !quotePricingLookup))}>
-                {createMutation.isPending || updateMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : isEditing ? 'Save Changes' : 'Create Reservation'}
+              <Link to={createPageUrl('Reservations')}>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={
+                  createMutation.isPending ||
+                  updateMutation.isPending ||
+                  !formData.client_id ||
+                  (isFromQuote && (quoteLoading || !quotePricingLookup))
+                }
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : isEditing ? (
+                  'Save Changes'
+                ) : (
+                  'Create Reservation'
+                )}
               </Button>
             </div>
           </form>
@@ -977,19 +1378,37 @@ export default function CreateReservation() {
       {/* Templates Dialog */}
       <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5" />Service Templates</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              Service Templates
+            </DialogTitle>
+          </DialogHeader>
           <div className="space-y-4 mt-2">
             {/* Save current as template */}
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="font-semibold text-sm text-blue-800 mb-2">Save Current Services as Template</h3>
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h3 className="font-semibold text-sm text-blue-800 dark:text-blue-300 mb-2">
+                Save Current Services as Template
+              </h3>
               <div className="space-y-2">
-                <Input value={templateName} onChange={e => setTemplateName(e.target.value)} placeholder="Template name (e.g. Istanbul Classic)" />
-                <Textarea value={templateDesc} onChange={e => setTemplateDesc(e.target.value)} placeholder="Description (optional)" rows={2} className="text-sm" />
+                <Input
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="Template name (e.g. Istanbul Classic)"
+                />
+                <Textarea
+                  value={templateDesc}
+                  onChange={(e) => setTemplateDesc(e.target.value)}
+                  placeholder="Description (optional)"
+                  rows={2}
+                  className="text-sm"
+                />
                 <Button
-                  size="sm" className="bg-blue-600 hover:bg-blue-700"
-                  disabled={!templateName || services.every(s => !s.name) || createTemplateMutation.isPending}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={!templateName || services.every((s) => !s.name) || createTemplateMutation.isPending}
                   onClick={() => {
-                    const svcs = services.map(s => {
+                    const svcs = services.map((s) => {
                       const { _key, ...rest } = s;
                       return rest;
                     });
@@ -997,47 +1416,65 @@ export default function CreateReservation() {
                       name: templateName,
                       description: templateDesc,
                       category: 'package',
-                      services: svcs
+                      services: svcs,
                     });
                     setTemplateName('');
                     setTemplateDesc('');
                   }}
                 >
-                  {createTemplateMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : 'Save as Template'}
+                  {createTemplateMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save as Template'
+                  )}
                 </Button>
               </div>
             </div>
 
             {/* Existing templates */}
-            <h3 className="font-semibold text-sm text-slate-700">Saved Templates</h3>
+            <h3 className="font-semibold text-sm text-foreground">Saved Templates</h3>
             {templates.length === 0 ? (
-              <p className="text-sm text-slate-400">No templates saved yet.</p>
+              <p className="text-sm text-muted-foreground">No templates saved yet.</p>
             ) : (
               <div className="space-y-2">
-                {templates.map(t => (
-                  <div key={t.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
+                {templates.map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between p-3 bg-card border border-border rounded-lg"
+                  >
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-slate-900 truncate">{t.name}</div>
-                      {t.description && <div className="text-xs text-slate-500 truncate">{t.description}</div>}
-                      <div className="text-xs text-slate-400 mt-0.5">{t.services?.length || 0} services</div>
+                      <div className="font-medium text-sm text-foreground truncate">{t.name}</div>
+                      {t.description && <div className="text-xs text-muted-foreground truncate">{t.description}</div>}
+                      <div className="text-xs text-muted-foreground mt-0.5">{t.services?.length || 0} services</div>
                     </div>
                     <div className="flex gap-1 ml-2 shrink-0">
-                      <Button size="sm" variant="outline" className="text-green-600 border-green-300 hover:bg-green-50"
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-green-600 dark:text-green-300 border-green-300 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/40"
                         onClick={() => {
-                          const loadedServices = (t.services || []).map(s => ({
+                          const loadedServices = (t.services || []).map((s) => ({
                             ...s,
                             _key: `svc-${Date.now()}-${Math.random()}`,
                             start_date: '',
-                            end_date: ''
+                            end_date: '',
                           }));
-                          setServices(prev => [...prev, ...loadedServices]);
+                          setServices((prev) => [...prev, ...loadedServices]);
                           setTemplateOpen(false);
                         }}
                       >
                         Load
                       </Button>
-                      <Button size="sm" variant="outline" className="text-red-500 border-red-200 hover:bg-red-50"
-                        onClick={() => { if (confirm(`Delete template "${t.name}"?`)) deleteTemplateMutation.mutate(t.id); }}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-500 dark:text-red-300 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        onClick={() => {
+                          if (confirm(`Delete template "${t.name}"?`)) deleteTemplateMutation.mutate(t.id);
+                        }}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -1053,20 +1490,58 @@ export default function CreateReservation() {
       {/* Add Provider Dialog */}
       <Dialog open={addProviderOpen} onOpenChange={setAddProviderOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Add New Provider</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); createSupplierMutation.mutate({ ...newProvider, category_id: categories[0]?.id || '' }); }} className="space-y-4 mt-2">
+          <DialogHeader>
+            <DialogTitle>Add New Provider</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createSupplierMutation.mutate({ ...newProvider, category_id: categories[0]?.id || '' });
+            }}
+            className="space-y-4 mt-2"
+          >
             <div className="space-y-2">
               <Label>Provider Name *</Label>
-              <Input value={newProvider.name} onChange={e => setNewProvider({ ...newProvider, name: e.target.value })} placeholder="e.g. Sunset Tours" required />
+              <Input
+                value={newProvider.name}
+                onChange={(e) => setNewProvider({ ...newProvider, name: e.target.value })}
+                placeholder="e.g. Sunset Tours"
+                required
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>City</Label><Input value={newProvider.city} onChange={e => setNewProvider({ ...newProvider, city: e.target.value })} /></div>
-              <div className="space-y-2"><Label>Phone</Label><Input value={newProvider.phone} onChange={e => setNewProvider({ ...newProvider, phone: e.target.value })} /></div>
+              <div className="space-y-2">
+                <Label>City</Label>
+                <Input
+                  value={newProvider.city}
+                  onChange={(e) => setNewProvider({ ...newProvider, city: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input
+                  value={newProvider.phone}
+                  onChange={(e) => setNewProvider({ ...newProvider, phone: e.target.value })}
+                />
+              </div>
             </div>
-            <div className="space-y-2"><Label>Email</Label><Input type="email" value={newProvider.email} onChange={e => setNewProvider({ ...newProvider, email: e.target.value })} /></div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={newProvider.email}
+                onChange={(e) => setNewProvider({ ...newProvider, email: e.target.value })}
+              />
+            </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setAddProviderOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createSupplierMutation.isPending}>
+              <Button type="button" variant="outline" onClick={() => setAddProviderOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={createSupplierMutation.isPending}
+              >
                 {createSupplierMutation.isPending ? 'Adding...' : 'Add Provider'}
               </Button>
             </div>
