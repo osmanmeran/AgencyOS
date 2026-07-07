@@ -15,8 +15,10 @@ import Itinerary from '../components/trip-details/Itinerary';
 import TripFinancialReport from '../components/trips/TripFinancialReport';
 import AutoInvoiceGenerator from '../components/invoices/AutoInvoiceGenerator';
 import SaveAsTemplateButton from '../components/trips/SaveAsTemplateButton';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function TripDetails() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');
   const [generatingList, setGeneratingList] = useState(false);
@@ -120,7 +122,7 @@ export default function TripDetails() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-muted-foreground">Loading trip details...</p>
+        <p className="text-muted-foreground">{t('tripDetails.loading')}</p>
       </div>
     );
   }
@@ -128,7 +130,7 @@ export default function TripDetails() {
   if (!trip) {
     return (
       <div className="text-center py-20">
-        <p className="text-muted-foreground">Trip not found</p>
+        <p className="text-muted-foreground">{t('tripDetails.notFound')}</p>
       </div>
     );
   }
@@ -143,7 +145,7 @@ export default function TripDetails() {
         <Link to={createPageUrl('Reservations')}>
           <Button variant="ghost" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Reservations
+            {t('tripDetails.backToReservations')}
           </Button>
         </Link>
         <div className="flex flex-wrap gap-2">
@@ -159,7 +161,7 @@ export default function TripDetails() {
               <Link to={createPageUrl(`CreateInvoice?tripId=${tripId}`)}>
                 <Button className="bg-green-600 hover:bg-green-700">
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Invoice
+                  {t('tripDetails.createInvoice')}
                 </Button>
               </Link>
             </>
@@ -205,7 +207,7 @@ export default function TripDetails() {
           </div>
           {totalCost > 0 && (
             <div className="bg-white/20 backdrop-blur-md rounded-xl px-6 py-3 border border-white/30">
-              <div className="text-white/80 text-sm mb-1">Total Trip Cost</div>
+              <div className="text-white/80 text-sm mb-1">{t('tripDetails.totalTripCost')}</div>
               <div className="text-white text-2xl font-bold flex items-center gap-2">
                 <DollarSign className="w-6 h-6" />
                 {totalCost.toFixed(2)}
@@ -219,13 +221,13 @@ export default function TripDetails() {
       <Tabs defaultValue="itinerary" className="space-y-6">
         <TabsList className="bg-card border border-border p-1">
           <TabsTrigger value="itinerary" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            Itinerary
+            {t('clientTripDetails.itinerary')}
           </TabsTrigger>
           <TabsTrigger value="financial" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            Financial Report
+            {t('tripDetails.financialReport')}
           </TabsTrigger>
           <TabsTrigger value="packing" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            Packing List
+            {t('clientTripDetails.packingList')}
           </TabsTrigger>
         </TabsList>
 
@@ -235,20 +237,18 @@ export default function TripDetails() {
               <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-8 h-8 text-blue-600 dark:text-blue-300" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Generate Smart Packing List</h3>
-              <p className="text-muted-foreground mb-6">
-                Let AI create a personalized packing list based on your destination and activities
-              </p>
+              <h3 className="text-xl font-bold text-foreground mb-2">{t('tripDetails.generateSmartPackingList')}</h3>
+              <p className="text-muted-foreground mb-6">{t('tripDetails.aiPackingHint')}</p>
               <Button onClick={generatePackingList} disabled={generatingList} className="bg-blue-600 hover:bg-blue-700">
                 {generatingList ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Generating...
+                    {t('tripDetails.generating')}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Packing List
+                    {t('tripDetails.generatePackingList')}
                   </>
                 )}
               </Button>
