@@ -7,12 +7,15 @@
     // Only store non-sensitive fields
     try {
       if (user) {
-        localStorage.setItem('marvelops_current_user', JSON.stringify({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          language: user.language,
-        }));
+        localStorage.setItem(
+          'marvelops_current_user',
+          JSON.stringify({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            language: user.language,
+          }),
+        );
       } else {
         localStorage.removeItem('marvelops_current_user');
       }
@@ -22,7 +25,9 @@
   function getCurrentUser() {
     try {
       return JSON.parse(localStorage.getItem('marvelops_current_user'));
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
   }
 
   async function api(path, options) {
@@ -40,7 +45,11 @@
     });
 
     var data;
-    try { data = await res.json(); } catch (e) { data = { message: res.statusText }; }
+    try {
+      data = await res.json();
+    } catch (e) {
+      data = { message: res.statusText };
+    }
 
     if (!res.ok) {
       // Server errors are shaped { error: { code, message, details? } } (see
@@ -50,7 +59,13 @@
       var apiError = data && data.error;
       var message = (apiError && apiError.message) || (data && data.message) || 'API Error (' + res.status + ')';
       if (apiError && Array.isArray(apiError.details) && apiError.details.length) {
-        message += ': ' + apiError.details.map(function (d) { return (d.path ? d.path + ' ' : '') + d.message; }).join(', ');
+        message +=
+          ': ' +
+          apiError.details
+            .map(function (d) {
+              return (d.path ? d.path + ' ' : '') + d.message;
+            })
+            .join(', ');
       }
       var err = new Error(message);
       err.status = res.status;
@@ -62,7 +77,39 @@
     return data;
   }
 
-  var ENTITIES = ['AppSettings','BookingRequest','BookingTemplate','Client','ClientPayment','ClientTask','Company','EmailLog','Invoice','ItineraryEvent','Message','PackingItem','Proposal','ProposalTemplate','QuoteRequest','ReferenceCounter','ReportSchedule','ServiceCategory','ServiceTemplate','Suggestion','Supplier','SupplierBooking','SupplierCategory','SupplierInvoice','SupplierPricing','SupplierReview','SupplierService','SupplierSubcategory','TourContract','Trip'];
+  var ENTITIES = [
+    'AppSettings',
+    'BookingRequest',
+    'BookingTemplate',
+    'Client',
+    'ClientPayment',
+    'ClientTask',
+    'Company',
+    'EmailLog',
+    'Invoice',
+    'ItineraryEvent',
+    'Message',
+    'PackingItem',
+    'Proposal',
+    'ProposalTemplate',
+    'QuoteRequest',
+    'ReferenceCounter',
+    'ReportSchedule',
+    'ServiceCategory',
+    'ServiceTemplate',
+    'Suggestion',
+    'Supplier',
+    'SupplierBooking',
+    'SupplierCategory',
+    'SupplierInvoice',
+    'SupplierPricing',
+    'SupplierReview',
+    'SupplierService',
+    'SupplierStopSale',
+    'SupplierSubcategory',
+    'TourContract',
+    'Trip',
+  ];
 
   function makeEntityApi(name) {
     return {
@@ -84,7 +131,7 @@
       update: function (id, data) {
         return api('/entities/' + name + '/' + id, { method: 'PUT', body: JSON.stringify(data || {}) });
       },
-      'delete': function (id) {
+      delete: function (id) {
         return api('/entities/' + name + '/' + id, { method: 'DELETE' });
       },
       // Paginated variant — returns { data, total } instead of a plain array.
@@ -100,10 +147,16 @@
         return api('/entities/' + name + '?' + params.join('&'));
       },
       bulkCreate: function (records) {
-        return api('/entities/' + name + '/bulk-create', { method: 'POST', body: JSON.stringify({ records: records || [] }) });
+        return api('/entities/' + name + '/bulk-create', {
+          method: 'POST',
+          body: JSON.stringify({ records: records || [] }),
+        });
       },
       bulkUpdate: function (ids, data) {
-        return api('/entities/' + name + '/bulk-update', { method: 'POST', body: JSON.stringify({ ids: ids || [], data: data || {} }) });
+        return api('/entities/' + name + '/bulk-update', {
+          method: 'POST',
+          body: JSON.stringify({ ids: ids || [], data: data || {} }),
+        });
       },
       bulkDelete: function (ids) {
         return api('/entities/' + name + '/bulk-delete', { method: 'POST', body: JSON.stringify({ ids: ids || [] }) });
@@ -119,7 +172,13 @@
   var db = {
     auth: {
       isAuthenticated: function () {
-        return api('/auth/me').then(function () { return true; }).catch(function () { return false; });
+        return api('/auth/me')
+          .then(function () {
+            return true;
+          })
+          .catch(function () {
+            return false;
+          });
       },
       me: function () {
         return api('/auth/me').then(function (data) {
@@ -127,16 +186,20 @@
         });
       },
       loginViaEmailPassword: function (email, password) {
-        return api('/auth/login', { method: 'POST', body: JSON.stringify({ email: email, password: password }) }).then(function (result) {
-          setCurrentUser(result.user);
-          return result.user;
-        });
+        return api('/auth/login', { method: 'POST', body: JSON.stringify({ email: email, password: password }) }).then(
+          function (result) {
+            setCurrentUser(result.user);
+            return result.user;
+          },
+        );
       },
       microsoftLogin: function (idToken) {
-        return api('/auth/microsoft', { method: 'POST', body: JSON.stringify({ idToken: idToken }) }).then(function (result) {
-          setCurrentUser(result.user);
-          return result.user;
-        });
+        return api('/auth/microsoft', { method: 'POST', body: JSON.stringify({ idToken: idToken }) }).then(
+          function (result) {
+            setCurrentUser(result.user);
+            return result.user;
+          },
+        );
       },
       updateMe: function (data) {
         return api('/auth/me', { method: 'PUT', body: JSON.stringify(data || {}) }).then(function (res) {
@@ -204,27 +267,36 @@
           if (data?.file instanceof File || data?.file instanceof Blob) {
             var formData = new FormData();
             formData.append('file', data.file);
-            return fetch(API_BASE + '/integrations/upload', { method: 'POST', body: formData, credentials: 'include' }).then(function(r) { return r.json(); });
+            return fetch(API_BASE + '/integrations/upload', {
+              method: 'POST',
+              body: formData,
+              credentials: 'include',
+            }).then(function (r) {
+              return r.json();
+            });
           }
           return api('/integrations/upload', { method: 'POST', body: JSON.stringify(data || {}) });
         },
         SendEmail: function (opts) {
           // Try Outlook first if user has it connected
-          return api('/integrations/outlook/status').catch(function (err) {
-            err._isStatusCheck = true;
-            throw err;
-          }).then(function (status) {
-            if (status.connected) {
-              return api('/integrations/outlook/send', { method: 'POST', body: JSON.stringify(opts || {}) });
-            }
-            return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
-          }).catch(function (statusErr) {
-            // Only fall back if the STATUS CHECK itself failed (not a send failure)
-            if (statusErr && statusErr._isStatusCheck) {
+          return api('/integrations/outlook/status')
+            .catch(function (err) {
+              err._isStatusCheck = true;
+              throw err;
+            })
+            .then(function (status) {
+              if (status.connected) {
+                return api('/integrations/outlook/send', { method: 'POST', body: JSON.stringify(opts || {}) });
+              }
               return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
-            }
-            throw statusErr;
-          });
+            })
+            .catch(function (statusErr) {
+              // Only fall back if the STATUS CHECK itself failed (not a send failure)
+              if (statusErr && statusErr._isStatusCheck) {
+                return api('/integrations/email', { method: 'POST', body: JSON.stringify(opts || {}) });
+              }
+              throw statusErr;
+            });
         },
         SendSMS: function (opts) {
           return api('/integrations/sms', { method: 'POST', body: JSON.stringify(opts || {}) });
@@ -239,7 +311,10 @@
           return api('/integrations/outlook/status');
         },
         OutlookConnect: function (tokenData) {
-          return api('/integrations/outlook/connect', { method: 'POST', body: JSON.stringify({ token_data: tokenData }) });
+          return api('/integrations/outlook/connect', {
+            method: 'POST',
+            body: JSON.stringify({ token_data: tokenData }),
+          });
         },
         OutlookSend: function (opts) {
           return api('/integrations/outlook/send', { method: 'POST', body: JSON.stringify(opts || {}) });

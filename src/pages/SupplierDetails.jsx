@@ -26,6 +26,7 @@ import {
   Check,
   Loader2,
   Store,
+  CalendarOff,
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -33,10 +34,12 @@ import SupplierServices from '../components/suppliers/SupplierServices';
 import { showSuccess, showError } from '@/lib/toast';
 import SupplierPricingManager from '../components/suppliers/SupplierPricingManager';
 import SupplierReviews from '../components/suppliers/SupplierReviews';
+import SupplierStopSales from '../components/suppliers/SupplierStopSales';
 import BookingEmailSender from '../components/booking/BookingEmailSender';
 import SupplierBookingForm from '../components/suppliers/SupplierBookingForm';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
+import { isSupplierInStopSaleToday } from '@/lib/supplierStopSales';
 
 export default function SupplierDetails() {
   const [searchParams] = useSearchParams();
@@ -81,6 +84,15 @@ export default function SupplierDetails() {
   const selectedCategories = categories.filter((c) =>
     getSupplierCategoryIds(supplierCategoryMap, supplierId).includes(c.id),
   );
+
+  const { data: stopSales = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierStopSales', supplierId],
+      queryFn: () => db.entities.SupplierStopSale.filter({ supplier_id: supplierId }),
+      enabled: !!supplierId,
+    })
+  );
+  const inStopSaleToday = isSupplierInStopSaleToday(stopSales, supplierId);
 
   const updateMutation = /** @type {any} */ (
     useMutation({
@@ -238,6 +250,11 @@ export default function SupplierDetails() {
                   <Store className="w-3.5 h-3.5" /> In client portal
                 </span>
               )}
+              {inStopSaleToday && (
+                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                  <CalendarOff className="w-3.5 h-3.5" /> In stop sales
+                </span>
+              )}
             </div>
 
             {supplier.rating && (
@@ -325,6 +342,21 @@ export default function SupplierDetails() {
           </div>
         </div>
       </Card>
+
+      {inStopSaleToday && (
+        <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 flex items-start gap-3">
+          <CalendarOff className="w-5 h-5 text-red-600 dark:text-red-300 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-red-800 dark:text-red-300">
+            <p className="font-semibold">This supplier is currently in stop sales</p>
+            <p className="mt-0.5">
+              It's unavailable for the dates below — new reservations, bookings and client quotes for those dates are
+              blocked everywhere. See the Stop Sales section for details.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <SupplierStopSales supplierId={supplierId} />
 
       <SupplierPricingManager supplierId={supplierId} />
 

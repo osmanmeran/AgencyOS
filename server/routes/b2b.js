@@ -101,6 +101,19 @@ function getEntityById(db, type, id) {
   return row ? { id: row.id, ...JSON.parse(row.data) } : null;
 }
 
+// Authoritative stop-sale check for the client portal — the catalog only
+// exposes stop sales for UI hints, this is what actually blocks a booking.
+function findBlockingStopSale(db, supplierId, startDate, endDate) {
+  if (!supplierId || !startDate) return null;
+  const end = endDate || startDate;
+  const rows = db.prepare("SELECT * FROM entities WHERE type = 'SupplierStopSale'").all();
+  for (const r of rows) {
+    const s = JSON.parse(r.data);
+    if (s.supplier_id === supplierId && startDate <= s.end_date && s.start_date <= end) return s;
+  }
+  return null;
+}
+
 function requireClientContext(user) {
   if (!user.client_id) {
     throw new ForbiddenError('This account is not linked to a client');
@@ -230,7 +243,17 @@ router.get(
     let items = getActiveCatalogItems(db, markupPct);
     if (displayCurrency) ({ items } = await convertItemsToCurrency(items, displayCurrency));
 
-    res.json({ markup_percentage: markupPct, currency: displayCurrency, items });
+    // Stop sales so the client UI can block/gray out dates and explain why —
+    // enforcement itself happens server-side again on quote submission.
+    const stopSales = db
+      .prepare("SELECT * FROM entities WHERE type = 'SupplierStopSale'")
+      .all()
+      .map((r) => {
+        const d = JSON.parse(r.data);
+        return { supplier_id: d.supplier_id, start_date: d.start_date, end_date: d.end_date, reason: d.reason || '' };
+      });
+
+    res.json({ markup_percentage: markupPct, currency: displayCurrency, items, stop_sales: stopSales });
   }),
 );
 
@@ -269,6 +292,12 @@ router.post(
         throw new BadRequestError(`Pricing "${pricing.name}" is not currently available`);
       }
       const supplier = suppliers[pricing.supplier_id];
+      const blockingStopSale = findBlockingStopSale(db, pricing.supplier_id, reqItem.start_date, reqItem.end_date);
+      if (blockingStopSale) {
+        throw new BadRequestError(
+          `"${pricing.name}" is unavailable ${blockingStopSale.start_date} to ${blockingStopSale.end_date} — please choose different dates`,
+        );
+      }
       const quantity = Math.max(1, reqItem.quantity || 1);
       const nights = nightsBetween(reqItem.start_date, reqItem.end_date);
 

@@ -36,8 +36,10 @@ import {
   Camera,
   X,
   Check,
+  CalendarOff,
 } from 'lucide-react';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
+import { getBlockingStopSale } from '@/lib/supplierStopSales';
 
 const CATEGORY_ICONS = {
   flight: {
@@ -120,6 +122,10 @@ export default function ItineraryBuilder() {
     useQuery({ queryKey: ['allSupplierSubcategories'], queryFn: () => db.entities.SupplierSubcategory.list() })
   );
   const supplierCategoryMap = categoryIdsBySupplier(subcategories);
+
+  const { data: stopSales = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({ queryKey: ['allSupplierStopSales'], queryFn: () => db.entities.SupplierStopSale.list() })
+  );
 
   const selectedTrip = trips.find((t) => t.id === selectedTripId);
 
@@ -252,8 +258,11 @@ export default function ItineraryBuilder() {
     }
   };
 
+  const eventStopSale = getBlockingStopSale(stopSales, formData.supplier_id, formData.date, formData.date);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (eventStopSale) return;
     const data = {
       ...formData,
       cost: formData.cost ? parseFloat(formData.cost) : undefined,
@@ -846,11 +855,18 @@ export default function ItineraryBuilder() {
               </div>
             </div>
 
+            {eventStopSale && (
+              <p className="text-xs text-red-600 dark:text-red-300 flex items-center gap-1 font-medium">
+                <CalendarOff className="w-3.5 h-3.5 flex-shrink-0" />
+                {selectedSupplier?.name} is in stop sales {eventStopSale.start_date} – {eventStopSale.end_date}
+                {eventStopSale.reason ? ` (${eventStopSale.reason})` : ''} — pick another date or supplier.
+              </p>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={closeModal}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={!!eventStopSale}>
                 <Check className="w-4 h-4 mr-1" />
                 {editingEvent ? 'Update Event' : 'Add Event'}
               </Button>

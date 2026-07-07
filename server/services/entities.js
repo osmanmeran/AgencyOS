@@ -34,6 +34,12 @@ const ENTITY_PERMISSION_MAP = {
     update: 'modify_invoices',
     delete: 'delete_invoices',
   },
+  SupplierStopSale: {
+    create: 'modify_suppliers',
+    read: 'view_all_data',
+    update: 'modify_suppliers',
+    delete: 'modify_suppliers',
+  },
   Client: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
   Company: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
   Service: { create: 'create_services', read: 'view_all_data', update: 'modify_services', delete: 'delete_services' },

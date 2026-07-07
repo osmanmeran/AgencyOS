@@ -1,0 +1,63 @@
+{
+  "name": "SupplierStopSale",
+  "type": "object",
+  "properties": {
+    "supplier_id": {
+      "type": "string",
+      "description": "Supplier this stop sale applies to"
+    },
+    "start_date": {
+      "type": "string",
+      "description": "First date sales are stopped (inclusive, YYYY-MM-DD)"
+    },
+    "end_date": {
+      "type": "string",
+      "description": "Last date sales are stopped (inclusive, YYYY-MM-DD)"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Internal note, e.g. fully booked, maintenance, price renegotiation"
+    }
+  },
+  "required": [
+    "supplier_id",
+    "start_date",
+    "end_date"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": [
+            "admin",
+            "manager",
+            "agent"
+          ]
+        }
+      }
+    }
+  }
+}

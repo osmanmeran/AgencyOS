@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Calendar, Save, RefreshCw, AlertCircle, Copy } from 'lucide-react';
+import { X, Calendar, Save, RefreshCw, AlertCircle, Copy, CalendarOff } from 'lucide-react';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
+import { getBlockingStopSale } from '@/lib/supplierStopSales';
 
 const CURRENCIES = {
   USD: '$',
@@ -87,6 +88,13 @@ export default function ServiceLineEditor({
   );
   const supplierCategoryMap = categoryIdsBySupplier(subcategories);
 
+  const { data: stopSales = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierStopSales'],
+      queryFn: () => db.entities.SupplierStopSale.list(),
+    })
+  );
+
   const categoryName = (formData.category || '').toLowerCase();
   const isLodging =
     categoryName.includes('hotel') ||
@@ -107,6 +115,14 @@ export default function ServiceLineEditor({
   const filteredSuppliers = selectedCategoryObj
     ? suppliers.filter((s) => getSupplierCategoryIds(supplierCategoryMap, s.id).includes(selectedCategoryObj.id))
     : suppliers;
+
+  const outboundDate = isTransfer ? formData.service_date || formData.start_date : formData.start_date;
+  const outboundEnd = isTransfer ? outboundDate : formData.end_date;
+  const stopSale =
+    getBlockingStopSale(stopSales, formData.supplier_id, outboundDate, outboundEnd) ||
+    (isTransfer && formData.return_leg?.enabled && formData.return_leg?.date
+      ? getBlockingStopSale(stopSales, formData.supplier_id, formData.return_leg.date, formData.return_leg.date)
+      : null);
 
   const calcQuantity = () => {
     const qty = formData.quantity || 1;
@@ -172,7 +188,8 @@ export default function ServiceLineEditor({
       !formData.category ||
       !formData.supplier_id ||
       formData.acquiring_price == null ||
-      formData.selling_price == null
+      formData.selling_price == null ||
+      stopSale
     )
       return;
     // For transfers, sync service_date into start_date/end_date
@@ -274,6 +291,13 @@ export default function ServiceLineEditor({
               <p className="text-xs text-red-500 dark:text-red-300 mt-1 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 Provider is required
+              </p>
+            )}
+            {stopSale && (
+              <p className="text-xs text-red-600 dark:text-red-300 mt-1 flex items-center gap-1 font-medium">
+                <CalendarOff className="w-3.5 h-3.5 flex-shrink-0" />
+                This provider is in stop sales {stopSale.start_date} – {stopSale.end_date}
+                {stopSale.reason ? ` (${stopSale.reason})` : ''} — pick different dates or another provider.
               </p>
             )}
 
@@ -1047,8 +1071,14 @@ export default function ServiceLineEditor({
               Acquiring and selling prices are required
             </p>
           )}
+          {saveAttempted && stopSale && (
+            <p className="text-xs text-red-500 dark:text-red-300 mt-2 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              This provider is in stop sales for the selected dates — pick different dates or another provider
+            </p>
+          )}
           <div className="flex justify-end">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSave}>
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSave} disabled={!!stopSale}>
               <Save className="w-3.5 h-3.5 mr-1" />
               Save Service
             </Button>

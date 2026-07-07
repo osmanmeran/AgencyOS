@@ -45,6 +45,7 @@ const ENTITIES = [
   'SupplierPricing',
   'SupplierReview',
   'SupplierService',
+  'SupplierStopSale',
   'SupplierSubcategory',
   'Trip',
   'OutlookToken',

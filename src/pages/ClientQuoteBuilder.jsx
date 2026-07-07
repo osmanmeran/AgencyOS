@@ -13,12 +13,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { Plus, Trash2, Users, Star, Building, Send, Loader2, MapPin, ArrowRightLeft, Pencil } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  Users,
+  Star,
+  Building,
+  Send,
+  Loader2,
+  MapPin,
+  ArrowRightLeft,
+  Pencil,
+  CalendarOff,
+} from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import LocationSearch from '@/components/services/LocationSearch';
+import { getBlockingStopSale } from '@/lib/supplierStopSales';
 
 const CURRENCY_SYMBOLS = {
   USD: '$',
@@ -432,7 +445,7 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect,
 // shown here are the client's own sell price: pulled from the catalog
 // (server already applied the client's markup and converted to their
 // preferred currency).
-function ServiceLineCard({ line, services, servicesById, currency, onChange, onRemove }) {
+function ServiceLineCard({ line, services, servicesById, currency, stopSales, onChange, onRemove }) {
   const svc = servicesById.get(line.pricing_id);
   const catName = (svc?.category_name || '').toLowerCase();
   // A room type has been picked but the exact rate might still be unresolved
@@ -450,6 +463,13 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
   const nights = nightsBetween(line.start_date, line.end_date);
   const unitPrice = svc?.unit_price || 0;
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  const stopSale = getBlockingStopSale(
+    stopSales,
+    svc?.supplier_id || line.supplier_id,
+    line.start_date || line.service_date,
+    line.end_date || line.service_date,
+  );
 
   // Every rate tier for the chosen supplier + room type, and which one (if
   // any) unambiguously applies to the current check-in date.
@@ -633,6 +653,16 @@ function ServiceLineCard({ line, services, servicesById, currency, onChange, onR
               </div>
             )}
           </div>
+
+          {stopSale && (
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-800 dark:text-red-300">
+              <CalendarOff className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+              <span>
+                This service isn't available {stopSale.start_date} to {stopSale.end_date}. Please choose different
+                dates.
+              </span>
+            </div>
+          )}
 
           {line.room_occupancy && !line.pricing_id && (
             <div className="space-y-1.5">
@@ -843,6 +873,7 @@ export default function ClientQuoteBuilder() {
   // already converted to their preferred currency (both computed server-side).
   const services = catalog?.items || [];
   const servicesById = useMemo(() => new Map(services.map((s) => [s.pricing_id, s])), [services]);
+  const stopSales = catalog?.stop_sales || [];
 
   // Rooms & passengers
   const setRoomOccupancy = (roomId, count) => {
@@ -884,6 +915,13 @@ export default function ClientQuoteBuilder() {
   const removeLine = (key) => setLines((prev) => (prev.length <= 1 ? [newLine()] : prev.filter((l) => l._key !== key)));
 
   const validLines = lines.filter((l) => l.pricing_id);
+  const blockedLines = validLines.filter((l) => {
+    const svc = servicesById.get(l.pricing_id);
+    const supplierId = svc?.supplier_id || l.supplier_id;
+    const start = l.start_date || l.service_date;
+    const end = l.end_date || l.service_date;
+    return !!getBlockingStopSale(stopSales, supplierId, start, end);
+  });
   const total = useMemo(
     () =>
       validLines.reduce((sum, l) => {
@@ -1071,6 +1109,7 @@ export default function ClientQuoteBuilder() {
                 services={services}
                 servicesById={servicesById}
                 currency={currency}
+                stopSales={stopSales}
                 onChange={(u) => updateLine(line._key, u)}
                 onRemove={() => removeLine(line._key)}
               />
@@ -1101,6 +1140,13 @@ export default function ClientQuoteBuilder() {
         <p className="text-xs text-muted-foreground mb-4">
           This is an estimate in {currency}. Your final quote is confirmed by our team after review.
         </p>
+        {blockedLines.length > 0 && (
+          <p className="flex items-center gap-1.5 text-xs text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg py-2 px-3 mb-3">
+            <CalendarOff className="w-3.5 h-3.5 flex-shrink-0" />
+            {blockedLines.length} service{blockedLines.length > 1 ? 's are' : ' is'} unavailable for the dates selected
+            — fix them above before submitting.
+          </p>
+        )}
         {isStaffPreview ? (
           <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">
             Staff preview is read-only — sign in as the client to submit a quote request.
@@ -1108,7 +1154,7 @@ export default function ClientQuoteBuilder() {
         ) : (
           <Button
             className="w-full bg-blue-600 hover:bg-blue-700"
-            disabled={validLines.length === 0 || submitMutation.isPending}
+            disabled={validLines.length === 0 || blockedLines.length > 0 || submitMutation.isPending}
             onClick={() => submitMutation.mutate()}
           >
             {submitMutation.isPending ? (

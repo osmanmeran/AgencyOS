@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Users, Loader2, CheckCircle } from 'lucide-react';
+import { CalendarDays, Users, Loader2, CheckCircle, CalendarOff } from 'lucide-react';
+import { getBlockingStopSale } from '@/lib/supplierStopSales';
 
 const MEAL_BASIS = [
   { value: 'RO', label: 'RO – Room Only' },
@@ -92,6 +93,17 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
     })
   );
 
+  const { data: stopSales = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierStopSales'],
+      queryFn: () => db.entities.SupplierStopSale.list(),
+      enabled: open,
+    })
+  );
+  const bookingStart = isHotel(categoryName) ? form.check_in_date : form.service_date;
+  const bookingEnd = isHotel(categoryName) ? form.check_out_date : form.service_date;
+  const stopSale = getBlockingStopSale(stopSales, supplier?.id, bookingStart, bookingEnd);
+
   useEffect(() => {
     if (open) {
       setSuccess(false);
@@ -156,6 +168,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (stopSale) return;
     const payload = {
       supplier_id: supplier.id,
       supplier_name: supplier.name,
@@ -233,6 +246,15 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+          {stopSale && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-sm text-red-800 dark:text-red-300">
+              <CalendarOff className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>
+                This provider is in stop sales {stopSale.start_date} – {stopSale.end_date}
+                {stopSale.reason ? ` (${stopSale.reason})` : ''}. Choose different dates to book.
+              </span>
+            </div>
+          )}
           {/* Common Fields */}
           <div className="grid grid-cols-2 gap-4">
             {!isHotel(categoryName) && (
@@ -584,7 +606,11 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              type="submit"
+              disabled={createMutation.isPending || !!stopSale}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               {createMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
