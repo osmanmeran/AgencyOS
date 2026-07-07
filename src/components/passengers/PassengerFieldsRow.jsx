@@ -2,13 +2,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Star, Trash2 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 import ClientLinkPicker from './ClientLinkPicker';
-
-const AGE_CATEGORIES = [
-  { value: 'adult', label: 'Adult' },
-  { value: 'children', label: 'Children (3–11.99 anni)' },
-  { value: 'infant', label: 'Infant (0–2.99 anni)' },
-];
 
 // Shared passenger data-entry row used by both the normal reservation
 // builder (CreateReservation.jsx) and the "Generate from Contract" flow.
@@ -18,6 +13,13 @@ const AGE_CATEGORIES = [
  * @param {{ passenger: any, onChange: any, onRemove?: any, showContact?: any, onSetContact?: any }} props
  */
 export default function PassengerFieldsRow({ passenger, onChange, onRemove, showContact, onSetContact }) {
+  const { t } = useT();
+  const AGE_CATEGORIES = [
+    { value: 'adult', label: t('passengers.adult') },
+    { value: 'children', label: t('passengers.children') },
+    { value: 'infant', label: t('passengers.infant') },
+  ];
+
   const set = (field, value) => onChange({ ...passenger, [field]: value });
 
   const handleClientSelect = (client) => {
@@ -38,14 +40,14 @@ export default function PassengerFieldsRow({ passenger, onChange, onRemove, show
         <Input
           value={passenger.name || ''}
           onChange={(e) => set('name', e.target.value)}
-          placeholder="Nome passeggero…"
+          placeholder={t('passengers.namePlaceholder')}
           className="flex-1 h-9 text-sm"
         />
         {showContact && (
           <button
             type="button"
             onClick={onSetContact}
-            title={passenger.is_contact ? 'Contatto della prenotazione' : 'Imposta come contatto'}
+            title={passenger.is_contact ? t('passengers.bookingContact') : t('passengers.setAsContact')}
             className={`p-1.5 rounded-md transition-colors flex-shrink-0 ${passenger.is_contact ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300' : 'text-muted-foreground hover:text-amber-400'}`}
           >
             <Star className="w-4 h-4" fill={passenger.is_contact ? 'currentColor' : 'none'} />
@@ -73,7 +75,7 @@ export default function PassengerFieldsRow({ passenger, onChange, onRemove, show
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <div>
-          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Età</Label>
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">{t('passengers.age')}</Label>
           <Select value={passenger.age_category || 'adult'} onValueChange={(v) => set('age_category', v)}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue />
@@ -88,11 +90,11 @@ export default function PassengerFieldsRow({ passenger, onChange, onRemove, show
           </Select>
         </div>
         <div>
-          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Telefono</Label>
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">{t('common.phone')}</Label>
           <Input value={passenger.phone || ''} onChange={(e) => set('phone', e.target.value)} className="h-8 text-xs" />
         </div>
         <div>
-          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Email</Label>
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">{t('common.email')}</Label>
           <Input
             type="email"
             value={passenger.email || ''}
@@ -101,7 +103,7 @@ export default function PassengerFieldsRow({ passenger, onChange, onRemove, show
           />
         </div>
         <div>
-          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Data di nascita</Label>
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">{t('crm.dateOfBirth')}</Label>
           <Input
             type="date"
             value={passenger.date_of_birth || ''}
@@ -110,11 +112,11 @@ export default function PassengerFieldsRow({ passenger, onChange, onRemove, show
           />
         </div>
         <div className="col-span-2 md:col-span-4">
-          <Label className="text-[11px] text-muted-foreground mb-0.5 block">Numero pratica</Label>
+          <Label className="text-[11px] text-muted-foreground mb-0.5 block">{t('passengers.fileNumber')}</Label>
           <Input
             value={passenger.numero_pratica || ''}
             onChange={(e) => set('numero_pratica', e.target.value)}
-            placeholder="Facoltativo"
+            placeholder={t('passengers.fileNumberPlaceholder')}
             className="h-8 text-xs"
           />
         </div>

@@ -15,10 +15,12 @@ import { showSuccess, showError } from '@/lib/toast';
 import { generateReferenceNumber } from '@/lib/referenceNumber';
 import { buildTripFromContract, emptyPassenger } from '@/lib/contractBooking';
 import PassengerFieldsRow from '../components/passengers/PassengerFieldsRow';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ' })[cur] || cur;
 
 export default function GenerateFromContract() {
+  const { t } = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -214,10 +216,8 @@ export default function GenerateFromContract() {
 
       {numParticipants > 0 && (
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-lg font-bold text-foreground mb-1">Passeggeri</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Facoltativo — puoi lasciare i campi vuoti e compilarli dopo
-          </p>
+          <h2 className="text-lg font-bold text-foreground mb-1">{t('passengers.title')}</h2>
+          <p className="text-sm text-muted-foreground mb-4">{t('passengers.optionalHint')}</p>
           <div className="space-y-3">
             {passengers.map((pax) => (
               <PassengerFieldsRow

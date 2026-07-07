@@ -235,14 +235,14 @@ app.post('/api/email/test-outlook', authMiddleware, async (req, res) => {
         res,
         400,
         'OUTLOOK_NOT_CONNECTED',
-        'Outlook non connesso. Vai su Impostazioni → Integrazioni per collegarlo.',
+        'Outlook not connected. Go to Settings → Integrations to connect it.',
       );
     await sendOutlookEmail(req.user.id, {
       to: req.user.email,
       subject: 'Marvelops – Test Outlook',
-      body: '<p>Test email inviata tramite Outlook. Funziona correttamente.</p>',
+      body: '<p>Test email sent via Outlook. It works correctly.</p>',
     });
-    res.json({ success: true, message: `Email inviata a ${req.user.email}` });
+    res.json({ success: true, message: `Email sent to ${req.user.email}` });
   } catch (err) {
     sendError(res, 500, 'INTERNAL_ERROR', err.message);
   }
