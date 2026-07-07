@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SkeletonTable } from '@/components/ui/skeletons';
 import { CalendarDays, Users, Trash2, Search, Plane, Hotel, CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_STYLES = {
   pending: { color: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300', icon: Clock },
@@ -20,16 +21,16 @@ const STATUS_STYLES = {
   cancelled: { color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300', icon: XCircle },
 };
 
-const MEAL_BASIS_LABELS = {
-  RO: 'Room Only',
-  BB: 'B&B',
-  HB: 'Half Board',
-  FB: 'Full Board',
-  AI: 'All Inclusive',
-  UAI: 'Ultra AI',
-};
-
 export default function SupplierBookings() {
+  const { t } = useT();
+  const MEAL_BASIS_LABELS = {
+    RO: t('supplierBookings.mealRO'),
+    BB: t('supplierBookings.mealBB'),
+    HB: t('supplierBookings.mealHB'),
+    FB: t('supplierBookings.mealFB'),
+    AI: t('supplierBookings.mealAI'),
+    UAI: t('supplierBookings.mealUAI'),
+  };
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -46,10 +47,10 @@ export default function SupplierBookings() {
       mutationFn: (/** @type {any} */ { id, /** @type {any} */ status }) =>
         db.entities.SupplierBooking.update(id, { status }),
       onSuccess: () => {
-        showSuccess('Booking status updated');
+        showSuccess(t('supplierBookings.updateSuccess'));
         queryClient.invalidateQueries({ queryKey: ['supplierBookings'] });
       },
-      onError: (error) => showError('Failed to update booking', error.message),
+      onError: (error) => showError(t('supplierBookings.updateError'), error.message),
     })
   );
 
@@ -57,10 +58,10 @@ export default function SupplierBookings() {
     useMutation({
       mutationFn: (/** @type {any} */ id) => db.entities.SupplierBooking.delete(id),
       onSuccess: () => {
-        showSuccess('Booking deleted');
+        showSuccess(t('supplierBookings.deleteSuccess'));
         queryClient.invalidateQueries({ queryKey: ['supplierBookings'] });
       },
-      onError: (error) => showError('Failed to delete booking', error.message),
+      onError: (error) => showError(t('supplierBookings.deleteError'), error.message),
     })
   );
 
@@ -80,8 +81,8 @@ export default function SupplierBookings() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-1">Supplier Bookings</h1>
-          <p className="text-muted-foreground">All booking requests across suppliers</p>
+          <h1 className="text-4xl font-bold text-foreground mb-1">{t('supplierBookings.title')}</h1>
+          <p className="text-muted-foreground">{t('supplierBookings.subtitle')}</p>
         </div>
       </div>
 
@@ -90,7 +91,7 @@ export default function SupplierBookings() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Search by supplier, service..."
+            placeholder={t('supplierBookings.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 bg-card"
@@ -101,10 +102,10 @@ export default function SupplierBookings() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="all">{t('supplierBookings.allStatus')}</SelectItem>
+            <SelectItem value="pending">{t('common.pending')}</SelectItem>
+            <SelectItem value="confirmed">{t('common.confirmed')}</SelectItem>
+            <SelectItem value="cancelled">{t('common.cancelled')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -120,7 +121,7 @@ export default function SupplierBookings() {
               >
                 {count}
               </div>
-              <div className="text-sm text-muted-foreground capitalize mt-1">{s}</div>
+              <div className="text-sm text-muted-foreground capitalize mt-1">{t(`common.${s}`)}</div>
             </Card>
           );
         })}
@@ -130,7 +131,7 @@ export default function SupplierBookings() {
       {filtered.length === 0 ? (
         <Card className="p-12 text-center bg-card">
           <CalendarDays className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No bookings found.</p>
+          <p className="text-muted-foreground">{t('supplierBookings.noBookingsFound')}</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -156,7 +157,7 @@ export default function SupplierBookings() {
                             {booking.category_name}
                           </Badge>
                         )}
-                        <Badge className={color}>{booking.status}</Badge>
+                        <Badge className={color}>{t(`common.${booking.status}`)}</Badge>
                       </div>
 
                       <div className="text-foreground font-medium">{booking.service_type}</div>
@@ -170,7 +171,12 @@ export default function SupplierBookings() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          {booking.num_people} {booking.num_people === 1 ? 'person' : 'people'}
+                          {t(
+                            booking.num_people === 1
+                              ? 'supplierBookings.personSingular'
+                              : 'supplierBookings.personPlural',
+                            { count: booking.num_people },
+                          )}
                         </span>
                         {booking.total_cost && (
                           <span className="font-semibold text-green-700 dark:text-green-300">
@@ -178,7 +184,9 @@ export default function SupplierBookings() {
                           </span>
                         )}
                         {booking.pricing_name && (
-                          <span className="text-blue-600 dark:text-blue-300 text-xs">Rate: {booking.pricing_name}</span>
+                          <span className="text-blue-600 dark:text-blue-300 text-xs">
+                            {t('supplierBookings.rateLabel', { name: booking.pricing_name })}
+                          </span>
                         )}
                       </div>
 
@@ -190,17 +198,24 @@ export default function SupplierBookings() {
                             {booking.transfer_type?.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                           </div>
                           <div className="text-muted-foreground">
-                            <span className="font-medium">From:</span> {booking.pickup_location}
+                            <span className="font-medium">{t('supplierBookings.fromLabel')}</span>{' '}
+                            {booking.pickup_location}
                             {' → '}
-                            <span className="font-medium">To:</span> {booking.dropoff_location}
+                            <span className="font-medium">{t('supplierBookings.toLabel')}</span>{' '}
+                            {booking.dropoff_location}
                           </div>
                           {booking.flight_number && (
                             <div className="text-muted-foreground">
-                              Flight: <strong>{booking.flight_number}</strong> at {booking.flight_time}
+                              {t('supplierBookings.flightLabel', {
+                                number: booking.flight_number,
+                                time: booking.flight_time,
+                              })}
                             </div>
                           )}
                           {booking.client_phone && (
-                            <div className="text-muted-foreground">Client Phone: {booking.client_phone}</div>
+                            <div className="text-muted-foreground">
+                              {t('supplierBookings.clientPhoneLabel', { phone: booking.client_phone })}
+                            </div>
                           )}
                         </div>
                       )}
@@ -210,17 +225,18 @@ export default function SupplierBookings() {
                         <div className="bg-green-50 dark:bg-green-950/40 rounded-lg p-3 text-sm space-y-1">
                           <div className="flex items-center gap-2 font-medium text-green-800 dark:text-green-300">
                             <Hotel className="w-4 h-4" />
-                            Hotel Booking
+                            {t('supplierBookings.hotelBooking')}
                           </div>
                           <div className="flex gap-4 text-muted-foreground">
                             {booking.room_category && (
                               <span>
-                                Room: <strong>{booking.room_category}</strong>
+                                {t('supplierBookings.roomLabel')} <strong>{booking.room_category}</strong>
                               </span>
                             )}
                             {booking.meal_basis && (
                               <span>
-                                Basis: <strong>{MEAL_BASIS_LABELS[booking.meal_basis] || booking.meal_basis}</strong>
+                                {t('supplierBookings.basisLabel')}{' '}
+                                <strong>{MEAL_BASIS_LABELS[booking.meal_basis] || booking.meal_basis}</strong>
                               </span>
                             )}
                           </div>
@@ -245,7 +261,7 @@ export default function SupplierBookings() {
                             ) : (
                               <CheckCircle className="w-4 h-4" />
                             )}
-                            Confirm
+                            {t('supplierBookings.confirm')}
                           </Button>
                           <Button
                             size="sm"
@@ -259,7 +275,7 @@ export default function SupplierBookings() {
                             ) : (
                               <XCircle className="w-4 h-4" />
                             )}
-                            Cancel
+                            {t('common.cancel')}
                           </Button>
                         </>
                       )}
@@ -276,7 +292,7 @@ export default function SupplierBookings() {
                           ) : (
                             <XCircle className="w-4 h-4" />
                           )}
-                          Cancel
+                          {t('common.cancel')}
                         </Button>
                       )}
                       <Button
@@ -291,7 +307,7 @@ export default function SupplierBookings() {
                         ) : (
                           <Trash2 className="w-4 h-4 mr-1" />
                         )}
-                        {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                        {deleteMutation.isPending ? t('supplierBookings.deleting') : t('common.delete')}
                       </Button>
                     </div>
                   </div>
