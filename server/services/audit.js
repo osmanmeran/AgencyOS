@@ -1,5 +1,18 @@
 import { getDb, uid } from '../db.js';
 
+// Never copy these request-body fields into the audit trail (they'd otherwise
+// be persisted in plaintext and shipped to log aggregators).
+const SENSITIVE_AUDIT_FIELDS = new Set([
+  'password',
+  'current_password',
+  'new_password',
+  'token',
+  'access_token',
+  'refresh_token',
+  'invite_token',
+  'secret',
+]);
+
 export const AUDIT_ACTIONS = {
   CREATE: 'create',
   UPDATE: 'update',
@@ -115,6 +128,7 @@ export function auditMiddleware(req, res, next) {
       const changes = {};
       if (['POST', 'PUT', 'PATCH'].includes(method)) {
         Object.entries(req.body || {}).forEach(([k, v]) => {
+          if (SENSITIVE_AUDIT_FIELDS.has(k.toLowerCase())) return;
           if (typeof v !== 'object' || v === null) changes[k] = v;
         });
       }

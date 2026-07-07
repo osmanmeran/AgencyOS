@@ -17,6 +17,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
 const BIND_ADDRESS = process.env.BIND_ADDRESS || '0.0.0.0';
 
+// Node leaves the process in an unknown state after either of these — log
+// and exit rather than keep serving requests against possibly-corrupted
+// state. Railway's restartPolicy (ON_FAILURE, max 3 retries) brings it back.
+process.on('uncaughtException', (err) => {
+  logger.error({ err }, 'Uncaught exception — exiting');
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  logger.error({ err: reason }, 'Unhandled promise rejection — exiting');
+  process.exit(1);
+});
+
 setBroadcastFn((userId, notification) => {
   sendToUser(userId, { type: 'notification', notification });
 });

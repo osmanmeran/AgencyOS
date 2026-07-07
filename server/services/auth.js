@@ -12,6 +12,18 @@ const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
 export const VALID_TIERS = ['admin', 'manager', 'accounting', 'agent', 'client'];
 
 /**
+ * Canonicalize an email for storage and lookup. Emails are treated
+ * case-insensitively, so we lowercase and trim on every write; reads still
+ * compare with LOWER(email) to also catch any legacy mixed-case rows.
+ * @returns {string}
+ */
+function normalizeEmail(email) {
+  return String(email || '')
+    .trim()
+    .toLowerCase();
+}
+
+/**
  * Strip sensitive/internal columns (password, microsoft_id, invite_token, ...)
  * from a raw `users` row before it's sent to the client.
  * @returns {object} Client-safe user object with parsed JSON fields.
@@ -55,7 +67,7 @@ export function setTokenCookie(res, token) {
  */
 export function authenticateLocal(email, password) {
   const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalizeEmail(email));
   if (!user || !user.is_active) throw new UnauthorizedError('Invalid email or password');
 
   const valid = bcrypt.compareSync(password, user.password);
@@ -100,12 +112,14 @@ export async function authenticateMicrosoft(idToken) {
   }
 
   const microsoftId = payload.oid || payload.sub;
-  const email = payload.preferred_username || payload.email || payload.unique_name;
-  const name = payload.name || email.split('@')[0];
+  const rawEmail = payload.preferred_username || payload.email || payload.unique_name;
 
-  if (!email) {
+  if (!rawEmail) {
     throw new UnauthorizedError('Could not retrieve the email from the Microsoft account.');
   }
+
+  const email = normalizeEmail(rawEmail);
+  const name = payload.name || email.split('@')[0];
 
   const db = getDb();
   const user = db.transaction(() => {
@@ -113,7 +127,7 @@ export async function authenticateMicrosoft(idToken) {
     let u = db.prepare('SELECT * FROM users WHERE microsoft_id = ?').get(microsoftId);
     if (!u) {
       // 2. Case-insensitive email fallback (Microsoft may return different casing)
-      u = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+      u = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
       if (u) {
         // Link microsoft_id so future logins hit the fast path
         db.prepare('UPDATE users SET microsoft_id = ?, updated_date = ? WHERE id = ?').run(
@@ -129,7 +143,7 @@ export async function authenticateMicrosoft(idToken) {
           'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, microsoft_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
         ).run(
           id,
-          email.toLowerCase(),
+          email,
           bcrypt.hashSync(microsoftId, 10),
           name,
           'agent',
@@ -250,7 +264,8 @@ export function getAllUsers() {
  */
 export function inviteUser({ email, name, user_tier, custom_permissions, departments, client_id, invited_by }) {
   const db = getDb();
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  email = normalizeEmail(email);
+  const existing = db.prepare('SELECT id FROM users WHERE LOWER(email) = ?').get(email);
   if (existing) throw new ConflictError('Email already registered');
 
   const tier = VALID_TIERS.includes(user_tier) ? user_tier : 'agent';
@@ -325,7 +340,8 @@ export function createUser({
   client_id,
 }) {
   const db = getDb();
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  email = normalizeEmail(email);
+  const existing = db.prepare('SELECT id FROM users WHERE LOWER(email) = ?').get(email);
   if (existing) throw new ConflictError('Email already registered');
 
   const tier = VALID_TIERS.includes(user_tier) ? user_tier : 'agent';

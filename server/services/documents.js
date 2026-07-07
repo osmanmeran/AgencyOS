@@ -6,6 +6,8 @@ import { getDb, uid } from '../db.js';
 import logger from '../lib/logger.js';
 import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 import { ALLOWED_MIME_TYPES } from '../lib/mimeTypes.js';
+import { findEntityById } from './entities.js';
+import { ForbiddenError } from '../middleware/errors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOAD_DIR = process.env.DATA_DIR
@@ -19,7 +21,9 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const safeName = sanitizeFilename(path.basename(file.originalname, ext));
-    cb(null, `${Date.now()}_${safeName}${ext}`);
+    // uid() (not just Date.now()) so two uploads in the same millisecond can't
+    // collide and overwrite each other's stored file.
+    cb(null, `${Date.now()}_${uid()}_${safeName}${ext}`);
   },
 });
 
@@ -74,16 +78,42 @@ export function saveDocument({ file, entityType, entityId, userId }) {
 }
 
 /**
- * @returns {object[]} Documents for the given entity, or (if omitted) the 100 most recent overall.
+ * Whether `user` may read/download/delete a document, based on the entity it's
+ * attached to (reusing the same row-level rule the generic entity routes use)
+ * rather than any document-specific ownership field.
+ * @returns {boolean}
  */
-export function getDocuments(entityType, entityId) {
+export function userCanAccessDocument(user, doc) {
+  const tier = user.user_tier || 'agent';
+  if (tier === 'admin' || tier === 'manager') return true;
+  if (doc.uploaded_by && doc.uploaded_by === user.id) return true;
+  if (!doc.entity_type || !doc.entity_id) return false;
+  try {
+    findEntityById(doc.entity_type, doc.entity_id, user);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @returns {object[]} Documents for the given entity, filtered to what `user` can access.
+ * Without an entity_type/entity_id, only admins/managers get the 100 most recent overall —
+ * everyone else must scope by entity.
+ */
+export function getDocuments(entityType, entityId, user) {
   const db = getDb();
   let rows;
   if (entityType && entityId) {
+    findEntityById(entityType, entityId, user); // throws NotFound/Forbidden if inaccessible
     rows = db
       .prepare('SELECT * FROM documents WHERE entity_type = ? AND entity_id = ? ORDER BY created_date DESC')
       .all(entityType, entityId);
   } else {
+    const tier = user.user_tier || 'agent';
+    if (tier !== 'admin' && tier !== 'manager') {
+      throw new ForbiddenError('entity_type and entity_id are required');
+    }
     rows = db.prepare('SELECT * FROM documents ORDER BY created_date DESC LIMIT 100').all();
   }
   return rows.map((d) => ({ ...d, url: `/uploads/${d.stored_name}` }));

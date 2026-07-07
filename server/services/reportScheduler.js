@@ -4,13 +4,25 @@ import { getRevenueOverview, getCommissionReport } from './reports.js';
 import { sendEmail } from './email.js';
 
 let intervalHandle = null;
+let isRunning = false;
 
 /** Run an immediate pass over due report schedules, then repeat it every 60 minutes. */
 export function startReportScheduler() {
   logger.info('Report scheduler started');
 
   const check = () => {
-    runDueSchedules().catch((err) => logger.error({ err }, 'Report scheduler check error'));
+    // Skip this tick if the previous pass is still sending — prevents email
+    // sends from stacking up if a batch takes longer than the interval.
+    if (isRunning) {
+      logger.warn('Report scheduler tick skipped — previous run still in progress');
+      return;
+    }
+    isRunning = true;
+    runDueSchedules()
+      .catch((err) => logger.error({ err }, 'Report scheduler check error'))
+      .finally(() => {
+        isRunning = false;
+      });
   };
 
   check();

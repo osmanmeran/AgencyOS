@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import path from 'path';
@@ -65,6 +66,7 @@ app.use(
   }),
 );
 
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 

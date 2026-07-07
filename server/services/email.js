@@ -16,6 +16,9 @@ function getSmtpConfig() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   };
 }
 
@@ -146,6 +149,25 @@ const TEMPLATES = {
     }),
 };
 
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+}
+
+/**
+ * Named template fields are user-controlled (client names, trip details,
+ * staff notes) but get interpolated directly into HTML — escape every string
+ * field before it reaches a template. `*Url` fields are server-built links,
+ * not user text, so they're passed through unescaped.
+ */
+function escapeTemplateData(data) {
+  const escaped = {};
+  for (const [key, value] of Object.entries(data || {})) {
+    escaped[key] = typeof value === 'string' && !key.endsWith('Url') ? escapeHtml(value) : value;
+  }
+  return escaped;
+}
+
 /**
  * Render one of the named HTML {@link TEMPLATES}, falling back to the generic
  * wrapper with raw `data.content` if the template name isn't recognized.
@@ -154,7 +176,7 @@ const TEMPLATES = {
 export function renderTemplate(templateName, data) {
   const template = TEMPLATES[templateName];
   if (!template) return TEMPLATES.generic({ content: data.content || '' });
-  return template(data);
+  return template(escapeTemplateData(data));
 }
 
 // ── Sending ────────────────────────────────────────────────────────────

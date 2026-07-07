@@ -1,6 +1,6 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
-import path from 'path'
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -33,14 +33,18 @@ export default defineConfig({
           if (id.includes('node_modules/lucide-react')) return 'icons';
           if (id.includes('node_modules/@tanstack')) return 'tanstack';
           if (id.includes('node_modules/next-themes')) return 'themes';
-          if (id.includes('node_modules/sonner') || id.includes('node_modules/vaul') || id.includes('node_modules/cmdk')) return 'ui-headless';
+          if (
+            id.includes('node_modules/sonner') ||
+            id.includes('node_modules/vaul') ||
+            id.includes('node_modules/cmdk')
+          )
+            return 'ui-headless';
           if (id.includes('node_modules/date-fns') || id.includes('node_modules/dayjs')) return 'dates';
+          if (id.includes('node_modules/@mui')) return 'mui';
           if (id.includes('node_modules')) return 'vendor';
         },
       },
     },
   },
-  plugins: [
-    react(),
-  ]
+  plugins: [react()],
 });

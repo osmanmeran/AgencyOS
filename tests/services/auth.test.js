@@ -1,7 +1,16 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { getDb } from '../../server/db.js';
-import { authenticateLocal, safeUser, createUser, getUserById, updateUser, deleteUser, getAllUsers, VALID_TIERS } from '../../server/services/auth.js';
+import {
+  authenticateLocal,
+  safeUser,
+  createUser,
+  getUserById,
+  updateUser,
+  deleteUser,
+  getAllUsers,
+  VALID_TIERS,
+} from '../../server/services/auth.js';
 
 describe('Auth Service', () => {
   beforeAll(() => {
@@ -11,11 +20,19 @@ describe('Auth Service', () => {
   describe('safeUser', () => {
     it('should strip sensitive fields', () => {
       const user = {
-        id: '1', email: 'test@test.com', password: 'secret', name: 'Test',
-        user_tier: 'agent', role: 'agent', language: 'en',
-        custom_permissions: '[]', departments: '[]',
-        client_id: null, linked_supplier_id: null,
-        is_active: 1, created_date: '2024-01-01',
+        id: '1',
+        email: 'test@test.com',
+        password: 'secret',
+        name: 'Test',
+        user_tier: 'agent',
+        role: 'agent',
+        language: 'en',
+        custom_permissions: '[]',
+        departments: '[]',
+        client_id: null,
+        linked_supplier_id: null,
+        is_active: 1,
+        created_date: '2024-01-01',
       };
       const result = safeUser(user);
       expect(result).not.toHaveProperty('password');
@@ -25,13 +42,11 @@ describe('Auth Service', () => {
 
   describe('authenticateLocal', () => {
     it('should reject invalid email', () => {
-      expect(() => authenticateLocal('nonexistent@test.com', 'password123'))
-        .toThrow('Invalid email or password');
+      expect(() => authenticateLocal('nonexistent@test.com', 'password123')).toThrow('Invalid email or password');
     });
 
     it('should reject wrong password', () => {
-      expect(() => authenticateLocal('admin@travelpro.com', 'wrongpassword'))
-        .toThrow('Invalid email or password');
+      expect(() => authenticateLocal('admin@travelpro.com', 'wrongpassword')).toThrow('Invalid email or password');
     });
   });
 
@@ -48,8 +63,27 @@ describe('Auth Service', () => {
     it('should reject duplicate email', () => {
       const email = `dup-${Date.now()}@test.com`;
       createUser({ email, password: 'TestPass1', name: 'First' });
-      expect(() => createUser({ email, password: 'TestPass2', name: 'Second' }))
-        .toThrow('Email already registered');
+      expect(() => createUser({ email, password: 'TestPass2', name: 'Second' })).toThrow('Email already registered');
+    });
+
+    it('should normalize email casing/whitespace on create', () => {
+      const base = `Case-${Date.now()}@Test.com`;
+      const user = createUser({ email: `  ${base}  `, password: 'TestPass1', name: 'Case Test' });
+      expect(user.email).toBe(base.toLowerCase());
+    });
+
+    it('should treat differently-cased emails as duplicates', () => {
+      const base = `Mixed-${Date.now()}@Test.com`;
+      createUser({ email: base, password: 'TestPass1', name: 'First' });
+      expect(() => createUser({ email: base.toUpperCase(), password: 'TestPass2', name: 'Second' })).toThrow(
+        'Email already registered',
+      );
+    });
+
+    it('should authenticate regardless of email casing', () => {
+      const base = `Login-${Date.now()}@Test.com`;
+      createUser({ email: base, password: 'TestPass1', name: 'Login Test' });
+      expect(authenticateLocal(base.toUpperCase(), 'TestPass1').email).toBe(base.toLowerCase());
     });
   });
 

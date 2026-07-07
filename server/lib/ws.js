@@ -15,10 +15,15 @@ export function createWebSocketServer(server) {
     const url = new URL(req.url, 'http://localhost');
     const token = cookies.token || url.searchParams.get('token');
 
-    if (!token) { ws.close(4001, 'Authentication required'); return; }
+    if (!token) {
+      ws.close(4001, 'Authentication required');
+      return;
+    }
 
     let user;
-    try { user = jwt.verify(token, getJwtSecret()); } catch {
+    try {
+      user = jwt.verify(token, getJwtSecret());
+    } catch {
       ws.close(4001, 'Invalid token');
       return;
     }
@@ -32,12 +37,24 @@ export function createWebSocketServer(server) {
 
     ws.on('close', () => {
       const conns = clients.get(user.id);
-      if (conns) { conns.delete(ws); if (conns.size === 0) clients.delete(user.id); }
+      if (conns) {
+        conns.delete(ws);
+        if (conns.size === 0) clients.delete(user.id);
+      }
       logger.debug({ userId: user.id }, 'WebSocket disconnected');
     });
 
-    ws.on('error', (err) => logger.error({ err }, 'WebSocket error'));
+    ws.on('error', (err) => {
+      logger.error({ err, userId: user.id }, 'WebSocket connection error');
+      // Terminate the faulty socket so it can't linger half-open; the 'close'
+      // handler above then removes it from the clients map.
+      try {
+        ws.terminate();
+      } catch {}
+    });
   });
+
+  wss.on('error', (err) => logger.error({ err }, 'WebSocket server error'));
 
   logger.info('WebSocket server initialized at /ws');
   return wss;

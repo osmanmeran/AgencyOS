@@ -84,6 +84,7 @@ export async function connectOutlook(userId, { token_data }) {
   try {
     const userResp = await fetch(`${GRAPH_API}/me`, {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      signal: AbortSignal.timeout(10000),
     });
     if (userResp.ok) {
       const userData = await userResp.json();
@@ -162,6 +163,7 @@ async function getGraphAccessToken(userId) {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!resp.ok) {
@@ -236,6 +238,7 @@ export async function sendOutlookEmail(userId, { to, subject, body, cc, bcc }) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(message),
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!sendResp.ok) {
@@ -274,7 +277,7 @@ export async function searchSupplier(name, city) {
   try {
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
-      { headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' } },
+      { headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' }, signal: AbortSignal.timeout(8000) },
     );
     const geoData = await geoRes.json();
     if (Array.isArray(geoData)) {
@@ -306,6 +309,7 @@ export async function searchSupplier(name, city) {
   try {
     const wikiRes = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}?redirect=true`,
+      { signal: AbortSignal.timeout(8000) },
     );
     if (wikiRes.ok) {
       const wiki = await wikiRes.json();
