@@ -32,28 +32,36 @@ import {
   ChevronRight,
   Star,
 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const PAYMENT_METHODS = ['credit_card', 'bank_transfer', 'paypal', 'check', 'cash', 'other'];
 
-const EDIT_FIELDS = [
-  ['name', 'Company Name', 'text'],
-  ['industry', 'Industry', 'text'],
-  ['email', 'Email', 'email'],
-  ['phone', 'Phone', 'text'],
-  ['website', 'Website', 'text'],
-  ['address', 'Address', 'text'],
-  ['city', 'City', 'text'],
-  ['region', 'Region / State', 'text'],
-  ['country', 'Country', 'text'],
-];
-
-const BILLING_FIELDS = [
-  ['tax_id', 'Tax ID / VAT', 'text'],
-  ['invoice_address', 'Invoice Address', 'text'],
-  ['default_markup', 'Default Markup %', 'number'],
-];
-
 export default function CompanyDetails() {
+  const { t } = useT();
+  const PAYMENT_METHOD_LABELS = {
+    credit_card: t('createClient.paymentCreditCard'),
+    bank_transfer: t('createClient.paymentBankTransfer'),
+    paypal: t('createClient.paymentPaypal'),
+    check: t('createClient.paymentCheck'),
+    cash: t('createClient.paymentCash'),
+    other: t('createClient.paymentOther'),
+  };
+  const EDIT_FIELDS = [
+    ['name', t('companyDetails.companyName'), 'text'],
+    ['industry', t('companyDetails.industry'), 'text'],
+    ['email', t('common.email'), 'email'],
+    ['phone', t('common.phone'), 'text'],
+    ['website', t('companyDetails.website'), 'text'],
+    ['address', t('common.address'), 'text'],
+    ['city', t('common.city'), 'text'],
+    ['region', t('companyDetails.region'), 'text'],
+    ['country', t('common.country'), 'text'],
+  ];
+  const BILLING_FIELDS = [
+    ['tax_id', t('createClient.taxIdVat'), 'text'],
+    ['invoice_address', t('createClient.invoiceAddress'), 'text'],
+    ['default_markup', `${t('companyDetails.defaultMarkupLabel')} %`, 'number'],
+  ];
   const [searchParams] = useSearchParams();
   const companyId = searchParams.get('id');
   const queryClient = useQueryClient();
@@ -110,9 +118,9 @@ export default function CompanyDetails() {
           );
         }
         setEditing(false);
-        showSuccess('Company updated');
+        showSuccess(t('companyDetails.updateSuccess'));
       },
-      onError: () => showError('Could not save company'),
+      onError: () => showError(t('companyDetails.updateError')),
     })
   );
 
@@ -130,7 +138,7 @@ export default function CompanyDetails() {
       const { file_url } = await db.integrations.Core.UploadFile({ file });
       set('logo_url', file_url);
     } catch {
-      showError('Upload failed');
+      showError(t('companyDetails.uploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -146,12 +154,12 @@ export default function CompanyDetails() {
     return (
       <div className="max-w-5xl mx-auto text-center py-16">
         <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-        <p className="text-muted-foreground">Company not found.</p>
+        <p className="text-muted-foreground">{t('companyDetails.notFound')}</p>
         <Link
           to={createPageUrl('Companies')}
           className="text-indigo-600 dark:text-indigo-300 text-sm mt-2 inline-block"
         >
-          Back to companies
+          {t('companyDetails.backToCompanies')}
         </Link>
       </div>
     );
@@ -164,7 +172,7 @@ export default function CompanyDetails() {
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Companies
+        {t('companyDetails.backToCompanies')}
       </Link>
 
       {/* Header */}
@@ -194,7 +202,7 @@ export default function CompanyDetails() {
                   <Badge
                     className={`text-[10px] ${company.status === 'inactive' ? 'bg-muted text-muted-foreground' : 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'}`}
                   >
-                    {company.status || 'active'}
+                    {company.status === 'inactive' ? t('common.inactive') : t('common.active')}
                   </Badge>
                 </div>
                 {company.industry && <div className="text-sm text-muted-foreground">{company.industry}</div>}
@@ -240,27 +248,37 @@ export default function CompanyDetails() {
             {!editing && (
               <Button variant="outline" size="sm" className="h-8 text-xs flex-shrink-0" onClick={startEdit}>
                 <Edit2 className="w-3 h-3 mr-1" />
-                Edit
+                {t('common.edit')}
               </Button>
             )}
           </div>
 
           {/* Rollup stat cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-            <Stat label="Contacts" value={contacts.length} icon={Users} tone="text-foreground" />
             <Stat
-              label="Paid"
+              label={t('companyDetails.contactsStat')}
+              value={contacts.length}
+              icon={Users}
+              tone="text-foreground"
+            />
+            <Stat
+              label={t('companyDetails.paidStat')}
               value={`$${rollup.paid.toFixed(0)}`}
               icon={DollarSign}
               tone="text-green-700 dark:text-green-300"
             />
             <Stat
-              label="Outstanding"
+              label={t('companyDetails.outstandingStat')}
               value={`$${rollup.owed.toFixed(0)}`}
               icon={DollarSign}
               tone="text-orange-600 dark:text-orange-300"
             />
-            <Stat label="Invoices" value={rollup.invoiceCount} icon={FileText} tone="text-foreground" />
+            <Stat
+              label={t('companyDetails.invoicesStat')}
+              value={rollup.invoiceCount}
+              icon={FileText}
+              tone="text-foreground"
+            />
           </div>
         </div>
 
@@ -286,7 +304,7 @@ export default function CompanyDetails() {
                   disabled={uploading}
                 >
                   <Upload className="w-3 h-3 mr-1" />
-                  {uploading ? 'Uploading…' : 'Upload logo'}
+                  {uploading ? t('companyDetails.uploading') : t('companyDetails.uploadLogo')}
                 </Button>
               </div>
             </div>
@@ -304,14 +322,14 @@ export default function CompanyDetails() {
                 </div>
               ))}
               <div className="space-y-1">
-                <Label className="text-xs">Status</Label>
+                <Label className="text-xs">{t('common.status')}</Label>
                 <Select value={form.status || 'active'} onValueChange={(v) => set('status', v)}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="active">{t('common.active')}</SelectItem>
+                    <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -319,7 +337,7 @@ export default function CompanyDetails() {
 
             <div>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                Shared Billing
+                {t('companyDetails.sharedBilling')}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {BILLING_FIELDS.map(([field, label, type]) => (
@@ -334,7 +352,7 @@ export default function CompanyDetails() {
                   </div>
                 ))}
                 <div className="space-y-1">
-                  <Label className="text-xs">Payment Method</Label>
+                  <Label className="text-xs">{t('companyDetails.paymentMethod')}</Label>
                   <Select
                     value={form.payment_method || 'bank_transfer'}
                     onValueChange={(v) => set('payment_method', v)}
@@ -345,14 +363,14 @@ export default function CompanyDetails() {
                     <SelectContent>
                       {PAYMENT_METHODS.map((m) => (
                         <SelectItem key={m} value={m}>
-                          {m.replace('_', ' ')}
+                          {PAYMENT_METHOD_LABELS[m]}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Preferred Currency</Label>
+                  <Label className="text-xs">{t('companyDetails.preferredCurrency')}</Label>
                   <Input
                     value={form.preferred_currency || 'USD'}
                     onChange={(e) => set('preferred_currency', e.target.value.toUpperCase())}
@@ -363,7 +381,7 @@ export default function CompanyDetails() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">Notes</Label>
+              <Label className="text-xs">{t('common.notes')}</Label>
               <Textarea
                 value={form.notes || ''}
                 onChange={(e) => set('notes', e.target.value)}
@@ -375,7 +393,7 @@ export default function CompanyDetails() {
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => setEditing(false)}>
                 <X className="w-3.5 h-3.5 mr-1" />
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 size="sm"
@@ -384,7 +402,7 @@ export default function CompanyDetails() {
                 disabled={updateMutation.isPending}
               >
                 <Check className="w-3.5 h-3.5 mr-1" />
-                {updateMutation.isPending ? 'Saving…' : 'Save'}
+                {updateMutation.isPending ? t('companyDetails.saving') : t('common.save')}
               </Button>
             </div>
           </div>
@@ -392,10 +410,10 @@ export default function CompanyDetails() {
           <Tabs defaultValue="contacts" className="w-full">
             <TabsList className="mx-6 mt-3 bg-muted">
               <TabsTrigger value="contacts" className="text-xs data-[state=active]:bg-card">
-                Contacts ({contacts.length})
+                {t('companyDetails.contactsTab', { count: contacts.length })}
               </TabsTrigger>
               <TabsTrigger value="details" className="text-xs data-[state=active]:bg-card">
-                Details & Billing
+                {t('companyDetails.detailsTab')}
               </TabsTrigger>
             </TabsList>
 
@@ -403,8 +421,8 @@ export default function CompanyDetails() {
               {contacts.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
                   <Users className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                  <p className="text-sm">No contacts linked to this company yet.</p>
-                  <p className="text-xs mt-1">Assign a company on a contact in the CRM to link them here.</p>
+                  <p className="text-sm">{t('companyDetails.noContactsLinked')}</p>
+                  <p className="text-xs mt-1">{t('companyDetails.assignCompanyHint')}</p>
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -447,31 +465,43 @@ export default function CompanyDetails() {
 
             <TabsContent value="details" className="p-6 pt-4 space-y-6">
               <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-                {company.email && <Info icon={Mail} label="Email" value={company.email} />}
-                {company.phone && <Info icon={Phone} label="Phone" value={company.phone} />}
-                {company.website && <Info icon={Globe} label="Website" value={company.website} />}
+                {company.email && <Info icon={Mail} label={t('common.email')} value={company.email} />}
+                {company.phone && <Info icon={Phone} label={t('common.phone')} value={company.phone} />}
+                {company.website && <Info icon={Globe} label={t('companyDetails.website')} value={company.website} />}
                 {(company.city || company.country) && (
                   <Info
                     icon={MapPin}
-                    label="Location"
+                    label={t('companyDetails.locationLabel')}
                     value={[company.city, company.region, company.country].filter(Boolean).join(', ')}
                   />
                 )}
-                {company.tax_id && <Info icon={FileText} label="Tax ID / VAT" value={company.tax_id} />}
+                {company.tax_id && <Info icon={FileText} label={t('createClient.taxIdVat')} value={company.tax_id} />}
                 {company.payment_method && (
-                  <Info icon={CreditCard} label="Payment Method" value={company.payment_method.replace('_', ' ')} />
+                  <Info
+                    icon={CreditCard}
+                    label={t('companyDetails.paymentMethod')}
+                    value={PAYMENT_METHOD_LABELS[company.payment_method] || company.payment_method}
+                  />
                 )}
                 {company.preferred_currency && (
-                  <Info icon={DollarSign} label="Currency" value={company.preferred_currency} />
+                  <Info
+                    icon={DollarSign}
+                    label={t('companyDetails.currencyLabel')}
+                    value={company.preferred_currency}
+                  />
                 )}
                 {(company.default_markup ?? 0) > 0 && (
-                  <Info icon={DollarSign} label="Default Markup" value={`${company.default_markup}%`} />
+                  <Info
+                    icon={DollarSign}
+                    label={t('companyDetails.defaultMarkupLabel')}
+                    value={`${company.default_markup}%`}
+                  />
                 )}
               </div>
               {company.invoice_address && (
                 <div className="bg-muted rounded-xl p-4">
                   <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">
-                    Invoice Address
+                    {t('createClient.invoiceAddress')}
                   </div>
                   <div className="text-sm text-foreground whitespace-pre-wrap">{company.invoice_address}</div>
                 </div>
@@ -479,7 +509,7 @@ export default function CompanyDetails() {
               {company.address && (
                 <div className="bg-muted rounded-xl p-4">
                   <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">
-                    Address
+                    {t('common.address')}
                   </div>
                   <div className="text-sm text-foreground">{company.address}</div>
                 </div>
@@ -487,7 +517,7 @@ export default function CompanyDetails() {
               {company.notes && (
                 <div className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-100 rounded-xl p-4">
                   <div className="text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 uppercase tracking-wider mb-1">
-                    Internal Notes
+                    {t('crm.internalNotes')}
                   </div>
                   <div className="text-sm text-foreground whitespace-pre-wrap">{company.notes}</div>
                 </div>

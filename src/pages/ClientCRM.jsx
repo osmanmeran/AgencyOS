@@ -10,27 +10,39 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, X, Users, ArrowLeft, List, Search, TrendingUp, UserCheck, Star, DollarSign } from 'lucide-react';
 import { filterClientsByCompany } from '../lib/companySearch';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const PIPELINE_STAGES = [
-  { key: 'new', label: 'New Lead', color: 'bg-muted border-border' },
-  {
-    key: 'contacted',
-    label: 'Contacted',
-    color: 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800',
-  },
-  {
-    key: 'proposal',
-    label: 'Proposal Sent',
-    color: 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800',
-  },
-  {
-    key: 'negotiation',
-    label: 'Negotiation',
-    color: 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800',
-  },
-  { key: 'won', label: 'Won', color: 'bg-green-50 dark:bg-green-950/40 border-green-300 dark:border-green-800' },
-  { key: 'lost', label: 'Lost', color: 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800' },
-];
+function usePipelineStages() {
+  const { t } = useT();
+  return [
+    { key: 'new', label: t('clientCRM.stages.newLead'), color: 'bg-muted border-border' },
+    {
+      key: 'contacted',
+      label: t('clientCRM.stages.contacted'),
+      color: 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800',
+    },
+    {
+      key: 'proposal',
+      label: t('clientCRM.stages.proposalSent'),
+      color: 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800',
+    },
+    {
+      key: 'negotiation',
+      label: t('clientCRM.stages.negotiation'),
+      color: 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800',
+    },
+    {
+      key: 'won',
+      label: t('clientCRM.stages.won'),
+      color: 'bg-green-50 dark:bg-green-950/40 border-green-300 dark:border-green-800',
+    },
+    {
+      key: 'lost',
+      label: t('clientCRM.stages.lost'),
+      color: 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800',
+    },
+  ];
+}
 
 function DealCard({ client }) {
   const initials = (client.name || '??')
@@ -67,14 +79,18 @@ function DealCard({ client }) {
   );
 }
 
+const STAGE_KEYS = ['new', 'contacted', 'proposal', 'negotiation', 'won', 'lost'];
+
 function getDealStage(client) {
-  if (client.deal_stage && PIPELINE_STAGES.find((s) => s.key === client.deal_stage)) return client.deal_stage;
+  if (client.deal_stage && STAGE_KEYS.includes(client.deal_stage)) return client.deal_stage;
   if (client.status === 'cancelled') return 'lost';
   if ((client.total_paid || 0) > 0) return 'won';
   return client.potential_deal ? 'proposal' : 'new';
 }
 
 export default function ClientCRM() {
+  const { t } = useT();
+  const PIPELINE_STAGES = usePipelineStages();
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [viewMode, setViewMode] = useState('list');
@@ -136,13 +152,13 @@ export default function ClientCRM() {
         <div className="flex items-center gap-3">
           <Button variant="ghost" onClick={handleBack} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Clients
+            {t('clientCRM.backToClients')}
           </Button>
         </div>
         {showNewForm ? (
           <div className="bg-card rounded-2xl shadow-sm border border-border">
             <div className="flex items-center justify-between p-6 border-b border-border">
-              <h2 className="text-lg font-bold text-foreground">New Client</h2>
+              <h2 className="text-lg font-bold text-foreground">{t('crm.newClient')}</h2>
               <Button variant="ghost" size="icon" onClick={handleBack}>
                 <X className="w-4 h-4" />
               </Button>
@@ -168,16 +184,16 @@ export default function ClientCRM() {
             <Users className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">CRM</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('crm.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {stats.total} contacts · {stats.active} active
+              {t('clientCRM.contactsCount', { total: stats.total, active: stats.active })}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => setShowNewForm(true)} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
-            New Client
+            {t('crm.newClient')}
           </Button>
         </div>
       </div>
@@ -186,37 +202,37 @@ export default function ClientCRM() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground font-medium">Total Contacts</span>
+            <span className="text-xs text-muted-foreground font-medium">{t('clientCRM.totalContacts')}</span>
             <Users className="w-4 h-4 text-blue-500 dark:text-blue-300" />
           </div>
           <div className="text-2xl font-bold text-foreground">{stats.total}</div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Across all statuses</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">{t('clientCRM.acrossAllStatuses')}</div>
         </div>
         <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground font-medium">Active</span>
+            <span className="text-xs text-muted-foreground font-medium">{t('common.active')}</span>
             <UserCheck className="w-4 h-4 text-green-500 dark:text-green-300" />
           </div>
           <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.active}</div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Active & VIP clients</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">{t('clientCRM.activeAndVip')}</div>
         </div>
         <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground font-medium">VIP</span>
+            <span className="text-xs text-muted-foreground font-medium">{t('clientCRM.vip')}</span>
             <Star className="w-4 h-4 text-purple-500 dark:text-purple-300" />
           </div>
           <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.vip}</div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Premium clients</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">{t('clientCRM.premiumClients')}</div>
         </div>
         <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground font-medium">Revenue</span>
+            <span className="text-xs text-muted-foreground font-medium">{t('clientCRM.revenue')}</span>
             <DollarSign className="w-4 h-4 text-emerald-500 dark:text-emerald-300" />
           </div>
           <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
             ${stats.totalRevenue.toFixed(0)}
           </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Total collected</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">{t('clientCRM.totalCollected')}</div>
         </div>
       </div>
 
@@ -225,7 +241,7 @@ export default function ClientCRM() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Search contacts or company..."
+            placeholder={t('clientCRM.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 text-sm h-9"
@@ -239,7 +255,7 @@ export default function ClientCRM() {
             }`}
           >
             <List className="w-3.5 h-3.5" />
-            List
+            {t('clientCRM.listView')}
           </button>
           <button
             onClick={() => setViewMode('pipeline')}
@@ -250,7 +266,7 @@ export default function ClientCRM() {
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            Pipeline
+            {t('clientCRM.pipelineView')}
           </button>
         </div>
       </div>
@@ -278,7 +294,9 @@ export default function ClientCRM() {
                       </div>
                     ))}
                     {cards.length === 0 && (
-                      <div className="text-center py-6 text-[11px] text-muted-foreground italic">No contacts</div>
+                      <div className="text-center py-6 text-[11px] text-muted-foreground italic">
+                        {t('clientCRM.noContacts')}
+                      </div>
                     )}
                   </div>
                 </div>

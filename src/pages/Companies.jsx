@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Building2, Plus, Search, Users, Globe, MapPin, ArrowLeft } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function Companies() {
+  const { t } = useT();
   const [search, setSearch] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState('');
@@ -72,20 +74,20 @@ export default function Companies() {
             <Building2 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Companies</h1>
-            <p className="text-sm text-muted-foreground">{companies.length} companies</p>
+            <h1 className="text-2xl font-bold text-foreground">{t('companies.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('companies.countLabel', { count: companies.length })}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Link to={createPageUrl('ClientCRM')}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
-              Contacts
+              {t('companies.contacts')}
             </Button>
           </Link>
           <Button onClick={() => setShowNew(true)} className="bg-indigo-600 hover:bg-indigo-700">
             <Plus className="w-4 h-4 mr-2" />
-            New Company
+            {t('companies.newCompany')}
           </Button>
         </div>
       </div>
@@ -94,7 +96,7 @@ export default function Companies() {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
         <Input
-          placeholder="Search companies..."
+          placeholder={t('companies.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9 text-sm h-9"
@@ -116,7 +118,7 @@ export default function Companies() {
         <div className="bg-card rounded-2xl border border-border py-16 text-center">
           <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">
-            {search ? 'No companies match your search.' : 'No companies yet. Create one to group your contacts.'}
+            {search ? t('companies.noMatchSearch') : t('companies.noCompaniesYet')}
           </p>
         </div>
       ) : (
@@ -151,7 +153,10 @@ export default function Companies() {
                 <div className="space-y-1.5 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                    {countByCompany[company.id] || 0} contact{(countByCompany[company.id] || 0) === 1 ? '' : 's'}
+                    {t(
+                      (countByCompany[company.id] || 0) === 1 ? 'companies.contactSingular' : 'companies.contactPlural',
+                      { count: countByCompany[company.id] || 0 },
+                    )}
                   </div>
                   {(company.city || company.country) && (
                     <div className="flex items-center gap-1.5">
@@ -176,31 +181,29 @@ export default function Companies() {
       <Dialog open={showNew} onOpenChange={setShowNew}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New Company</DialogTitle>
+            <DialogTitle>{t('companies.newCompany')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>Company name</Label>
+            <Label>{t('companies.companyNameLabel')}</Label>
             <Input
               autoFocus
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Acme Corp"
+              placeholder={t('companies.companyNamePlaceholder')}
               onKeyDown={(e) => e.key === 'Enter' && newName.trim() && createMutation.mutate(newName.trim())}
             />
-            <p className="text-xs text-muted-foreground">
-              You can add address, logo and billing details after creating it.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('companies.createHint')}</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNew(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700"
               disabled={!newName.trim() || createMutation.isPending}
               onClick={() => createMutation.mutate(newName.trim())}
             >
-              {createMutation.isPending ? 'Creating…' : 'Create'}
+              {createMutation.isPending ? t('companies.creating') : t('companies.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
