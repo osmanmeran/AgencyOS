@@ -90,18 +90,18 @@ src/               — React frontend (Vite)
 ├── components/    — Shared UI components
 ├── hooks/         — Custom React hooks
 ├── lib/           — Utility functions
-├── pages/         — Route-level page components (56 pages)
+├── pages/         — Route-level page components (58 pages)
 └── pages.config.js — Route definitions (with permissions)
 
 server/            — Express.js backend
 ├── app.js         — Express app setup
 ├── server.js      — HTTP/HTTPS + WebSocket server
 ├── db.js          — SQLite setup + migrations
-├── routes/        — 11 API route modules
+├── routes/        — 13 API route modules
 ├── services/      — Business logic (auth, entities, email, etc.)
 ├── middleware/     — Auth, permissions, error handling
 ├── lib/           — Logger, WebSocket helpers
-└── migrations/    — 12 migration files
+└── migrations/    — 13 migration files
 
 entities/          — JSON schemas for 25+ entity types
 tests/             — Vitest test suite (server-side only)
@@ -175,6 +175,38 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 - **Pre-commit hooks** — husky + lint-staged now run `eslint --fix` (scoped to the files ESLint already covers) and `prettier --write` on staged files
 - **JSDoc pass** — added to exported functions across `server/services/` and `src/lib/` (documentation only — neither directory is covered by `jsconfig.json`'s typecheck)
 - **`ARCHITECTURE.md` added** — documents the entity system, permission model, auth, data flow, and real-time sync
+
+### Cleanup + hardening pass (2026-07-07)
+
+**Dead code removed**
+
+- Deleted `ItineraryAgent.jsx` (orphaned AI-chat experiment referencing a `db.agents` API that never existed) and `Invoices.jsx` (superseded by the invoice tab in `Revenue.jsx`)
+- Removed the unused `react-markdown` and `three` dependencies, the broken "Test Notifications" button in `TestingArea.jsx` (hit a nonexistent endpoint), and stale scratch files (`bin/tunnel.sh`, `OPTIMIZATION_PROMPT.txt`)
+
+**Security**
+
+- **Document access control** — listing/downloading/deleting a document now verifies the caller can access the entity it's attached to (fixes an IDOR where any authenticated user could fetch any document by id)
+- **Email templates escaped** — user-controlled fields (client name, destination, notes) are HTML-escaped before interpolation into email HTML
+- **Email casing normalized** — every user write and lookup lowercases/trims, so password login and SSO agree and mixed-case duplicate accounts can't be created
+- **Test-user endpoints blocked in production** — `/api/testing/create-test-user*` (fixed-password accounts) return 403 when `NODE_ENV=production`
+- **Audit redaction** — password/token/secret fields are stripped before request bodies are written to the audit trail
+- **Misc** — `uid()` in stored upload filenames (no same-ms collisions), `encodeURIComponent` on `Content-Disposition` filenames
+
+**Stability**
+
+- **Global crash handlers** — `uncaughtException`/`unhandledRejection` log and exit cleanly so Railway restarts from a known-good state instead of serving corrupt state
+- **External-call timeouts** — Microsoft Graph, Nominatim, Wikipedia, and SMTP calls now time out instead of hanging a request indefinitely
+- **Report scheduler overlap guard** — skips a tick if the previous email batch is still running
+- **WebSocket hardening** — faulty sockets are terminated (and cleaned from the client map); added a server-level error handler
+
+**Performance**
+
+- **gzip compression** enabled on API responses
+- **React Query** — `staleTime` (60s) and `gcTime` (10m) set to cut needless refetches and cap long-session memory
+- **Bundle** — MUI split into its own Vite chunk; dropping `three` shrank the vendor chunk from ~1.34 MB to ~1.09 MB
+- **Dashboard** — filter/sort passes and `getDayEvents` memoized
+- **SQL over JS** — `/api/b2b/quotes` scopes by `client_id` in SQL; `/api/suggestions` is bounded with `LIMIT/OFFSET`
+- **Entity indexes (migration 013)** — composite `(type, json_extract(...))` indexes on `status`, `due_date`, `proposal_status`, `client_id`, `approval_status` for the report/reminder/B2B hot paths; the migration guards with a `json_valid` check so it can never crash startup on a malformed row
 
 ## Improvement Roadmap
 
