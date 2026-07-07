@@ -11,6 +11,7 @@ import { format, parseISO } from 'date-fns';
 import { getQuote } from '@/lib/b2bApi';
 import { formatCurrency } from '@/lib/formatters';
 import { QuoteTripInfo, QuoteLineExtras } from '@/components/b2b/QuoteRichDetails';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   submitted: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
@@ -20,15 +21,8 @@ const STATUS_COLORS = {
   declined: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
 };
 
-const STATUS_MESSAGES = {
-  submitted: 'Your quote request has been received and is waiting to be reviewed.',
-  reviewing: 'Your travel agent is reviewing this request.',
-  quoted: 'Your travel agent has responded — they will be in touch to finalize details.',
-  accepted: 'This quote has been accepted.',
-  declined: 'This quote request was declined. Contact your travel agent for details.',
-};
-
 export default function ClientQuoteDetails() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const quoteId = searchParams.get('id');
 
@@ -45,7 +39,7 @@ export default function ClientQuoteDetails() {
   }
 
   if (!quote) {
-    return <div className="text-center py-20">Quote not found or access denied</div>;
+    return <div className="text-center py-20">{t('clientQuoteDetails.notFoundOrDenied')}</div>;
   }
 
   return (
@@ -53,7 +47,7 @@ export default function ClientQuoteDetails() {
       <Link to={createPageUrl('ClientQuotes')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Quote Requests
+          {t('clientQuoteDetails.backToQuotes')}
         </Button>
       </Link>
 
@@ -62,28 +56,30 @@ export default function ClientQuoteDetails() {
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">{quote.title}</h1>
             <p className="text-sm text-muted-foreground">
-              Requested {format(parseISO(quote.created_date), 'MMM d, yyyy')}
+              {t('clientQuotes.requested', { date: format(parseISO(quote.created_date), 'MMM d, yyyy') })}
             </p>
           </div>
-          <Badge className={STATUS_COLORS[quote.status] || 'bg-muted text-foreground'}>{quote.status}</Badge>
+          <Badge className={STATUS_COLORS[quote.status] || 'bg-muted text-foreground'}>
+            {t(`quotes.status.${quote.status}`)}
+          </Badge>
         </div>
 
-        {STATUS_MESSAGES[quote.status] && (
+        {quote.status && STATUS_COLORS[quote.status] && (
           <div className="p-3 bg-muted border border-border rounded-lg text-sm text-muted-foreground mb-2">
-            {STATUS_MESSAGES[quote.status]}
+            {t(`quotes.statusMessage.${quote.status}`)}
           </div>
         )}
       </Card>
 
       {(quote.destination || quote.start_date || quote.passengers?.length > 0) && (
         <Card className="p-8 bg-card shadow-lg">
-          <h2 className="text-xl font-bold text-foreground mb-4">Trip & Travellers</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('clientQuoteDetails.tripAndTravellers')}</h2>
           <QuoteTripInfo quote={quote} />
         </Card>
       )}
 
       <Card className="p-8 bg-card shadow-lg">
-        <h2 className="text-2xl font-bold text-foreground mb-6">Requested Services</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">{t('clientQuoteDetails.requestedServices')}</h2>
         {quote.items && quote.items.length > 0 ? (
           <div className="space-y-4">
             {quote.items.map((item, index) => (
@@ -110,7 +106,7 @@ export default function ClientQuoteDetails() {
 
             <div className="pt-6 mt-6 border-t-2 border-border">
               <div className="flex justify-between items-center">
-                <span className="text-2xl font-bold text-foreground">Total</span>
+                <span className="text-2xl font-bold text-foreground">{t('clientProposalDetails.total')}</span>
                 <span className="text-4xl font-bold text-green-700 dark:text-green-300">
                   {formatCurrency(quote.total || 0, quote.currency)}
                 </span>
@@ -118,13 +114,13 @@ export default function ClientQuoteDetails() {
             </div>
           </div>
         ) : (
-          <p className="text-muted-foreground">No services in this quote</p>
+          <p className="text-muted-foreground">{t('clientQuoteDetails.noServicesInQuote')}</p>
         )}
       </Card>
 
       {quote.notes && (
         <Card className="p-8 bg-card shadow-lg">
-          <h2 className="text-xl font-bold text-foreground mb-4">Notes</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('common.notes')}</h2>
           <p className="text-foreground whitespace-pre-wrap">{quote.notes}</p>
         </Card>
       )}

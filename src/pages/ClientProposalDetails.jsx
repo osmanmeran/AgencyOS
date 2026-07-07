@@ -13,6 +13,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
 import MessageThread from '../components/messaging/MessageThread';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   draft: 'bg-muted text-foreground',
@@ -23,6 +24,7 @@ const STATUS_COLORS = {
 };
 
 export default function ClientProposalDetails() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const proposalId = searchParams.get('id');
   const queryClient = useQueryClient();
@@ -40,11 +42,11 @@ export default function ClientProposalDetails() {
     useMutation({
       mutationFn: (/** @type {any} */ status) => db.entities.Proposal.update(proposalId, { ...proposal, status }),
       onSuccess: () => {
-        showSuccess('Proposal updated');
+        showSuccess(t('proposals.updateSuccess'));
         queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
         queryClient.invalidateQueries({ queryKey: ['myProposals', client?.id] });
       },
-      onError: (error) => showError('Failed to update proposal', error.message),
+      onError: (error) => showError(t('proposals.updateError'), error.message),
     })
   );
 
@@ -53,7 +55,7 @@ export default function ClientProposalDetails() {
   }
 
   if (!proposal || !client || proposal.client_id !== client.id) {
-    return <div className="text-center py-20">Proposal not found or access denied</div>;
+    return <div className="text-center py-20">{t('clientProposalDetails.notFoundOrDenied')}</div>;
   }
 
   return (
@@ -61,7 +63,7 @@ export default function ClientProposalDetails() {
       <Link to={createPageUrl('ClientProposals')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Proposals
+          {t('clientProposalDetails.backToProposals')}
         </Button>
       </Link>
 
@@ -71,13 +73,13 @@ export default function ClientProposalDetails() {
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">{proposal.title}</h1>
           </div>
-          <Badge className={STATUS_COLORS[proposal.status]}>{proposal.status}</Badge>
+          <Badge className={STATUS_COLORS[proposal.status]}>{t(`proposals.status.${proposal.status}`)}</Badge>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-border">
           {proposal.destination && (
             <div>
-              <div className="text-sm text-muted-foreground mb-1">Destination</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('clientProposalDetails.destination')}</div>
               <div className="font-semibold text-foreground">{proposal.destination}</div>
             </div>
           )}
@@ -85,7 +87,7 @@ export default function ClientProposalDetails() {
             <div>
               <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                Travel Dates
+                {t('clientProposalDetails.travelDates')}
               </div>
               <div className="font-semibold text-foreground">
                 {format(new Date(proposal.start_date), 'MMM d')} - {format(new Date(proposal.end_date), 'MMM d, yyyy')}
@@ -96,10 +98,15 @@ export default function ClientProposalDetails() {
             <div>
               <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                Travelers
+                {t('clientProposalDetails.travelers')}
               </div>
               <div className="font-semibold text-foreground">
-                {proposal.num_travelers} person{proposal.num_travelers > 1 ? 's' : ''}
+                {t(
+                  proposal.num_travelers > 1
+                    ? 'clientProposalDetails.personPlural'
+                    : 'clientProposalDetails.personSingular',
+                  { count: proposal.num_travelers },
+                )}
               </div>
             </div>
           )}
@@ -108,7 +115,7 @@ export default function ClientProposalDetails() {
 
       {/* Services */}
       <Card className="p-8 bg-card shadow-lg">
-        <h2 className="text-2xl font-bold text-foreground mb-6">Services Included</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">{t('clientProposalDetails.servicesIncluded')}</h2>
         {proposal.services && proposal.services.length > 0 ? (
           <div className="space-y-4">
             {proposal.services.map((service, index) => {
@@ -161,7 +168,7 @@ export default function ClientProposalDetails() {
 
             <div className="pt-6 mt-6 border-t-2 border-border">
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-2xl font-bold text-foreground">Total</span>
+                <span className="text-2xl font-bold text-foreground">{t('clientProposalDetails.total')}</span>
                 <div className="text-4xl font-bold text-green-700 dark:text-green-300 flex items-center gap-2">
                   {(() => {
                     const currencies = [
@@ -200,14 +207,14 @@ export default function ClientProposalDetails() {
             </div>
           </div>
         ) : (
-          <p className="text-muted-foreground">No services added</p>
+          <p className="text-muted-foreground">{t('clientProposalDetails.noServicesAdded')}</p>
         )}
       </Card>
 
       {/* Notes */}
       {proposal.notes && (
         <Card className="p-8 bg-card shadow-lg">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Notes</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">{t('clientProposalDetails.notes')}</h2>
           <p className="text-foreground whitespace-pre-wrap">{proposal.notes}</p>
         </Card>
       )}
@@ -215,7 +222,7 @@ export default function ClientProposalDetails() {
       {/* Terms */}
       {proposal.terms_and_conditions && (
         <Card className="p-8 bg-muted">
-          <h2 className="text-xl font-bold text-foreground mb-4">Terms & Conditions</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('clientProposalDetails.termsAndConditions')}</h2>
           <p className="text-foreground text-sm whitespace-pre-wrap">{proposal.terms_and_conditions}</p>
         </Card>
       )}
@@ -223,10 +230,8 @@ export default function ClientProposalDetails() {
       {/* Action Buttons */}
       {proposal.status === 'sent' && (
         <Card className="p-6 bg-card shadow-lg">
-          <h3 className="text-lg font-bold text-foreground mb-4">Response Required</h3>
-          <p className="text-muted-foreground mb-6">
-            Please review the proposal and let us know if you'd like to proceed.
-          </p>
+          <h3 className="text-lg font-bold text-foreground mb-4">{t('clientProposalDetails.responseRequired')}</h3>
+          <p className="text-muted-foreground mb-6">{t('clientProposalDetails.responseRequiredBody')}</p>
           <div className="flex gap-4">
             <Button
               className="flex-1 bg-green-600 hover:bg-green-700"
@@ -234,7 +239,7 @@ export default function ClientProposalDetails() {
               onClick={() => updateProposalMutation.mutate('accepted')}
             >
               <CheckCircle className="w-5 h-5 mr-2" />
-              Accept Proposal
+              {t('clientProposalDetails.acceptProposal')}
             </Button>
             <Button
               className="flex-1 bg-red-600 hover:bg-red-700"
@@ -242,7 +247,7 @@ export default function ClientProposalDetails() {
               onClick={() => updateProposalMutation.mutate('rejected')}
             >
               <XCircle className="w-5 h-5 mr-2" />
-              Decline Proposal
+              {t('clientProposalDetails.declineProposal')}
             </Button>
           </div>
         </Card>
@@ -253,8 +258,8 @@ export default function ClientProposalDetails() {
           <div className="flex items-center gap-3 text-green-800 dark:text-green-300">
             <CheckCircle className="w-6 h-6" />
             <div>
-              <h3 className="font-bold">Proposal Accepted</h3>
-              <p className="text-sm">Your travel agent will be in touch shortly to finalize the booking.</p>
+              <h3 className="font-bold">{t('clientProposalDetails.acceptedTitle')}</h3>
+              <p className="text-sm">{t('clientProposalDetails.acceptedBody')}</p>
             </div>
           </div>
         </Card>

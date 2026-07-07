@@ -11,8 +11,10 @@ import { ArrowLeft, Download, Calendar, CheckCircle, AlertCircle } from 'lucide-
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ClientInvoiceDetails() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const invoiceId = searchParams.get('id');
   const client = useMyClient();
@@ -40,7 +42,7 @@ export default function ClientInvoiceDetails() {
   }
 
   if (!invoice || (client && invoice.client_id !== client.id)) {
-    return <div className="text-center py-20">Invoice not found</div>;
+    return <div className="text-center py-20">{t('clientInvoiceDetails.notFound')}</div>;
   }
 
   const isOverdue = invoice.status !== 'paid' && isBefore(parseISO(invoice.due_date), new Date());
@@ -56,19 +58,19 @@ export default function ClientInvoiceDetails() {
         <Link to={createPageUrl('ClientInvoices')}>
           <Button variant="ghost" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Invoices
+            {t('clientInvoiceDetails.backToInvoices')}
           </Button>
         </Link>
         <Button onClick={handlePrint} variant="outline">
           <Download className="w-4 h-4 mr-2" />
-          Print / PDF
+          {t('clientInvoiceDetails.printPdf')}
         </Button>
       </div>
 
       <Card className="p-8 bg-card shadow-lg print:shadow-none">
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">INVOICE</h1>
+            <h1 className="text-4xl font-bold text-foreground mb-2">{t('clientInvoiceDetails.invoiceLabel')}</h1>
             <div className="text-lg text-muted-foreground">{invoice.invoice_number}</div>
           </div>
           <Badge
@@ -80,7 +82,7 @@ export default function ClientInvoiceDetails() {
                   : 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300'
             }`}
           >
-            {isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Pending'}
+            {isPaid ? t('invoices.status.paid') : isOverdue ? t('invoices.status.overdue') : t('common.pending')}
           </Badge>
         </div>
 
@@ -96,8 +98,10 @@ export default function ClientInvoiceDetails() {
               )}
               <span className={isOverdue ? 'text-red-800 dark:text-red-300' : 'text-orange-800 dark:text-orange-300'}>
                 {isOverdue
-                  ? `This invoice is overdue. Please make payment as soon as possible.`
-                  : `Payment due by ${format(parseISO(invoice.due_date), 'MMMM d, yyyy')}`}
+                  ? t('clientInvoiceDetails.overdueMessage')
+                  : t('clientInvoiceDetails.paymentDueBy', {
+                      date: format(parseISO(invoice.due_date), 'MMMM d, yyyy'),
+                    })}
               </span>
             </div>
           </div>
@@ -107,31 +111,37 @@ export default function ClientInvoiceDetails() {
           <div className="p-4 rounded-lg mb-6 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 print:hidden">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-300" />
-              <span className="text-green-800 dark:text-green-300">This invoice has been paid in full. Thank you!</span>
+              <span className="text-green-800 dark:text-green-300">{t('clientInvoiceDetails.paidThankYou')}</span>
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <div>
-            <div className="text-sm text-muted-foreground mb-1">Bill To:</div>
+            <div className="text-sm text-muted-foreground mb-1">{t('clientInvoiceDetails.billTo')}</div>
             <div className="font-bold text-lg text-foreground">{billingCompany?.name || client?.name}</div>
             {billingCompany?.tax_id && (
-              <div className="text-muted-foreground mt-1">Tax ID: {billingCompany.tax_id}</div>
+              <div className="text-muted-foreground mt-1">
+                {t('clientInvoiceDetails.taxIdLabel')} {billingCompany.tax_id}
+              </div>
             )}
             {billingCompany?.invoice_address && (
               <div className="text-muted-foreground mt-1 whitespace-pre-wrap">{billingCompany.invoice_address}</div>
             )}
-            {billingCompany && <div className="text-muted-foreground mt-1">Attn: {client?.name}</div>}
+            {billingCompany && (
+              <div className="text-muted-foreground mt-1">
+                {t('clientInvoiceDetails.attn')} {client?.name}
+              </div>
+            )}
             {client?.email && <div className="text-muted-foreground">{client.email}</div>}
           </div>
           <div className="text-right">
             <div className="mb-4">
-              <div className="text-sm text-muted-foreground">Issue Date:</div>
+              <div className="text-sm text-muted-foreground">{t('clientInvoiceDetails.issueDate')}</div>
               <div className="font-semibold text-foreground">{format(parseISO(invoice.issue_date), 'MMM d, yyyy')}</div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Due Date:</div>
+              <div className="text-sm text-muted-foreground">{t('clientInvoiceDetails.dueDate')}</div>
               <div className="font-semibold text-foreground">{format(parseISO(invoice.due_date), 'MMM d, yyyy')}</div>
             </div>
           </div>
@@ -142,10 +152,10 @@ export default function ClientInvoiceDetails() {
           <table className="w-full">
             <thead className="border-b-2 border-border">
               <tr className="text-left">
-                <th className="pb-3 text-muted-foreground">Description</th>
-                <th className="pb-3 text-muted-foreground text-center">Qty</th>
-                <th className="pb-3 text-muted-foreground text-right">Price</th>
-                <th className="pb-3 text-muted-foreground text-right">Amount</th>
+                <th className="pb-3 text-muted-foreground">{t('clientInvoiceDetails.descriptionCol')}</th>
+                <th className="pb-3 text-muted-foreground text-center">{t('clientInvoiceDetails.qtyCol')}</th>
+                <th className="pb-3 text-muted-foreground text-right">{t('clientInvoiceDetails.priceCol')}</th>
+                <th className="pb-3 text-muted-foreground text-right">{t('clientInvoiceDetails.amountCol')}</th>
               </tr>
             </thead>
             <tbody>
@@ -165,27 +175,29 @@ export default function ClientInvoiceDetails() {
         <div className="flex justify-end">
           <div className="w-80 space-y-3">
             <div className="flex justify-between text-lg">
-              <span className="text-muted-foreground">Subtotal:</span>
+              <span className="text-muted-foreground">{t('clientInvoiceDetails.subtotal')}</span>
               <span className="font-semibold">${invoice.subtotal?.toFixed(2)}</span>
             </div>
             {invoice.tax_amount > 0 && (
               <div className="flex justify-between text-lg">
-                <span className="text-muted-foreground">Tax ({invoice.tax_rate}%):</span>
+                <span className="text-muted-foreground">
+                  {t('clientInvoiceDetails.taxLabel', { rate: invoice.tax_rate })}
+                </span>
                 <span className="font-semibold">${invoice.tax_amount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between text-2xl font-bold border-t-2 pt-3">
-              <span>Total:</span>
+              <span>{t('clientInvoiceDetails.total')}</span>
               <span className="text-green-700 dark:text-green-300">${invoice.total_amount.toFixed(2)}</span>
             </div>
             {invoice.amount_paid > 0 && (
               <>
                 <div className="flex justify-between text-lg text-green-600 dark:text-green-300">
-                  <span>Amount Paid:</span>
+                  <span>{t('clientInvoiceDetails.amountPaid')}</span>
                   <span className="font-semibold">-${invoice.amount_paid.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold border-t pt-3">
-                  <span>Amount Due:</span>
+                  <span>{t('clientInvoiceDetails.amountDue')}</span>
                   <span
                     className={
                       invoice.amount_due > 0
@@ -203,7 +215,7 @@ export default function ClientInvoiceDetails() {
 
         {invoice.payment_terms && (
           <div className="mt-8 pt-8 border-t border-border">
-            <div className="text-sm font-semibold text-foreground mb-1">Payment Terms:</div>
+            <div className="text-sm font-semibold text-foreground mb-1">{t('clientInvoiceDetails.paymentTerms')}</div>
             <div className="text-muted-foreground">{invoice.payment_terms}</div>
           </div>
         )}
