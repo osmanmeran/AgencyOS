@@ -26,24 +26,30 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
 
     for (const row of rows) {
       const name = row['name']?.trim();
-      const categoryName = row['category']?.trim();
+      // Multiple categories can be listed separated by ; or ,
+      const categoryNames = (row['category'] || '')
+        .split(/[;,]/)
+        .map((c) => c.trim())
+        .filter(Boolean);
 
       if (!name) {
         failed.push({ row, reason: 'Missing required field: name' });
         continue;
       }
 
-      const matchedCategory = categories.find((c) => c.name.toLowerCase() === categoryName?.toLowerCase());
+      const matchedCategoryIds = categoryNames
+        .map((cn) => categories.find((c) => c.name.toLowerCase() === cn.toLowerCase()))
+        .filter(Boolean)
+        .map((c) => c.id);
 
-      if (!matchedCategory) {
-        failed.push({ row, reason: `Category "${categoryName}" not found` });
+      if (matchedCategoryIds.length === 0) {
+        failed.push({ row, reason: `Category "${row['category']}" not found` });
         continue;
       }
 
       try {
-        await db.entities.Supplier.create({
+        const created = await db.entities.Supplier.create({
           name,
-          category_id: matchedCategory.id,
           contact_person: row['contact_person'] || '',
           email: row['email'] || '',
           phone: row['phone'] || '',
@@ -53,6 +59,17 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
           notes: row['notes'] || '',
           rating: row['rating'] ? parseInt(row['rating']) : undefined,
         });
+        // A supplier's category comes from its subcategories (service lines);
+        // seed one default subcategory per matched category so it shows up
+        // filtered right away.
+        for (const categoryId of matchedCategoryIds) {
+          const category = categories.find((c) => c.id === categoryId);
+          await db.entities.SupplierSubcategory.create({
+            supplier_id: created.id,
+            category_id: categoryId,
+            name: category?.name || 'General',
+          });
+        }
         succeeded.push(row);
       } catch (err) {
         failed.push({ row, reason: err?.message || 'Unknown error' });
@@ -96,8 +113,8 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
             <p className="font-semibold mb-1">Required columns:</p>
             <p>
               <span className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">name</span>,{' '}
-              <span className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">category</span> (must match an
-              existing category name)
+              <span className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">category</span> (must match
+              existing category name(s); separate multiple categories with a semicolon)
             </p>
             <p className="mt-1 text-blue-600 dark:text-blue-300">
               Optional: contact_person, email, phone, website, city, area, notes, rating

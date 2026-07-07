@@ -108,7 +108,6 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
           name: data.name,
           email: data.email,
           phone: data.phone,
-          category_id: 'general',
         });
         return newSupplier;
       },

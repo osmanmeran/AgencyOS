@@ -86,24 +86,30 @@ const OCCUPANCY_OPTIONS = [
 export default function SupplierPricingManager({ supplierId }) {
   const queryClient = useQueryClient();
 
-  const { data: supplier } = /** @type {any} */ (
+  const { data: supplierCategories = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
-      queryKey: ['supplier', supplierId],
-      queryFn: () => db.entities.Supplier.get(supplierId),
+      queryKey: ['supplierCategories'],
+      queryFn: () => db.entities.SupplierCategory.list(),
+    })
+  );
+
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierSubcategories', supplierId],
+      queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
       enabled: !!supplierId,
     })
   );
 
-  const { data: supplierCategory } = /** @type {any} */ (
-    useQuery({
-      queryKey: ['supplierCategory', supplier?.category_id],
-      queryFn: () => db.entities.SupplierCategory.get(supplier.category_id),
-      enabled: !!supplier?.category_id,
-    })
-  );
-
-  const isHotel = supplierCategory?.name?.toLowerCase().includes('hotel');
-  const isTransfer = supplierCategory?.name?.toLowerCase().includes('transfer');
+  // Category now lives on each subcategory (service line), not on the
+  // supplier — a supplier's "categories" are just the distinct set across
+  // its subcategories. Used here to pick sensible pricing defaults.
+  const subcategoryCategoryIds = new Set(subcategories.map((sc) => sc.category_id).filter(Boolean));
+  const categoryNames = supplierCategories
+    .filter((c) => subcategoryCategoryIds.has(c.id))
+    .map((c) => c.name?.toLowerCase() || '');
+  const isHotel = categoryNames.some((n) => n.includes('hotel'));
+  const isTransfer = categoryNames.some((n) => n.includes('transfer'));
   const defaultUnit = isHotel ? 'per_night' : isTransfer ? 'per_car' : 'per_person';
   const defaultCurrency = isHotel ? 'EUR' : 'USD';
 
@@ -119,7 +125,7 @@ export default function SupplierPricingManager({ supplierId }) {
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrSelectedRows, setOcrSelectedRows] = useState([]);
 
-  const [subcatForm, setSubcatForm] = useState({ name: '', description: '', sort_order: 0 });
+  const [subcatForm, setSubcatForm] = useState({ name: '', category_id: '', description: '', sort_order: 0 });
 
   const freshPricingForm = () => ({
     name: '',
@@ -164,14 +170,6 @@ export default function SupplierPricingManager({ supplierId }) {
     setImageUploading(false);
   };
 
-  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
-    useQuery({
-      queryKey: ['supplierSubcategories', supplierId],
-      queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
-      enabled: !!supplierId,
-    })
-  );
-
   const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['supplierPricings', supplierId],
@@ -187,8 +185,9 @@ export default function SupplierPricingManager({ supplierId }) {
         db.entities.SupplierSubcategory.create({ ...data, supplier_id: supplierId }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
+        queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
         setSubcatModalOpen(false);
-        setSubcatForm({ name: '', description: '', sort_order: 0 });
+        setSubcatForm({ name: '', category_id: '', description: '', sort_order: 0 });
       },
     })
   );
@@ -199,6 +198,7 @@ export default function SupplierPricingManager({ supplierId }) {
         db.entities.SupplierSubcategory.update(id, data),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
+        queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
         setSubcatModalOpen(false);
         setEditingSubcat(null);
       },
@@ -208,7 +208,10 @@ export default function SupplierPricingManager({ supplierId }) {
   const deleteSubcatMutation = /** @type {any} */ (
     useMutation({
       mutationFn: (/** @type {any} */ id) => db.entities.SupplierSubcategory.delete(id),
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
+        queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
+      },
     })
   );
 
@@ -249,10 +252,15 @@ export default function SupplierPricingManager({ supplierId }) {
   const openSubcatModal = (subcat = null) => {
     if (subcat) {
       setEditingSubcat(subcat);
-      setSubcatForm({ name: subcat.name, description: subcat.description || '', sort_order: subcat.sort_order || 0 });
+      setSubcatForm({
+        name: subcat.name,
+        category_id: subcat.category_id || '',
+        description: subcat.description || '',
+        sort_order: subcat.sort_order || 0,
+      });
     } else {
       setEditingSubcat(null);
-      setSubcatForm({ name: '', description: '', sort_order: 0 });
+      setSubcatForm({ name: '', category_id: '', description: '', sort_order: 0 });
     }
     setSubcatModalOpen(true);
   };
@@ -298,6 +306,10 @@ export default function SupplierPricingManager({ supplierId }) {
 
   const handleSubcatSubmit = (e) => {
     e.preventDefault();
+    if (!subcatForm.category_id) {
+      showError('Select a category for this subcategory');
+      return;
+    }
     if (editingSubcat) {
       updateSubcatMutation.mutate({ id: editingSubcat.id, data: subcatForm });
     } else {
@@ -424,15 +436,19 @@ export default function SupplierPricingManager({ supplierId }) {
         {/* Subcategories Tab */}
         <TabsContent value="subcategories">
           <div className="flex justify-end mb-4">
-            <Button onClick={() => openSubcatModal()} size="sm">
+            <Button onClick={() => openSubcatModal()} size="sm" disabled={supplierCategories.length === 0}>
               <Plus className="w-4 h-4 mr-2" />
               Add Subcategory
             </Button>
           </div>
 
-          {subcategories.length === 0 ? (
+          {supplierCategories.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              No categories exist yet — create one on the Categories page first.
+            </div>
+          ) : subcategories.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No subcategories yet. Create subcategories to organize your services.
+              No subcategories yet. Add one to place this supplier under a category.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -442,7 +458,14 @@ export default function SupplierPricingManager({ supplierId }) {
                   <Card key={subcat.id} className="p-4 bg-muted group hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-semibold text-foreground">{subcat.name}</h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-foreground">{subcat.name}</h3>
+                          {subcat.category_id && (
+                            <Badge variant="outline" className="text-xs">
+                              {supplierCategories.find((c) => c.id === subcat.category_id)?.name || 'Unknown'}
+                            </Badge>
+                          )}
+                        </div>
                         {subcat.description && (
                           <p className="text-sm text-muted-foreground mt-1">{subcat.description}</p>
                         )}
@@ -658,6 +681,27 @@ export default function SupplierPricingManager({ supplierId }) {
                 placeholder="e.g., Economy, Business, Deluxe"
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Category *</Label>
+              <Select
+                value={subcatForm.category_id}
+                onValueChange={(v) => setSubcatForm({ ...subcatForm, category_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {supplierCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Determines which category this supplier shows up under (e.g. Guided Tours, Transfers).
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="subcat_desc">Description</Label>

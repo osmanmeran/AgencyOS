@@ -37,6 +37,7 @@ import {
   X,
   Check,
 } from 'lucide-react';
+import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 
 const CATEGORY_ICONS = {
   flight: {
@@ -115,6 +116,10 @@ export default function ItineraryBuilder() {
   const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({ queryKey: ['supplierCategories'], queryFn: () => db.entities.SupplierCategory.list() })
   );
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({ queryKey: ['allSupplierSubcategories'], queryFn: () => db.entities.SupplierSubcategory.list() })
+  );
+  const supplierCategoryMap = categoryIdsBySupplier(subcategories);
 
   const selectedTrip = trips.find((t) => t.id === selectedTripId);
 
@@ -261,7 +266,9 @@ export default function ItineraryBuilder() {
   const selectedSupplier = suppliers.find((s) => s.id === formData.supplier_id);
   const supplierServices = allServices.filter((s) => s.supplier_id === formData.supplier_id);
   const supplierPricings = allPricings.filter((p) => p.supplier_id === formData.supplier_id && p.is_active !== false);
-  const supplierCategory = selectedSupplier ? categories.find((c) => c.id === selectedSupplier.category_id) : null;
+  const supplierCategories = selectedSupplier
+    ? categories.filter((c) => getSupplierCategoryIds(supplierCategoryMap, selectedSupplier.id).includes(c.id))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -652,8 +659,10 @@ export default function ItineraryBuilder() {
                   <div className="flex-1">
                     <div className="font-semibold text-foreground text-sm">{selectedSupplier.name}</div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                      {supplierCategory && (
-                        <span className="text-blue-600 dark:text-blue-300">{supplierCategory.name}</span>
+                      {supplierCategories.length > 0 && (
+                        <span className="text-blue-600 dark:text-blue-300">
+                          {supplierCategories.map((c) => c.name).join(', ')}
+                        </span>
                       )}
                       {selectedSupplier.city && (
                         <span className="flex items-center gap-0.5">
@@ -704,7 +713,9 @@ export default function ItineraryBuilder() {
                         <div className="p-3 text-center text-sm text-muted-foreground">No suppliers found</div>
                       ) : (
                         filteredSuppliers.map((s) => {
-                          const cat = categories.find((c) => c.id === s.category_id);
+                          const cat = categories.find((c) =>
+                            getSupplierCategoryIds(supplierCategoryMap, s.id).includes(c.id),
+                          );
                           return (
                             <button
                               key={s.id}

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SendHorizontal, CheckCircle2, XCircle, Building2, Plus } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
+import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 
 const STATUS_STYLES = {
   pending:
@@ -36,6 +37,14 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
   });
   const queryClient = useQueryClient();
 
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+  const supplierCategoryMap = categoryIdsBySupplier(subcategories);
+
   const sendRFP = /** @type {any} */ (
     useMutation({
       mutationFn: (data) => db.entities.BookingRequest.create(data),
@@ -48,7 +57,9 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
     })
   );
 
-  const filteredSuppliers = selectedCategory ? suppliers.filter((s) => s.category_id === selectedCategory) : suppliers;
+  const filteredSuppliers = selectedCategory
+    ? suppliers.filter((s) => getSupplierCategoryIds(supplierCategoryMap, s.id).includes(selectedCategory))
+    : suppliers;
 
   const handleSend = () => {
     selectedSuppliers.forEach((supplierId) => {
@@ -189,7 +200,11 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
                       {s.city} {s.area ? `· ${s.area}` : ''}
                     </p>
                   </div>
-                  <Badge className="ml-auto">{categories.find((c) => c.id === s.category_id)?.name || ''}</Badge>
+                  <div className="ml-auto flex gap-1 flex-wrap justify-end">
+                    {getSupplierCategoryIds(supplierCategoryMap, s.id).map((cid) => (
+                      <Badge key={cid}>{categories.find((c) => c.id === cid)?.name || ''}</Badge>
+                    ))}
+                  </div>
                 </label>
               );
             })}

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { X, Calendar, Save, RefreshCw, AlertCircle, Copy } from 'lucide-react';
+import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 
 const CURRENCIES = {
   USD: '$',
@@ -78,6 +79,14 @@ export default function ServiceLineEditor({
     })
   );
 
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+  const supplierCategoryMap = categoryIdsBySupplier(subcategories);
+
   const categoryName = (formData.category || '').toLowerCase();
   const isLodging =
     categoryName.includes('hotel') ||
@@ -96,7 +105,7 @@ export default function ServiceLineEditor({
     (c) => formData.category && (c.id === formData.category || c.name === formData.category),
   );
   const filteredSuppliers = selectedCategoryObj
-    ? suppliers.filter((s) => s.category_id === selectedCategoryObj.id)
+    ? suppliers.filter((s) => getSupplierCategoryIds(supplierCategoryMap, s.id).includes(selectedCategoryObj.id))
     : suppliers;
 
   const calcQuantity = () => {

@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { applyMarkup } from '@/lib/pricing';
+import { createSupplierWithCategory } from '@/lib/supplierCategories';
 import { Plus, Trash2, TrendingUp, Building2, RefreshCw, ArrowRightLeft, Users, X, Save } from 'lucide-react';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
@@ -145,9 +146,11 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
 
   const createSupplierMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
+      mutationFn: (/** @type {any} */ data) =>
+        createSupplierWithCategory(db, data, categories[0]?.id, categories[0]?.name),
       onSuccess: async (/** @type {any} */ created) => {
         await refetchSuppliers();
+        queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
         if (addProviderForIndex !== null) updateService(addProviderForIndex, 'supplier_id', created.id);
         setAddProviderOpen(false);
         setNewProvider({ name: '', email: '', phone: '', city: '' });
@@ -815,7 +818,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                createSupplierMutation.mutate({ ...newProvider, category_id: categories[0]?.id || '' });
+                createSupplierMutation.mutate(newProvider);
               }}
               className="space-y-4 mt-2"
             >

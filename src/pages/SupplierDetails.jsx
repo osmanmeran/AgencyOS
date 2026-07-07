@@ -36,6 +36,7 @@ import SupplierReviews from '../components/suppliers/SupplierReviews';
 import BookingEmailSender from '../components/booking/BookingEmailSender';
 import SupplierBookingForm from '../components/suppliers/SupplierBookingForm';
 import { usePermissions } from '../components/permissions/PermissionContext';
+import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 
 export default function SupplierDetails() {
   const [searchParams] = useSearchParams();
@@ -62,12 +63,23 @@ export default function SupplierDetails() {
     })
   );
 
-  const { data: category } = /** @type {any} */ (
+  const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
-      queryKey: ['category', supplier?.category_id],
-      queryFn: () => db.entities.SupplierCategory.get(supplier.category_id),
-      enabled: !!supplier?.category_id,
+      queryKey: ['supplierCategories'],
+      queryFn: () => db.entities.SupplierCategory.list(),
     })
+  );
+
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierSubcategories', supplierId],
+      queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
+      enabled: !!supplierId,
+    })
+  );
+  const supplierCategoryMap = categoryIdsBySupplier(subcategories);
+  const selectedCategories = categories.filter((c) =>
+    getSupplierCategoryIds(supplierCategoryMap, supplierId).includes(c.id),
   );
 
   const updateMutation = /** @type {any} */ (
@@ -75,7 +87,6 @@ export default function SupplierDetails() {
       mutationFn: (/** @type {any} */ data) =>
         db.entities.Supplier.update(supplierId, {
           name: data.name,
-          category_id: supplier.category_id,
           contact_person: data.contact_person || '',
           email: data.email || '',
           phone: data.phone || '',
@@ -205,8 +216,14 @@ export default function SupplierDetails() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              {category && (
+              {selectedCategories.length === 0 && (
+                <span className="text-sm text-muted-foreground">
+                  No category yet — add a subcategory below to place this supplier in one
+                </span>
+              )}
+              {selectedCategories.map((category) => (
                 <span
+                  key={category.id}
                   className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold"
                   style={{
                     backgroundColor: `${category.color}20`,
@@ -215,7 +232,7 @@ export default function SupplierDetails() {
                 >
                   {category.name}
                 </span>
-              )}
+              ))}
               {supplier.show_in_portal && (
                 <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
                   <Store className="w-3.5 h-3.5" /> In client portal
@@ -447,7 +464,7 @@ export default function SupplierDetails() {
         open={bookingFormOpen}
         onClose={() => setBookingFormOpen(false)}
         supplier={supplier}
-        categoryName={category?.name}
+        categoryName={selectedCategories.map((c) => c.name).join(', ')}
         onCreated={() => {}}
       />
 

@@ -58,6 +58,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { showSuccess, showError } from '@/lib/toast';
+import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 
 const SortHeader = ({ field, label, filter, filterActive, sortField, handleSort }) => (
   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider select-none">
@@ -106,7 +107,6 @@ export default function Suppliers() {
 
   const [formData, setFormData] = useState({
     name: '',
-    category_id: '',
     contact_person: '',
     email: '',
     phone: '',
@@ -148,6 +148,14 @@ export default function Suppliers() {
       queryFn: () => db.entities.SupplierCategory.list(),
     })
   );
+
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+  const supplierCategoryMap = categoryIdsBySupplier(subcategories);
 
   const { selectedIds, toggle, toggleAll, clear, allSelected, count: selectedCount } = useSelection(suppliers);
 
@@ -211,7 +219,7 @@ export default function Suppliers() {
     const selected = suppliers.filter((s) => selectedIds.has(s.id));
     exportCSV(selected, 'suppliers-selected', [
       { label: 'Name', accessor: (s) => s.name },
-      { label: 'Category', accessor: (s) => getCategoryName(s.category_id) },
+      { label: 'Category', accessor: (s) => getCategoryNames(getSupplierCategoryIds(supplierCategoryMap, s.id)) },
       { label: 'Contact Person', accessor: (s) => s.contact_person },
       { label: 'Email', accessor: (s) => s.email },
       { label: 'Phone', accessor: (s) => s.phone },
@@ -229,7 +237,7 @@ export default function Suppliers() {
         : await db.entities.Supplier.list();
       exportCSV(all, 'suppliers', [
         { label: 'Name', accessor: (s) => s.name },
-        { label: 'Category', accessor: (s) => getCategoryName(s.category_id) },
+        { label: 'Category', accessor: (s) => getCategoryNames(getSupplierCategoryIds(supplierCategoryMap, s.id)) },
         { label: 'Contact Person', accessor: (s) => s.contact_person },
         { label: 'Email', accessor: (s) => s.email },
         { label: 'Phone', accessor: (s) => s.phone },
@@ -248,7 +256,6 @@ export default function Suppliers() {
       setEditingSupplier(supplier);
       setFormData({
         name: supplier.name || '',
-        category_id: supplier.category_id || '',
         contact_person: supplier.contact_person || '',
         email: supplier.email || '',
         phone: supplier.phone || '',
@@ -265,7 +272,6 @@ export default function Suppliers() {
       setEditingSupplier(null);
       setFormData({
         name: '',
-        category_id: categories[0]?.id || '',
         contact_person: '',
         email: '',
         phone: '',
@@ -321,13 +327,17 @@ export default function Suppliers() {
 
   const getCategoryName = (id) => categories.find((c) => c.id === id)?.name || '—';
   const getCategoryColor = (id) => categories.find((c) => c.id === id)?.color || '#94a3b8';
+  const getCategoryNames = (ids) =>
+    (ids || []).length ? (ids || []).map((id) => getCategoryName(id)).join(', ') : '—';
 
   const filtered = suppliers
     .filter((s) => {
       // Free-text search already happened server-side (usePaginatedEntities);
       // these are the per-column refinement filters on top of that page.
       const nameMatch = !filters.name || s.name?.toLowerCase().includes(filters.name.toLowerCase());
-      const categoryMatch = !filters.category?.length || filters.category.includes(s.category_id);
+      const categoryMatch =
+        !filters.category?.length ||
+        getSupplierCategoryIds(supplierCategoryMap, s.id).some((id) => filters.category.includes(id));
       const cityMatch = !filters.city || s.city?.toLowerCase().includes(filters.city.toLowerCase());
       const areaMatch = !filters.area || s.area?.toLowerCase().includes(filters.area.toLowerCase());
       const ratingMatch = !filters.rating?.length || filters.rating.includes(s.rating);
@@ -338,8 +348,8 @@ export default function Suppliers() {
       let av = '',
         bv = '';
       if (sortField === 'category') {
-        av = getCategoryName(a.category_id);
-        bv = getCategoryName(b.category_id);
+        av = getCategoryNames(getSupplierCategoryIds(supplierCategoryMap, a.id));
+        bv = getCategoryNames(getSupplierCategoryIds(supplierCategoryMap, b.id));
       } else if (sortField === 'rating') {
         av = a.rating || 0;
         bv = b.rating || 0;
@@ -373,281 +383,286 @@ export default function Suppliers() {
               Columns
             </Button>
           )}
-          <Button variant="outline" onClick={() => setCsvImporterOpen(true)} disabled={categories.length === 0}>
+          <Button variant="outline" onClick={() => setCsvImporterOpen(true)}>
             <Upload className="w-4 h-4 mr-2" />
             Import CSV
           </Button>
-          <Button
-            onClick={() => openModal()}
-            className="bg-blue-600 hover:bg-blue-700 shadow-lg"
-            disabled={categories.length === 0}
-          >
+          <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 shadow-lg">
             <Plus className="w-5 h-5 mr-2" />
             New Supplier
           </Button>
         </div>
       </div>
 
-      {categories.length === 0 ? (
-        <Card className="p-12 text-center bg-card shadow-md">
-          <h3 className="text-xl font-bold text-foreground mb-2">Create categories first</h3>
-          <p className="text-muted-foreground">
-            Go to{' '}
-            <Link to={createPageUrl('Categories')} className="text-blue-600 dark:text-blue-300 underline">
+      {categories.length === 0 && (
+        <Card className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            No categories set up yet — a supplier's category is now determined by its service lines. Go to{' '}
+            <Link to={createPageUrl('Categories')} className="underline font-medium">
               Categories
             </Link>{' '}
-            to set up supplier categories
+            to create some, then add subcategories under each supplier's Pricing Management tab.
           </p>
         </Card>
-      ) : (
-        <Tabs defaultValue="list" className="space-y-6">
-          <TabsList className="bg-card border border-border p-1">
-            <TabsTrigger value="list" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              All Suppliers
-            </TabsTrigger>
-            <TabsTrigger value="summary" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Category Summary
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="list" className="space-y-4">
-            <BulkActionsBar count={selectedCount} label="supplier" onDeselectAll={clear}>
-              <Button variant="outline" size="sm" onClick={handleExportSelected}>
-                <Download className="w-4 h-4 mr-2" />
-                Export {selectedCount}
-              </Button>
-              <Button
-                size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white"
-                onClick={() => setBulkDeleteOpen(true)}
-              >
-                <XCircle className="w-4 h-4 mr-2" />
-                Delete {selectedCount}
-              </Button>
-            </BulkActionsBar>
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
-              <Input
-                placeholder="Search by name, city, area or category..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-10 bg-card"
-              />
-              {isFetching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 animate-spin" />
-              )}
-            </div>
-
-            {/* Active filters indicator */}
-            {activeFilterCount > 0 && (
-              <div className="flex items-center gap-2 px-1">
-                <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-full">
-                  <Filter className="w-3 h-3" />
-                  {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
-                </div>
-                <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={clearFilters}>
-                  <FilterX className="w-3 h-3 mr-1" /> Clear all
-                </Button>
-              </div>
-            )}
-
-            {/* Table */}
-            <Card className="bg-card shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted border-b border-border">
-                    <tr>
-                      <th className="px-4 py-3 w-10">
-                        <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
-                      </th>
-                      <SortHeader
-                        field="name"
-                        label="Name"
-                        sortField={sortField}
-                        handleSort={handleSort}
-                        filter={
-                          <SupplierTextFilter
-                            value={filters.name}
-                            onChange={(v) => setFilters({ ...filters, name: v })}
-                            placeholder="Filter by name..."
-                          />
-                        }
-                        filterActive={!!filters.name}
-                      />
-                      <SortHeader
-                        field="category"
-                        label="Category"
-                        sortField={sortField}
-                        handleSort={handleSort}
-                        filter={
-                          <SupplierCategoryFilter
-                            categories={categories}
-                            selected={filters.category}
-                            onChange={(v) => setFilters({ ...filters, category: v })}
-                          />
-                        }
-                        filterActive={filters.category.length > 0}
-                      />
-                      <SortHeader
-                        field="city"
-                        label="City"
-                        sortField={sortField}
-                        handleSort={handleSort}
-                        filter={
-                          <SupplierTextFilter
-                            value={filters.city}
-                            onChange={(v) => setFilters({ ...filters, city: v })}
-                            placeholder="Filter by city..."
-                          />
-                        }
-                        filterActive={!!filters.city}
-                      />
-                      <SortHeader
-                        field="rating"
-                        label="Rating"
-                        sortField={sortField}
-                        handleSort={handleSort}
-                        filter={
-                          <SupplierRatingFilter
-                            value={filters.rating}
-                            onChange={(v) => setFilters({ ...filters, rating: v })}
-                          />
-                        }
-                        filterActive={!!filters.rating?.length}
-                      />
-                      <SortHeader
-                        field="area"
-                        label="Area"
-                        sortField={sortField}
-                        handleSort={handleSort}
-                        filter={
-                          <SupplierTextFilter
-                            value={filters.area}
-                            onChange={(v) => setFilters({ ...filters, area: v })}
-                            placeholder="Filter by area..."
-                          />
-                        }
-                        filterActive={!!filters.area}
-                      />
-                      {extraColumns.map((col) => (
-                        <th
-                          key={col.key}
-                          className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider"
-                        >
-                          {col.label}
-                        </th>
-                      ))}
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filtered.length === 0 ? (
-                      <tr>
-                        <td colSpan={7 + extraColumns.length} className="text-center py-16 text-muted-foreground">
-                          {searchTerm
-                            ? 'No suppliers match your search.'
-                            : 'No suppliers yet. Add your first supplier!'}
-                        </td>
-                      </tr>
-                    ) : (
-                      filtered.map((supplier) => {
-                        const catColor = getCategoryColor(supplier.category_id);
-                        return (
-                          <tr
-                            key={supplier.id}
-                            className={`hover:bg-muted transition-colors cursor-pointer ${selectedIds.has(supplier.id) ? 'bg-blue-50/50 dark:bg-blue-950/50' : ''}`}
-                            onClick={() => (window.location.href = createPageUrl(`SupplierDetails?id=${supplier.id}`))}
-                          >
-                            <td
-                              className="px-4 py-3"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                toggle(supplier.id);
-                              }}
-                            >
-                              <Checkbox checked={selectedIds.has(supplier.id)} />
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="font-semibold text-foreground">{supplier.name}</div>
-                              {supplier.contact_person && (
-                                <div className="text-xs text-muted-foreground">{supplier.contact_person}</div>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge
-                                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                                style={{
-                                  backgroundColor: `${catColor}20`,
-                                  color: catColor,
-                                  border: `1px solid ${catColor}40`,
-                                }}
-                              >
-                                {getCategoryName(supplier.category_id)}
-                              </Badge>
-                            </td>
-                            <td className="px-4 py-3 text-muted-foreground text-sm">{supplier.city || '—'}</td>
-                            <td className="px-4 py-3">
-                              {supplier.rating ? (
-                                <div className="flex items-center gap-1">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`w-3.5 h-3.5 ${i < supplier.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground fill-slate-200'}`}
-                                    />
-                                  ))}
-                                  <span className="text-xs text-muted-foreground ml-1">{supplier.rating}</span>
-                                </div>
-                              ) : (
-                                '—'
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-muted-foreground text-sm">{supplier.area || '—'}</td>
-                            {extraColumns.map((col) => (
-                              <td key={col.key} className="px-4 py-3 text-muted-foreground text-sm">
-                                {supplier.custom_fields?.[col.key] || '—'}
-                              </td>
-                            ))}
-                            <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex justify-end gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => openModal(supplier)}>
-                                  <Edit className="w-4 h-4 text-muted-foreground" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(supplier.id)}>
-                                  <Trash2 className="w-4 h-4 text-red-400" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className="px-4 py-2 border-t border-border bg-muted text-xs text-muted-foreground">
-                {filtered.length} of {total} supplier{total !== 1 ? 's' : ''}
-              </div>
-            </Card>
-
-            <PaginationControls
-              page={page}
-              pageCount={pageCount}
-              total={total}
-              pageSize={pageSize}
-              onPageChange={setPage}
-            />
-          </TabsContent>
-
-          <TabsContent value="summary">
-            <SupplierCategorySummary />
-          </TabsContent>
-        </Tabs>
       )}
+
+      <Tabs defaultValue="list" className="space-y-6">
+        <TabsList className="bg-card border border-border p-1">
+          <TabsTrigger value="list" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            All Suppliers
+          </TabsTrigger>
+          <TabsTrigger value="summary" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            Category Summary
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-4">
+          <BulkActionsBar count={selectedCount} label="supplier" onDeselectAll={clear}>
+            <Button variant="outline" size="sm" onClick={handleExportSelected}>
+              <Download className="w-4 h-4 mr-2" />
+              Export {selectedCount}
+            </Button>
+            <Button
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => setBulkDeleteOpen(true)}
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Delete {selectedCount}
+            </Button>
+          </BulkActionsBar>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+            <Input
+              placeholder="Search by name, city, area or category..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-10 bg-card"
+            />
+            {isFetching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 animate-spin" />
+            )}
+          </div>
+
+          {/* Active filters indicator */}
+          {activeFilterCount > 0 && (
+            <div className="flex items-center gap-2 px-1">
+              <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-full">
+                <Filter className="w-3 h-3" />
+                {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
+              </div>
+              <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={clearFilters}>
+                <FilterX className="w-3 h-3 mr-1" /> Clear all
+              </Button>
+            </div>
+          )}
+
+          {/* Table */}
+          <Card className="bg-card shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted border-b border-border">
+                  <tr>
+                    <th className="px-4 py-3 w-10">
+                      <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+                    </th>
+                    <SortHeader
+                      field="name"
+                      label="Name"
+                      sortField={sortField}
+                      handleSort={handleSort}
+                      filter={
+                        <SupplierTextFilter
+                          value={filters.name}
+                          onChange={(v) => setFilters({ ...filters, name: v })}
+                          placeholder="Filter by name..."
+                        />
+                      }
+                      filterActive={!!filters.name}
+                    />
+                    <SortHeader
+                      field="category"
+                      label="Category"
+                      sortField={sortField}
+                      handleSort={handleSort}
+                      filter={
+                        <SupplierCategoryFilter
+                          categories={categories}
+                          selected={filters.category}
+                          onChange={(v) => setFilters({ ...filters, category: v })}
+                        />
+                      }
+                      filterActive={filters.category.length > 0}
+                    />
+                    <SortHeader
+                      field="city"
+                      label="City"
+                      sortField={sortField}
+                      handleSort={handleSort}
+                      filter={
+                        <SupplierTextFilter
+                          value={filters.city}
+                          onChange={(v) => setFilters({ ...filters, city: v })}
+                          placeholder="Filter by city..."
+                        />
+                      }
+                      filterActive={!!filters.city}
+                    />
+                    <SortHeader
+                      field="rating"
+                      label="Rating"
+                      sortField={sortField}
+                      handleSort={handleSort}
+                      filter={
+                        <SupplierRatingFilter
+                          value={filters.rating}
+                          onChange={(v) => setFilters({ ...filters, rating: v })}
+                        />
+                      }
+                      filterActive={!!filters.rating?.length}
+                    />
+                    <SortHeader
+                      field="area"
+                      label="Area"
+                      sortField={sortField}
+                      handleSort={handleSort}
+                      filter={
+                        <SupplierTextFilter
+                          value={filters.area}
+                          onChange={(v) => setFilters({ ...filters, area: v })}
+                          placeholder="Filter by area..."
+                        />
+                      }
+                      filterActive={!!filters.area}
+                    />
+                    {extraColumns.map((col) => (
+                      <th
+                        key={col.key}
+                        className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                      >
+                        {col.label}
+                      </th>
+                    ))}
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={7 + extraColumns.length} className="text-center py-16 text-muted-foreground">
+                        {searchTerm ? 'No suppliers match your search.' : 'No suppliers yet. Add your first supplier!'}
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((supplier) => {
+                      const supplierCatIds = getSupplierCategoryIds(supplierCategoryMap, supplier.id);
+                      return (
+                        <tr
+                          key={supplier.id}
+                          className={`hover:bg-muted transition-colors cursor-pointer ${selectedIds.has(supplier.id) ? 'bg-blue-50/50 dark:bg-blue-950/50' : ''}`}
+                          onClick={() => (window.location.href = createPageUrl(`SupplierDetails?id=${supplier.id}`))}
+                        >
+                          <td
+                            className="px-4 py-3"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggle(supplier.id);
+                            }}
+                          >
+                            <Checkbox checked={selectedIds.has(supplier.id)} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="font-semibold text-foreground">{supplier.name}</div>
+                            {supplier.contact_person && (
+                              <div className="text-xs text-muted-foreground">{supplier.contact_person}</div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {supplierCatIds.length === 0 ? (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              ) : (
+                                supplierCatIds.map((catId) => {
+                                  const catColor = getCategoryColor(catId);
+                                  return (
+                                    <Badge
+                                      key={catId}
+                                      className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                      style={{
+                                        backgroundColor: `${catColor}20`,
+                                        color: catColor,
+                                        border: `1px solid ${catColor}40`,
+                                      }}
+                                    >
+                                      {getCategoryName(catId)}
+                                    </Badge>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-sm">{supplier.city || '—'}</td>
+                          <td className="px-4 py-3">
+                            {supplier.rating ? (
+                              <div className="flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-3.5 h-3.5 ${i < supplier.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground fill-slate-200'}`}
+                                  />
+                                ))}
+                                <span className="text-xs text-muted-foreground ml-1">{supplier.rating}</span>
+                              </div>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-sm">{supplier.area || '—'}</td>
+                          {extraColumns.map((col) => (
+                            <td key={col.key} className="px-4 py-3 text-muted-foreground text-sm">
+                              {supplier.custom_fields?.[col.key] || '—'}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => openModal(supplier)}>
+                                <Edit className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(supplier.id)}>
+                                <Trash2 className="w-4 h-4 text-red-400" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-2 border-t border-border bg-muted text-xs text-muted-foreground">
+              {filtered.length} of {total} supplier{total !== 1 ? 's' : ''}
+            </div>
+          </Card>
+
+          <PaginationControls
+            page={page}
+            pageCount={pageCount}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+          />
+        </TabsContent>
+
+        <TabsContent value="summary">
+          <SupplierCategorySummary />
+        </TabsContent>
+      </Tabs>
 
       {/* Supplier Modal */}
       <Dialog open={modalOpen} onOpenChange={closeModal}>
@@ -655,6 +670,10 @@ export default function Suppliers() {
           <DialogHeader>
             <DialogTitle>{editingSupplier ? 'Edit Supplier' : 'Add Supplier'}</DialogTitle>
           </DialogHeader>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Categories aren't set here — they follow from the supplier's service lines. After saving, add subcategories
+            under each category in the supplier's Pricing Management tab.
+          </p>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -664,24 +683,6 @@ export default function Suppliers() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
-              </div>
-              <div className="space-y-2">
-                <Label>Category *</Label>
-                <Select
-                  value={formData.category_id}
-                  onValueChange={(v) => setFormData({ ...formData, category_id: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
               <div className="space-y-2">
                 <Label>City</Label>
@@ -815,7 +816,10 @@ export default function Suppliers() {
         open={csvImporterOpen}
         onOpenChange={setCsvImporterOpen}
         categories={categories}
-        onImported={() => queryClient.invalidateQueries({ queryKey: ['Supplier'] })}
+        onImported={() => {
+          queryClient.invalidateQueries({ queryKey: ['Supplier'] });
+          queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
+        }}
       />
 
       {/* Column Manager Modal (Admin only) */}

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, ChevronDown, ChevronRight, Users } from 'lucide-react';
+import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 
 export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, _sellingCurrency, onAddService }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,17 +42,24 @@ export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, _
     return matching.length ? matching[0] : pricings[0];
   };
 
+  const supplierCategoryMap = categoryIdsBySupplier(subcategories);
+
   const filteredSuppliers = suppliers.filter((s) => {
     const matchSearch = !searchTerm || s.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCat = categoryFilter === 'all' || s.category_id === categoryFilter;
+    const matchCat =
+      categoryFilter === 'all' || getSupplierCategoryIds(supplierCategoryMap, s.id).includes(categoryFilter);
     const hasPricing = allPricings.some((p) => p.supplier_id === s.id && p.is_active !== false);
     return matchSearch && matchCat && hasPricing;
   });
 
+  // Suppliers offering services in several categories appear under each of them.
   const groupedByCategory = filteredSuppliers.reduce((acc, s) => {
-    const catId = s.category_id || 'other';
-    if (!acc[catId]) acc[catId] = [];
-    acc[catId].push(s);
+    const catIds = getSupplierCategoryIds(supplierCategoryMap, s.id);
+    const keys = catIds.length ? catIds : ['other'];
+    for (const catId of keys) {
+      if (!acc[catId]) acc[catId] = [];
+      acc[catId].push(s);
+    }
     return acc;
   }, {});
 

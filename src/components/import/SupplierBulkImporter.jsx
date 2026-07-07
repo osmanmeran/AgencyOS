@@ -220,9 +220,10 @@ Return JSON:
 
     // 1. Import suppliers
     const supplierIdMap = {}; // name → id
+    const defaultCategoryName = categories.find((c) => c.id === defaultCategory)?.name || 'General';
     for (const row of parsed.rows) {
       try {
-        const supplier = { category_id: defaultCategory };
+        const supplier = {};
         for (const [header, field] of Object.entries(mapping)) {
           if (field && row[header] !== undefined && row[header] !== '') {
             if (field === 'rating') supplier[field] = Math.min(5, Math.max(1, parseInt(row[header]) || 3));
@@ -240,6 +241,13 @@ Return JSON:
           continue;
         }
         const created = await db.entities.Supplier.create(supplier);
+        // A supplier's category comes from its subcategories — seed a
+        // default one for the category picked for this import batch.
+        await db.entities.SupplierSubcategory.create({
+          supplier_id: created.id,
+          category_id: defaultCategory,
+          name: defaultCategoryName,
+        });
         supplierIdMap[supplier.name] = created.id;
         suppliersOk++;
       } catch (e) {
@@ -273,6 +281,7 @@ Return JSON:
     setResults({ suppliersOk, suppliersSkip, pricesOk, errors });
     queryClient.invalidateQueries({ queryKey: ['suppliers'] });
     queryClient.invalidateQueries({ queryKey: ['supplierPricing'] });
+    queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
     setStep('results');
   };
 

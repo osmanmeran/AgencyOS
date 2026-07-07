@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Copy } from 'lucide-react';
+import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 
 const HOTEL_TREATMENTS = [
   'Room Only',
@@ -38,6 +39,14 @@ export default function ContractItineraryRow({ item, categories, onUpdate, onRem
     })
   );
 
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+  const supplierCategoryMap = categoryIdsBySupplier(subcategories);
+
   const categoryName = (item.category || '').toLowerCase();
   const isLodging =
     categoryName.includes('hotel') ||
@@ -49,7 +58,7 @@ export default function ContractItineraryRow({ item, categories, onUpdate, onRem
     (c) => item.category && (c.id === item.category || c.name === item.category),
   );
   const filteredSuppliers = selectedCategoryObj
-    ? suppliers.filter((s) => s.category_id === selectedCategoryObj.id)
+    ? suppliers.filter((s) => getSupplierCategoryIds(supplierCategoryMap, s.id).includes(selectedCategoryObj.id))
     : suppliers;
 
   const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (

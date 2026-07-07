@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import { FolderTree, Users, ClipboardList, ChevronDown, ChevronRight, ArrowRight, Star, Tag } from 'lucide-react';
+import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 
 export default function SupplierCategorySummary() {
   const [expandedCategories, setExpandedCategories] = useState(/** @type {any} */ ({}));
@@ -34,6 +35,13 @@ export default function SupplierCategorySummary() {
     })
   );
 
+  const { data: subcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+
   const { data: bookingRequests = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['allBookingRequests'],
@@ -41,14 +49,26 @@ export default function SupplierCategorySummary() {
     })
   );
 
+  const supplierCategoryMap = categoryIdsBySupplier(subcategories);
+  const categoryBySubcategoryId = new Map(subcategories.map((sc) => [sc.id, sc.category_id]));
+
   const toggleCategory = (id) => {
     setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const getCategoryStats = (categoryId) => {
-    const catSuppliers = suppliers.filter((s) => s.category_id === categoryId);
+    const catSuppliers = suppliers.filter((s) =>
+      getSupplierCategoryIds(supplierCategoryMap, s.id).includes(categoryId),
+    );
     const supplierIds = new Set(catSuppliers.map((s) => s.id));
-    const catPricing = pricingList.filter((p) => supplierIds.has(p.supplier_id));
+    // Pricing tiers with a subcategory are matched to that subcategory's own
+    // category (accurate for suppliers spanning several categories); tiers
+    // without one fall back to "belongs to a supplier in this category".
+    const catPricing = pricingList.filter((p) => {
+      if (!supplierIds.has(p.supplier_id)) return false;
+      if (p.subcategory_id) return categoryBySubcategoryId.get(p.subcategory_id) === categoryId;
+      return true;
+    });
     const catBookings = bookingRequests.filter((b) => supplierIds.has(b.supplier_id));
     const pendingBookings = catBookings.filter((b) => b.status === 'pending').length;
     const confirmedBookings = catBookings.filter((b) => b.status === 'confirmed').length;

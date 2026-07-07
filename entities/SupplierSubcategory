@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Parent supplier ID"
     },
+    "category_id": {
+      "type": "string",
+      "description": "SupplierCategory this service line belongs to (e.g. Hotels, Transportation). Drives which category(ies) the parent supplier appears under."
+    },
     "name": {
       "type": "string",
       "description": "Subcategory name (e.g., Economy, Business, Deluxe)"

@@ -173,6 +173,10 @@ function getActiveCatalogItems(db, markupPct) {
   const suppliers = new Map(supplierRows.map((r) => [r.id, JSON.parse(r.data)]));
   const categoryRows = db.prepare("SELECT * FROM entities WHERE type = 'SupplierCategory'").all();
   const categories = new Map(categoryRows.map((r) => [r.id, JSON.parse(r.data)]));
+  // Category lives on the subcategory (service line) a price tier belongs
+  // to, not on the supplier — a supplier can span several categories.
+  const subcategoryRows = db.prepare("SELECT * FROM entities WHERE type = 'SupplierSubcategory'").all();
+  const subcategories = new Map(subcategoryRows.map((r) => [r.id, JSON.parse(r.data)]));
 
   // Use SQL json_extract to filter active/approved on the server side,
   // avoiding loading all pricing rows into memory
@@ -189,14 +193,15 @@ function getActiveCatalogItems(db, markupPct) {
   return pricingRows.map((r) => {
     const p = JSON.parse(r.data);
     const supplier = suppliers.get(p.supplier_id);
+    const subcategoryCategoryId = subcategories.get(p.subcategory_id)?.category_id || null;
     return {
       pricing_id: r.id,
       supplier_id: p.supplier_id,
       supplier_name: supplier?.name || '',
       city: supplier?.city || '',
       area: supplier?.area || '',
-      category_id: supplier?.category_id || null,
-      category_name: categories.get(supplier?.category_id)?.name || '',
+      category_id: subcategoryCategoryId,
+      category_name: categories.get(subcategoryCategoryId)?.name || '',
       name: p.name,
       description: p.description || '',
       image_url: p.image_url || '',

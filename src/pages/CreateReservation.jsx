@@ -46,6 +46,7 @@ import PassengerFieldsRow from '../components/passengers/PassengerFieldsRow';
 import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { applyMarkup } from '@/lib/pricing';
+import { categoryIdsBySupplier, getSupplierCategoryIds, createSupplierWithCategory } from '@/lib/supplierCategories';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 const currSymbol = (cur) =>
@@ -242,6 +243,13 @@ export default function CreateReservation() {
       queryFn: () => db.entities.SupplierCategory.list(),
     })
   );
+  const { data: allSupplierSubcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+  const supplierCategoryMap = categoryIdsBySupplier(allSupplierSubcategories);
   const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['clients'],
@@ -316,7 +324,9 @@ export default function CreateReservation() {
       const pricing = pricingById[item.pricing_id];
       const supplier = supplierById[item.supplier_id];
       if (!pricing) missingPricing = true;
-      const categoryName = supplier ? categories.find((c) => c.id === supplier.category_id)?.name || '' : '';
+      const categoryName = supplier
+        ? categories.find((c) => c.id === getSupplierCategoryIds(supplierCategoryMap, supplier.id)?.[0])?.name || ''
+        : '';
       const location = supplier ? supplier.city || supplier.area || '' : '';
       return {
         _key: `svc-${Date.now()}-${Math.random()}`,
@@ -420,10 +430,12 @@ export default function CreateReservation() {
 
   const createSupplierMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
+      mutationFn: (/** @type {any} */ data) =>
+        createSupplierWithCategory(db, data, categories[0]?.id, categories[0]?.name),
       onSuccess: async (_created) => {
         showSuccess('Supplier created');
         await refetchSuppliers();
+        queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
         setAddProviderOpen(false);
         setNewProvider({ name: '', email: '', phone: '', city: '' });
         setAddProviderForIndex(null);
@@ -1496,7 +1508,7 @@ export default function CreateReservation() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              createSupplierMutation.mutate({ ...newProvider, category_id: categories[0]?.id || '' });
+              createSupplierMutation.mutate(newProvider);
             }}
             className="space-y-4 mt-2"
           >

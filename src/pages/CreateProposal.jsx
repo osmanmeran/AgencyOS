@@ -31,6 +31,7 @@ import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import ServiceLibraryPanel from '../components/proposals/ServiceLibraryPanel';
 import { applyMarkup } from '@/lib/pricing';
+import { createSupplierWithCategory } from '@/lib/supplierCategories';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 
@@ -128,10 +129,12 @@ export default function CreateProposal() {
 
   const createSupplierMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: (/** @type {any} */ data) => db.entities.Supplier.create(data),
+      mutationFn: (/** @type {any} */ data) =>
+        createSupplierWithCategory(db, data, categories[0]?.id, categories[0]?.name),
       onSuccess: async (/** @type {any} */ created) => {
         showSuccess('Supplier created');
         await refetchSuppliers();
+        queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
         if (addProviderForIndex !== null) updateService(addProviderForIndex, 'supplier_id', created.id);
         setAddProviderOpen(false);
         setNewProvider({ name: '', email: '', phone: '', city: '' });
@@ -966,7 +969,7 @@ export default function CreateProposal() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              createSupplierMutation.mutate({ ...newProvider, category_id: categories[0]?.id || '' });
+              createSupplierMutation.mutate(newProvider);
             }}
             className="space-y-4 mt-2"
           >
