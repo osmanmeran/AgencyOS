@@ -24,6 +24,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Button from '@mui/material/Button';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardRounded from '@mui/icons-material/DashboardRounded';
@@ -60,20 +61,33 @@ const DRAWER_WIDTH = 260;
 const NAV_SECTIONS = {
   main: (t) => [
     { label: t('nav.dashboard'), icon: <DashboardRounded />, page: 'Dashboard' },
-    { label: t('nav.reservations'), icon: <FlightTakeoffRounded />, page: 'Reservations', children: [
-      { label: t('nav.newReservation'), page: 'CreateReservation' },
-      { label: 'Calendar', page: 'CalendarView' },
-      { label: 'Tour Contracts', page: 'TourContracts' },
-      { label: 'Generate from Contract', page: 'GenerateFromContract' },
-    ]},
-    { label: t('nav.suppliers'), icon: <BusinessRounded />, page: 'Suppliers', children: [
-      { label: t('nav.categories'), page: 'Categories' },
-      { label: t('nav.bookings'), page: 'SupplierBookings' },
-      { label: 'RFP Manager', page: 'RFPManager' },
-    ]},
-    { label: t('nav.crm'), icon: <PeopleRounded />, page: 'ClientCRM', children: [
-      { label: 'Companies', page: 'Companies' },
-    ]},
+    {
+      label: t('nav.reservations'),
+      icon: <FlightTakeoffRounded />,
+      page: 'Reservations',
+      children: [
+        { label: t('nav.newReservation'), page: 'CreateReservation' },
+        { label: 'Calendar', page: 'CalendarView' },
+        { label: 'Tour Contracts', page: 'TourContracts' },
+        { label: 'Generate from Contract', page: 'GenerateFromContract' },
+      ],
+    },
+    {
+      label: t('nav.suppliers'),
+      icon: <BusinessRounded />,
+      page: 'Suppliers',
+      children: [
+        { label: t('nav.categories'), page: 'Categories' },
+        { label: t('nav.bookings'), page: 'SupplierBookings' },
+        { label: 'RFP Manager', page: 'RFPManager' },
+      ],
+    },
+    {
+      label: t('nav.crm'),
+      icon: <PeopleRounded />,
+      page: 'ClientCRM',
+      children: [{ label: 'Companies', page: 'Companies' }],
+    },
     { label: 'Quote Requests', icon: <RequestQuoteRounded />, page: 'QuoteRequests' },
     { label: 'Tasks', icon: <TaskAltRounded />, page: 'TaskBoard' },
     // The client portal is entered per-client via "View portal as client" on a
@@ -81,19 +95,30 @@ const NAV_SECTIONS = {
     // portal link, since the portal is meaningless without a client context.
   ],
   secondary: (t) => [
-    { label: t('nav.revenue'), icon: <AttachMoneyRounded />, page: 'Revenue', children: [
-      { label: 'Commission Report', page: 'CommissionReport' },
-    ]},
-    { label: t('nav.services'), icon: <InventoryRounded />, page: 'ServiceLibrary', children: [
-      { label: t('nav.templates'), page: 'BookingTemplates' },
-      { label: t('nav.itineraryBuilder') || 'Itinerary Builder', page: 'ItineraryBuilder' },
-    ]},
+    {
+      label: t('nav.revenue'),
+      icon: <AttachMoneyRounded />,
+      page: 'Revenue',
+      children: [{ label: 'Commission Report', page: 'CommissionReport' }],
+    },
+    {
+      label: t('nav.services'),
+      icon: <InventoryRounded />,
+      page: 'ServiceLibrary',
+      children: [
+        { label: t('nav.templates'), page: 'BookingTemplates' },
+        { label: t('nav.itineraryBuilder') || 'Itinerary Builder', page: 'ItineraryBuilder' },
+      ],
+    },
   ],
   admin: (t) => [
     { label: 'User Management', icon: <PeopleRounded />, page: 'UserManagement' },
-    { label: t('nav.settings'), icon: <SettingsRounded />, page: 'AppSettings', children: [
-      { label: t('nav.importHub'), page: 'ImportHub' },
-    ]},
+    {
+      label: t('nav.settings'),
+      icon: <SettingsRounded />,
+      page: 'AppSettings',
+      children: [{ label: t('nav.importHub'), page: 'ImportHub' }],
+    },
     { label: 'Audit Trail', icon: <HistoryRounded />, page: 'AuditLogViewer' },
     { label: 'Testing', icon: <BuildRounded />, page: 'TestingArea' },
   ],
@@ -110,9 +135,9 @@ const CLIENT_NAV = (_t) => [
 
 function NavItem({ item, currentPageName, depth = 0 }) {
   const [open, setOpen] = useState(false);
-//   const location = useLocation();
+  //   const location = useLocation();
   const hasChildren = item.children?.length > 0;
-  const isActive = currentPageName === item.page || item.children?.some(c => c.page === currentPageName);
+  const isActive = currentPageName === item.page || item.children?.some((c) => c.page === currentPageName);
   const isExpanded = isActive || open;
 
   const content = (
@@ -120,7 +145,9 @@ function NavItem({ item, currentPageName, depth = 0 }) {
       component={Link}
       to={createPageUrl(item.page) + (item.query || '')}
       selected={isActive && !hasChildren}
-      onClick={() => { if (hasChildren) setOpen(!open); }}
+      onClick={() => {
+        if (hasChildren) setOpen(!open);
+      }}
       sx={{
         pl: 2 + depth * 2,
         pr: 1.5,
@@ -138,9 +165,7 @@ function NavItem({ item, currentPageName, depth = 0 }) {
         '&:hover': { bgcolor: 'action.hover' },
       }}
     >
-      <ListItemIcon sx={{ minWidth: 36, color: isActive ? 'inherit' : 'text.secondary' }}>
-        {item.icon}
-      </ListItemIcon>
+      <ListItemIcon sx={{ minWidth: 36, color: isActive ? 'inherit' : 'text.secondary' }}>{item.icon}</ListItemIcon>
       <ListItemText
         primary={item.label}
         slotProps={{ primary: { sx: { fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500 } } }}
@@ -160,7 +185,7 @@ function NavItem({ item, currentPageName, depth = 0 }) {
       {content}
       <Collapse in={isExpanded} timeout="auto" unmountOnExit>
         <List component="div" disablePadding>
-          {item.children.map(child => (
+          {item.children.map((child) => (
             <ListItemButton
               key={child.page}
               component={Link}
@@ -194,16 +219,21 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
   // CRM record) still carry their own userTier (never 'client') — give them an
   // obvious way back instead of stranding them in the client-only nav.
   const isStaffPreviewingClient = isClientPortal && userTier && userTier !== 'client';
-  const navSections = isClientPortal
-    ? { main: () => CLIENT_NAV(t) }
-    : NAV_SECTIONS;
+  const navSections = isClientPortal ? { main: () => CLIENT_NAV(t) } : NAV_SECTIONS;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar sx={{ px: 2, minHeight: '64px !important' }}>
-        <Box component={Link} to={createPageUrl('Dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none' }}>
+        <Box
+          component={Link}
+          to={createPageUrl('Dashboard')}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none' }}
+        >
           <MarvelopsLogo size={28} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', lg: 'block' } }}>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', lg: 'block' } }}
+          >
             Marvelops
           </Typography>
         </Box>
@@ -232,7 +262,7 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
           </>
         )}
         <List disablePadding>
-          {navSections.main(t).map(item => (
+          {navSections.main(t).map((item) => (
             <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
           ))}
         </List>
@@ -240,7 +270,7 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
           <>
             <Divider sx={{ my: 1.5, mx: 2 }} />
             <List disablePadding>
-              {navSections.secondary(t).map(item => (
+              {navSections.secondary(t).map((item) => (
                 <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
               ))}
             </List>
@@ -248,7 +278,7 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
               <>
                 <Divider sx={{ my: 1.5, mx: 2 }} />
                 <List disablePadding>
-                  {navSections.admin(t).map(item => (
+                  {navSections.admin(t).map((item) => (
                     <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
                   ))}
                 </List>
@@ -262,6 +292,7 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
 }
 
 export default function Layout({ children, currentPageName }) {
+  const theme = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const { t, setLanguage: setI18nLanguage } = useT();
@@ -275,16 +306,28 @@ export default function Layout({ children, currentPageName }) {
   useEntitySync();
 
   useEffect(() => {
-    db.auth.me().then(setUser).catch(() => setUser(null));
+    db.auth
+      .me()
+      .then(setUser)
+      .catch(() => setUser(null));
   }, []);
 
   useEffect(() => {
-    if (!actAsClientId) { setActAsClient(null); return; }
+    if (!actAsClientId) {
+      setActAsClient(null);
+      return;
+    }
     let cancelled = false;
     db.entities.Client.get(actAsClientId)
-      .then((c) => { if (!cancelled) setActAsClient(c); })
-      .catch(() => { if (!cancelled) setActAsClient(null); });
-    return () => { cancelled = true; };
+      .then((c) => {
+        if (!cancelled) setActAsClient(c);
+      })
+      .catch(() => {
+        if (!cancelled) setActAsClient(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [actAsClientId]);
 
   const exitActAsClient = () => {
@@ -292,11 +335,12 @@ export default function Layout({ children, currentPageName }) {
     navigate(createPageUrl('Dashboard'));
   };
 
-  const isClientPortal = currentPageName?.startsWith('ClientPortal') ||
-                          currentPageName?.startsWith('ClientProposal') ||
-                          currentPageName?.startsWith('ClientTrip') ||
-                          currentPageName?.startsWith('ClientInvoice') ||
-                          currentPageName?.startsWith('ClientQuote');
+  const isClientPortal =
+    currentPageName?.startsWith('ClientPortal') ||
+    currentPageName?.startsWith('ClientProposal') ||
+    currentPageName?.startsWith('ClientTrip') ||
+    currentPageName?.startsWith('ClientInvoice') ||
+    currentPageName?.startsWith('ClientQuote');
 
   const isSupplierPortal = currentPageName === 'SupplierPortal';
 
@@ -308,14 +352,20 @@ export default function Layout({ children, currentPageName }) {
   if (isSupplierPortal) {
     return (
       <PermissionProvider>
-        <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-          <AppBar position="sticky" color="default" sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)' }}>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+          <AppBar
+            position="sticky"
+            color="default"
+            sx={{ bgcolor: alpha(theme.palette.background.paper, 0.9), backdropFilter: 'blur(8px)' }}
+          >
             <Toolbar>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Avatar sx={{ bgcolor: 'warning.main', width: 36, height: 36 }}>
                   <LocalShippingRounded fontSize="small" />
                 </Avatar>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>{t('nav.supplierPortal')}</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  {t('nav.supplierPortal')}
+                </Typography>
               </Box>
               <Box sx={{ flex: 1 }} />
               <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -345,9 +395,12 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <PermissionProvider>
-      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
         {/* Desktop Sidebar */}
-        <Box component="nav" sx={{ width: { lg: DRAWER_WIDTH }, flexShrink: { lg: 0 }, display: { xs: 'none', lg: 'block' } }}>
+        <Box
+          component="nav"
+          sx={{ width: { lg: DRAWER_WIDTH }, flexShrink: { lg: 0 }, display: { xs: 'none', lg: 'block' } }}
+        >
           <Drawer
             variant="permanent"
             sx={{
@@ -360,7 +413,12 @@ export default function Layout({ children, currentPageName }) {
               },
             }}
           >
-            <SidebarContent currentPageName={currentPageName} t={t} isClientPortal={isClientPortal} userTier={user?.user_tier} />
+            <SidebarContent
+              currentPageName={currentPageName}
+              t={t}
+              isClientPortal={isClientPortal}
+              userTier={user?.user_tier}
+            />
           </Drawer>
         </Box>
 
@@ -379,7 +437,12 @@ export default function Layout({ children, currentPageName }) {
             },
           }}
         >
-          <SidebarContent currentPageName={currentPageName} t={t} isClientPortal={isClientPortal} userTier={user?.user_tier} />
+          <SidebarContent
+            currentPageName={currentPageName}
+            t={t}
+            isClientPortal={isClientPortal}
+            userTier={user?.user_tier}
+          />
         </Drawer>
 
         {/* Main Content Area */}
@@ -389,7 +452,7 @@ export default function Layout({ children, currentPageName }) {
             position="sticky"
             color="default"
             sx={{
-              bgcolor: 'rgba(255,255,255,0.85)',
+              bgcolor: alpha(theme.palette.background.paper, 0.85),
               backdropFilter: 'blur(12px)',
               borderBottom: '1px solid',
               borderColor: 'divider',
@@ -405,9 +468,16 @@ export default function Layout({ children, currentPageName }) {
                 <MenuIcon />
               </IconButton>
 
-              <Box component={Link} to={createPageUrl('Dashboard')} sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none' }}>
+              <Box
+                component={Link}
+                to={createPageUrl('Dashboard')}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none' }}
+              >
                 <MarvelopsLogo size={28} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', sm: 'block' } }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', sm: 'block' } }}
+                >
                   Marvelops
                 </Typography>
               </Box>
@@ -468,14 +538,23 @@ export default function Layout({ children, currentPageName }) {
               <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
                 Viewing the client portal as {actAsClient?.name || 'this client'} — this is a read-only staff preview.
               </Typography>
-              <Button size="small" color="inherit" variant="outlined" startIcon={<ArrowBackRounded fontSize="small" />} onClick={exitActAsClient}>
+              <Button
+                size="small"
+                color="inherit"
+                variant="outlined"
+                startIcon={<ArrowBackRounded fontSize="small" />}
+                onClick={exitActAsClient}
+              >
                 Exit
               </Button>
             </Box>
           )}
 
           {/* Page Content */}
-          <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, py: 3, maxWidth: 1400, width: '100%', mx: 'auto' }}>
+          <Box
+            component="main"
+            sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, py: 3, maxWidth: 1400, width: '100%', mx: 'auto' }}
+          >
             {children}
           </Box>
         </Box>
