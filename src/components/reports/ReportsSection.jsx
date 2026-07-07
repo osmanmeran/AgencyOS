@@ -53,7 +53,7 @@ function StatCard({ label, value, icon, accent }) {
 }
 
 /** Small labelled metric tile used inside the Proposals/Reservations tabs. */
-function MetricTile({ label, value, accent }) {
+function MetricTile({ label, value, accent = undefined }) {
   return (
     <div className="p-3 bg-muted rounded-lg">
       <div className="text-sm text-muted-foreground">{label}</div>

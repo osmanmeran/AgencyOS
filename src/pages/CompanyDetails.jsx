@@ -99,7 +99,7 @@ export default function CompanyDetails() {
   const updateMutation = /** @type {any} */ (
     useMutation({
       mutationFn: (/** @type {any} */ data) => db.entities.Company.update(companyId, data),
-      onSuccess: (updated) => {
+      onSuccess: (/** @type {any} */ updated) => {
         queryClient.invalidateQueries({ queryKey: ['company', companyId] });
         queryClient.invalidateQueries({ queryKey: ['companies'] });
         // Keep contacts' denormalized company name in sync if the name changed.

@@ -378,7 +378,9 @@ export default function SupplierPricingManager({ supplierId }) {
     try {
       const uploadResult = await db.integrations.Ocr.uploadFile(ocrFile);
       if (!uploadResult.success) throw new Error('Upload failed');
-      const result = await db.integrations.Ocr.extract(uploadResult.file_path, 'tur+eng', true, supplierCategory?.name);
+      const subcat = subcategories.find((s) => s.id === pricingForm.subcategory_id);
+      const category = supplierCategories.find((c) => c.id === subcat?.category_id);
+      const result = await db.integrations.Ocr.extract(uploadResult.file_path, 'tur+eng', true, category?.name);
       setOcrResult(result);
       if (result.parsed?.rows) {
         setOcrSelectedRows(result.parsed.rows.map((_, i) => i));
