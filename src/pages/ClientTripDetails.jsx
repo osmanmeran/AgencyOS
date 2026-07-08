@@ -16,8 +16,10 @@ import { DaySection, ServiceCard } from '../components/client-trip/ServiceItiner
 import TripMap from '../components/client-trip/TripMap';
 import TripApprovalBar from '../components/client-trip/TripApprovalBar';
 import { groupServicesByDay } from '../lib/serviceItinerary';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ClientTripDetails() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');
   const client = useMyClient();
@@ -55,7 +57,7 @@ export default function ClientTripDetails() {
   }
 
   if (!trip || trip.client_id !== client.id) {
-    return <div className="text-center py-20 text-muted-foreground">Trip not found or access denied</div>;
+    return <div className="text-center py-20 text-muted-foreground">{t('clientTripDetails.notFoundOrDenied')}</div>;
   }
 
   const groupedItems = packingItems.reduce((acc, item) => {
@@ -82,7 +84,7 @@ export default function ClientTripDetails() {
       <Link to={createPageUrl('ClientTrips')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Trips
+          {t('clientTripDetails.backToTrips')}
         </Button>
       </Link>
 
@@ -121,25 +123,25 @@ export default function ClientTripDetails() {
         <TabsList className="bg-card border border-border p-1">
           <TabsTrigger value="itinerary" className="gap-2">
             <List className="w-4 h-4" />
-            Itinerary
+            {t('clientTripDetails.itinerary')}
           </TabsTrigger>
           <TabsTrigger value="map" className="gap-2">
             <Map className="w-4 h-4" />
-            Map
+            {t('clientTripDetails.map')}
           </TabsTrigger>
           <TabsTrigger value="packing" className="gap-2">
-            Packing List
+            {t('clientTripDetails.packingList')}
           </TabsTrigger>
           <TabsTrigger value="messages" className="gap-2">
             <MessageSquare className="w-4 h-4" />
-            Messages
+            {t('clientTripDetails.messages')}
           </TabsTrigger>
         </TabsList>
 
         {/* Itinerary Tab */}
         <TabsContent value="itinerary">
           <Card className="p-6 bg-card shadow-md">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Your Itinerary</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-6">{t('clientTripDetails.yourItinerary')}</h2>
             {hasManualEvents ? (
               <ItineraryTimeline events={itineraryEvents} />
             ) : sortedDays.length > 0 || unscheduled.length > 0 ? (
@@ -149,7 +151,7 @@ export default function ClientTripDetails() {
                 ))}
                 {unscheduled.length > 0 && (
                   <div className="mt-6">
-                    <h3 className="font-semibold text-foreground mb-3">Other Services</h3>
+                    <h3 className="font-semibold text-foreground mb-3">{t('clientTripDetails.otherServices')}</h3>
                     <div className="space-y-3">
                       {unscheduled.map((svc, idx) => (
                         <ServiceCard key={idx} service={svc} />
@@ -161,7 +163,7 @@ export default function ClientTripDetails() {
             ) : (
               <div className="text-center py-16 text-muted-foreground">
                 <List className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                <p>No itinerary available yet.</p>
+                <p>{t('clientTripDetails.noItinerary')}</p>
               </div>
             )}
           </Card>
@@ -170,7 +172,7 @@ export default function ClientTripDetails() {
         {/* Map Tab */}
         <TabsContent value="map">
           <Card className="p-6 bg-card shadow-md">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Trip Map</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-6">{t('clientTripDetails.tripMap')}</h2>
             <TripMap events={mapEvents} />
           </Card>
         </TabsContent>
@@ -178,9 +180,9 @@ export default function ClientTripDetails() {
         {/* Packing Tab */}
         <TabsContent value="packing">
           <Card className="p-6 bg-card shadow-md">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Packing List</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-6">{t('clientTripDetails.packingList')}</h2>
             {packingItems.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No packing list available yet</p>
+              <p className="text-muted-foreground text-center py-8">{t('clientTripDetails.noPackingList')}</p>
             ) : (
               <div className="space-y-6">
                 {Object.keys(groupedItems).map((category) => (

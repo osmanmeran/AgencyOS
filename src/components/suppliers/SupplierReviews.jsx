@@ -11,8 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Star, Plus, ThumbsUp, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function SupplierReviews({ supplierId }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -77,7 +79,7 @@ export default function SupplierReviews({ supplierId }) {
   const recommendRate =
     reviews.length > 0 ? Math.round((reviews.filter((r) => r.would_recommend).length / reviews.length) * 100) : 0;
 
-  const getClientName = (id) => clients.find((c) => c.id === id)?.name || 'Anonymous';
+  const getClientName = (id) => clients.find((c) => c.id === id)?.name || t('supplierReviews.anonymousFallback');
   const getTripName = (id) => trips.find((t) => t.id === id)?.name || '';
 
   const StarRating = ({ value, onChange = (_v) => {}, readonly = false }) => (
@@ -101,11 +103,11 @@ export default function SupplierReviews({ supplierId }) {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-          Reviews & Ratings
+          {t('supplierReviews.title')}
         </h2>
         <Button onClick={() => setModalOpen(true)} size="sm">
           <Plus className="w-4 h-4 mr-2" />
-          Add Review
+          {t('supplierReviews.addReview')}
         </Button>
       </div>
 
@@ -116,21 +118,25 @@ export default function SupplierReviews({ supplierId }) {
           <div className="flex justify-center mt-1">
             <StarRating value={Math.round(Number(avgRating))} readonly />
           </div>
-          <div className="text-sm text-muted-foreground mt-1">{reviews.length} reviews</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            {reviews.length === 1
+              ? t('supplierReviews.reviewsCountSingular', { count: reviews.length })
+              : t('supplierReviews.reviewsCountPlural', { count: reviews.length })}
+          </div>
         </div>
         <div className="bg-muted rounded-lg p-4 text-center">
           <div className="text-3xl font-bold text-foreground">{avgServiceQuality}</div>
-          <div className="text-sm text-muted-foreground mt-2">Service Quality</div>
+          <div className="text-sm text-muted-foreground mt-2">{t('supplierReviews.serviceQuality')}</div>
         </div>
         <div className="bg-muted rounded-lg p-4 text-center">
           <div className="text-3xl font-bold text-green-600 dark:text-green-300">{recommendRate}%</div>
-          <div className="text-sm text-muted-foreground mt-2">Would Recommend</div>
+          <div className="text-sm text-muted-foreground mt-2">{t('supplierReviews.wouldRecommend')}</div>
         </div>
       </div>
 
       {/* Reviews List */}
       {reviews.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">No reviews yet</div>
+        <div className="text-center py-8 text-muted-foreground">{t('supplierReviews.noReviewsYet')}</div>
       ) : (
         <div className="space-y-4">
           {reviews.map((review) => (
@@ -139,7 +145,9 @@ export default function SupplierReviews({ supplierId }) {
                 <div>
                   <div className="font-medium text-foreground">{getClientName(review.client_id)}</div>
                   {review.trip_id && (
-                    <div className="text-sm text-muted-foreground">Trip: {getTripName(review.trip_id)}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('supplierReviews.tripLabel', { trip: getTripName(review.trip_id) })}
+                    </div>
                   )}
                 </div>
                 <div className="text-right">
@@ -153,7 +161,7 @@ export default function SupplierReviews({ supplierId }) {
               {review.would_recommend && (
                 <div className="flex items-center gap-1 mt-2 text-green-600 dark:text-green-300 text-sm">
                   <ThumbsUp className="w-4 h-4" />
-                  Would recommend
+                  {t('supplierReviews.wouldRecommendBadge')}
                 </div>
               )}
             </div>
@@ -165,7 +173,7 @@ export default function SupplierReviews({ supplierId }) {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Review</DialogTitle>
+            <DialogTitle>{t('supplierReviews.addReview')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -175,16 +183,16 @@ export default function SupplierReviews({ supplierId }) {
             className="space-y-4 mt-4"
           >
             <div className="space-y-2">
-              <Label>Trip (Optional)</Label>
+              <Label>{t('supplierReviews.tripOptionalLabel')}</Label>
               <Select value={formData.trip_id} onValueChange={(v) => setFormData({ ...formData, trip_id: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select trip" />
+                  <SelectValue placeholder={t('supplierReviews.selectTripPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
-                  {trips.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
+                  <SelectItem value={null}>{t('common.none')}</SelectItem>
+                  {trips.map((trip) => (
+                    <SelectItem key={trip.id} value={trip.id}>
+                      {trip.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -192,27 +200,27 @@ export default function SupplierReviews({ supplierId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Overall Rating *</Label>
+              <Label>{t('supplierReviews.overallRatingLabel')}</Label>
               <StarRating value={formData.rating} onChange={(v) => setFormData({ ...formData, rating: v })} />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm">Service Quality</Label>
+                <Label className="text-sm">{t('supplierReviews.serviceQuality')}</Label>
                 <StarRating
                   value={formData.service_quality}
                   onChange={(v) => setFormData({ ...formData, service_quality: v })}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm">Value for Money</Label>
+                <Label className="text-sm">{t('supplierReviews.valueForMoney')}</Label>
                 <StarRating
                   value={formData.value_for_money}
                   onChange={(v) => setFormData({ ...formData, value_for_money: v })}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm">Communication</Label>
+                <Label className="text-sm">{t('supplierReviews.communication')}</Label>
                 <StarRating
                   value={formData.communication}
                   onChange={(v) => setFormData({ ...formData, communication: v })}
@@ -221,12 +229,12 @@ export default function SupplierReviews({ supplierId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Review</Label>
+              <Label>{t('supplierReviews.reviewLabel')}</Label>
               <Textarea
                 value={formData.review_text}
                 onChange={(e) => setFormData({ ...formData, review_text: e.target.value })}
                 rows={3}
-                placeholder="Share your experience..."
+                placeholder={t('supplierReviews.reviewPlaceholder')}
               />
             </div>
 
@@ -238,15 +246,15 @@ export default function SupplierReviews({ supplierId }) {
                 onChange={(e) => setFormData({ ...formData, would_recommend: e.target.checked })}
                 className="rounded"
               />
-              <Label htmlFor="recommend">Would recommend this supplier</Label>
+              <Label htmlFor="recommend">{t('supplierReviews.recommendCheckboxLabel')}</Label>
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Submit Review
+                {t('supplierReviews.submitReview')}
               </Button>
             </div>
           </form>

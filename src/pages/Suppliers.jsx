@@ -417,7 +417,7 @@ export default function Suppliers() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
-          <BulkActionsBar count={selectedCount} label="supplier" onDeselectAll={clear}>
+          <BulkActionsBar count={selectedCount} labelSingular="supplier" labelPlural="suppliers" onDeselectAll={clear}>
             <Button variant="outline" size="sm" onClick={handleExportSelected}>
               <Download className="w-4 h-4 mr-2" />
               Export {selectedCount}

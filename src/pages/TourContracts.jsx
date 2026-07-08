@@ -22,8 +22,10 @@ import { Plus, Search, Edit, Trash2, FileText, Zap } from 'lucide-react';
 import { createPageUrl } from '../utils';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { showSuccess, showError } from '@/lib/toast';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function TourContracts() {
+  const { t } = useT();
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const queryClient = useQueryClient();
@@ -41,11 +43,11 @@ export default function TourContracts() {
     useMutation({
       mutationFn: (/** @type {any} */ id) => db.entities.TourContract.delete(id),
       onSuccess: () => {
-        showSuccess('Contract deleted');
+        showSuccess(t('tourContracts.deleteSuccess'));
         queryClient.invalidateQueries({ queryKey: ['TourContract'] });
         setDeleteTarget(null);
       },
-      onError: (error) => showError('Failed to delete contract', error.message),
+      onError: (error) => showError(t('tourContracts.deleteError'), error.message),
     })
   );
 
@@ -66,14 +68,14 @@ export default function TourContracts() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Tour Contracts</h1>
-          <p className="text-muted-foreground">Recurring serial tours with a fixed itinerary and pax-based pricing</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">{t('tourContracts.title')}</h1>
+          <p className="text-muted-foreground">{t('tourContracts.subtitle')}</p>
         </div>
         {canManage && (
           <Link to={createPageUrl('TourContractForm')}>
             <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg">
               <Plus className="w-5 h-5 mr-2" />
-              New Contract
+              {t('tourContracts.newContract')}
             </Button>
           </Link>
         )}
@@ -82,7 +84,7 @@ export default function TourContracts() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
         <Input
-          placeholder="Search by name, client or destination..."
+          placeholder={t('tourContracts.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10 bg-card"
@@ -95,25 +97,25 @@ export default function TourContracts() {
             <thead className="bg-muted border-b border-border">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Name
+                  {t('tourContracts.colName')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Client
+                  {t('tourContracts.colClient')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Destination
+                  {t('clientProposalDetails.destination')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Itinerary
+                  {t('tourContracts.colItinerary')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Pricing Tiers
+                  {t('tourContracts.colPricingTiers')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Status
+                  {t('common.status')}
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Actions
+                  {t('common.actions')}
                 </th>
               </tr>
             </thead>
@@ -121,7 +123,7 @@ export default function TourContracts() {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-16 text-muted-foreground">
-                    {search ? 'No contracts match your search.' : 'No tour contracts yet. Create your first one!'}
+                    {search ? t('tourContracts.noMatchSearch') : t('tourContracts.noContractsYet')}
                   </td>
                 </tr>
               ) : (
@@ -135,12 +137,21 @@ export default function TourContracts() {
                     <td className="px-4 py-3 text-muted-foreground text-sm">
                       <span className="inline-flex items-center gap-1">
                         <FileText className="w-3.5 h-3.5" />
-                        {(contract.itinerary || []).length} line{(contract.itinerary || []).length !== 1 ? 's' : ''}
+                        {t(
+                          (contract.itinerary || []).length === 1
+                            ? 'tourContracts.lineSingular'
+                            : 'tourContracts.linePlural',
+                          { count: (contract.itinerary || []).length },
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-sm">
-                      {(contract.pricing_tiers || []).length} tier
-                      {(contract.pricing_tiers || []).length !== 1 ? 's' : ''}
+                      {t(
+                        (contract.pricing_tiers || []).length === 1
+                          ? 'tourContracts.tierSingular'
+                          : 'tourContracts.tierPlural',
+                        { count: (contract.pricing_tiers || []).length },
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge
@@ -150,14 +161,14 @@ export default function TourContracts() {
                             : 'bg-muted text-muted-foreground border-border'
                         }
                       >
-                        {contract.is_active !== false ? 'Active' : 'Inactive'}
+                        {contract.is_active !== false ? t('common.active') : t('common.inactive')}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
                         {contract.is_active !== false && (
                           <Link to={createPageUrl(`GenerateFromContract?contract_id=${contract.id}`)}>
-                            <Button variant="ghost" size="icon" title="Generate booking">
+                            <Button variant="ghost" size="icon" title={t('tourContracts.generateBookingTitle')}>
                               <Zap className="w-4 h-4 text-blue-500 dark:text-blue-300" />
                             </Button>
                           </Link>
@@ -165,14 +176,14 @@ export default function TourContracts() {
                         {canManage && (
                           <>
                             <Link to={createPageUrl(`TourContractForm?id=${contract.id}`)}>
-                              <Button variant="ghost" size="icon" title="Edit contract">
+                              <Button variant="ghost" size="icon" title={t('tourContracts.editContractTitle')}>
                                 <Edit className="w-4 h-4 text-muted-foreground" />
                               </Button>
                             </Link>
                             <Button
                               variant="ghost"
                               size="icon"
-                              title="Delete contract"
+                              title={t('tourContracts.deleteContractTitle')}
                               onClick={() => setDeleteTarget(contract)}
                             >
                               <Trash2 className="w-4 h-4 text-red-400" />
@@ -188,26 +199,27 @@ export default function TourContracts() {
           </table>
         </div>
         <div className="px-4 py-2 border-t border-border bg-muted text-xs text-muted-foreground">
-          {filtered.length} of {contracts.length} contract{contracts.length !== 1 ? 's' : ''}
+          {t(contracts.length === 1 ? 'tourContracts.summarySingular' : 'tourContracts.summaryPlural', {
+            filtered: filtered.length,
+            total: contracts.length,
+          })}
         </div>
       </Card>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently deletes the contract. Bookings already generated from it are not affected.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t('tourContracts.deleteConfirmTitle', { name: deleteTarget?.name })}</AlertDialogTitle>
+            <AlertDialogDescription>{t('tourContracts.deleteConfirmBody')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 text-white"
               onClick={() => deleteMutation.mutate(deleteTarget.id)}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete Contract'}
+              {deleteMutation.isPending ? t('tourContracts.deleting') : t('tourContracts.deleteConfirmButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

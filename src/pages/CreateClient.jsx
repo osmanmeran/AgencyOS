@@ -14,8 +14,10 @@ import { ArrowLeft } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function CreateClient() {
+  const { t } = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
@@ -42,11 +44,11 @@ export default function CreateClient() {
     useMutation({
       mutationFn: (/** @type {any} */ data) => db.entities.Client.create(data),
       onSuccess: (/** @type {any} */ newClient) => {
-        showSuccess('Client created');
+        showSuccess(t('createClient.successMsg'));
         queryClient.invalidateQueries({ queryKey: ['clients'] });
         navigate(createPageUrl(`ClientDetails?id=${newClient.id}`));
       },
-      onError: (error) => showError('Failed to create client', error.message),
+      onError: (error) => showError(t('createClient.errorMsg'), error.message),
     })
   );
 
@@ -60,21 +62,21 @@ export default function CreateClient() {
       <Link to={createPageUrl('ClientCRM')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Clients
+          {t('clientCRM.backToClients')}
         </Button>
       </Link>
 
       <div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">Add New Client</h1>
-        <p className="text-muted-foreground">Create a new client profile</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">{t('createClient.title')}</h1>
+        <p className="text-muted-foreground">{t('createClient.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-xl font-bold text-foreground mb-4">Basic Information</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('createClient.basicInfo')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name *</Label>
+              <Label htmlFor="name">{t('crm.fullName')} *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -83,7 +85,7 @@ export default function CreateClient() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="age_category">Age Category *</Label>
+              <Label htmlFor="age_category">{t('createClient.ageCategory')}</Label>
               <Select
                 value={formData.age_category}
                 onValueChange={(v) => setFormData({ ...formData, age_category: v })}
@@ -92,35 +94,35 @@ export default function CreateClient() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="adult">Adult</SelectItem>
-                  <SelectItem value="children">Children (3 – 11.99 years)</SelectItem>
-                  <SelectItem value="infant">Infant (0 – 2.99 years)</SelectItem>
+                  <SelectItem value="adult">{t('passengers.adult')}</SelectItem>
+                  <SelectItem value="children">{t('passengers.children')}</SelectItem>
+                  <SelectItem value="infant">{t('passengers.infant')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Primary Contact *</Label>
+              <Label htmlFor="phone">{t('createClient.primaryContact')}</Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+1 555 000 0000"
+                placeholder={t('createClient.contactPlaceholder')}
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone_secondary">Secondary Contact</Label>
+              <Label htmlFor="phone_secondary">{t('createClient.secondaryContact')}</Label>
               <Input
                 id="phone_secondary"
                 type="tel"
-                placeholder="+1 555 000 0000"
+                placeholder={t('createClient.contactPlaceholder')}
                 value={formData.phone_secondary}
                 onChange={(e) => setFormData({ ...formData, phone_secondary: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('common.email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -129,7 +131,7 @@ export default function CreateClient() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company">Company</Label>
+              <Label htmlFor="company">{t('crm.company')}</Label>
               <Input
                 id="company"
                 value={formData.company}
@@ -137,7 +139,7 @@ export default function CreateClient() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date_of_birth">Date of Birth</Label>
+              <Label htmlFor="date_of_birth">{t('crm.dateOfBirth')}</Label>
               <Input
                 id="date_of_birth"
                 type="date"
@@ -146,7 +148,7 @@ export default function CreateClient() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="passport_number">Passport Number</Label>
+              <Label htmlFor="passport_number">{t('crm.passportNumber')}</Label>
               <Input
                 id="passport_number"
                 value={formData.passport_number}
@@ -157,10 +159,10 @@ export default function CreateClient() {
         </Card>
 
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-xl font-bold text-foreground mb-4">Address Details</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('createClient.addressDetails')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address">{t('common.address')}</Label>
               <Input
                 id="address"
                 value={formData.address}
@@ -168,7 +170,7 @@ export default function CreateClient() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
+              <Label htmlFor="city">{t('common.city')}</Label>
               <Input
                 id="city"
                 value={formData.city}
@@ -176,7 +178,7 @@ export default function CreateClient() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
+              <Label htmlFor="country">{t('common.country')}</Label>
               <Input
                 id="country"
                 value={formData.country}
@@ -187,20 +189,20 @@ export default function CreateClient() {
         </Card>
 
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-xl font-bold text-foreground mb-4">Billing Information</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('createClient.billingInfo')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="invoice_address">Invoice Address</Label>
+              <Label htmlFor="invoice_address">{t('createClient.invoiceAddress')}</Label>
               <Textarea
                 id="invoice_address"
                 value={formData.invoice_address}
                 onChange={(e) => setFormData({ ...formData, invoice_address: e.target.value })}
                 rows={2}
-                placeholder="If different from main address"
+                placeholder={t('createClient.invoiceAddressPlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax_id">Tax ID / VAT Number</Label>
+              <Label htmlFor="tax_id">{t('createClient.taxIdVat')}</Label>
               <Input
                 id="tax_id"
                 value={formData.tax_id}
@@ -208,7 +210,7 @@ export default function CreateClient() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="payment_method">Preferred Payment Method</Label>
+              <Label htmlFor="payment_method">{t('createClient.preferredPaymentMethod')}</Label>
               <Select
                 value={formData.payment_method}
                 onValueChange={(v) => setFormData({ ...formData, payment_method: v })}
@@ -217,12 +219,12 @@ export default function CreateClient() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="credit_card">Credit Card</SelectItem>
-                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="paypal">PayPal</SelectItem>
-                  <SelectItem value="check">Check</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="credit_card">{t('createClient.paymentCreditCard')}</SelectItem>
+                  <SelectItem value="bank_transfer">{t('createClient.paymentBankTransfer')}</SelectItem>
+                  <SelectItem value="paypal">{t('createClient.paymentPaypal')}</SelectItem>
+                  <SelectItem value="check">{t('createClient.paymentCheck')}</SelectItem>
+                  <SelectItem value="cash">{t('createClient.paymentCash')}</SelectItem>
+                  <SelectItem value="other">{t('createClient.paymentOther')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -230,18 +232,18 @@ export default function CreateClient() {
         </Card>
 
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-xl font-bold text-foreground mb-4">Client Settings</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('createClient.clientSettings')}</h2>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">{t('common.status')}</Label>
               <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="vip">VIP</SelectItem>
+                  <SelectItem value="active">{t('common.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+                  <SelectItem value="vip">{t('clientCRM.vip')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -253,18 +255,18 @@ export default function CreateClient() {
                 onCheckedChange={(checked) => setFormData({ ...formData, portal_access: checked })}
               />
               <Label htmlFor="portal_access" className="cursor-pointer">
-                Grant client portal access
+                {t('crm.portalAccess')}
               </Label>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Internal Notes</Label>
+              <Label htmlFor="notes">{t('crm.internalNotes')}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
-                placeholder="Internal notes about this client..."
+                placeholder={t('createClient.notesPlaceholder')}
               />
             </div>
           </div>
@@ -273,11 +275,11 @@ export default function CreateClient() {
         <div className="flex justify-end gap-3">
           <Link to={createPageUrl('ClientCRM')}>
             <Button type="button" variant="outline">
-              Cancel
+              {t('common.cancel')}
             </Button>
           </Link>
           <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
-            {createMutation.isPending ? 'Creating...' : 'Create Client'}
+            {createMutation.isPending ? t('createClient.creating') : t('crm.createClient')}
           </Button>
         </div>
       </form>

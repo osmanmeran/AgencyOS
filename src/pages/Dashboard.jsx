@@ -37,8 +37,10 @@ import ChevronRight from '@mui/icons-material/ChevronRight';
 import PlaceRounded from '@mui/icons-material/PlaceRounded';
 import ReceiptLongRounded from '@mui/icons-material/ReceiptLongRounded';
 import RateReviewRounded from '@mui/icons-material/RateReviewRounded';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function Dashboard() {
+  const { t } = useT();
   const today = new Date();
   const nextWeek = addDays(today, 7);
   const next30Days = addDays(today, 30);
@@ -55,29 +57,29 @@ export default function Dashboard() {
 
   const { upcomingArrivals, upcomingDepartures, pendingReservations, departingNext7 } = useMemo(() => {
     const upcomingArrivals = trips
-      .filter((t) => {
-        if (!t.start_date) return false;
-        const startDate = parseISO(t.start_date);
+      .filter((trip) => {
+        if (!trip.start_date) return false;
+        const startDate = parseISO(trip.start_date);
         return isWithinInterval(startDate, { start: today, end: next30Days });
       })
       .sort((a, b) => +new Date(a.start_date) - +new Date(b.start_date));
 
     const upcomingDepartures = trips
-      .filter((t) => {
-        if (!t.end_date) return false;
-        const endDate = parseISO(t.end_date);
+      .filter((trip) => {
+        if (!trip.end_date) return false;
+        const endDate = parseISO(trip.end_date);
         return isWithinInterval(endDate, { start: today, end: next30Days });
       })
       .sort((a, b) => +new Date(a.end_date) - +new Date(b.end_date));
 
     const pendingReservations = trips
-      .filter((t) => (t.proposal_status || 'pending') === 'pending')
+      .filter((trip) => (trip.proposal_status || 'pending') === 'pending')
       .sort((a, b) => +new Date(a.created_date) - +new Date(b.created_date));
 
     const departingNext7 = trips
-      .filter((t) => {
-        if (!t.start_date) return false;
-        const startDate = parseISO(t.start_date);
+      .filter((trip) => {
+        if (!trip.start_date) return false;
+        const startDate = parseISO(trip.start_date);
         return isWithinInterval(startDate, { start: today, end: nextWeek });
       })
       .sort((a, b) => +new Date(a.start_date) - +new Date(b.start_date));
@@ -93,8 +95,8 @@ export default function Dashboard() {
 
   const getDayEvents = useCallback(
     (day) => {
-      const arrivals = trips.filter((t) => t.start_date && isSameDay(parseISO(t.start_date), day));
-      const departures = trips.filter((t) => t.end_date && isSameDay(parseISO(t.end_date), day));
+      const arrivals = trips.filter((trip) => trip.start_date && isSameDay(parseISO(trip.start_date), day));
+      const departures = trips.filter((trip) => trip.end_date && isSameDay(parseISO(trip.end_date), day));
       return { arrivals, departures };
     },
     [trips],
@@ -112,10 +114,10 @@ export default function Dashboard() {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Box>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Dashboard
+          {t('dashboard.title')}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Welcome back! Here's what's happening with your travel business.
+          {t('dashboard.subtitle')}
         </Typography>
       </Box>
 
@@ -129,7 +131,7 @@ export default function Dashboard() {
                   sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}
                 >
                   <AssignmentRounded fontSize="small" sx={{ color: 'warning.main' }} />
-                  Tasks To Do
+                  {t('dashboard.tasksToDo')}
                 </Typography>
                 <Chip
                   label={pendingReservations.length}
@@ -151,14 +153,14 @@ export default function Dashboard() {
                       gap: 0.5,
                     }}
                   >
-                    <CheckCircleRounded fontSize="small" /> All caught up!
+                    <CheckCircleRounded fontSize="small" /> {t('dashboard.allCaughtUp')}
                   </Box>
                 ) : (
-                  pendingReservations.slice(0, 6).map((t) => (
+                  pendingReservations.slice(0, 6).map((trip) => (
                     <Box
-                      key={t.id}
+                      key={trip.id}
                       component={Link}
-                      to={createPageUrl(`ReservationDetails?id=${t.id}`)}
+                      to={createPageUrl(`ReservationDetails?id=${trip.id}`)}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -173,10 +175,10 @@ export default function Dashboard() {
                     >
                       <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                          {t.name}
+                          {trip.name}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" noWrap>
-                          {t.client_name || '—'}
+                          {trip.client_name || '—'}
                         </Typography>
                       </Box>
                       <ArrowForwardRounded fontSize="small" sx={{ color: 'text.secondary', ml: 1, flexShrink: 0 }} />
@@ -197,7 +199,7 @@ export default function Dashboard() {
                     '&:hover': { textDecoration: 'underline' },
                   }}
                 >
-                  +{pendingReservations.length - 6} more
+                  {t('dashboard.moreCount', { count: pendingReservations.length - 6 })}
                 </Box>
               )}
             </CardContent>
@@ -213,23 +215,23 @@ export default function Dashboard() {
                   sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}
                 >
                   <FlightTakeoffRounded fontSize="small" sx={{ color: 'primary.main' }} />
-                  Departing Soon
+                  {t('dashboard.departingSoon')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Next 7 days
+                  {t('dashboard.next7Days')}
                 </Typography>
               </Box>
               <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
                 {departingNext7.length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                    No departures this week
+                    {t('dashboard.noDeparturesWeek')}
                   </Typography>
                 ) : (
-                  departingNext7.map((t) => (
+                  departingNext7.map((trip) => (
                     <Box
-                      key={t.id}
+                      key={trip.id}
                       component={Link}
-                      to={createPageUrl(`ReservationDetails?id=${t.id}`)}
+                      to={createPageUrl(`ReservationDetails?id=${trip.id}`)}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -244,7 +246,7 @@ export default function Dashboard() {
                     >
                       <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                          {t.name}
+                          {trip.name}
                         </Typography>
                         <Typography
                           variant="caption"
@@ -252,16 +254,16 @@ export default function Dashboard() {
                           noWrap
                           sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                         >
-                          <PlaceRounded sx={{ fontSize: 12 }} /> {t.destination}
+                          <PlaceRounded sx={{ fontSize: 12 }} /> {trip.destination}
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 1 }}>
                         <Typography variant="caption" sx={{ fontWeight: 600 }} color="primary.main">
-                          {format(parseISO(t.start_date), 'MMM d')}
+                          {format(parseISO(trip.start_date), 'MMM d')}
                         </Typography>
-                        {t.passengers?.length > 0 && (
+                        {trip.passengers?.length > 0 && (
                           <Typography variant="caption" sx={{ display: 'block' }} color="text.secondary">
-                            {t.passengers.length} pax
+                            {t('dashboard.paxCount', { count: trip.passengers.length })}
                           </Typography>
                         )}
                       </Box>
@@ -281,13 +283,13 @@ export default function Dashboard() {
                 sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', mb: 1.5 }}
               >
                 <CheckCircleRounded fontSize="small" sx={{ color: 'primary.main' }} />
-                Quick Actions
+                {t('dashboard.quickActions')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 {[
-                  { label: 'New Reservation', to: 'CreateReservation', color: 'primary' },
-                  { label: 'New Proposal', to: 'CreateProposal', color: 'success' },
-                  { label: 'New Invoice', to: 'CreateInvoice', color: 'warning' },
+                  { label: t('reservations.newReservation'), to: 'CreateReservation', color: 'primary' },
+                  { label: t('proposals.newProposal'), to: 'CreateProposal', color: 'success' },
+                  { label: t('invoices.newInvoice'), to: 'CreateInvoice', color: 'warning' },
                 ].map((action) => (
                   <Box
                     key={action.to}
@@ -323,7 +325,7 @@ export default function Dashboard() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CalendarMonthRounded sx={{ color: 'primary.main' }} />
-              Trip Calendar
+              {t('dashboard.tripCalendar')}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <IconButton
@@ -353,13 +355,13 @@ export default function Dashboard() {
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                Today
+                {t('dashboard.today')}
               </Box>
             </Box>
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+            {t('dashboard.weekdays').map((day) => (
               <Box
                 key={day}
                 sx={{ textAlign: 'center', py: 1, fontSize: '0.8125rem', fontWeight: 500, color: 'text.secondary' }}
@@ -394,9 +396,9 @@ export default function Dashboard() {
                   </Typography>
                   {hasEvents && (
                     <Box sx={{ mt: 0.25, display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                      {events.arrivals.slice(0, 1).map((t) => (
+                      {events.arrivals.slice(0, 1).map((trip) => (
                         <Box
-                          key={t.id}
+                          key={trip.id}
                           sx={{
                             fontSize: '0.625rem',
                             bgcolor: 'success.light',
@@ -408,12 +410,12 @@ export default function Dashboard() {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          ↓ {t.name}
+                          ↓ {trip.name}
                         </Box>
                       ))}
-                      {events.departures.slice(0, 1).map((t) => (
+                      {events.departures.slice(0, 1).map((trip) => (
                         <Box
-                          key={t.id}
+                          key={trip.id}
                           sx={{
                             fontSize: '0.625rem',
                             bgcolor: 'error.light',
@@ -425,7 +427,7 @@ export default function Dashboard() {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          ↑ {t.name}
+                          ↑ {trip.name}
                         </Box>
                       ))}
                     </Box>
@@ -438,34 +440,34 @@ export default function Dashboard() {
           {/* Month Recap */}
           <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
             <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
-              Confirmed Arrivals — {format(currentMonth, 'MMMM yyyy')}
+              {t('dashboard.confirmedArrivalsMonth', { month: format(currentMonth, 'MMMM yyyy') })}
             </Typography>
             {(() => {
               const confirmedArrivals = trips
-                .filter((t) => {
-                  if (!t.start_date) return false;
-                  const start = parseISO(t.start_date);
+                .filter((trip) => {
+                  if (!trip.start_date) return false;
+                  const start = parseISO(trip.start_date);
                   return (
                     start >= monthStart &&
                     start <= monthEnd &&
-                    (t.proposal_status === 'confirmed' || t.status === 'confirmed')
+                    (trip.proposal_status === 'confirmed' || trip.status === 'confirmed')
                   );
                 })
                 .sort((a, b) => +new Date(a.start_date) - +new Date(b.start_date));
               if (confirmedArrivals.length === 0) {
                 return (
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                    No confirmed arrivals this month
+                    {t('dashboard.noConfirmedArrivalsMonth')}
                   </Typography>
                 );
               }
               return (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {confirmedArrivals.map((t) => (
+                  {confirmedArrivals.map((trip) => (
                     <Box
-                      key={t.id}
+                      key={trip.id}
                       component={Link}
-                      to={createPageUrl(`ReservationDetails?id=${t.id}`)}
+                      to={createPageUrl(`ReservationDetails?id=${trip.id}`)}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -485,25 +487,30 @@ export default function Dashboard() {
                         <CheckCircleRounded sx={{ color: 'success.main', fontSize: 18, flexShrink: 0 }} />
                         <Box sx={{ minWidth: 0 }}>
                           <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                            {t.name}
+                            {trip.name}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {t.destination || '—'}
+                            {trip.destination || '—'}
                           </Typography>
                         </Box>
                       </Box>
                       <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 1 }}>
                         <Typography variant="caption" sx={{ fontWeight: 600 }} color="success.dark">
-                          {format(parseISO(t.start_date), 'MMM d')}
+                          {format(parseISO(trip.start_date), 'MMM d')}
                         </Typography>
                         <Typography variant="caption" sx={{ display: 'block' }} color="text.secondary">
-                          {t.passengers?.length || 0} pax
+                          {t('dashboard.paxCount', { count: trip.passengers?.length || 0 })}
                         </Typography>
                       </Box>
                     </Box>
                   ))}
                   <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
-                    {confirmedArrivals.length} confirmed arrival{confirmedArrivals.length > 1 ? 's' : ''}
+                    {t(
+                      confirmedArrivals.length > 1
+                        ? 'dashboard.confirmedArrivalPlural'
+                        : 'dashboard.confirmedArrivalSingular',
+                      { count: confirmedArrivals.length },
+                    )}
                   </Typography>
                 </Box>
               );
@@ -519,12 +526,12 @@ export default function Dashboard() {
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <FlightLandRounded sx={{ color: 'success.main' }} />
-                Upcoming Arrivals
+                {t('dashboard.upcomingArrivals')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {upcomingArrivals.length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-                    No upcoming arrivals
+                    {t('dashboard.noUpcomingArrivals')}
                   </Typography>
                 ) : (
                   upcomingArrivals.slice(0, 5).map((trip) => (
@@ -573,12 +580,12 @@ export default function Dashboard() {
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <FlightTakeoffRounded sx={{ color: 'error.main', transform: 'rotate(-45deg)' }} />
-                Upcoming Departures
+                {t('dashboard.upcomingDepartures')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {upcomingDepartures.length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-                    No upcoming departures
+                    {t('dashboard.noUpcomingDepartures')}
                   </Typography>
                 ) : (
                   upcomingDepartures.slice(0, 5).map((trip) => (
@@ -626,9 +633,9 @@ export default function Dashboard() {
       {/* Quick Links */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
         {[
-          { label: 'Reservations', to: 'Reservations', icon: <FlightTakeoffRounded />, color: 'primary' },
-          { label: 'Proposals', to: 'Proposals', icon: <RateReviewRounded />, color: 'success' },
-          { label: 'Invoices', to: 'Revenue', icon: <ReceiptLongRounded />, color: 'warning' },
+          { label: t('nav.reservations'), to: 'Reservations', icon: <FlightTakeoffRounded />, color: 'primary' },
+          { label: t('proposals.title'), to: 'Proposals', icon: <RateReviewRounded />, color: 'success' },
+          { label: t('nav.invoices'), to: 'Revenue', icon: <ReceiptLongRounded />, color: 'warning' },
         ].map((link) => (
           <Card
             key={link.to}

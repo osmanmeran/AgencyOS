@@ -12,8 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarClock, Save } from 'lucide-react';
 import { addDays, format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function TripEditModal({ open, onClose, trip }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(/** @type {any} */ ({}));
   const [moveDays, setMoveDays] = useState(0);
@@ -85,19 +87,19 @@ export default function TripEditModal({ open, onClose, trip }) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Trip</DialogTitle>
+          <DialogTitle>{t('tripEditModal.title')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <Tabs defaultValue="details">
             <TabsList>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="dates">Move Dates</TabsTrigger>
+              <TabsTrigger value="details">{t('tripEditModal.tabDetails')}</TabsTrigger>
+              <TabsTrigger value="dates">{t('tripEditModal.tabMoveDates')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="details" className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Trip Name *</Label>
+                  <Label>{t('tripEditModal.tripNameLabel')}</Label>
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -105,7 +107,7 @@ export default function TripEditModal({ open, onClose, trip }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Destination *</Label>
+                  <Label>{t('tripEditModal.destinationLabel')}</Label>
                   <Input
                     value={formData.destination}
                     onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
@@ -116,7 +118,7 @@ export default function TripEditModal({ open, onClose, trip }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Start Date *</Label>
+                  <Label>{t('tripEditModal.startDateLabel')}</Label>
                   <Input
                     type="date"
                     value={formData.start_date}
@@ -125,7 +127,7 @@ export default function TripEditModal({ open, onClose, trip }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>End Date *</Label>
+                  <Label>{t('tripEditModal.endDateLabel')}</Label>
                   <Input
                     type="date"
                     value={formData.end_date}
@@ -137,16 +139,16 @@ export default function TripEditModal({ open, onClose, trip }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Department</Label>
+                  <Label>{t('tripEditModal.departmentLabel')}</Label>
                   <Select
                     value={formData.department}
                     onValueChange={(v) => setFormData({ ...formData, department: v })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
+                      <SelectValue placeholder={t('tripEditModal.selectDepartmentPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={null}>None</SelectItem>
+                      <SelectItem value={null}>{t('common.none')}</SelectItem>
                       {departments.map((d) => (
                         <SelectItem key={d} value={d}>
                           {d}
@@ -156,13 +158,13 @@ export default function TripEditModal({ open, onClose, trip }) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Client</Label>
+                  <Label>{t('tripEditModal.clientLabel')}</Label>
                   <Select value={formData.client_id} onValueChange={(v) => setFormData({ ...formData, client_id: v })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select client" />
+                      <SelectValue placeholder={t('tripEditModal.selectClientPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={null}>None</SelectItem>
+                      <SelectItem value={null}>{t('common.none')}</SelectItem>
                       {clients.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
@@ -174,7 +176,7 @@ export default function TripEditModal({ open, onClose, trip }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Notes</Label>
+                <Label>{t('common.notes')}</Label>
                 <Textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -183,7 +185,7 @@ export default function TripEditModal({ open, onClose, trip }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Image URL</Label>
+                <Label>{t('tripEditModal.imageUrlLabel')}</Label>
                 <Input
                   value={formData.image_url}
                   onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
@@ -196,33 +198,31 @@ export default function TripEditModal({ open, onClose, trip }) {
               <div className="p-4 bg-muted rounded-lg">
                 <div className="flex items-center gap-2 mb-4">
                   <CalendarClock className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-                  <h4 className="font-semibold">Move All Dates</h4>
+                  <h4 className="font-semibold">{t('tripEditModal.moveAllDatesTitle')}</h4>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Shift all trip dates forward or backward by a number of days.
-                </p>
+                <p className="text-sm text-muted-foreground mb-4">{t('tripEditModal.moveAllDatesHint')}</p>
                 <div className="flex items-center gap-4">
                   <Input
                     type="number"
                     value={moveDays}
                     onChange={(e) => setMoveDays(parseInt(e.target.value) || 0)}
                     className="w-32"
-                    placeholder="Days"
+                    placeholder={t('tripEditModal.daysPlaceholder')}
                   />
                   <Button type="button" variant="outline" onClick={handleMoveDates}>
-                    Apply Shift
+                    {t('tripEditModal.applyShift')}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Positive = move forward, Negative = move backward</p>
+                <p className="text-xs text-muted-foreground mt-2">{t('tripEditModal.shiftHint')}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
                 <div>
-                  <Label className="text-sm text-muted-foreground">Current Start</Label>
+                  <Label className="text-sm text-muted-foreground">{t('tripEditModal.currentStartLabel')}</Label>
                   <div className="font-semibold">{formData.start_date}</div>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Current End</Label>
+                  <Label className="text-sm text-muted-foreground">{t('tripEditModal.currentEndLabel')}</Label>
                   <div className="font-semibold">{formData.end_date}</div>
                 </div>
               </div>
@@ -231,10 +231,10 @@ export default function TripEditModal({ open, onClose, trip }) {
 
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              <Save className="w-4 h-4 mr-2" /> Save Changes
+              <Save className="w-4 h-4 mr-2" /> {t('tripEditModal.saveChanges')}
             </Button>
           </div>
         </form>

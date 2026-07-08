@@ -10,8 +10,10 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
 import { FileText, Calendar, CheckCircle } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ClientInvoices() {
+  const { t } = useT();
   const client = useMyClient();
 
   const { data: invoices = /** @type {any} */ ([]) } = /** @type {any} */ (
@@ -31,8 +33,8 @@ export default function ClientInvoices() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">My Invoices</h1>
-        <p className="text-muted-foreground">View and manage your invoices</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">{t('clientInvoices.title')}</h1>
+        <p className="text-muted-foreground">{t('clientInvoices.subtitle')}</p>
       </div>
 
       {sortedInvoices.length === 0 ? (
@@ -40,8 +42,8 @@ export default function ClientInvoices() {
           <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText className="w-8 h-8 text-blue-600 dark:text-blue-300" />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">No invoices yet</h3>
-          <p className="text-muted-foreground">Your invoices will appear here</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('clientInvoices.noInvoicesTitle')}</h3>
+          <p className="text-muted-foreground">{t('clientInvoices.noInvoicesBody')}</p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -67,17 +69,21 @@ export default function ClientInvoices() {
                                 : 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300'
                           }
                         >
-                          {isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Pending'}
+                          {isPaid
+                            ? t('invoices.status.paid')
+                            : isOverdue
+                              ? t('invoices.status.overdue')
+                              : t('common.pending')}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          Issued: {format(parseISO(invoice.issue_date), 'MMM d, yyyy')}
+                          {t('clientInvoices.issued', { date: format(parseISO(invoice.issue_date), 'MMM d, yyyy') })}
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          Due: {format(parseISO(invoice.due_date), 'MMM d, yyyy')}
+                          {t('clientPortal.due', { date: format(parseISO(invoice.due_date), 'MMM d, yyyy') })}
                         </div>
                       </div>
                     </div>
@@ -87,13 +93,13 @@ export default function ClientInvoices() {
                       </div>
                       {!isPaid && invoice.amount_due > 0 && (
                         <div className="text-sm text-orange-600 dark:text-orange-300">
-                          Due: ${invoice.amount_due.toFixed(2)}
+                          {t('clientInvoices.dueAmount', { amount: `$${invoice.amount_due.toFixed(2)}` })}
                         </div>
                       )}
                       {isPaid && (
                         <div className="flex items-center gap-1 text-green-600 dark:text-green-300 text-sm">
                           <CheckCircle className="w-4 h-4" />
-                          Paid in full
+                          {t('clientInvoices.paidInFull')}
                         </div>
                       )}
                     </div>

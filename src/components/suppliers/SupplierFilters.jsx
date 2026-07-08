@@ -2,22 +2,24 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Filter, X, Star } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 // ── Text Filter ──────────────────────────────────────────────────────────
 
 export function SupplierTextFilter({ value, onChange, placeholder }) {
+  const { t } = useT();
   return (
     <div className="p-2 w-56">
       <Input
-        placeholder={placeholder || 'Filter...'}
+        placeholder={placeholder || t('supplierFilters.filterPlaceholder')}
         value={value || ''}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         className="h-9"
         autoFocus
       />
       {value && (
         <Button variant="ghost" size="sm" className="mt-1 h-7 text-xs w-full" onClick={() => onChange('')}>
-          <X className="w-3 h-3 mr-1" /> Clear
+          <X className="w-3 h-3 mr-1" /> {t('supplierFilters.clear')}
         </Button>
       )}
     </div>
@@ -27,14 +29,17 @@ export function SupplierTextFilter({ value, onChange, placeholder }) {
 // ── Category Filter ──────────────────────────────────────────────────────
 
 export function SupplierCategoryFilter({ categories, selected, onChange }) {
+  const { t } = useT();
   return (
     <div className="p-2 w-64">
-      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 px-1">Select categories</p>
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 px-1">
+        {t('supplierFilters.selectCategories')}
+      </p>
       <div className="space-y-1 max-h-48 overflow-y-auto">
         {categories.length === 0 ? (
-          <p className="text-xs text-slate-400 px-1">No categories available</p>
+          <p className="text-xs text-slate-400 px-1">{t('supplierFilters.noCategoriesAvailable')}</p>
         ) : (
-          categories.map(cat => {
+          categories.map((cat) => {
             const checked = selected.includes(cat.id);
             return (
               <label
@@ -48,9 +53,7 @@ export function SupplierCategoryFilter({ categories, selected, onChange }) {
                 <input
                   type="checkbox"
                   checked={checked}
-                  onChange={() => onChange(
-                    checked ? selected.filter(id => id !== cat.id) : [...selected, cat.id]
-                  )}
+                  onChange={() => onChange(checked ? selected.filter((id) => id !== cat.id) : [...selected, cat.id])}
                   className="rounded border-slate-300 dark:border-slate-600"
                 />
                 {cat.name}
@@ -61,7 +64,7 @@ export function SupplierCategoryFilter({ categories, selected, onChange }) {
       </div>
       {selected.length > 0 && (
         <Button variant="ghost" size="sm" className="mt-1 h-7 text-xs w-full" onClick={() => onChange([])}>
-          <X className="w-3 h-3 mr-1" /> Clear ({selected.length})
+          <X className="w-3 h-3 mr-1" /> {t('supplierFilters.clearCount', { count: selected.length })}
         </Button>
       )}
     </div>
@@ -71,12 +74,11 @@ export function SupplierCategoryFilter({ categories, selected, onChange }) {
 // ── Rating Filter ────────────────────────────────────────────────────────
 
 export function SupplierRatingFilter({ value, onChange }) {
+  const { t } = useT();
   const selected = value || [];
 
   const toggleRating = (r) => {
-    const next = selected.includes(r)
-      ? selected.filter(v => v !== r)
-      : [...selected, r];
+    const next = selected.includes(r) ? selected.filter((v) => v !== r) : [...selected, r];
     onChange(next.length > 0 ? next : null);
   };
 
@@ -84,11 +86,11 @@ export function SupplierRatingFilter({ value, onChange }) {
     <div className="p-3 w-64">
       <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">
         {selected.length > 0
-          ? `${selected.map(r => `${r}★`).join(', ')} selected`
-          : 'Filter by rating'}
+          ? t('supplierFilters.ratingsSelected', { list: selected.map((r) => `${r}★`).join(', ') })
+          : t('supplierFilters.filterByRating')}
       </p>
       <div className="flex flex-col gap-1.5">
-        {[5, 4, 3, 2, 1].map(r => {
+        {[5, 4, 3, 2, 1].map((r) => {
           const active = selected.includes(r);
           return (
             <button
@@ -101,7 +103,7 @@ export function SupplierRatingFilter({ value, onChange }) {
               }`}
             >
               <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map(s => (
+                {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
                     className={`w-4 h-4 ${s <= r ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200 dark:text-slate-600'}`}
@@ -116,7 +118,7 @@ export function SupplierRatingFilter({ value, onChange }) {
       </div>
       {selected.length > 0 && (
         <Button variant="ghost" size="sm" className="mt-2 h-7 text-xs w-full" onClick={() => onChange(null)}>
-          <X className="w-3 h-3 mr-1" /> Clear
+          <X className="w-3 h-3 mr-1" /> {t('supplierFilters.clear')}
         </Button>
       )}
     </div>
@@ -135,7 +137,7 @@ export function SupplierFilterButton({ active, children }) {
               ? 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/40'
               : 'text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400'
           }`}
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           <Filter className="w-3 h-3" />
         </button>

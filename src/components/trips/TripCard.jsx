@@ -19,8 +19,10 @@ import { format, differenceInDays } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import TripEditModal from './TripEditModal';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function TripCard({ trip }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -63,9 +65,9 @@ export default function TripCard({ trip }) {
   const handleAction = (e, action) => {
     e.preventDefault();
     e.stopPropagation();
-    if (action === 'delete' && confirm('Delete this trip?')) deleteMutation.mutate();
+    if (action === 'delete' && confirm(t('tripCard.deleteConfirm'))) deleteMutation.mutate();
     if (action === 'duplicate') duplicateMutation.mutate();
-    if (action === 'cancel' && confirm('Cancel this trip?')) cancelMutation.mutate();
+    if (action === 'cancel' && confirm(t('tripCard.cancelConfirm'))) cancelMutation.mutate();
     if (action === 'edit') setEditModalOpen(true);
   };
 
@@ -82,11 +84,11 @@ export default function TripCard({ trip }) {
             <DropdownMenuContent align="end">
               {canModify && (
                 <DropdownMenuItem onClick={(e) => handleAction(e, 'edit')}>
-                  <Edit className="w-4 h-4 mr-2" /> Edit Reservation
+                  <Edit className="w-4 h-4 mr-2" /> {t('tripCard.editReservation')}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={(e) => handleAction(e, 'duplicate')}>
-                <Copy className="w-4 h-4 mr-2" /> Duplicate
+                <Copy className="w-4 h-4 mr-2" /> {t('tripCard.duplicate')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {trip.status !== 'cancelled' && (
@@ -94,11 +96,11 @@ export default function TripCard({ trip }) {
                   onClick={(e) => handleAction(e, 'cancel')}
                   className="text-orange-600 dark:text-orange-300"
                 >
-                  <XCircle className="w-4 h-4 mr-2" /> Cancel Reservation
+                  <XCircle className="w-4 h-4 mr-2" /> {t('tripCard.cancelReservation')}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={(e) => handleAction(e, 'delete')} className="text-red-600 dark:text-red-300">
-                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                <Trash2 className="w-4 h-4 mr-2" /> {t('common.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -118,13 +120,13 @@ export default function TripCard({ trip }) {
 
             {trip.status === 'cancelled' && (
               <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                Cancelled
+                {t('common.cancelled')}
               </div>
             )}
 
             {isUpcoming && daysUntil <= 30 && trip.status !== 'cancelled' && (
               <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
-                {daysUntil === 0 ? 'Today!' : `${daysUntil} days`}
+                {daysUntil === 0 ? t('clientTrips.today') : t('common.daysCount', { count: daysUntil })}
               </div>
             )}
 
@@ -152,7 +154,9 @@ export default function TripCard({ trip }) {
                   {format(new Date(trip.start_date), 'MMM d')} - {format(new Date(trip.end_date), 'MMM d, yyyy')}
                 </span>
               </div>
-              <span className="text-blue-600 dark:text-blue-300 font-semibold">{duration} days</span>
+              <span className="text-blue-600 dark:text-blue-300 font-semibold">
+                {t('common.daysCount', { count: duration })}
+              </span>
             </div>
 
             {trip.department && (
@@ -172,7 +176,7 @@ export default function TripCard({ trip }) {
             )}
 
             <div className="mt-4 flex items-center justify-end text-blue-600 dark:text-blue-300 font-medium text-sm group-hover:gap-2 gap-1 transition-all">
-              View Details
+              {t('tripCard.viewDetails')}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>

@@ -22,8 +22,10 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ClientPortal() {
+  const { t } = useT();
   const [user, setUser] = React.useState(null);
   const [client, setClient] = React.useState(null);
   const actAsClientId = useActAsClientId();
@@ -95,10 +97,8 @@ export default function ClientPortal() {
     return (
       <div className="text-center py-20">
         <Card className="max-w-md mx-auto p-8">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Welcome!</h2>
-          <p className="text-muted-foreground">
-            Your client account is being set up. Please contact your travel agent for access.
-          </p>
+          <h2 className="text-2xl font-bold text-foreground mb-4">{t('clientPortal.welcomeSetupTitle')}</h2>
+          <p className="text-muted-foreground">{t('clientPortal.welcomeSetupBody')}</p>
         </Card>
       </div>
     );
@@ -109,8 +109,8 @@ export default function ClientPortal() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">Welcome, {client.name}!</h1>
-        <p className="text-muted-foreground">Track your trips and invoices, or build your next one</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">{t('clientPortal.welcome', { name: client.name })}</h1>
+        <p className="text-muted-foreground">{t('clientPortal.subtitle')}</p>
       </div>
 
       {/* Request a Quote CTA */}
@@ -119,13 +119,13 @@ export default function ClientPortal() {
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2 mb-1">
               <ShoppingCart className="w-5 h-5" />
-              Ready to plan your next trip?
+              {t('clientPortal.ctaTitle')}
             </h2>
-            <p className="text-blue-100">Build your itinerary from our services and send us a quote request.</p>
+            <p className="text-blue-100">{t('clientPortal.ctaBody')}</p>
           </div>
           <Link to={createPageUrl('ClientQuoteBuilder')}>
             <Button className="bg-card text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 whitespace-nowrap">
-              Request a Quote
+              {t('clientPortal.requestQuote')}
             </Button>
           </Link>
         </div>
@@ -135,7 +135,7 @@ export default function ClientPortal() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-90">Total Proposals</div>
+            <div className="text-sm opacity-90">{t('clientPortal.totalProposals')}</div>
             <FileText className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">{proposals.length}</div>
@@ -143,7 +143,7 @@ export default function ClientPortal() {
 
         <Card className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-90">Active Trips</div>
+            <div className="text-sm opacity-90">{t('clientPortal.activeTrips')}</div>
             <Plane className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">{trips.length}</div>
@@ -151,7 +151,7 @@ export default function ClientPortal() {
 
         <Card className="p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-90">Total Paid</div>
+            <div className="text-sm opacity-90">{t('clientPortal.totalPaid')}</div>
             <DollarSign className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">${totalPaid.toFixed(2)}</div>
@@ -159,7 +159,7 @@ export default function ClientPortal() {
 
         <Card className="p-6 bg-gradient-to-br from-orange-500 to-orange-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-90">Amount Owed</div>
+            <div className="text-sm opacity-90">{t('clientPortal.amountOwed')}</div>
             <DollarSign className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">${(client.total_owed || 0).toFixed(2)}</div>
@@ -169,16 +169,16 @@ export default function ClientPortal() {
       {/* Recent Proposals */}
       <Card className="p-6 bg-card shadow-md">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Recent Proposals</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t('clientPortal.recentProposals')}</h2>
           <Link to={createPageUrl('ClientProposals')}>
             <span className="text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium">
-              View All
+              {t('clientPortal.viewAll')}
             </span>
           </Link>
         </div>
 
         {proposals.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No proposals yet</p>
+          <p className="text-muted-foreground text-center py-8">{t('clientPortal.noProposalsYet')}</p>
         ) : (
           <div className="space-y-4">
             {proposals.slice(0, 3).map((proposal) => (
@@ -218,16 +218,16 @@ export default function ClientPortal() {
       {/* Upcoming Trips */}
       <Card className="p-6 bg-card shadow-md">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Your Trips</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t('clientPortal.yourTrips')}</h2>
           <Link to={createPageUrl('ClientTrips')}>
             <span className="text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium">
-              View All
+              {t('clientPortal.viewAll')}
             </span>
           </Link>
         </div>
 
         {trips.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No trips booked yet</p>
+          <p className="text-muted-foreground text-center py-8">{t('clientPortal.noTripsYet')}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {trips.slice(0, 2).map((trip) => (
@@ -250,11 +250,11 @@ export default function ClientPortal() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-            My Invoices
+            {t('clientPortal.myInvoices')}
           </h2>
           <Link to={createPageUrl('ClientInvoices')}>
             <Button variant="ghost" size="sm">
-              View All <ArrowRight className="w-4 h-4 ml-1" />
+              {t('clientPortal.viewAll')} <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </Link>
         </div>
@@ -263,7 +263,12 @@ export default function ClientPortal() {
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-300" />
             <span className="text-red-800 dark:text-red-300 font-medium">
-              {overdueInvoices.length} overdue invoice(s)
+              {t(
+                overdueInvoices.length > 1
+                  ? 'clientPortal.overdueInvoicePlural'
+                  : 'clientPortal.overdueInvoiceSingular',
+                { count: overdueInvoices.length },
+              )}
             </span>
           </div>
         )}
@@ -271,7 +276,7 @@ export default function ClientPortal() {
         {pendingInvoices.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
             <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-500 dark:text-green-300" />
-            All invoices are paid!
+            {t('clientPortal.allInvoicesPaid')}
           </div>
         ) : (
           <div className="space-y-3">
@@ -287,7 +292,7 @@ export default function ClientPortal() {
                         <div className="font-medium text-foreground">{invoice.invoice_number}</div>
                         <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                           <Calendar className="w-4 h-4" />
-                          Due: {format(parseISO(invoice.due_date), 'MMM d, yyyy')}
+                          {t('clientPortal.due', { date: format(parseISO(invoice.due_date), 'MMM d, yyyy') })}
                         </div>
                       </div>
                       <div className="text-right">
@@ -298,7 +303,7 @@ export default function ClientPortal() {
                               : 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300'
                           }
                         >
-                          {isOverdue ? 'Overdue' : 'Pending'}
+                          {isOverdue ? t('invoices.status.overdue') : t('common.pending')}
                         </Badge>
                         <div className="font-bold text-green-700 dark:text-green-300 mt-1">
                           ${invoice.amount_due?.toFixed(2)}
@@ -315,10 +320,8 @@ export default function ClientPortal() {
 
       {/* Quick Actions */}
       <Card className="p-6 bg-gradient-to-br from-muted to-blue-50 dark:to-blue-950/40 border-blue-200 dark:border-blue-800">
-        <h3 className="text-lg font-bold text-foreground mb-4">Need Help?</h3>
-        <p className="text-muted-foreground mb-4">
-          Contact your travel agent if you have any questions about your bookings or need assistance.
-        </p>
+        <h3 className="text-lg font-bold text-foreground mb-4">{t('clientPortal.needHelp')}</h3>
+        <p className="text-muted-foreground mb-4">{t('clientPortal.needHelpBody')}</p>
       </Card>
     </div>
   );

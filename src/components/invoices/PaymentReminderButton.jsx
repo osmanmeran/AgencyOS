@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Bell, Loader2, CheckCircle, Mail } from 'lucide-react';
 
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function PaymentReminderButton({
   invoice,
@@ -15,6 +16,7 @@ export default function PaymentReminderButton({
   settings = /** @type {any} */ ({}),
   variant = 'default',
 }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -75,10 +77,10 @@ ${companyName}`;
             ? 'border-red-400 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40'
             : 'border-orange-400 text-orange-600 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/40'
         }
-        title="Send Payment Reminder"
+        title={t('paymentReminderButton.sendReminderTitle')}
       >
         <Bell className="w-4 h-4" />
-        {variant !== 'icon' && <span className="ml-2">Send Reminder</span>}
+        {variant !== 'icon' && <span className="ml-2">{t('paymentReminderButton.sendReminder')}</span>}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -86,18 +88,19 @@ ${companyName}`;
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="w-5 h-5 text-orange-600 dark:text-orange-300" />
-              {isOverdue ? 'Overdue Notice' : 'Payment Reminder'}
+              {isOverdue ? t('paymentReminderButton.overdueNotice') : t('paymentReminderButton.paymentReminder')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
             <div className="bg-muted rounded-lg p-3 text-sm">
-              <div className="text-muted-foreground">Sending to:</div>
+              <div className="text-muted-foreground">{t('paymentReminderButton.sendingTo')}</div>
               <div className="font-semibold text-foreground">
                 {client.name} &lt;{client.email}&gt;
               </div>
               <div className="text-muted-foreground mt-1">
-                Invoice: <span className="font-semibold">{invoice.invoice_number}</span> · Due:{' '}
+                {t('paymentReminderButton.invoiceLabel')}{' '}
+                <span className="font-semibold">{invoice.invoice_number}</span> · {t('paymentReminderButton.dueLabel')}{' '}
                 <span className={isOverdue ? 'text-red-600 dark:text-red-300 font-semibold' : ''}>
                   ${invoice.amount_due?.toFixed(2)}
                 </span>
@@ -105,7 +108,7 @@ ${companyName}`;
             </div>
 
             <div className="space-y-1">
-              <Label>Email Message</Label>
+              <Label>{t('paymentReminderButton.emailMessageLabel')}</Label>
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -116,7 +119,7 @@ ${companyName}`;
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={handleSend}
@@ -126,17 +129,17 @@ ${companyName}`;
                 {sent ? (
                   <>
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Sent!
+                    {t('paymentReminderButton.sent')}
                   </>
                 ) : sending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Sending...
+                    {t('tripApprovalBar.sending')}
                   </>
                 ) : (
                   <>
                     <Mail className="w-4 h-4 mr-2" />
-                    Send Email
+                    {t('paymentReminderButton.sendEmail')}
                   </>
                 )}
               </Button>

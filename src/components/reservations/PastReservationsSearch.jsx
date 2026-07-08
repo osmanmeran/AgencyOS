@@ -13,8 +13,10 @@ import { Search, Calendar, Plane, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import { format, parseISO, isBefore } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function PastReservationsSearch() {
+  const { t } = useT();
   const [filters, setFilters] = useState({
     reference: '',
     clientId: 'all',
@@ -83,7 +85,7 @@ export default function PastReservationsSearch() {
     return true;
   });
 
-  const getClientName = (id) => clients.find((c) => c.id === id)?.name || 'N/A';
+  const getClientName = (id) => clients.find((c) => c.id === id)?.name || t('supplierAnalytics.naFallback');
 
   const clearFilters = () => {
     setFilters({
@@ -100,17 +102,17 @@ export default function PastReservationsSearch() {
     <Card className="p-6 bg-card">
       <div className="flex items-center gap-2 mb-4">
         <Search className="w-5 h-5 text-muted-foreground" />
-        <h3 className="font-bold text-foreground">Search Past Reservations</h3>
+        <h3 className="font-bold text-foreground">{t('pastReservationsSearch.title')}</h3>
       </div>
 
       {/* Always visible search box */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
         <div className="space-y-2 lg:col-span-2">
-          <Label>Search</Label>
+          <Label>{t('pastReservationsSearch.searchLabel')}</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Reference or name..."
+              placeholder={t('pastReservationsSearch.searchPlaceholder')}
               value={filters.reference}
               onChange={(e) => setFilters({ ...filters, reference: e.target.value })}
               className="pl-10"
@@ -119,13 +121,13 @@ export default function PastReservationsSearch() {
         </div>
 
         <div className="space-y-2">
-          <Label>Client</Label>
+          <Label>{t('pastReservationsSearch.clientLabel')}</Label>
           <Select value={filters.clientId} onValueChange={(v) => setFilters({ ...filters, clientId: v })}>
             <SelectTrigger>
-              <SelectValue placeholder="All Clients" />
+              <SelectValue placeholder={t('pastReservationsSearch.allClients')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Clients</SelectItem>
+              <SelectItem value="all">{t('pastReservationsSearch.allClients')}</SelectItem>
               {clients.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
@@ -136,13 +138,13 @@ export default function PastReservationsSearch() {
         </div>
 
         <div className="space-y-2">
-          <Label>Department</Label>
+          <Label>{t('pastReservationsSearch.departmentLabel')}</Label>
           <Select value={filters.department} onValueChange={(v) => setFilters({ ...filters, department: v })}>
             <SelectTrigger>
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder={t('common.all')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">{t('common.all')}</SelectItem>
               {departments.map((d) => (
                 <SelectItem key={d} value={d}>
                   {d}
@@ -153,13 +155,13 @@ export default function PastReservationsSearch() {
         </div>
 
         <div className="space-y-2">
-          <Label>Year</Label>
+          <Label>{t('pastReservationsSearch.yearLabel')}</Label>
           <Select value={filters.year} onValueChange={(v) => setFilters({ ...filters, year: v })}>
             <SelectTrigger>
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder={t('common.all')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Years</SelectItem>
+              <SelectItem value="all">{t('pastReservationsSearch.allYears')}</SelectItem>
               {years.map((y) => (
                 <SelectItem key={y} value={y.toString()}>
                   {y}
@@ -171,19 +173,23 @@ export default function PastReservationsSearch() {
 
         <div className="flex items-end">
           <Button variant="outline" onClick={clearFilters} className="w-full">
-            Clear
+            {t('pastReservationsSearch.clear')}
           </Button>
         </div>
       </div>
 
       {/* Results */}
       <div className="space-y-3">
-        <div className="text-sm text-muted-foreground">{filteredTrips.length} past reservations found</div>
+        <div className="text-sm text-muted-foreground">
+          {filteredTrips.length === 1
+            ? t('pastReservationsSearch.resultsCountSingular', { count: filteredTrips.length })
+            : t('pastReservationsSearch.resultsCountPlural', { count: filteredTrips.length })}
+        </div>
 
         {filteredTrips.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Plane className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>No past reservations found</p>
+            <p>{t('pastReservationsSearch.noResultsFound')}</p>
           </div>
         ) : (
           <div className="max-h-96 overflow-y-auto space-y-2">

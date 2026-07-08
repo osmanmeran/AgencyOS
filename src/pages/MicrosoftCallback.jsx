@@ -1,27 +1,29 @@
 import { useEffect, useState } from 'react';
 import { handleMicrosoftCallback, exchangeIdTokenWithServer } from '@/lib/microsoft-auth';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function MicrosoftCallback() {
+  const { t } = useT();
   const [error, setError] = useState('');
-  const [step, setStep] = useState('Verifying authorization code...');
+  const [step, setStep] = useState(t('auth.microsoftCallback.verifyingCode'));
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        setStep('Exchanging code for a Microsoft token...');
+        setStep(t('auth.microsoftCallback.exchangingToken'));
         const { idToken, returnUrl } = await handleMicrosoftCallback();
         if (cancelled) return;
 
-        setStep('Authenticating with the server...');
+        setStep(t('auth.microsoftCallback.authenticatingServer'));
         await exchangeIdTokenWithServer(idToken);
         if (cancelled) return;
 
-        setStep('Login complete, redirecting...');
+        setStep(t('auth.microsoftCallback.loginComplete'));
         window.location.href = returnUrl;
       } catch (err) {
         if (!cancelled) {
-          setError(err.message || 'Login failed.');
+          setError(err.message || t('auth.login.errLoginFailedPeriod'));
         }
       }
     })();
@@ -44,7 +46,7 @@ export default function MicrosoftCallback() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">Login failed</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">{t('auth.microsoftCallback.loginFailedTitle')}</h2>
           <p className="text-sm text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950/40 rounded-lg p-3 mb-6 text-left">
             {error}
           </p>
@@ -52,7 +54,7 @@ export default function MicrosoftCallback() {
             href="/mock-login"
             className="inline-block px-4 py-2 bg-foreground text-background text-sm rounded-lg hover:bg-foreground/90"
           >
-            Back to login
+            {t('auth.microsoftCallback.backToLogin')}
           </a>
         </div>
       </div>

@@ -19,10 +19,12 @@ import {
 } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
 import { DollarSign, Star, Calendar, CheckCircle } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 // const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function SupplierAnalytics({ supplierId }) {
+  const { t } = useT();
   const { data: bookings = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['supplierBookings', supplierId],
@@ -76,15 +78,19 @@ export default function SupplierAnalytics({ supplierId }) {
 
   // Booking status distribution
   const statusData = [
-    { name: 'Confirmed', value: bookings.filter((b) => b.status === 'confirmed').length, color: '#10b981' },
-    { name: 'Pending', value: bookings.filter((b) => b.status === 'pending').length, color: '#f59e0b' },
-    { name: 'Completed', value: bookings.filter((b) => b.status === 'completed').length, color: '#3b82f6' },
-    { name: 'Cancelled', value: bookings.filter((b) => b.status === 'cancelled').length, color: '#ef4444' },
+    { name: t('common.confirmed'), value: bookings.filter((b) => b.status === 'confirmed').length, color: '#10b981' },
+    { name: t('common.pending'), value: bookings.filter((b) => b.status === 'pending').length, color: '#f59e0b' },
+    {
+      name: t('tripStatus.completed'),
+      value: bookings.filter((b) => b.status === 'completed').length,
+      color: '#3b82f6',
+    },
+    { name: t('common.cancelled'), value: bookings.filter((b) => b.status === 'cancelled').length, color: '#ef4444' },
   ].filter((s) => s.value > 0);
 
   // Rating breakdown
   const ratingBreakdown = [5, 4, 3, 2, 1].map((rating) => ({
-    rating: `${rating} Stars`,
+    rating: t('supplierAnalytics.starsLabel', { n: rating }),
     count: reviews.filter((r) => Math.floor(r.rating) === rating).length,
   }));
 
@@ -92,7 +98,9 @@ export default function SupplierAnalytics({ supplierId }) {
   const totalRevenue = invoices.filter((i) => i.status === 'paid').reduce((sum, i) => sum + (i.amount || 0), 0);
   const pendingPayments = invoices.filter((i) => i.status === 'approved').reduce((sum, i) => sum + (i.amount || 0), 0);
   const avgRating =
-    reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 'N/A';
+    reviews.length > 0
+      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+      : t('supplierAnalytics.naFallback');
   const confirmationRate =
     bookings.length > 0
       ? Math.round(
@@ -106,28 +114,28 @@ export default function SupplierAnalytics({ supplierId }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm opacity-90">Total Revenue</span>
+            <span className="text-sm opacity-90">{t('supplierAnalytics.totalRevenue')}</span>
             <DollarSign className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">${totalRevenue.toFixed(0)}</div>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-orange-500 to-orange-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm opacity-90">Pending Payments</span>
+            <span className="text-sm opacity-90">{t('supplierAnalytics.pendingPayments')}</span>
             <Calendar className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">${pendingPayments.toFixed(0)}</div>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm opacity-90">Avg Rating</span>
+            <span className="text-sm opacity-90">{t('supplierAnalytics.avgRating')}</span>
             <Star className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">{avgRating}</div>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm opacity-90">Confirmation Rate</span>
+            <span className="text-sm opacity-90">{t('supplierAnalytics.confirmationRate')}</span>
             <CheckCircle className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">{confirmationRate}%</div>
@@ -137,21 +145,21 @@ export default function SupplierAnalytics({ supplierId }) {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6 bg-card">
-          <h3 className="text-lg font-bold text-foreground mb-4">Booking Trends</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">{t('supplierAnalytics.bookingTrends')}</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={monthlyData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="bookings" name="Total Bookings" fill="#3b82f6" />
-              <Bar dataKey="confirmed" name="Confirmed" fill="#10b981" />
+              <Bar dataKey="bookings" name={t('supplierAnalytics.totalBookings')} fill="#3b82f6" />
+              <Bar dataKey="confirmed" name={t('common.confirmed')} fill="#10b981" />
             </BarChart>
           </ResponsiveContainer>
         </Card>
 
         <Card className="p-6 bg-card">
-          <h3 className="text-lg font-bold text-foreground mb-4">Revenue Trend</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">{t('supplierAnalytics.revenueTrend')}</h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={monthlyData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -164,9 +172,9 @@ export default function SupplierAnalytics({ supplierId }) {
         </Card>
 
         <Card className="p-6 bg-card">
-          <h3 className="text-lg font-bold text-foreground mb-4">Booking Status Distribution</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">{t('supplierAnalytics.bookingStatusDistribution')}</h3>
           {statusData.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No booking data yet</div>
+            <div className="text-center py-8 text-muted-foreground">{t('supplierAnalytics.noBookingData')}</div>
           ) : (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -191,7 +199,7 @@ export default function SupplierAnalytics({ supplierId }) {
         </Card>
 
         <Card className="p-6 bg-card">
-          <h3 className="text-lg font-bold text-foreground mb-4">Rating Breakdown</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">{t('supplierAnalytics.ratingBreakdown')}</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={ratingBreakdown} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
@@ -207,7 +215,7 @@ export default function SupplierAnalytics({ supplierId }) {
       {/* Recent Reviews Summary */}
       {reviews.length > 0 && (
         <Card className="p-6 bg-card">
-          <h3 className="text-lg font-bold text-foreground mb-4">Recent Reviews</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">{t('supplierAnalytics.recentReviews')}</h3>
           <div className="space-y-4">
             {reviews.slice(0, 5).map((review) => (
               <div key={review.id} className="p-4 bg-muted rounded-lg">

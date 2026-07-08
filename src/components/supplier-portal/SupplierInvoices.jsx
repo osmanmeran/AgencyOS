@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, FileText, Calendar, Edit, Eye } from 'lucide-react';
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   submitted: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
@@ -23,6 +24,14 @@ const STATUS_COLORS = {
 };
 
 export default function SupplierInvoices({ supplierId }) {
+  const { t } = useT();
+  const STATUS_LABEL_KEYS = {
+    submitted: 'supplierPortalInvoices.statusSubmitted',
+    under_review: 'supplierPortalInvoices.statusUnderReview',
+    approved: 'supplierPortalInvoices.statusApproved',
+    paid: 'supplierPortalInvoices.statusPaid',
+    rejected: 'supplierPortalInvoices.statusRejected',
+  };
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -164,15 +173,15 @@ export default function SupplierInvoices({ supplierId }) {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" /> Submit Invoice
+          <Plus className="w-4 h-4 mr-2" /> {t('supplierPortalInvoices.submitInvoice')}
         </Button>
       </div>
 
       {invoices.length === 0 ? (
         <Card className="p-12 text-center">
           <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-foreground mb-2">No invoices submitted</h3>
-          <p className="text-muted-foreground">Submit invoices for your completed services</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('supplierPortalInvoices.noInvoicesTitle')}</h3>
+          <p className="text-muted-foreground">{t('supplierPortalInvoices.noInvoicesBody')}</p>
         </Card>
       ) : (
         invoices.map((invoice) => {
@@ -183,9 +192,15 @@ export default function SupplierInvoices({ supplierId }) {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-lg font-bold text-foreground">{invoice.invoice_number}</h3>
-                    <Badge className={STATUS_COLORS[invoice.status]}>{invoice.status?.replace('_', ' ')}</Badge>
+                    <Badge className={STATUS_COLORS[invoice.status]}>
+                      {STATUS_LABEL_KEYS[invoice.status] ? t(STATUS_LABEL_KEYS[invoice.status]) : invoice.status}
+                    </Badge>
                   </div>
-                  {trip && <p className="text-sm text-muted-foreground">Trip: {trip.reference_number || trip.name}</p>}
+                  {trip && (
+                    <p className="text-sm text-muted-foreground">
+                      {t('supplierPortalInvoices.tripLabel', { trip: trip.reference_number || trip.name })}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-2xl font-bold text-green-700 dark:text-green-300">
@@ -202,12 +217,20 @@ export default function SupplierInvoices({ supplierId }) {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>Issued: {format(new Date(invoice.issue_date), 'MMM d, yyyy')}</span>
+                  <span>
+                    {t('supplierPortalInvoices.issuedLabel', {
+                      date: format(new Date(invoice.issue_date), 'MMM d, yyyy'),
+                    })}
+                  </span>
                 </div>
                 {invoice.due_date && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>Due: {format(new Date(invoice.due_date), 'MMM d, yyyy')}</span>
+                    <span>
+                      {t('supplierPortalInvoices.dueLabel', {
+                        date: format(new Date(invoice.due_date), 'MMM d, yyyy'),
+                      })}
+                    </span>
                   </div>
                 )}
                 {invoice.file_url && (
@@ -217,7 +240,7 @@ export default function SupplierInvoices({ supplierId }) {
                     rel="noopener noreferrer"
                     className="text-blue-600 dark:text-blue-300 hover:underline flex items-center gap-1"
                   >
-                    <Eye className="w-4 h-4" /> View Invoice
+                    <Eye className="w-4 h-4" /> {t('supplierPortalInvoices.viewInvoice')}
                   </a>
                 )}
               </div>
@@ -232,20 +255,24 @@ export default function SupplierInvoices({ supplierId }) {
       <Dialog open={modalOpen} onOpenChange={closeModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedInvoice ? 'Edit Invoice' : 'Submit Invoice'}</DialogTitle>
+            <DialogTitle>
+              {selectedInvoice
+                ? t('supplierPortalInvoices.editInvoiceTitle')
+                : t('supplierPortalInvoices.submitInvoice')}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Link to Trip</Label>
+              <Label>{t('supplierPortalInvoices.linkToTripLabel')}</Label>
               <Select value={formData.trip_id} onValueChange={(v) => setFormData({ ...formData, trip_id: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select trip" />
+                  <SelectValue placeholder={t('supplierPortalInvoices.selectTripPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {trips.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.reference_number ? `${t.reference_number} - ` : ''}
-                      {t.name}
+                  {trips.map((trip) => (
+                    <SelectItem key={trip.id} value={trip.id}>
+                      {trip.reference_number ? `${trip.reference_number} - ` : ''}
+                      {trip.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -253,16 +280,16 @@ export default function SupplierInvoices({ supplierId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Related Booking (Optional)</Label>
+              <Label>{t('supplierPortalInvoices.relatedBookingLabel')}</Label>
               <Select
                 value={formData.booking_request_id}
                 onValueChange={(v) => setFormData({ ...formData, booking_request_id: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select booking" />
+                  <SelectValue placeholder={t('supplierPortalInvoices.selectBookingPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
+                  <SelectItem value={null}>{t('common.none')}</SelectItem>
                   {confirmedBookings.map((b) => (
                     <SelectItem key={b.id} value={b.id}>
                       {b.reference_number || b.id.slice(-6)} - {format(new Date(b.service_date), 'MMM d')}
@@ -274,7 +301,7 @@ export default function SupplierInvoices({ supplierId }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Amount *</Label>
+                <Label>{t('supplierPortalInvoices.amountLabel')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -284,7 +311,7 @@ export default function SupplierInvoices({ supplierId }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Issue Date *</Label>
+                <Label>{t('supplierPortalInvoices.issueDateLabel')}</Label>
                 <Input
                   type="date"
                   value={formData.issue_date}
@@ -295,7 +322,7 @@ export default function SupplierInvoices({ supplierId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Due Date</Label>
+              <Label>{t('supplierPortalInvoices.dueDateLabel')}</Label>
               <Input
                 type="date"
                 value={formData.due_date}
@@ -304,12 +331,12 @@ export default function SupplierInvoices({ supplierId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Upload Invoice (PDF)</Label>
+              <Label>{t('supplierPortalInvoices.uploadInvoiceLabel')}</Label>
               <Input type="file" accept=".pdf" onChange={(e) => setInvoiceFile(e.target.files[0])} />
             </div>
 
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>{t('common.notes')}</Label>
               <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -319,10 +346,12 @@ export default function SupplierInvoices({ supplierId }) {
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {selectedInvoice ? 'Update Invoice' : 'Submit Invoice'}
+                {selectedInvoice
+                  ? t('supplierPortalInvoices.updateInvoiceButton')
+                  : t('supplierPortalInvoices.submitInvoice')}
               </Button>
             </div>
           </form>

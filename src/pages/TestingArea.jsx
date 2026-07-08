@@ -16,6 +16,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -40,6 +41,7 @@ async function api(path, opts = {}) {
 }
 
 export default function TestingArea() {
+  const { t } = useT();
   const { user } = useAuth();
   const [results, setResults] = useState(/** @type {any} */ ({}));
   const [loading, setLoading] = useState(/** @type {any} */ ({}));
@@ -64,8 +66,8 @@ export default function TestingArea() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Shield className="w-16 h-16 text-muted-foreground mb-4" />
-        <h2 className="text-xl font-semibold text-muted-foreground">Admin Access Required</h2>
-        <p className="text-muted-foreground mt-2">This area is restricted to administrators.</p>
+        <h2 className="text-xl font-semibold text-muted-foreground">{t('testingArea.adminAccessRequired')}</h2>
+        <p className="text-muted-foreground mt-2">{t('testingArea.adminAccessRequiredBody')}</p>
       </div>
     );
   }
@@ -84,7 +86,7 @@ export default function TestingArea() {
             ) : (
               <RefreshCw className="w-4 h-4 mr-1" />
             )}
-            Run
+            {t('testingArea.run')}
           </Button>
         )}
       </div>
@@ -99,7 +101,9 @@ export default function TestingArea() {
             ) : (
               <AlertCircle className="w-4 h-4" />
             )}
-            <span className="font-semibold">{results[testKey].status === 'pass' ? 'OK' : 'FAIL'}</span>
+            <span className="font-semibold">
+              {results[testKey].status === 'pass' ? t('testingArea.ok') : t('testingArea.fail')}
+            </span>
             <span className="text-xs opacity-60 ml-auto">{results[testKey].timestamp}</span>
           </div>
           <pre className="whitespace-pre-wrap text-xs">{JSON.stringify(results[testKey].data, null, 2)}</pre>
@@ -115,23 +119,23 @@ export default function TestingArea() {
           <Shield className="w-6 h-6 text-amber-700 dark:text-amber-300" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Testing Area</h1>
-          <p className="text-sm text-muted-foreground">Admin-only tools for testing and verifying system features</p>
+          <h1 className="text-2xl font-bold">{t('testingArea.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('testingArea.subtitle')}</p>
         </div>
       </div>
 
       <Tabs defaultValue="features">
         <TabsList>
-          <TabsTrigger value="features">Feature Tests</TabsTrigger>
-          <TabsTrigger value="users">Test Users</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="features">{t('testingArea.tabFeatureTests')}</TabsTrigger>
+          <TabsTrigger value="users">{t('testingArea.tabTestUsers')}</TabsTrigger>
+          <TabsTrigger value="system">{t('testingArea.tabSystem')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="features" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <TestCard
-              title="Email Service"
-              description="Send a test email to verify SMTP configuration"
+              title={t('testingArea.emailServiceTitle')}
+              description={t('testingArea.emailServiceDesc')}
               testKey="email"
               action={async () => {
                 const data = await api('/api/email/test', { method: 'POST' });
@@ -141,13 +145,13 @@ export default function TestingArea() {
             >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="w-4 h-4" />
-                Sends a test email using the configured SMTP provider
+                {t('testingArea.emailServiceBody')}
               </div>
             </TestCard>
 
             <TestCard
-              title="PDF Generation"
-              description="Generate a test PDF document"
+              title={t('testingArea.pdfGenerationTitle')}
+              description={t('testingArea.pdfGenerationDesc')}
               testKey="pdf"
               action={async () => {
                 const data = await api('/api/pdf/test', { method: 'POST' });
@@ -157,13 +161,13 @@ export default function TestingArea() {
             >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <FileText className="w-4 h-4" />
-                Generates a sample proposal PDF
+                {t('testingArea.pdfGenerationBody')}
               </div>
             </TestCard>
 
             <TestCard
-              title="File Upload"
-              description="Upload a test document to verify file handling"
+              title={t('testingArea.fileUploadTitle')}
+              description={t('testingArea.fileUploadDesc')}
               testKey="upload"
               action={async () => {
                 const blob = new Blob(['test content'], { type: 'text/plain' });
@@ -183,7 +187,7 @@ export default function TestingArea() {
             >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Upload className="w-4 h-4" />
-                Uploads a small test file and returns the document record
+                {t('testingArea.fileUploadBody')}
               </div>
             </TestCard>
           </div>
@@ -193,10 +197,8 @@ export default function TestingArea() {
           <Card className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="font-semibold text-lg">Create Test Users</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Provision temporary users for each tier to test permission boundaries
-                </p>
+                <h3 className="font-semibold text-lg">{t('testingArea.createTestUsersTitle')}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{t('testingArea.createTestUsersBody')}</p>
               </div>
               <Button
                 size="sm"
@@ -215,7 +217,7 @@ export default function TestingArea() {
                 ) : (
                   <Plus className="w-4 h-4 mr-1" />
                 )}
-                Create All
+                {t('testingArea.createAll')}
               </Button>
             </div>
             {results['createTestUsers'] && (
@@ -252,7 +254,7 @@ export default function TestingArea() {
                   ) : (
                     <Plus className="w-4 h-4 mr-2" />
                   )}
-                  Create {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                  {t('testingArea.createTierButton', { tier: tier.charAt(0).toUpperCase() + tier.slice(1) })}
                 </Button>
               ))}
             </div>
@@ -261,8 +263,8 @@ export default function TestingArea() {
           <Card className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="font-semibold text-lg">Clean Up Test Users</h3>
-                <p className="text-sm text-muted-foreground mt-1">Remove all test users created in the testing area</p>
+                <h3 className="font-semibold text-lg">{t('testingArea.cleanUpTestUsersTitle')}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{t('testingArea.cleanUpTestUsersBody')}</p>
               </div>
               <Button
                 size="sm"
@@ -281,7 +283,7 @@ export default function TestingArea() {
                 ) : (
                   <Trash2 className="w-4 h-4 mr-1" />
                 )}
-                Clean Up
+                {t('testingArea.cleanUp')}
               </Button>
             </div>
             {results['cleanupTestUsers'] && (
@@ -299,8 +301,8 @@ export default function TestingArea() {
         <TabsContent value="system" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <TestCard
-              title="Database Health"
-              description="Check database connection and migration status"
+              title={t('testingArea.dbHealthTitle')}
+              description={t('testingArea.dbHealthDesc')}
               testKey="dbHealth"
               action={async () => {
                 const data = await api('/api/testing/db-health');
@@ -310,13 +312,13 @@ export default function TestingArea() {
             >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Database className="w-4 h-4" />
-                Verifies DB connectivity and applied migrations
+                {t('testingArea.dbHealthBody')}
               </div>
             </TestCard>
 
             <TestCard
-              title="API Health"
-              description="Check all API endpoints are reachable"
+              title={t('testingArea.apiHealthTitle')}
+              description={t('testingArea.apiHealthDesc')}
               testKey="apiHealth"
               action={async () => {
                 const endpoints = ['/api/entities', '/api/search?q=', '/api/notifications', '/api/audit/logs'];
@@ -335,7 +337,7 @@ export default function TestingArea() {
             >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <RefreshCw className="w-4 h-4" />
-                Pings key API routes to verify they respond
+                {t('testingArea.apiHealthBody')}
               </div>
             </TestCard>
           </div>

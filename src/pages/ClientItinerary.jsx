@@ -7,8 +7,10 @@ import { format } from 'date-fns';
 import { Calendar, MapPin, Share2, Check, Zap } from 'lucide-react';
 import { groupServicesByDay } from '@/lib/serviceItinerary';
 import { ServiceCard, DaySection } from '@/components/client-trip/ServiceItineraryCards';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ClientItinerary() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');
   const [shareCopied, setShareCopied] = useState(false);
@@ -45,10 +47,10 @@ export default function ClientItinerary() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-muted text-center p-8">
         <MapPin className="w-16 h-16 text-muted-foreground mb-4" />
-        <h1 className="text-2xl font-bold text-foreground mb-2">Itinerary Not Found</h1>
-        <p className="text-muted-foreground mb-6">This itinerary could not be found or is no longer available.</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t('clientItinerary.notFoundTitle')}</h1>
+        <p className="text-muted-foreground mb-6">{t('clientItinerary.notFoundBody')}</p>
         <Link to="/" className="text-blue-600 dark:text-blue-300 hover:underline text-sm">
-          Go to homepage
+          {t('clientItinerary.goHome')}
         </Link>
       </div>
     );
@@ -81,7 +83,7 @@ export default function ClientItinerary() {
       {/* Nav bar */}
       <nav className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border no-print">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="font-bold text-foreground text-sm tracking-wide">ITINERARY</span>
+          <span className="font-bold text-foreground text-sm tracking-wide">{t('clientItinerary.navLabel')}</span>
           <div className="flex items-center gap-2 no-print">
             <button
               onClick={handleShare}
@@ -92,7 +94,7 @@ export default function ClientItinerary() {
               ) : (
                 <Share2 className="w-3.5 h-3.5" />
               )}
-              {shareCopied ? 'Copied!' : 'Share'}
+              {shareCopied ? t('clientItinerary.copied') : t('clientItinerary.share')}
             </button>
             <button
               onClick={() => {
@@ -103,7 +105,7 @@ export default function ClientItinerary() {
               }}
               className="text-xs text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-300 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
             >
-              Print / PDF
+              {t('clientItinerary.printPdf')}
             </button>
           </div>
         </div>
@@ -137,14 +139,14 @@ export default function ClientItinerary() {
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">
-                Your Travel Itinerary
+                {t('clientItinerary.heroLabel')}
               </span>
             </div>
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 leading-tight">{trip.name}</h1>
             <div className="flex flex-wrap items-center gap-4 text-white/80">
               <div className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4" />
-                <span className="text-sm font-medium">{trip.destination || 'Destination TBD'}</span>
+                <span className="text-sm font-medium">{trip.destination || t('clientItinerary.destinationTbd')}</span>
               </div>
               {trip.start_date && trip.end_date && (
                 <div className="flex items-center gap-1.5">
@@ -164,20 +166,20 @@ export default function ClientItinerary() {
         {sortedDays.length === 0 && unscheduled.length === 0 ? (
           <div className="text-center py-20">
             <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold text-muted-foreground mb-2">No Services Added</h2>
-            <p className="text-muted-foreground">Your itinerary is empty. Services will appear here once added.</p>
+            <h2 className="text-xl font-semibold text-muted-foreground mb-2">{t('clientItinerary.noServicesTitle')}</h2>
+            <p className="text-muted-foreground">{t('clientItinerary.noServicesBody')}</p>
           </div>
         ) : (
           <>
             {/* Summary cards */}
             <div className="grid grid-cols-2 gap-3 mb-10">
               <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
-                <div className="text-xs text-muted-foreground mb-1">Days</div>
+                <div className="text-xs text-muted-foreground mb-1">{t('clientItinerary.days')}</div>
                 <div className="text-2xl font-bold text-foreground">{sortedDays.length}</div>
               </div>
               {trip.notes && (
                 <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
-                  <div className="text-xs text-muted-foreground mb-1">Notes</div>
+                  <div className="text-xs text-muted-foreground mb-1">{t('common.notes')}</div>
                   <div className="text-sm font-medium text-foreground line-clamp-2">{trip.notes}</div>
                 </div>
               )}
@@ -187,7 +189,7 @@ export default function ClientItinerary() {
             <div className="space-y-2">
               <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-                Your Trip Day by Day
+                {t('clientItinerary.dayByDay')}
               </h2>
 
               {sortedDays.map((date, idx) => (
@@ -200,9 +202,9 @@ export default function ClientItinerary() {
               <div className="mt-10">
                 <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
                   <Zap className="w-5 h-5 text-amber-500 dark:text-amber-300" />
-                  Other Services
+                  {t('clientTripDetails.otherServices')}
                 </h2>
-                <p className="text-sm text-muted-foreground mb-4">These services are not tied to a specific date:</p>
+                <p className="text-sm text-muted-foreground mb-4">{t('clientItinerary.unscheduledHint')}</p>
                 <div className="space-y-3">
                   {unscheduled.map((svc, idx) => (
                     <ServiceCard key={idx} service={svc} />
@@ -214,7 +216,7 @@ export default function ClientItinerary() {
             {/* Notes */}
             {trip.notes && (
               <div className="mt-10 bg-card rounded-xl border border-border p-6 shadow-sm">
-                <h3 className="font-semibold text-foreground mb-2">Notes</h3>
+                <h3 className="font-semibold text-foreground mb-2">{t('common.notes')}</h3>
                 <p className="text-muted-foreground text-sm whitespace-pre-wrap leading-relaxed">{trip.notes}</p>
               </div>
             )}
@@ -230,13 +232,13 @@ export default function ClientItinerary() {
                       d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                     />
                   </svg>
-                  Emergency Contact
+                  {t('clientItinerary.emergencyContact')}
                 </h3>
                 <div className="space-y-1 text-sm text-red-800 dark:text-red-300">
                   {trip.created_by_name && trip.created_by_name !== 'Unknown' && (
                     <div className="font-semibold">{trip.created_by_name}</div>
                   )}
-                  <div>Your Travel Agent</div>
+                  <div>{t('clientItinerary.yourTravelAgent')}</div>
                   {trip.created_by_phone && (
                     <div>
                       <a href={`tel:${trip.created_by_phone}`} className="underline">
@@ -251,7 +253,9 @@ export default function ClientItinerary() {
             {/* Terms */}
             {trip.terms_and_conditions && (
               <div className="mt-4 bg-muted rounded-xl border border-border p-6">
-                <h3 className="font-semibold text-foreground mb-2 text-sm">Terms & Conditions</h3>
+                <h3 className="font-semibold text-foreground mb-2 text-sm">
+                  {t('clientProposalDetails.termsAndConditions')}
+                </h3>
                 <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-relaxed">
                   {trip.terms_and_conditions}
                 </p>
@@ -264,7 +268,7 @@ export default function ClientItinerary() {
       {/* Footer */}
       <div className="border-t border-border bg-card mt-10">
         <div className="max-w-4xl mx-auto px-4 py-6 text-center text-xs text-muted-foreground">
-          Generated automatically from reservation data.
+          {t('clientItinerary.footerGenerated')}
         </div>
       </div>
     </div>

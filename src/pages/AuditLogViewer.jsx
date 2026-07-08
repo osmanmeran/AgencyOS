@@ -19,6 +19,7 @@ import {
   Edit3,
   Mail,
 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const ACTION_ICONS = {
   create: { icon: FileText, color: 'text-green-600 dark:text-green-300 bg-green-100 dark:bg-green-900/40' },
@@ -53,6 +54,7 @@ const ENTITY_TYPE_OPTIONS = [
 ];
 
 export default function AuditLogViewer() {
+  const { t } = useT();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterEntity, setFilterEntity] = useState('');
@@ -96,8 +98,8 @@ export default function AuditLogViewer() {
             <History className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Audit Trail</h1>
-            <p className="text-sm text-muted-foreground">Track all state-changing actions across the system</p>
+            <h1 className="text-2xl font-bold text-foreground">{t('auditLogViewer.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('auditLogViewer.subtitle')}</p>
           </div>
         </div>
         <Button
@@ -108,46 +110,52 @@ export default function AuditLogViewer() {
           }}
           disabled={loading}
         >
-          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} /> {t('auditLogViewer.refresh')}
         </Button>
       </div>
 
       <Card className="p-4">
         <form onSubmit={handleSearch} className="flex flex-wrap gap-3 items-end">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Entity Type</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t('auditLogViewer.entityTypeLabel')}
+            </label>
             <Select value={filterEntity} onValueChange={setFilterEntity}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="All types" />
+                <SelectValue placeholder={t('auditLogViewer.allTypes')} />
               </SelectTrigger>
               <SelectContent>
-                {ENTITY_TYPE_OPTIONS.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t || 'All types'}
+                {ENTITY_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt || t('auditLogViewer.allTypes')}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Action</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t('auditLogViewer.actionLabel')}
+            </label>
             <Select value={filterAction} onValueChange={setFilterAction}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder="All actions" />
+                <SelectValue placeholder={t('auditLogViewer.allActions')} />
               </SelectTrigger>
               <SelectContent>
                 {['', 'create', 'update', 'delete', 'login', 'email_sent', 'pdf_generated', 'upload'].map((a) => (
                   <SelectItem key={a} value={a}>
-                    {a || 'All actions'}
+                    {a || t('auditLogViewer.allActions')}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">User ID</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t('auditLogViewer.userIdLabel')}
+            </label>
             <Input
-              placeholder="Filter by user..."
+              placeholder={t('auditLogViewer.userIdPlaceholder')}
               value={filterUser}
               onChange={(e) => setFilterUser(e.target.value)}
               className="w-40 h-10"
@@ -155,7 +163,7 @@ export default function AuditLogViewer() {
           </div>
           <Button type="submit" disabled={searching} className="h-10">
             {searching ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Search className="w-4 h-4 mr-1" />}
-            Search
+            {t('common.search')}
           </Button>
         </form>
       </Card>
@@ -167,7 +175,7 @@ export default function AuditLogViewer() {
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-16 text-sm text-muted-foreground">No audit logs found</div>
+            <div className="text-center py-16 text-sm text-muted-foreground">{t('auditLogViewer.noLogsFound')}</div>
           ) : (
             <div className="divide-y divide-slate-100">
               {logs.map((log) => {
@@ -199,7 +207,11 @@ export default function AuditLogViewer() {
                               <User className="w-3 h-3" /> {log.user_name}
                             </span>
                           )}
-                          {log.ip && <span className="text-xs text-muted-foreground">IP: {log.ip}</span>}
+                          {log.ip && (
+                            <span className="text-xs text-muted-foreground">
+                              {t('auditLogViewer.ipLabel', { ip: log.ip })}
+                            </span>
+                          )}
                         </div>
                         {log.changes && Object.keys(log.changes).length > 0 && (
                           <div className="mt-2 text-xs font-mono bg-muted rounded p-2 border border-border overflow-x-auto">

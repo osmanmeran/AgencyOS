@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, Receipt, Calculator, Save, Percent } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function TripFinancialReport({ trip, events, invoices }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [markupPercentage, setMarkupPercentage] = useState(trip.markup_percentage || 0);
 
@@ -47,23 +49,25 @@ export default function TripFinancialReport({ trip, events, invoices }) {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-4 bg-gradient-to-br from-slate-500 to-slate-600 text-white">
-          <div className="text-sm opacity-80 mb-1">Total Expenses</div>
+          <div className="text-sm opacity-80 mb-1">{t('tripFinancialReport.totalExpenses')}</div>
           <div className="text-2xl font-bold">${totalExpenses.toFixed(2)}</div>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-          <div className="text-sm opacity-80 mb-1">Final Price</div>
+          <div className="text-sm opacity-80 mb-1">{t('tripFinancialReport.finalPrice')}</div>
           <div className="text-2xl font-bold">${finalPrice.toFixed(2)}</div>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-green-500 to-green-600 text-white">
-          <div className="text-sm opacity-80 mb-1">Paid</div>
+          <div className="text-sm opacity-80 mb-1">{t('tripFinancialReport.paid')}</div>
           <div className="text-2xl font-bold">${totalPaid.toFixed(2)}</div>
         </Card>
         <Card
           className={`p-4 bg-gradient-to-br ${profit >= 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white`}
         >
-          <div className="text-sm opacity-80 mb-1">Profit</div>
+          <div className="text-sm opacity-80 mb-1">{t('tripFinancialReport.profit')}</div>
           <div className="text-2xl font-bold">${profit.toFixed(2)}</div>
-          <div className="text-xs opacity-80">{profitMargin.toFixed(1)}% margin</div>
+          <div className="text-xs opacity-80">
+            {t('tripFinancialReport.marginLabel', { percent: profitMargin.toFixed(1) })}
+          </div>
         </Card>
       </div>
 
@@ -71,15 +75,15 @@ export default function TripFinancialReport({ trip, events, invoices }) {
       <Card className="p-6 bg-card">
         <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
           <Calculator className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-          Price Calculator
+          {t('tripFinancialReport.priceCalculator')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
-            <Label className="text-sm text-muted-foreground">Total Expenses</Label>
+            <Label className="text-sm text-muted-foreground">{t('tripFinancialReport.totalExpenses')}</Label>
             <div className="text-2xl font-bold text-foreground">${totalExpenses.toFixed(2)}</div>
           </div>
           <div className="space-y-2">
-            <Label>Markup %</Label>
+            <Label>{t('tripFinancialReport.markupPercent')}</Label>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
@@ -91,16 +95,16 @@ export default function TripFinancialReport({ trip, events, invoices }) {
             </div>
           </div>
           <div>
-            <Label className="text-sm text-muted-foreground">Markup Amount</Label>
+            <Label className="text-sm text-muted-foreground">{t('tripFinancialReport.markupAmount')}</Label>
             <div className="text-xl font-bold text-blue-600 dark:text-blue-300">+${markupAmount.toFixed(2)}</div>
           </div>
           <div className="flex items-center gap-2">
             <div>
-              <Label className="text-sm text-muted-foreground">Final Price</Label>
+              <Label className="text-sm text-muted-foreground">{t('tripFinancialReport.finalPrice')}</Label>
               <div className="text-2xl font-bold text-green-700 dark:text-green-300">${finalPrice.toFixed(2)}</div>
             </div>
             <Button onClick={() => updateMutation.mutate()} className="ml-auto bg-blue-600 hover:bg-blue-700">
-              <Save className="w-4 h-4 mr-2" /> Save
+              <Save className="w-4 h-4 mr-2" /> {t('common.save')}
             </Button>
           </div>
         </div>
@@ -110,11 +114,11 @@ export default function TripFinancialReport({ trip, events, invoices }) {
       <Card className="p-6 bg-card">
         <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
           <Receipt className="w-5 h-5 text-orange-600 dark:text-orange-300" />
-          Expense Breakdown
+          {t('tripFinancialReport.expenseBreakdown')}
         </h3>
         <div className="space-y-3">
           {events.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No expenses recorded</p>
+            <p className="text-muted-foreground text-center py-4">{t('tripFinancialReport.noExpenses')}</p>
           ) : (
             events.map((event) => (
               <div key={event.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
@@ -130,7 +134,7 @@ export default function TripFinancialReport({ trip, events, invoices }) {
             ))
           )}
           <div className="flex justify-between items-center p-3 bg-muted rounded-lg font-bold">
-            <span>Total</span>
+            <span>{t('clientProposalDetails.total')}</span>
             <span>${totalExpenses.toFixed(2)}</span>
           </div>
         </div>
@@ -140,10 +144,10 @@ export default function TripFinancialReport({ trip, events, invoices }) {
       <Card className="p-6 bg-card">
         <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-green-600 dark:text-green-300" />
-          Invoice Summary
+          {t('tripFinancialReport.invoiceSummary')}
         </h3>
         {tripInvoices.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">No invoices linked to this trip</p>
+          <p className="text-muted-foreground text-center py-4">{t('tripFinancialReport.noInvoices')}</p>
         ) : (
           <div className="space-y-3">
             {tripInvoices.map((invoice) => (
@@ -159,14 +163,14 @@ export default function TripFinancialReport({ trip, events, invoices }) {
                           : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
                     }
                   >
-                    {invoice.status}
+                    {t(`invoices.status.${invoice.status}`)}
                   </Badge>
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-foreground">${(invoice.total_amount || 0).toFixed(2)}</div>
                   {invoice.amount_due > 0 && (
                     <div className="text-sm text-orange-600 dark:text-orange-300">
-                      Due: ${invoice.amount_due.toFixed(2)}
+                      {t('tripFinancialReport.due', { amount: `$${invoice.amount_due.toFixed(2)}` })}
                     </div>
                   )}
                 </div>

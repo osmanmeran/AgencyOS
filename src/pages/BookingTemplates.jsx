@@ -15,8 +15,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Switch } from '@/components/ui/switch';
 import { Plus, Edit, Trash2, FileCode, Eye, Star } from 'lucide-react';
 import { usePermissions } from '../components/permissions/PermissionContext';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function BookingTemplates() {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [modalOpen, setModalOpen] = useState(false);
@@ -41,11 +43,11 @@ export default function BookingTemplates() {
     useMutation({
       mutationFn: (/** @type {any} */ data) => db.entities.BookingTemplate.create(data),
       onSuccess: () => {
-        showSuccess('Template created');
+        showSuccess(t('bookingTemplates.createSuccess'));
         queryClient.invalidateQueries({ queryKey: ['bookingTemplates'] });
         closeModal();
       },
-      onError: (error) => showError('Failed to create template', error.message),
+      onError: (error) => showError(t('bookingTemplates.createError'), error.message),
     })
   );
 
@@ -53,11 +55,11 @@ export default function BookingTemplates() {
     useMutation({
       mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.BookingTemplate.update(id, data),
       onSuccess: () => {
-        showSuccess('Template updated');
+        showSuccess(t('bookingTemplates.updateSuccess'));
         queryClient.invalidateQueries({ queryKey: ['bookingTemplates'] });
         closeModal();
       },
-      onError: (error) => showError('Failed to update template', error.message),
+      onError: (error) => showError(t('bookingTemplates.updateError'), error.message),
     })
   );
 
@@ -65,10 +67,10 @@ export default function BookingTemplates() {
     useMutation({
       mutationFn: (/** @type {any} */ id) => db.entities.BookingTemplate.delete(id),
       onSuccess: () => {
-        showSuccess('Template deleted');
+        showSuccess(t('bookingTemplates.deleteSuccess'));
         queryClient.invalidateQueries({ queryKey: ['bookingTemplates'] });
       },
-      onError: (error) => showError('Failed to delete template', error.message),
+      onError: (error) => showError(t('bookingTemplates.deleteError'), error.message),
     })
   );
 
@@ -106,8 +108,8 @@ export default function BookingTemplates() {
     return (
       <Card className="p-12 text-center">
         <FileCode className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-xl font-bold text-foreground mb-2">Access Denied</h3>
-        <p className="text-muted-foreground">You don't have permission to manage booking templates</p>
+        <h3 className="text-xl font-bold text-foreground mb-2">{t('common.accessDenied')}</h3>
+        <p className="text-muted-foreground">{t('bookingTemplates.accessDeniedBody')}</p>
       </Card>
     );
   }
@@ -116,24 +118,24 @@ export default function BookingTemplates() {
     <div className="space-y-8">
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Booking Templates</h1>
-          <p className="text-muted-foreground">Customize email templates for booking requests</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">{t('bookingTemplates.title')}</h1>
+          <p className="text-muted-foreground">{t('bookingTemplates.subtitle')}</p>
         </div>
         <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" /> New Template
+          <Plus className="w-4 h-4 mr-2" /> {t('bookingTemplates.newTemplate')}
         </Button>
       </div>
 
       <div className="p-4 bg-blue-50 dark:bg-blue-950/40 rounded-lg text-sm text-blue-800 dark:text-blue-300">
-        <strong>Available placeholders:</strong>{' '}
+        <strong>{t('bookingTemplates.availablePlaceholdersLabel')}</strong>{' '}
         {`{{reference_number}}, {{service_date}}, {{num_guests}}, {{trip_name}}, {{trip_destination}}, {{client_name}}, {{client_email}}, {{total_cost}}, {{service_details}}, {{supplier_name}}, {{company_name}}`}
       </div>
 
       {templates.length === 0 ? (
         <Card className="p-12 text-center">
           <FileCode className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-foreground mb-2">No templates yet</h3>
-          <p className="text-muted-foreground">Create your first booking email template</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('bookingTemplates.noTemplatesTitle')}</h3>
+          <p className="text-muted-foreground">{t('bookingTemplates.noTemplatesBody')}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -144,7 +146,7 @@ export default function BookingTemplates() {
                   <h3 className="font-bold text-lg text-foreground">{template.name}</h3>
                   {template.is_default && (
                     <Badge className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 mt-1">
-                      <Star className="w-3 h-3 mr-1" /> Default
+                      <Star className="w-3 h-3 mr-1" /> {t('bookingTemplates.defaultBadge')}
                     </Badge>
                   )}
                 </div>
@@ -167,7 +169,11 @@ export default function BookingTemplates() {
                   </Button>
                 </div>
               </div>
-              {template.subject && <p className="text-sm text-muted-foreground mb-2">Subject: {template.subject}</p>}
+              {template.subject && (
+                <p className="text-sm text-muted-foreground mb-2">
+                  {t('bookingTemplates.subjectLabel', { subject: template.subject })}
+                </p>
+              )}
               <pre className="text-xs bg-muted p-2 rounded overflow-hidden max-h-20 text-muted-foreground">
                 {template.html_content?.substring(0, 200)}...
               </pre>
@@ -180,12 +186,16 @@ export default function BookingTemplates() {
       <Dialog open={modalOpen} onOpenChange={closeModal}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingTemplate ? 'Edit Template' : 'Create Template'}</DialogTitle>
+            <DialogTitle>
+              {editingTemplate
+                ? t('bookingTemplates.editTemplateDialogTitle')
+                : t('bookingTemplates.createTemplateDialogTitle')}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Template Name *</Label>
+                <Label>{t('bookingTemplates.templateNameLabel')}</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -193,11 +203,11 @@ export default function BookingTemplates() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Email Subject</Label>
+                <Label>{t('bookingTemplates.emailSubjectLabel')}</Label>
                 <Input
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="Booking Request - {{reference_number}}"
+                  placeholder={t('bookingTemplates.subjectPlaceholder')}
                 />
               </div>
             </div>
@@ -207,11 +217,11 @@ export default function BookingTemplates() {
                 checked={formData.is_default}
                 onCheckedChange={(v) => setFormData({ ...formData, is_default: v })}
               />
-              <Label>Set as default template</Label>
+              <Label>{t('bookingTemplates.setAsDefaultLabel')}</Label>
             </div>
 
             <div className="space-y-2">
-              <Label>HTML Content *</Label>
+              <Label>{t('bookingTemplates.htmlContentLabel')}</Label>
               <Textarea
                 value={formData.html_content}
                 onChange={(e) => setFormData({ ...formData, html_content: e.target.value })}
@@ -223,10 +233,12 @@ export default function BookingTemplates() {
 
             <div className="flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingTemplate ? 'Update' : 'Create'} Template
+                {editingTemplate
+                  ? t('bookingTemplates.updateTemplateButton')
+                  : t('bookingTemplates.createTemplateButton')}
               </Button>
             </div>
           </form>
@@ -237,7 +249,7 @@ export default function BookingTemplates() {
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Template Preview</DialogTitle>
+            <DialogTitle>{t('bookingTemplates.previewDialogTitle')}</DialogTitle>
           </DialogHeader>
           <div
             className="border rounded-lg p-4 bg-card"

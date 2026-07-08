@@ -6,8 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BookmarkPlus, Check } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function SaveAsTemplateButton({ trip, services = [] }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -58,32 +60,31 @@ export default function SaveAsTemplateButton({ trip, services = [] }) {
     <>
       <Button variant="outline" onClick={handleOpen} className="gap-2">
         <BookmarkPlus className="w-4 h-4" />
-        Save as Template
+        {t('saveAsTemplate.button')}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Save as Proposal Template</DialogTitle>
+            <DialogTitle>{t('saveAsTemplate.dialogTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
-              This will save <strong>{trip.destination || trip.name}</strong>'s destination, services, and pricing as a
-              reusable template for future proposals.
+              {t('saveAsTemplate.description', { name: trip.destination || trip.name })}
             </p>
             <div className="space-y-2">
-              <Label>Template Name</Label>
+              <Label>{t('saveAsTemplate.nameLabel')}</Label>
               <Input
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
-                placeholder="e.g. Bali 7-Day Package"
+                placeholder={t('saveAsTemplate.namePlaceholder')}
                 autoFocus
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSave}
@@ -92,16 +93,16 @@ export default function SaveAsTemplateButton({ trip, services = [] }) {
             >
               {saved ? (
                 <>
-                  <Check className="w-4 h-4" /> Saved!
+                  <Check className="w-4 h-4" /> {t('saveAsTemplate.saved')}
                 </>
               ) : saving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{' '}
-                  Saving...
+                  {t('common.saving')}
                 </>
               ) : (
                 <>
-                  <BookmarkPlus className="w-4 h-4" /> Save Template
+                  <BookmarkPlus className="w-4 h-4" /> {t('saveAsTemplate.saveTemplate')}
                 </>
               )}
             </Button>

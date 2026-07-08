@@ -3,15 +3,15 @@ import { Users, TrendingUp, Truck } from 'lucide-react';
 import OutlookContactsImporter from '../components/import/OutlookContactsImporter';
 import MarketPriceAnalyzer from '../components/import/MarketPriceAnalyzer';
 import SupplierBulkImporter from '../components/import/SupplierBulkImporter';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ImportHub() {
+  const { t } = useT();
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-1">Import Hub</h1>
-        <p className="text-muted-foreground">
-          Import contacts from Outlook, analyze market prices with AI, and bulk-import suppliers.
-        </p>
+        <h1 className="text-3xl font-bold text-foreground mb-1">{t('importHub.title')}</h1>
+        <p className="text-muted-foreground">{t('importHub.subtitle')}</p>
       </div>
 
       <Tabs defaultValue="contacts">
@@ -21,21 +21,21 @@ export default function ImportHub() {
             className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-4 py-2 rounded-lg"
           >
             <Users className="w-4 h-4" />
-            Outlook Contacts
+            {t('importHub.tabContacts')}
           </TabsTrigger>
           <TabsTrigger
             value="prices"
             className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-4 py-2 rounded-lg"
           >
             <TrendingUp className="w-4 h-4" />
-            AI Price Analyzer
+            {t('importHub.tabPrices')}
           </TabsTrigger>
           <TabsTrigger
             value="suppliers"
             className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-4 py-2 rounded-lg"
           >
             <Truck className="w-4 h-4" />
-            Supplier Import
+            {t('importHub.tabSuppliers')}
           </TabsTrigger>
         </TabsList>
 

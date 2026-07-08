@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Lightbulb, Star, Bug, Heart } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_STYLES = {
   open: 'bg-muted text-foreground border-border',
@@ -35,6 +36,7 @@ async function api(path, opts = {}) {
 }
 
 export default function SuggestionsManager() {
+  const { t } = useT();
   const [filterStatus, setFilterStatus] = useState('all');
   const queryClient = useQueryClient();
 
@@ -83,8 +85,8 @@ export default function SuggestionsManager() {
           <Lightbulb className="w-6 h-6 text-amber-700 dark:text-amber-300" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Suggestions & Feedback</h1>
-          <p className="text-sm text-muted-foreground">Review and manage user-submitted suggestions</p>
+          <h1 className="text-2xl font-bold">{t('suggestionsManager.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('suggestionsManager.subtitle')}</p>
         </div>
       </div>
 
@@ -97,7 +99,7 @@ export default function SuggestionsManager() {
             onClick={() => setFilterStatus(s)}
             className={filterStatus === s ? 'bg-amber-600' : ''}
           >
-            {s === 'all' ? 'All' : s.replace('_', ' ')}
+            {s === 'all' ? t('common.all') : t(`suggestionsManager.status.${s}`)}
             <span className="ml-1.5 text-xs opacity-70">
               ({s === 'all' ? suggestions.length : suggestions.filter((x) => x.status === s).length})
             </span>
@@ -108,8 +110,8 @@ export default function SuggestionsManager() {
       {filtered.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           <Lightbulb className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-          <p className="font-medium">No suggestions yet</p>
-          <p className="text-sm mt-1">Suggestions from users will appear here</p>
+          <p className="font-medium">{t('suggestionsManager.noSuggestionsYet')}</p>
+          <p className="text-sm mt-1">{t('suggestionsManager.noSuggestionsBody')}</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -125,11 +127,13 @@ export default function SuggestionsManager() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold">{s.title}</h3>
-                        <Badge className={STATUS_STYLES[s.status] || 'bg-muted'}>{s.status?.replace('_', ' ')}</Badge>
+                        <Badge className={STATUS_STYLES[s.status] || 'bg-muted'}>
+                          {STATUS_STYLES[s.status] ? t(`suggestionsManager.status.${s.status}`) : s.status}
+                        </Badge>
                       </div>
                       {s.description && <p className="text-sm text-muted-foreground mt-1.5">{s.description}</p>}
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                        <span>{s.user_name || s.user_email || 'Anonymous'}</span>
+                        <span>{s.user_name || s.user_email || t('suggestionsManager.anonymous')}</span>
                         {s.created_date && <span>{new Date(s.created_date).toLocaleDateString()}</span>}
                         <Badge className="bg-muted text-muted-foreground text-[10px] capitalize">{s.type}</Badge>
                       </div>
@@ -144,11 +148,11 @@ export default function SuggestionsManager() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="open">Open</SelectItem>
-                        <SelectItem value="under_review">Under Review</SelectItem>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="implemented">Implemented</SelectItem>
-                        <SelectItem value="declined">Declined</SelectItem>
+                        <SelectItem value="open">{t('suggestionsManager.status.open')}</SelectItem>
+                        <SelectItem value="under_review">{t('suggestionsManager.status.under_review')}</SelectItem>
+                        <SelectItem value="planned">{t('suggestionsManager.status.planned')}</SelectItem>
+                        <SelectItem value="implemented">{t('suggestionsManager.status.implemented')}</SelectItem>
+                        <SelectItem value="declined">{t('suggestionsManager.status.declined')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

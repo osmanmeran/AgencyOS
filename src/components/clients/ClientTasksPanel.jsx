@@ -13,23 +13,27 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, CheckCircle2, Circle, Bell, StickyNote, ClipboardList, Trash2, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const TYPE_CONFIG = {
-  task: {
-    icon: ClipboardList,
-    color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
-    label: 'Task',
-  },
-  reminder: {
-    icon: Bell,
-    color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
-    label: 'Reminder',
-  },
-  note: {
-    icon: StickyNote,
-    color: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
-    label: 'Note',
-  },
+const TYPE_ICONS = {
+  task: { icon: ClipboardList, color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' },
+  reminder: { icon: Bell, color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' },
+  note: { icon: StickyNote, color: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' },
+};
+
+const TYPE_LABEL_KEYS = {
+  task: 'clientTasksPanel.filterTask',
+  reminder: 'clientTasksPanel.filterReminder',
+  note: 'clientTasksPanel.filterNote',
+};
+
+const FILTER_LABEL_KEYS = {
+  all: 'common.all',
+  task: 'clientTasksPanel.filterTask',
+  reminder: 'clientTasksPanel.filterReminder',
+  note: 'clientTasksPanel.filterNote',
+  pending: 'common.pending',
+  done: 'clientTasksPanel.filterDone',
 };
 
 const PRIORITY_COLORS = {
@@ -39,6 +43,7 @@ const PRIORITY_COLORS = {
 };
 
 export default function ClientTasksPanel({ clientId }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('all');
   const [form, setForm] = useState({
@@ -109,7 +114,7 @@ export default function ClientTasksPanel({ clientId }) {
               className={filter === f ? 'bg-blue-600' : ''}
               onClick={() => setFilter(f)}
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {t(FILTER_LABEL_KEYS[f])}
               {f === 'pending' && pending > 0 && (
                 <span className="ml-1 bg-orange-500 text-white text-xs rounded-full px-1.5">{pending}</span>
               )}
@@ -118,19 +123,20 @@ export default function ClientTasksPanel({ clientId }) {
         </div>
         <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-1" />
-          Add
+          {t('clientTasksPanel.addButton')}
         </Button>
       </div>
 
       {filtered.length === 0 ? (
         <Card className="p-10 text-center bg-card">
           <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground">No items found</p>
+          <p className="text-muted-foreground">{t('clientTasksPanel.noItemsFound')}</p>
         </Card>
       ) : (
         <div className="space-y-3">
           {filtered.map((task) => {
-            const cfg = TYPE_CONFIG[task.type] || TYPE_CONFIG.task;
+            const cfg = TYPE_ICONS[task.type] || TYPE_ICONS.task;
+            const labelKey = TYPE_LABEL_KEYS[task.type] || TYPE_LABEL_KEYS.task;
             const Icon = cfg.icon;
             const isDone = task.status === 'done';
             return (
@@ -152,9 +158,11 @@ export default function ClientTasksPanel({ clientId }) {
                       </span>
                       <Badge className={`text-xs ${cfg.color}`}>
                         <Icon className="w-3 h-3 mr-1" />
-                        {cfg.label}
+                        {t(labelKey)}
                       </Badge>
-                      <Badge className={`text-xs ${PRIORITY_COLORS[task.priority]}`}>{task.priority}</Badge>
+                      <Badge className={`text-xs ${PRIORITY_COLORS[task.priority]}`}>
+                        {t(`priority.${task.priority}`)}
+                      </Badge>
                     </div>
                     {task.description && <p className="text-xs text-muted-foreground mt-1">{task.description}</p>}
                     <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
@@ -164,7 +172,9 @@ export default function ClientTasksPanel({ clientId }) {
                           {format(new Date(task.due_date), 'MMM d, yyyy')}
                         </span>
                       )}
-                      {task.assigned_to && <span>Assigned: {task.assigned_to}</span>}
+                      {task.assigned_to && (
+                        <span>{t('clientTasksPanel.assignedLabel', { name: task.assigned_to })}</span>
+                      )}
                       <span>{format(new Date(task.created_date), 'MMM d')}</span>
                     </div>
                   </div>
@@ -184,7 +194,7 @@ export default function ClientTasksPanel({ clientId }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Task / Reminder / Note</DialogTitle>
+            <DialogTitle>{t('clientTasksPanel.dialogTitle')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -195,42 +205,42 @@ export default function ClientTasksPanel({ clientId }) {
           >
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 space-y-1">
-                <Label>Title *</Label>
+                <Label>{t('clientTasksPanel.titleLabel')}</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   required
-                  placeholder="Task title..."
+                  placeholder={t('clientTasksPanel.titlePlaceholder')}
                 />
               </div>
               <div className="space-y-1">
-                <Label>Type</Label>
+                <Label>{t('clientTasksPanel.typeLabel')}</Label>
                 <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="task">Task</SelectItem>
-                    <SelectItem value="reminder">Reminder</SelectItem>
-                    <SelectItem value="note">Note</SelectItem>
+                    <SelectItem value="task">{t('clientTasksPanel.filterTask')}</SelectItem>
+                    <SelectItem value="reminder">{t('clientTasksPanel.filterReminder')}</SelectItem>
+                    <SelectItem value="note">{t('clientTasksPanel.filterNote')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label>Priority</Label>
+                <Label>{t('priority.label')}</Label>
                 <Select value={form.priority} onValueChange={(v) => setForm((f) => ({ ...f, priority: v }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="low">{t('priority.low')}</SelectItem>
+                    <SelectItem value="medium">{t('priority.medium')}</SelectItem>
+                    <SelectItem value="high">{t('priority.high')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label>Due Date</Label>
+                <Label>{t('clientTasksPanel.dueDateLabel')}</Label>
                 <Input
                   type="date"
                   value={form.due_date}
@@ -238,29 +248,29 @@ export default function ClientTasksPanel({ clientId }) {
                 />
               </div>
               <div className="space-y-1">
-                <Label>Assign To (email)</Label>
+                <Label>{t('clientTasksPanel.assignToLabel')}</Label>
                 <Input
                   value={form.assigned_to}
                   onChange={(e) => setForm((f) => ({ ...f, assigned_to: e.target.value }))}
-                  placeholder="team@member.com"
+                  placeholder={t('clientTasksPanel.assignToPlaceholder')}
                 />
               </div>
               <div className="col-span-2 space-y-1">
-                <Label>Description</Label>
+                <Label>{t('common.description')}</Label>
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={3}
-                  placeholder="Additional details..."
+                  placeholder={t('clientTasksPanel.descriptionPlaceholder')}
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
-                Add
+                {t('clientTasksPanel.addButton')}
               </Button>
             </div>
           </form>

@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
 import { createPageUrl } from '../utils';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   planning:
@@ -31,6 +32,7 @@ const STATUS_COLORS = {
 };
 
 export default function CalendarView() {
+  const { t } = useT();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
 
@@ -73,8 +75,8 @@ export default function CalendarView() {
           <Calendar className="w-6 h-6 text-blue-700 dark:text-blue-300" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Calendar</h1>
-          <p className="text-sm text-muted-foreground">Trip schedule overview</p>
+          <h1 className="text-2xl font-bold">{t('calendarView.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('calendarView.subtitle')}</p>
         </div>
       </div>
 
@@ -91,7 +93,7 @@ export default function CalendarView() {
           </div>
 
           <div className="grid grid-cols-7 gap-px bg-muted rounded-lg overflow-hidden">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+            {t('dashboard.weekdays').map((d) => (
               <div key={d} className="bg-muted px-2 py-1.5 text-center text-xs font-semibold text-muted-foreground">
                 {d}
               </div>
@@ -131,7 +133,7 @@ export default function CalendarView() {
                       ))}
                       {events.length > 3 && (
                         <span className="text-[10px] text-blue-600 dark:text-blue-300 font-medium">
-                          +{events.length - 3} more
+                          {t('dashboard.moreCount', { count: events.length - 3 })}
                         </span>
                       )}
                     </div>
@@ -144,10 +146,10 @@ export default function CalendarView() {
 
         <Card className="bg-card p-4">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">
-            {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : 'Select a date'}
+            {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : t('calendarView.selectDate')}
           </h3>
           {selectedEvents.length === 0 && (
-            <p className="text-sm text-muted-foreground py-8 text-center">No trips on this date</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">{t('calendarView.noTripsOnDate')}</p>
           )}
           <div className="space-y-2">
             {selectedEvents.map((trip) => (
@@ -171,7 +173,11 @@ export default function CalendarView() {
                 </div>
                 <div className="flex items-center gap-2 mt-1.5">
                   <Badge className={`text-[10px] ${STATUS_COLORS[trip.status] || ''}`}>
-                    {trip.status?.replace('_', ' ')}
+                    {trip.status === 'confirmed'
+                      ? t('common.confirmed')
+                      : trip.status === 'cancelled'
+                        ? t('common.cancelled')
+                        : t(`tripStatus.${trip.status}`)}
                   </Badge>
                   {trip.end_date && (
                     <span className="text-[10px] text-muted-foreground">

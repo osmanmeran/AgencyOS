@@ -11,16 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ListCheck, Plus, MoreHorizontal, Calendar as CalendarIcon } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { format } from 'date-fns';
-
-const COLUMNS = [
-  { id: 'pending', label: 'Pending', color: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
-  {
-    id: 'in_progress',
-    label: 'In Progress',
-    color: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800',
-  },
-  { id: 'done', label: 'Done', color: 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800' },
-];
+import { useT } from '@/lib/i18n/I18nContext';
 
 const PRIORITY_COLORS = {
   high: 'text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800',
@@ -29,6 +20,24 @@ const PRIORITY_COLORS = {
 };
 
 export default function TaskBoard() {
+  const { t } = useT();
+  const COLUMNS = [
+    {
+      id: 'pending',
+      label: t('common.pending'),
+      color: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
+    },
+    {
+      id: 'in_progress',
+      label: t('taskBoard.columnInProgress'),
+      color: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800',
+    },
+    {
+      id: 'done',
+      label: t('taskBoard.columnDone'),
+      color: 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800',
+    },
+  ];
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', client_id: '', priority: 'medium', due_date: '' });
   const queryClient = useQueryClient();
@@ -51,12 +60,12 @@ export default function TaskBoard() {
     useMutation({
       mutationFn: (data) => db.entities.ClientTask.create(data),
       onSuccess: () => {
-        showSuccess('Task created');
+        showSuccess(t('taskBoard.createSuccess'));
         queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
         setNewTaskOpen(false);
         setNewTask({ title: '', client_id: '', priority: 'medium', due_date: '' });
       },
-      onError: (error) => showError('Failed to create task', error.message),
+      onError: (error) => showError(t('taskBoard.createError'), error.message),
     })
   );
 
@@ -64,10 +73,10 @@ export default function TaskBoard() {
     useMutation({
       mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ClientTask.update(id, data),
       onSuccess: () => {
-        showSuccess('Task updated');
+        showSuccess(t('taskBoard.updateSuccess'));
         queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
       },
-      onError: (error) => showError('Failed to update task', error.message),
+      onError: (error) => showError(t('taskBoard.updateError'), error.message),
     })
   );
 
@@ -75,10 +84,10 @@ export default function TaskBoard() {
     useMutation({
       mutationFn: (id) => db.entities.ClientTask.delete(id),
       onSuccess: () => {
-        showSuccess('Task deleted');
+        showSuccess(t('taskBoard.deleteSuccess'));
         queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
       },
-      onError: (error) => showError('Failed to delete task', error.message),
+      onError: (error) => showError(t('taskBoard.deleteError'), error.message),
     })
   );
 
@@ -104,29 +113,29 @@ export default function TaskBoard() {
             <ListCheck className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Task Board</h1>
-            <p className="text-sm text-muted-foreground">Manage client tasks and reminders</p>
+            <h1 className="text-2xl font-bold">{t('taskBoard.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('taskBoard.subtitle')}</p>
           </div>
         </div>
         <Dialog open={newTaskOpen} onOpenChange={setNewTaskOpen}>
           <DialogTrigger asChild>
             <Button className="bg-indigo-600 hover:bg-indigo-700">
-              <Plus className="w-4 h-4 mr-2" /> New Task
+              <Plus className="w-4 h-4 mr-2" /> {t('taskBoard.newTask')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>New Task</DialogTitle>
+              <DialogTitle>{t('taskBoard.newTaskDialogTitle')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 mt-2">
               <Input
-                placeholder="Task title"
+                placeholder={t('taskBoard.taskTitlePlaceholder')}
                 value={newTask.title}
                 onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
               />
               <Select value={newTask.client_id} onValueChange={(v) => setNewTask({ ...newTask, client_id: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select client (optional)" />
+                  <SelectValue placeholder={t('taskBoard.selectClientPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((c) => (
@@ -141,23 +150,23 @@ export default function TaskBoard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="low">{t('priority.low')}</SelectItem>
+                  <SelectItem value="medium">{t('priority.medium')}</SelectItem>
+                  <SelectItem value="high">{t('priority.high')}</SelectItem>
                 </SelectContent>
               </Select>
               <Input
                 type="date"
                 value={newTask.due_date}
                 onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-                placeholder="Due date"
+                placeholder={t('taskBoard.dueDatePlaceholder')}
               />
               <Button
                 className="w-full bg-indigo-600 hover:bg-indigo-700"
                 onClick={() => createTask.mutate({ ...newTask, status: 'pending' })}
                 disabled={!newTask.title}
               >
-                Create Task
+                {t('taskBoard.createTask')}
               </Button>
             </div>
           </DialogContent>
@@ -210,7 +219,7 @@ export default function TaskBoard() {
                               )}
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
                                 <Badge className={`text-[10px] ${PRIORITY_COLORS[task.priority] || 'bg-muted'}`}>
-                                  {task.priority}
+                                  {PRIORITY_COLORS[task.priority] ? t(`priority.${task.priority}`) : task.priority}
                                 </Badge>
                                 {task.due_date && (
                                   <span className="flex items-center gap-1 text-[10px] text-muted-foreground">

@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Loader2, CheckCircle, Plus, Globe } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function MarketPriceAnalyzer() {
+  const { t } = useT();
   const [description, setDescription] = useState('');
   const [destination, setDestination] = useState('');
   const [currency, setCurrency] = useState('USD');
@@ -162,18 +164,15 @@ Return a JSON with this structure:
       <Card className="p-5 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800">
         <h3 className="font-bold text-purple-900 dark:text-purple-300 mb-1 flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
-          AI Market Price Analyzer
+          {t('marketPriceAnalyzer.title')}
         </h3>
-        <p className="text-sm text-purple-700 dark:text-purple-300">
-          Describe travel services or products and our AI will research current market prices, suggest selling prices,
-          and import them into your pricing database.
-        </p>
+        <p className="text-sm text-purple-700 dark:text-purple-300">{t('marketPriceAnalyzer.subtitle')}</p>
       </Card>
 
       <Card className="p-6 bg-card shadow-sm">
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="font-semibold">Describe services/products to analyze *</Label>
+            <Label className="font-semibold">{t('marketPriceAnalyzer.describeLabel')}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -184,15 +183,15 @@ Return a JSON with this structure:
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Destination / Region (optional)</Label>
+              <Label>{t('marketPriceAnalyzer.destinationLabel')}</Label>
               <Input
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                placeholder="e.g., Paris, France or Southeast Asia"
+                placeholder={t('marketPriceAnalyzer.destinationPlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Currency</Label>
+              <Label>{t('marketPriceAnalyzer.currencyLabel')}</Label>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger>
                   <SelectValue />
@@ -215,18 +214,16 @@ Return a JSON with this structure:
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing market prices...
+                {t('marketPriceAnalyzer.analyzing')}
               </>
             ) : (
               <>
                 <Globe className="w-4 h-4 mr-2" />
-                Analyze with AI + Live Market Data
+                {t('marketPriceAnalyzer.analyzeButton')}
               </>
             )}
           </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            Uses AI with internet search for up-to-date pricing. Results are estimates.
-          </p>
+          <p className="text-xs text-muted-foreground text-center">{t('marketPriceAnalyzer.disclaimerText')}</p>
         </div>
       </Card>
 
@@ -251,7 +248,7 @@ Return a JSON with this structure:
                   {imported[idx] ? (
                     <Badge className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center gap-1">
                       <CheckCircle className="w-3 h-3" />
-                      Imported
+                      {t('marketPriceAnalyzer.imported')}
                     </Badge>
                   ) : (
                     <Button
@@ -266,7 +263,7 @@ Return a JSON with this structure:
                       ) : (
                         <Plus className="w-3.5 h-3.5 mr-1" />
                       )}
-                      {importing[idx] ? 'Saving...' : 'Import Price'}
+                      {importing[idx] ? t('marketPriceAnalyzer.saving') : t('marketPriceAnalyzer.importPrice')}
                     </Button>
                   )}
                 </div>
@@ -275,21 +272,21 @@ Return a JSON with this structure:
 
                 <div className="grid grid-cols-3 gap-2 text-center mb-3">
                   <div className="bg-amber-50 dark:bg-amber-950/40 rounded p-2">
-                    <div className="text-xs text-muted-foreground">Market Low</div>
+                    <div className="text-xs text-muted-foreground">{t('marketPriceAnalyzer.marketLow')}</div>
                     <div className="font-bold text-amber-700 dark:text-amber-300">
                       {svc.currency}
                       {svc.market_price_low?.toFixed(0)}
                     </div>
                   </div>
                   <div className="bg-orange-50 dark:bg-orange-950/40 rounded p-2">
-                    <div className="text-xs text-muted-foreground">Market High</div>
+                    <div className="text-xs text-muted-foreground">{t('marketPriceAnalyzer.marketHigh')}</div>
                     <div className="font-bold text-orange-700 dark:text-orange-300">
                       {svc.currency}
                       {svc.market_price_high?.toFixed(0)}
                     </div>
                   </div>
                   <div className="bg-green-50 dark:bg-green-950/40 rounded p-2">
-                    <div className="text-xs text-muted-foreground">Suggested Sell</div>
+                    <div className="text-xs text-muted-foreground">{t('marketPriceAnalyzer.suggestedSell')}</div>
                     <div className="font-bold text-green-700 dark:text-green-300">
                       {svc.currency}
                       {svc.suggested_price?.toFixed(0)}
@@ -298,7 +295,7 @@ Return a JSON with this structure:
                 </div>
 
                 <div className="text-xs text-muted-foreground flex justify-between">
-                  <span>Per: {svc.unit?.replace(/_/g, ' ')}</span>
+                  <span>{t('marketPriceAnalyzer.perLabel', { unit: svc.unit?.replace(/_/g, ' ') })}</span>
                 </div>
                 {svc.notes && <p className="text-xs text-muted-foreground mt-2 bg-muted rounded p-2">{svc.notes}</p>}
               </Card>
@@ -313,7 +310,7 @@ Return a JSON with this structure:
                 setDescription('');
               }}
             >
-              Analyze More Services
+              {t('marketPriceAnalyzer.analyzeMore')}
             </Button>
           </div>
         </div>

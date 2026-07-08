@@ -14,8 +14,10 @@ import { Plus, Edit, Trash2, FolderTree, BookOpen, ArrowRight } from 'lucide-rea
 import { showSuccess, showError } from '@/lib/toast';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function Categories() {
+  const { t } = useT();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '', color: '#3B82F6' });
@@ -39,11 +41,11 @@ export default function Categories() {
     useMutation({
       mutationFn: (/** @type {any} */ data) => db.entities.SupplierCategory.create(data),
       onSuccess: () => {
-        showSuccess('Category created');
+        showSuccess(t('categories.createSuccess'));
         queryClient.invalidateQueries({ queryKey: ['categories'] });
         closeModal();
       },
-      onError: (error) => showError('Failed to create category', error.message),
+      onError: (error) => showError(t('categories.createError'), error.message),
     })
   );
 
@@ -51,11 +53,11 @@ export default function Categories() {
     useMutation({
       mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierCategory.update(id, data),
       onSuccess: () => {
-        showSuccess('Category updated');
+        showSuccess(t('categories.updateSuccess'));
         queryClient.invalidateQueries({ queryKey: ['categories'] });
         closeModal();
       },
-      onError: (error) => showError('Failed to update category', error.message),
+      onError: (error) => showError(t('categories.updateError'), error.message),
     })
   );
 
@@ -63,10 +65,10 @@ export default function Categories() {
     useMutation({
       mutationFn: (/** @type {any} */ id) => db.entities.SupplierCategory.delete(id),
       onSuccess: () => {
-        showSuccess('Category deleted');
+        showSuccess(t('categories.deleteSuccess'));
         queryClient.invalidateQueries({ queryKey: ['categories'] });
       },
-      onError: (error) => showError('Failed to delete category', error.message),
+      onError: (error) => showError(t('categories.deleteError'), error.message),
     })
   );
 
@@ -110,19 +112,19 @@ export default function Categories() {
       {/* Header */}
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Categories & Services</h1>
-          <p className="text-muted-foreground">Organize categories and manage service library</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">{t('categories.title')}</h1>
+          <p className="text-muted-foreground">{t('categories.subtitle')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to={createPageUrl('ServiceLibrary')}>
             <Button variant="outline">
               <BookOpen className="w-5 h-5 mr-2" />
-              Service Library
+              {t('categories.serviceLibrary')}
             </Button>
           </Link>
           <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 shadow-lg">
             <Plus className="w-5 h-5 mr-2" />
-            New Category
+            {t('categories.newCategory')}
           </Button>
         </div>
       </div>
@@ -133,11 +135,11 @@ export default function Categories() {
           <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <FolderTree className="w-8 h-8 text-blue-600 dark:text-blue-300" />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">No categories yet</h3>
-          <p className="text-muted-foreground mb-6">Create your first category to organize suppliers</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('categories.noCategoriesTitle')}</h3>
+          <p className="text-muted-foreground mb-6">{t('categories.noCategoriesBody')}</p>
           <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
-            Create Category
+            {t('categories.createCategory')}
           </Button>
         </Card>
       ) : (
@@ -163,10 +165,17 @@ export default function Categories() {
               <h3 className="text-xl font-bold text-foreground mb-2">{category.name}</h3>
               {category.description && <p className="text-muted-foreground text-sm mb-3">{category.description}</p>}
               <div className="flex items-center justify-between pt-3 border-t border-border">
-                <span className="text-sm text-muted-foreground">{getServiceCount(category.id)} services</span>
+                <span className="text-sm text-muted-foreground">
+                  {t(
+                    getServiceCount(category.id) === 1
+                      ? 'categories.serviceCountSingular'
+                      : 'categories.serviceCountPlural',
+                    { count: getServiceCount(category.id) },
+                  )}
+                </span>
                 <Link to={createPageUrl(`ServiceLibrary?category=${category.id}`)}>
                   <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-300">
-                    View <ArrowRight className="w-4 h-4 ml-1" />
+                    {t('categories.view')} <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 </Link>
               </div>
@@ -179,33 +188,33 @@ export default function Categories() {
       <Dialog open={modalOpen} onOpenChange={closeModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
+            <DialogTitle>{editingCategory ? t('categories.editCategory') : t('categories.createCategory')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Category Name *</Label>
+              <Label htmlFor="name">{t('categories.categoryNameLabel')}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Hotels, Transportation, etc."
+                placeholder={t('categories.categoryNamePlaceholder')}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('categories.descriptionLabel')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description..."
+                placeholder={t('categories.descriptionPlaceholder')}
                 rows={3}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="color">Color</Label>
+              <Label htmlFor="color">{t('categories.colorLabel')}</Label>
               <div className="flex gap-3 items-center">
                 <Input
                   id="color"
@@ -220,10 +229,10 @@ export default function Categories() {
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingCategory ? 'Update' : 'Create'}
+                {editingCategory ? t('categories.update') : t('categories.create')}
               </Button>
             </div>
           </form>

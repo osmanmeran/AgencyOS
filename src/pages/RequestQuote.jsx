@@ -8,8 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SendHorizontal, CheckCircle2, Plane } from 'lucide-react';
 import LocationSearch from '@/components/services/LocationSearch';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function RequestQuote() {
+  const { t } = useT();
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -40,7 +42,7 @@ export default function RequestQuote() {
       await db.entities.Client.create(lead);
       setSubmitted(true);
     } catch {
-      alert('Something went wrong. Please email us directly.');
+      alert(t('requestQuote.errorGeneric'));
     }
   };
 
@@ -51,15 +53,13 @@ export default function RequestQuote() {
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-300" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">Thank You!</h1>
-          <p className="text-muted-foreground mb-4">
-            We've received your trip request. Our travel experts will review it and get back to you within 24 hours.
-          </p>
+          <h1 className="text-2xl font-bold mb-2">{t('requestQuote.thankYouTitle')}</h1>
+          <p className="text-muted-foreground mb-4">{t('requestQuote.thankYouBody')}</p>
           <p className="text-sm text-muted-foreground">
-            Reference: {form.name} - {form.destination}
+            {t('requestQuote.reference', { name: form.name, destination: form.destination })}
           </p>
           <Button className="mt-6" onClick={() => setSubmitted(false)}>
-            Submit Another
+            {t('requestQuote.submitAnother')}
           </Button>
         </Card>
       </div>
@@ -73,51 +73,51 @@ export default function RequestQuote() {
           <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-600/30">
             <Plane className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Request a Quote</h1>
-          <p className="text-muted-foreground mt-2">Tell us about your trip and we'll craft the perfect itinerary</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('clientPortal.requestQuote')}</h1>
+          <p className="text-muted-foreground mt-2">{t('requestQuote.subtitle')}</p>
         </div>
 
         <Card className="p-6 bg-card shadow-lg border-0">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Name *</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.nameLabel')}</label>
                 <Input
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Your full name"
+                  placeholder={t('requestQuote.namePlaceholder')}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Email *</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.emailLabel')}</label>
                 <Input
                   required
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="your@email.com"
+                  placeholder={t('requestQuote.emailPlaceholder')}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Phone</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.phoneLabel')}</label>
                 <Input
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder={t('requestQuote.phonePlaceholder')}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Destination *</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.destinationLabel')}</label>
                 <LocationSearch
                   value={form.destination}
                   onChange={(v) => setForm({ ...form, destination: v })}
-                  placeholder="e.g., Paris, France"
+                  placeholder={t('requestQuote.destinationPlaceholder')}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Start Date</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.startDateLabel')}</label>
                 <Input
                   type="date"
                   value={form.start_date}
@@ -125,7 +125,7 @@ export default function RequestQuote() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">End Date</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.endDateLabel')}</label>
                 <Input
                   type="date"
                   value={form.end_date}
@@ -133,7 +133,7 @@ export default function RequestQuote() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Number of Travelers</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.travelersLabel')}</label>
                 <Input
                   type="number"
                   min={1}
@@ -142,50 +142,50 @@ export default function RequestQuote() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Budget Range</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.budgetLabel')}</label>
                 <Select value={form.budget} onValueChange={(v) => setForm({ ...form, budget: v })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select range" />
+                    <SelectValue placeholder={t('requestQuote.budgetPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="under_1000">Under $1,000</SelectItem>
-                    <SelectItem value="1000_3000">$1,000 - $3,000</SelectItem>
-                    <SelectItem value="3000_5000">$3,000 - $5,000</SelectItem>
-                    <SelectItem value="5000_10000">$5,000 - $10,000</SelectItem>
-                    <SelectItem value="over_10000">$10,000+</SelectItem>
-                    <SelectItem value="not_sure">Not sure</SelectItem>
+                    <SelectItem value="under_1000">{t('requestQuote.budgetUnder1000')}</SelectItem>
+                    <SelectItem value="1000_3000">{t('requestQuote.budget1000to3000')}</SelectItem>
+                    <SelectItem value="3000_5000">{t('requestQuote.budget3000to5000')}</SelectItem>
+                    <SelectItem value="5000_10000">{t('requestQuote.budget5000to10000')}</SelectItem>
+                    <SelectItem value="over_10000">{t('requestQuote.budgetOver10000')}</SelectItem>
+                    <SelectItem value="not_sure">{t('requestQuote.budgetNotSure')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">How did you hear about us?</label>
+                <label className="text-sm font-medium text-foreground">{t('requestQuote.referralLabel')}</label>
                 <Select value={form.referral} onValueChange={(v) => setForm({ ...form, referral: v })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select" />
+                    <SelectValue placeholder={t('requestQuote.referralPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="google">Google Search</SelectItem>
-                    <SelectItem value="social">Social Media</SelectItem>
-                    <SelectItem value="referral">Friend/Family</SelectItem>
-                    <SelectItem value="repeat">Returning Client</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="google">{t('requestQuote.referralGoogle')}</SelectItem>
+                    <SelectItem value="social">{t('requestQuote.referralSocial')}</SelectItem>
+                    <SelectItem value="referral">{t('requestQuote.referralFriend')}</SelectItem>
+                    <SelectItem value="repeat">{t('requestQuote.referralReturning')}</SelectItem>
+                    <SelectItem value="other">{t('requestQuote.referralOther')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">Trip Description *</label>
+              <label className="text-sm font-medium text-foreground">{t('requestQuote.descriptionLabel')}</label>
               <Textarea
                 required
                 rows={4}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Tell us about your ideal trip - preferred activities, accommodation style, special requirements..."
+                placeholder={t('requestQuote.descriptionPlaceholder')}
               />
             </div>
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base">
               <SendHorizontal className="w-5 h-5 mr-2" />
-              Send Request
+              {t('requestQuote.sendRequest')}
             </Button>
           </form>
         </Card>

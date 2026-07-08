@@ -12,6 +12,7 @@ import { showSuccess, showError } from '@/lib/toast';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   delivered: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
@@ -20,14 +21,8 @@ const STATUS_COLORS = {
   rejected: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
 };
 
-const STATUS_LABELS = {
-  delivered: 'Delivered',
-  changed: 'Changed',
-  approved: 'Approved',
-  rejected: 'Rejected',
-};
-
 export default function Proposals() {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const { exportCSV } = useExport();
 
@@ -35,10 +30,10 @@ export default function Proposals() {
     useMutation({
       mutationFn: (/** @type {any} */ id) => db.entities.Proposal.delete(id),
       onSuccess: () => {
-        showSuccess('Proposal deleted');
+        showSuccess(t('proposals.deleteSuccess'));
         queryClient.invalidateQueries({ queryKey: ['proposals'] });
       },
-      onError: (error) => showError('Failed to delete proposal', error.message),
+      onError: (error) => showError(t('proposals.deleteError'), error.message),
     })
   );
 
@@ -57,8 +52,8 @@ export default function Proposals() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Proposals</h1>
-          <p className="text-muted-foreground">Create and manage travel proposals for clients</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">{t('proposals.title')}</h1>
+          <p className="text-muted-foreground">{t('proposals.listSubtitle')}</p>
         </div>
         <Button
           variant="outline"
@@ -74,12 +69,12 @@ export default function Proposals() {
           }
         >
           <Download className="w-4 h-4 mr-2" />
-          Export CSV
+          {t('common.exportCsv')}
         </Button>
         <Link to={createPageUrl('CreateProposal')}>
           <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg">
             <Plus className="w-5 h-5 mr-2" />
-            New Proposal
+            {t('proposals.newProposal')}
           </Button>
         </Link>
       </div>
@@ -89,12 +84,12 @@ export default function Proposals() {
           <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText className="w-8 h-8 text-blue-600 dark:text-blue-300" />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">No proposals yet</h3>
-          <p className="text-muted-foreground mb-6">Start creating proposals from your supplier database</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('proposals.noProposalsTitle')}</h3>
+          <p className="text-muted-foreground mb-6">{t('proposals.noProposalsBody')}</p>
           <Link to={createPageUrl('CreateProposal')}>
             <Button className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
-              Create First Proposal
+              {t('proposals.createFirst')}
             </Button>
           </Link>
         </Card>
@@ -106,7 +101,7 @@ export default function Proposals() {
                 className="absolute top-3 right-3 z-10 p-1.5 rounded-md text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 opacity-0 group-hover/card:opacity-100 transition-all"
                 onClick={(e) => {
                   e.preventDefault();
-                  if (confirm('Delete this proposal?')) deleteMutation.mutate(proposal.id);
+                  if (confirm(t('proposals.deleteConfirm'))) deleteMutation.mutate(proposal.id);
                 }}
               >
                 <Trash2 className="w-4 h-4" />
@@ -122,12 +117,19 @@ export default function Proposals() {
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <Badge className={STATUS_COLORS[proposal.status] || 'bg-muted text-foreground'}>
-                        {STATUS_LABELS[proposal.status] || proposal.status}
+                        {STATUS_COLORS[proposal.status]
+                          ? t(`proposals.proposalStatus.${proposal.status}`)
+                          : proposal.status}
                       </Badge>
                       {proposal.change_history?.length > 0 && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <History className="w-3 h-3" />
-                          {proposal.change_history.length} change{proposal.change_history.length > 1 ? 's' : ''}
+                          {t(
+                            proposal.change_history.length === 1
+                              ? 'proposals.changeSingular'
+                              : 'proposals.changePlural',
+                            { count: proposal.change_history.length },
+                          )}
                         </div>
                       )}
                     </div>
@@ -142,7 +144,7 @@ export default function Proposals() {
                           {format(new Date(proposal.end_date), 'MMM d, yyyy')}
                         </span>
                       ) : (
-                        <span>Dates not set</span>
+                        <span>{t('proposals.datesNotSet')}</span>
                       )}
                     </div>
                     {proposal.destination && (
@@ -154,7 +156,12 @@ export default function Proposals() {
                     {proposal.num_travelers > 0 && (
                       <div className="flex items-center gap-2">
                         <UsersIcon className="w-4 h-4" />
-                        {proposal.num_travelers} traveler{proposal.num_travelers > 1 ? 's' : ''}
+                        {t(
+                          proposal.num_travelers === 1
+                            ? 'clientProposals.travelerSingular'
+                            : 'clientProposals.travelerPlural',
+                          { count: proposal.num_travelers },
+                        )}
                       </div>
                     )}
                   </div>
@@ -162,7 +169,7 @@ export default function Proposals() {
                   {proposal.total_cost > 0 && (
                     <div className="pt-4 border-t border-border">
                       <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="text-muted-foreground text-sm">Total Cost</span>
+                        <span className="text-muted-foreground text-sm">{t('clientProposals.totalCost')}</span>
                         <div className="flex items-center gap-1 text-green-700 dark:text-green-300 font-bold text-lg">
                           <DollarSign className="w-5 h-5" />
                           {proposal.total_cost.toFixed(2)}

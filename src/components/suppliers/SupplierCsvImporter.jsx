@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Download, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { parseCsv } from '@/lib/csv';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function SupplierCsvImporter({ open, onOpenChange, categories, onImported }) {
+  const { t } = useT();
   const fileRef = useRef(null);
   const [results, setResults] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -33,7 +35,7 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
         .filter(Boolean);
 
       if (!name) {
-        failed.push({ row, reason: 'Missing required field: name' });
+        failed.push({ row, reason: t('supplierCsvImporter.missingNameError') });
         continue;
       }
 
@@ -43,7 +45,7 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
         .map((c) => c.id);
 
       if (matchedCategoryIds.length === 0) {
-        failed.push({ row, reason: `Category "${row['category']}" not found` });
+        failed.push({ row, reason: t('supplierCsvImporter.categoryNotFoundError', { category: row['category'] }) });
         continue;
       }
 
@@ -104,26 +106,26 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Import Suppliers from CSV</DialogTitle>
+          <DialogTitle>{t('supplierCsvImporter.dialogTitle')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
           {/* Instructions */}
           <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-300">
-            <p className="font-semibold mb-1">Required columns:</p>
+            <p className="font-semibold mb-1">{t('supplierCsvImporter.requiredColumns')}</p>
             <p>
               <span className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">name</span>,{' '}
-              <span className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">category</span> (must match
-              existing category name(s); separate multiple categories with a semicolon)
+              <span className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">category</span>{' '}
+              {t('supplierCsvImporter.requiredColumnsBody')}
             </p>
-            <p className="mt-1 text-blue-600 dark:text-blue-300">
-              Optional: contact_person, email, phone, website, city, area, notes, rating
-            </p>
+            <p className="mt-1 text-blue-600 dark:text-blue-300">{t('supplierCsvImporter.optionalColumns')}</p>
           </div>
 
           {/* Available categories */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Available categories</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+              {t('supplierCsvImporter.availableCategories')}
+            </p>
             <div className="flex flex-wrap gap-1">
               {categories.map((c) => (
                 <Badge key={c.id} variant="outline" className="text-xs">
@@ -137,7 +139,7 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={downloadTemplate}>
               <Download className="w-4 h-4 mr-2" />
-              Download Template
+              {t('supplierCsvImporter.downloadTemplate')}
             </Button>
             <Button
               size="sm"
@@ -148,12 +150,12 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
               {importing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Importing...
+                  {t('supplierCsvImporter.importing')}
                 </>
               ) : (
                 <>
                   <Upload className="w-4 h-4 mr-2" />
-                  Upload CSV
+                  {t('supplierCsvImporter.uploadCsv')}
                 </>
               )}
             </Button>
@@ -166,23 +168,27 @@ export default function SupplierCsvImporter({ open, onOpenChange, categories, on
               <div className="flex gap-3">
                 <div className="flex items-center gap-1.5 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2 text-sm font-medium">
                   <CheckCircle className="w-4 h-4" />
-                  {results.succeeded.length} imported
+                  {t('supplierCsvImporter.importedCount', { count: results.succeeded.length })}
                 </div>
                 <div className="flex items-center gap-1.5 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 text-sm font-medium">
                   <XCircle className="w-4 h-4" />
-                  {results.failed.length} failed
+                  {t('supplierCsvImporter.failedCount', { count: results.failed.length })}
                 </div>
               </div>
 
               {results.failed.length > 0 && (
                 <div className="max-h-48 overflow-y-auto space-y-1">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase">Failed rows</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">
+                    {t('supplierCsvImporter.failedRows')}
+                  </p>
                   {results.failed.map((f, i) => (
                     <div
                       key={i}
                       className="text-xs bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded p-2"
                     >
-                      <span className="font-semibold text-foreground">{f.row.name || `Row ${i + 1}`}</span>
+                      <span className="font-semibold text-foreground">
+                        {f.row.name || t('supplierCsvImporter.rowFallback', { n: i + 1 })}
+                      </span>
                       <span className="text-red-600 dark:text-red-300 ml-2">— {f.reason}</span>
                     </div>
                   ))}

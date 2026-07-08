@@ -14,11 +14,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarOff, Plus, Trash2, AlertTriangle, CalendarDays } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const fmt = (d) => format(parseISO(d), 'MMM d, yyyy');
 const todayStr = () => new Date().toISOString().split('T')[0];
 
 export default function SupplierStopSales({ supplierId }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [range, setRange] = useState(/** @type {any} */ (undefined));
@@ -42,11 +44,11 @@ export default function SupplierStopSales({ supplierId }) {
       mutationFn: (/** @type {any} */ data) =>
         db.entities.SupplierStopSale.create({ ...data, supplier_id: supplierId }),
       onSuccess: () => {
-        showSuccess('Stop sale added — new bookings for these dates are now blocked');
+        showSuccess(t('supplierStopSales.addSuccess'));
         invalidate();
         closeModal();
       },
-      onError: (error) => showError('Failed to add stop sale', error.message),
+      onError: (error) => showError(t('supplierStopSales.addError'), error.message),
     })
   );
 
@@ -54,10 +56,10 @@ export default function SupplierStopSales({ supplierId }) {
     useMutation({
       mutationFn: (/** @type {any} */ id) => db.entities.SupplierStopSale.delete(id),
       onSuccess: () => {
-        showSuccess('Stop sale removed');
+        showSuccess(t('supplierStopSales.removeSuccess'));
         invalidate();
       },
-      onError: (error) => showError('Failed to remove stop sale', error.message),
+      onError: (error) => showError(t('supplierStopSales.removeError'), error.message),
     })
   );
 
@@ -70,7 +72,7 @@ export default function SupplierStopSales({ supplierId }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!range?.from) {
-      showError('Pick a start date (and optionally an end date) on the calendar');
+      showError(t('supplierStopSales.pickDateError'));
       return;
     }
     createMutation.mutate({
@@ -91,10 +93,10 @@ export default function SupplierStopSales({ supplierId }) {
     <Card className="p-6 bg-card">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-foreground flex items-center gap-2">
-          <CalendarOff className="w-5 h-5 text-red-500 dark:text-red-300" /> Stop Sales
+          <CalendarOff className="w-5 h-5 text-red-500 dark:text-red-300" /> {t('supplierStopSales.title')}
         </h3>
         <Button size="sm" onClick={() => setModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Add Stop Sale
+          <Plus className="w-4 h-4 mr-2" /> {t('supplierStopSales.addStopSale')}
         </Button>
       </div>
 
@@ -102,18 +104,14 @@ export default function SupplierStopSales({ supplierId }) {
         <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-300 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-red-800 dark:text-red-300">
-            <p className="font-semibold">This supplier is unavailable right now</p>
-            <p className="mt-0.5">
-              New reservations for the dates below are blocked in every booking channel, including the client portal.
-            </p>
+            <p className="font-semibold">{t('supplierStopSales.unavailableTitle')}</p>
+            <p className="mt-0.5">{t('supplierStopSales.unavailableBody')}</p>
           </div>
         </div>
       )}
 
       {ordered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No stop sale periods. Add one to block new bookings for this supplier across a date range.
-        </p>
+        <p className="text-sm text-muted-foreground">{t('supplierStopSales.noStopSales')}</p>
       ) : (
         <div className="space-y-2">
           {ordered.map((s) => {
@@ -123,7 +121,11 @@ export default function SupplierStopSales({ supplierId }) {
               upcoming: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300',
               ended: 'bg-muted text-muted-foreground',
             }[status];
-            const statusLabel = { active: 'Active', upcoming: 'Upcoming', ended: 'Ended' }[status];
+            const statusLabel = {
+              active: t('supplierStopSales.statusActive'),
+              upcoming: t('supplierStopSales.statusUpcoming'),
+              ended: t('supplierStopSales.statusEnded'),
+            }[status];
             return (
               <div
                 key={s.id}
@@ -156,18 +158,18 @@ export default function SupplierStopSales({ supplierId }) {
       <Dialog open={modalOpen} onOpenChange={closeModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Stop Sale</DialogTitle>
+            <DialogTitle>{t('supplierStopSales.addStopSale')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Date range *</Label>
+              <Label>{t('supplierStopSales.dateRangeLabel')}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button type="button" variant="outline" className="w-full justify-start font-normal">
                     <CalendarDays className="w-4 h-4 mr-2" />
                     {range?.from
                       ? `${format(range.from, 'MMM d, yyyy')}${range.to ? ` – ${format(range.to, 'MMM d, yyyy')}` : ''}`
-                      : 'Select dates on the calendar'}
+                      : t('supplierStopSales.selectDatesPlaceholder')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -176,20 +178,20 @@ export default function SupplierStopSales({ supplierId }) {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label>Reason (internal note)</Label>
+              <Label>{t('supplierStopSales.reasonLabel')}</Label>
               <Textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={2}
-                placeholder="e.g. fully booked, closed for maintenance..."
+                placeholder={t('supplierStopSales.reasonPlaceholder')}
               />
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-red-600 hover:bg-red-700" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Adding...' : 'Add Stop Sale'}
+                {createMutation.isPending ? t('supplierStopSales.adding') : t('supplierStopSales.addStopSale')}
               </Button>
             </div>
           </form>

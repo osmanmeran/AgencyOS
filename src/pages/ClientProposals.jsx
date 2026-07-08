@@ -12,6 +12,7 @@ import { showSuccess, showError } from '@/lib/toast';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   draft: 'bg-muted text-foreground',
@@ -22,6 +23,7 @@ const STATUS_COLORS = {
 };
 
 export default function ClientProposals() {
+  const { t } = useT();
   const client = useMyClient();
   const queryClient = useQueryClient();
 
@@ -40,10 +42,10 @@ export default function ClientProposals() {
         return db.entities.Proposal.update(id, { ...proposal, status });
       },
       onSuccess: () => {
-        showSuccess('Proposal updated');
+        showSuccess(t('proposals.updateSuccess'));
         queryClient.invalidateQueries({ queryKey: ['myProposals', client?.id] });
       },
-      onError: (error) => showError('Failed to update proposal', error.message),
+      onError: (error) => showError(t('proposals.updateError'), error.message),
     })
   );
 
@@ -54,8 +56,8 @@ export default function ClientProposals() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">My Proposals</h1>
-        <p className="text-muted-foreground">View and respond to travel proposals</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">{t('clientProposals.title')}</h1>
+        <p className="text-muted-foreground">{t('clientProposals.subtitle')}</p>
       </div>
 
       {proposals.length === 0 ? (
@@ -63,8 +65,8 @@ export default function ClientProposals() {
           <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText className="w-8 h-8 text-blue-600 dark:text-blue-300" />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">No proposals yet</h3>
-          <p className="text-muted-foreground">Your travel agent will send you proposals here</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('clientProposals.noProposalsTitle')}</h3>
+          <p className="text-muted-foreground">{t('clientProposals.noProposalsBody')}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -72,7 +74,7 @@ export default function ClientProposals() {
             <Card key={proposal.id} className="p-6 bg-card hover:shadow-xl transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="font-bold text-lg text-foreground">{proposal.title}</h3>
-                <Badge className={STATUS_COLORS[proposal.status]}>{proposal.status}</Badge>
+                <Badge className={STATUS_COLORS[proposal.status]}>{t(`proposals.status.${proposal.status}`)}</Badge>
               </div>
 
               <div className="space-y-3 mb-4">
@@ -92,14 +94,19 @@ export default function ClientProposals() {
                 {proposal.num_travelers > 0 && (
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Users className="w-4 h-4" />
-                    {proposal.num_travelers} traveler{proposal.num_travelers > 1 ? 's' : ''}
+                    {t(
+                      proposal.num_travelers > 1
+                        ? 'clientProposals.travelerPlural'
+                        : 'clientProposals.travelerSingular',
+                      { count: proposal.num_travelers },
+                    )}
                   </div>
                 )}
               </div>
 
               <div className="pt-4 border-t border-border mb-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-muted-foreground text-sm">Total Cost</span>
+                  <span className="text-muted-foreground text-sm">{t('clientProposals.totalCost')}</span>
                   <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center gap-1">
                     <DollarSign className="w-5 h-5" />
                     {(proposal.total_cost || 0).toFixed(2)}
@@ -109,7 +116,7 @@ export default function ClientProposals() {
 
               <Link to={createPageUrl(`ClientProposalDetails?id=${proposal.id}`)}>
                 <Button className="w-full mb-2" variant="outline">
-                  View Details
+                  {t('clientProposals.viewDetails')}
                 </Button>
               </Link>
 
@@ -120,14 +127,14 @@ export default function ClientProposals() {
                     onClick={() => updateProposalMutation.mutate({ id: proposal.id, status: 'accepted' })}
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Accept
+                    {t('clientProposals.accept')}
                   </Button>
                   <Button
                     className="flex-1 bg-red-600 hover:bg-red-700"
                     onClick={() => updateProposalMutation.mutate({ id: proposal.id, status: 'rejected' })}
                   >
                     <XCircle className="w-4 h-4 mr-2" />
-                    Decline
+                    {t('clientProposals.decline')}
                   </Button>
                 </div>
               )}
