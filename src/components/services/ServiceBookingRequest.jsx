@@ -10,8 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Send, Loader2 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ServiceBookingRequest({ open, onClose, service, tripId, supplierId }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     supplier_id: supplierId || '',
@@ -126,7 +128,7 @@ TravelPro Team
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Send Booking Request</DialogTitle>
+          <DialogTitle>{t('serviceBookingRequest.title')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-4">
           <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
@@ -135,10 +137,10 @@ TravelPro Team
           </div>
 
           <div className="space-y-2">
-            <Label>Select Supplier *</Label>
+            <Label>{t('serviceBookingRequest.selectSupplierLabel')}</Label>
             <Select value={formData.supplier_id} onValueChange={(v) => setFormData({ ...formData, supplier_id: v })}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose supplier" />
+                <SelectValue placeholder={t('serviceBookingRequest.chooseSupplierPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {serviceSuppliers.length > 0
@@ -156,14 +158,17 @@ TravelPro Team
             </Select>
             {supplierContact && (
               <div className="text-xs text-muted-foreground mt-1">
-                Contact: {supplierContact.contact_name} ({supplierContact.contact_email})
+                {t('serviceBookingRequest.contactLabel', {
+                  name: supplierContact.contact_name,
+                  email: supplierContact.contact_email,
+                })}
               </div>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Service Date *</Label>
+              <Label>{t('serviceBookingRequest.serviceDateLabel')}</Label>
               <Input
                 type="date"
                 value={formData.service_date}
@@ -172,7 +177,7 @@ TravelPro Team
               />
             </div>
             <div className="space-y-2">
-              <Label>Number of Guests *</Label>
+              <Label>{t('serviceBookingRequest.numGuestsLabel')}</Label>
               <Input
                 type="number"
                 min="1"
@@ -184,7 +189,7 @@ TravelPro Team
           </div>
 
           <div className="space-y-2">
-            <Label>Estimated Cost</Label>
+            <Label>{t('serviceBookingRequest.estimatedCostLabel')}</Label>
             <Input
               type="number"
               step="0.01"
@@ -194,18 +199,18 @@ TravelPro Team
           </div>
 
           <div className="space-y-2">
-            <Label>Additional Details</Label>
+            <Label>{t('serviceBookingRequest.additionalDetailsLabel')}</Label>
             <Textarea
               value={formData.service_details}
               onChange={(e) => setFormData({ ...formData, service_details: e.target.value })}
-              placeholder="Special requests, timing preferences, etc."
+              placeholder={t('serviceBookingRequest.additionalDetailsPlaceholder')}
               rows={3}
             />
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={() => createBookingMutation.mutate()}
@@ -214,11 +219,11 @@ TravelPro Team
             >
               {sending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('serviceBookingRequest.sending')}
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4 mr-2" /> Send Request
+                  <Send className="w-4 h-4 mr-2" /> {t('serviceBookingRequest.sendRequest')}
                 </>
               )}
             </Button>
