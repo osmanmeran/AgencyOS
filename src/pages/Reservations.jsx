@@ -144,7 +144,7 @@ function ReservationCard({ trip, selected, onToggleSelect }) {
                 <Users className="w-3.5 h-3.5 flex-shrink-0" />
                 <span>
                   {trip.client_name}
-                  {paxCount > 0 ? ` · ${paxCount} pax` : ''}
+                  {paxCount > 0 ? ` · ${t('dashboard.paxCount', { count: paxCount })}` : ''}
                 </span>
               </div>
             )}
@@ -152,7 +152,7 @@ function ReservationCard({ trip, selected, onToggleSelect }) {
 
           {trip.total_cost > 0 && (
             <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Total</span>
+              <span className="text-xs text-muted-foreground">{t('clientProposalDetails.total')}</span>
               <span className="font-bold text-green-700 dark:text-green-300">
                 {sc}
                 {trip.total_cost.toFixed(2)}
@@ -222,10 +222,10 @@ export default function Reservations() {
     useMutation({
       mutationFn: () => db.entities.Trip.bulkDelete(cancelledTrips.map((t) => t.id)),
       onSuccess: () => {
-        showSuccess('Cancelled reservations deleted');
+        showSuccess(t('reservations.cancelledDeleteSuccess'));
         queryClient.invalidateQueries({ queryKey: ['Trip'] });
       },
-      onError: (error) => showError('Failed to delete cancelled reservations', error.message),
+      onError: (error) => showError(t('reservations.cancelledDeleteError'), error.message),
     })
   );
 
@@ -235,17 +235,19 @@ export default function Reservations() {
       const result = await db.entities.Trip.bulkDelete([...selectedIds]);
       if (result.skipped.length > 0) {
         showError(
-          `${result.skipped.length} reservation(s) could not be deleted`,
-          'You may not have permission for some of the selected reservations.',
+          t(result.skipped.length === 1 ? 'reservations.skippedErrorSingular' : 'reservations.skippedErrorPlural', {
+            count: result.skipped.length,
+          }),
+          t('reservations.skippedErrorBody'),
         );
       } else {
-        showSuccess('Reservations deleted');
+        showSuccess(t('reservations.reservationsDeletedSuccess'));
       }
       clear();
       setBulkDeleteOpen(false);
       queryClient.invalidateQueries({ queryKey: ['Trip'] });
     } catch (error) {
-      showError('Failed to delete reservations', error.message);
+      showError(t('reservations.bulkDeleteError'), error.message);
     }
     setIsBulkDeleting(false);
   };
@@ -255,11 +257,16 @@ export default function Reservations() {
     try {
       const ids = [...selectedIds];
       await db.entities.Trip.bulkUpdate(ids, { proposal_status });
-      showSuccess(`Updated ${ids.length} reservation${ids.length > 1 ? 's' : ''} to "${proposal_status}"`);
+      showSuccess(
+        t(ids.length === 1 ? 'reservations.statusUpdateSuccessSingular' : 'reservations.statusUpdateSuccessPlural', {
+          count: ids.length,
+          status: t(`common.${proposal_status}`),
+        }),
+      );
       clear();
       queryClient.invalidateQueries({ queryKey: ['Trip'] });
     } catch (error) {
-      showError('Failed to update reservations', error.message);
+      showError(t('reservations.statusUpdateError'), error.message);
     }
     setIsBulkUpdating(false);
   };
@@ -280,7 +287,7 @@ export default function Reservations() {
         { label: 'Total Cost', accessor: (t) => t.total_cost },
       ]);
     } catch (error) {
-      showError('Failed to export reservations', error.message);
+      showError(t('reservations.exportError'), error.message);
     }
     setIsExporting(false);
   };
@@ -355,7 +362,7 @@ export default function Reservations() {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300"
               >
                 <XCircle className="w-3.5 h-3.5" />
-                Cancelled: {cancelledCount}
+                {t('reservations.cancelledLabel', { count: cancelledCount })}
               </div>
             );
           }
@@ -387,14 +394,14 @@ export default function Reservations() {
               {t('common.confirmed')} ({byStatus('confirmed').length})
             </TabsTrigger>
             <TabsTrigger value="rejected" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              Cancelled ({cancelledCount})
+              {t('common.cancelled')} ({cancelledCount})
             </TabsTrigger>
             <TabsTrigger value="past" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
               {t('reservations.past')}
             </TabsTrigger>
             <TabsTrigger value="calendar" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
               <Calendar className="w-3.5 h-3.5 mr-1" />
-              Calendar
+              {t('reservations.calendarTab')}
             </TabsTrigger>
           </TabsList>
           <div className="relative flex-1 max-w-sm">
@@ -410,30 +417,35 @@ export default function Reservations() {
             )}
           </div>
           <Button variant="outline" size="sm" onClick={toggleAll}>
-            {allSelected ? 'Deselect All' : 'Select All'}
+            {allSelected ? t('common.deselectAll') : t('common.selectAll')}
           </Button>
           <Button variant="outline" onClick={handleExportAll} disabled={isExporting}>
             {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-            Export CSV
+            {t('common.exportCsv')}
           </Button>
         </div>
 
-        <BulkActionsBar count={selectedCount} label="reservation" onDeselectAll={clear}>
+        <BulkActionsBar
+          count={selectedCount}
+          labelSingular={t('reservations.reservationNoun')}
+          labelPlural={t('reservations.reservationNounPlural')}
+          onDeselectAll={clear}
+        >
           <Select onValueChange={handleBulkStatusChange} disabled={isBulkUpdating}>
             <SelectTrigger className="w-44 h-9 bg-card">
-              <SelectValue placeholder="Change status" />
+              <SelectValue placeholder={t('reservations.changeStatusPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {Object.keys(PROPOSAL_STATUS_CONFIG).map((s) => (
                 <SelectItem key={s} value={s}>
-                  {s}
+                  {t(`common.${s}`)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setBulkDeleteOpen(true)}>
             <XCircle className="w-4 h-4 mr-2" />
-            Delete {selectedCount}
+            {t('reservations.deleteCount', { count: selectedCount })}
           </Button>
         </BulkActionsBar>
 
@@ -490,7 +502,12 @@ export default function Reservations() {
                                 <div>
                                   <div className="font-bold text-foreground">{format(date, 'EEEE, MMM d, yyyy')}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    {grouped[key].length} reservation{grouped[key].length !== 1 ? 's' : ''}
+                                    {t(
+                                      grouped[key].length === 1
+                                        ? 'reservations.reservationSingular'
+                                        : 'reservations.reservationPlural',
+                                      { count: grouped[key].length },
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -513,7 +530,7 @@ export default function Reservations() {
                               <div className="bg-muted-foreground text-background rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
                                 ∞
                               </div>
-                              <div className="font-bold text-muted-foreground">Unscheduled</div>
+                              <div className="font-bold text-muted-foreground">{t('reservations.unscheduled')}</div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                               {grouped['__unscheduled'].map((trip) => (
@@ -535,18 +552,16 @@ export default function Reservations() {
                       <Button
                         variant="destructive"
                         onClick={() => {
-                          if (
-                            confirm(
-                              `Permanently erase all ${cancelledCount} cancelled reservations? This cannot be undone.`,
-                            )
-                          ) {
+                          if (confirm(t('reservations.eraseConfirm', { count: cancelledCount }))) {
                             deleteCancelledMutation.mutate();
                           }
                         }}
                         disabled={deleteCancelledMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
-                        {deleteCancelledMutation.isPending ? 'Erasing...' : `Erase All Cancelled (${cancelledCount})`}
+                        {deleteCancelledMutation.isPending
+                          ? t('reservations.erasing')
+                          : t('reservations.eraseAllCancelled', { count: cancelledCount })}
                       </Button>
                     </div>
                   )}
@@ -573,7 +588,7 @@ export default function Reservations() {
                 </Button>
               </div>
               <div className="grid grid-cols-7 gap-px bg-muted rounded-lg overflow-hidden">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                {t('dashboard.weekdays').map((d) => (
                   <div key={d} className="bg-muted px-2 py-1.5 text-center text-xs font-semibold text-muted-foreground">
                     {d}
                   </div>
@@ -607,7 +622,7 @@ export default function Reservations() {
                           ))}
                           {events.length > 3 && (
                             <span className="text-[10px] text-blue-600 dark:text-blue-300 font-medium">
-                              +{events.length - 3} more
+                              {t('dashboard.moreCount', { count: events.length - 3 })}
                             </span>
                           )}
                         </div>
@@ -619,10 +634,10 @@ export default function Reservations() {
             </Card>
             <Card className="bg-card p-4">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                {calSelectedDate ? format(calSelectedDate, 'MMMM d, yyyy') : 'Select a date'}
+                {calSelectedDate ? format(calSelectedDate, 'MMMM d, yyyy') : t('reservations.selectDate')}
               </h3>
               {calSelectedEvents.length === 0 && (
-                <p className="text-sm text-muted-foreground py-8 text-center">No trips on this date</p>
+                <p className="text-sm text-muted-foreground py-8 text-center">{t('calendarView.noTripsOnDate')}</p>
               )}
               <div className="space-y-2">
                 {calSelectedEvents.map((trip) => (
@@ -646,7 +661,11 @@ export default function Reservations() {
                     </div>
                     <div className="flex items-center gap-2 mt-1.5">
                       <Badge className={`text-[10px] ${CAL_STATUS_COLORS[trip.status] || ''}`}>
-                        {trip.status?.replace('_', ' ')}
+                        {trip.status === 'confirmed'
+                          ? t('common.confirmed')
+                          : trip.status === 'cancelled'
+                            ? t('common.cancelled')
+                            : t(`tripStatus.${trip.status}`)}
                       </Badge>
                       {trip.end_date && (
                         <span className="text-[10px] text-muted-foreground">
@@ -668,23 +687,25 @@ export default function Reservations() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Permanently Delete {selectedCount} Reservation{selectedCount > 1 ? 's' : ''}?
+              {t(
+                selectedCount === 1 ? 'reservations.deleteDialogTitleSingular' : 'reservations.deleteDialogTitlePlural',
+                { count: selectedCount },
+              )}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will <strong>permanently delete</strong> all selected reservations from the database. This action
-              cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('reservations.deleteDialogBody')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkDeleting}>Keep Reservations</AlertDialogCancel>
+            <AlertDialogCancel disabled={isBulkDeleting}>{t('reservations.keepReservations')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={isBulkDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isBulkDeleting
-                ? 'Deleting...'
-                : `Yes, Delete ${selectedCount} Reservation${selectedCount > 1 ? 's' : ''}`}
+                ? t('reservations.deleting')
+                : t(selectedCount === 1 ? 'reservations.yesDeleteSingular' : 'reservations.yesDeletePlural', {
+                    count: selectedCount,
+                  })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
