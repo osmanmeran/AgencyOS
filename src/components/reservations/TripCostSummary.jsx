@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const currSymbol = (cur) =>
   ({
@@ -21,6 +22,7 @@ const currSymbol = (cur) =>
   '$';
 
 export default function TripCostSummary({ trip }) {
+  const { t } = useT();
   // Build supplier service rows from SupplierService entity (actual vs budgeted)
   // Also incorporate trip.services array for selling prices
   const tripServices = (trip.services || []).slice().sort((a, b) => {
@@ -80,9 +82,9 @@ export default function TripCostSummary({ trip }) {
       <Card className="p-6 bg-card shadow-lg">
         <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-          Trip Cost Summary
+          {t('tripCostSummary.title')}
         </h2>
-        <p className="text-muted-foreground text-center py-4">No services to summarize yet.</p>
+        <p className="text-muted-foreground text-center py-4">{t('tripCostSummary.noServicesYet')}</p>
       </Card>
     );
   }
@@ -91,31 +93,31 @@ export default function TripCostSummary({ trip }) {
     <Card className="p-6 bg-card shadow-lg print:shadow-none">
       <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
         <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-        Trip Cost Summary
+        {t('tripCostSummary.title')}
       </h2>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-          <div className="text-xs text-muted-foreground mb-1">Total Budgeted Cost</div>
+          <div className="text-xs text-muted-foreground mb-1">{t('tripCostSummary.totalBudgetedCost')}</div>
           <div className="text-2xl font-bold text-amber-800 dark:text-amber-300">
             {ac}
             {totalBudgeted.toFixed(2)}
           </div>
-          <div className="text-xs text-muted-foreground mt-1">Sum of all supplier costs</div>
+          <div className="text-xs text-muted-foreground mt-1">{t('tripCostSummary.budgetedHint')}</div>
         </div>
         <div className="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <div className="text-xs text-muted-foreground mb-1">Total Selling Price</div>
+          <div className="text-xs text-muted-foreground mb-1">{t('tripCostSummary.totalSellingPrice')}</div>
           <div className="text-2xl font-bold text-green-800 dark:text-green-300">
             {sc}
             {totalSelling.toFixed(2)}
           </div>
-          <div className="text-xs text-muted-foreground mt-1">Sum of all client prices</div>
+          <div className="text-xs text-muted-foreground mt-1">{t('tripCostSummary.sellingHint')}</div>
         </div>
         <div
           className={`rounded-lg p-4 border ${totalMargin >= 0 ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800'}`}
         >
-          <div className="text-xs text-muted-foreground mb-1">Gross Margin</div>
+          <div className="text-xs text-muted-foreground mb-1">{t('tripCostSummary.grossMargin')}</div>
           <div
             className={`text-2xl font-bold ${totalMargin >= 0 ? 'text-blue-800 dark:text-blue-300' : 'text-red-800 dark:text-red-300'} flex items-center gap-1`}
           >
@@ -127,8 +129,9 @@ export default function TripCostSummary({ trip }) {
             <div
               className={`text-xs mt-1 font-medium ${totalMargin >= 0 ? 'text-blue-600 dark:text-blue-300' : 'text-red-600 dark:text-red-300'}`}
             >
-              {totalMarginPct >= 0 ? '+' : ''}
-              {totalMarginPct.toFixed(1)}% margin
+              {t('tripCostSummary.marginSuffix', {
+                pct: `${totalMarginPct >= 0 ? '+' : ''}${totalMarginPct.toFixed(1)}`,
+              })}
             </div>
           )}
         </div>
@@ -139,12 +142,16 @@ export default function TripCostSummary({ trip }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left">
-              <th className="pb-3 text-muted-foreground font-medium">Service</th>
-              <th className="pb-3 text-muted-foreground font-medium">Category</th>
-              <th className="pb-3 text-muted-foreground font-medium text-center">Qty</th>
-              <th className="pb-3 text-muted-foreground font-medium text-right">Budgeted Cost</th>
-              <th className="pb-3 text-muted-foreground font-medium text-right">Selling Price</th>
-              <th className="pb-3 text-muted-foreground font-medium text-right">Margin</th>
+              <th className="pb-3 text-muted-foreground font-medium">{t('tripCostSummary.tableService')}</th>
+              <th className="pb-3 text-muted-foreground font-medium">{t('tripCostSummary.tableCategory')}</th>
+              <th className="pb-3 text-muted-foreground font-medium text-center">{t('tripCostSummary.tableQty')}</th>
+              <th className="pb-3 text-muted-foreground font-medium text-right">
+                {t('tripCostSummary.tableBudgetedCost')}
+              </th>
+              <th className="pb-3 text-muted-foreground font-medium text-right">
+                {t('tripCostSummary.tableSellingPrice')}
+              </th>
+              <th className="pb-3 text-muted-foreground font-medium text-right">{t('tripCostSummary.tableMargin')}</th>
               <th className="pb-3 text-muted-foreground font-medium text-right">%</th>
             </tr>
           </thead>
@@ -201,7 +208,7 @@ export default function TripCostSummary({ trip }) {
           <tfoot>
             <tr className="border-t-2 border-border font-bold">
               <td className="pt-4 text-foreground" colSpan={3}>
-                TOTAL
+                {t('tripCostSummary.totalLabel')}
               </td>
               <td className="pt-4 text-right text-amber-800 dark:text-amber-300">
                 {ac}
@@ -239,13 +246,13 @@ export default function TripCostSummary({ trip }) {
       >
         {totalMargin >= 0 ? (
           <>
-            <CheckCircle className="w-4 h-4" /> This trip is profitable with a {sc}
-            {totalMargin.toFixed(2)} gross margin.
+            <CheckCircle className="w-4 h-4" />{' '}
+            {t('tripCostSummary.profitableMessage', { amount: `${sc}${totalMargin.toFixed(2)}` })}
           </>
         ) : (
           <>
-            <AlertTriangle className="w-4 h-4" /> Warning: selling price is below cost by {sc}
-            {Math.abs(totalMargin).toFixed(2)}.
+            <AlertTriangle className="w-4 h-4" />{' '}
+            {t('tripCostSummary.warningMessage', { amount: `${sc}${Math.abs(totalMargin).toFixed(2)}` })}
           </>
         )}
       </div>
