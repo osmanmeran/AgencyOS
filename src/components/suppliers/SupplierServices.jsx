@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   quoted: 'bg-muted text-foreground',
@@ -21,6 +22,13 @@ const STATUS_COLORS = {
 };
 
 export default function SupplierServices({ supplierId }) {
+  const { t } = useT();
+  const STATUS_LABEL_KEYS = {
+    quoted: 'supplierServices.statusQuoted',
+    booked: 'supplierServices.statusBooked',
+    paid: 'supplierServices.statusPaid',
+    cancelled: 'supplierServices.statusCancelled',
+  };
   const [modalOpen, setModalOpen] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [formData, setFormData] = useState({
@@ -124,27 +132,27 @@ export default function SupplierServices({ supplierId }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-foreground">Services & Cost Tracking</h3>
+        <h3 className="text-lg font-semibold text-foreground">{t('supplierServices.title')}</h3>
         <Button onClick={() => openModal()} size="sm" className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-2" />
-          Add Service
+          {t('supplierServices.addService')}
         </Button>
       </div>
 
       {services.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-4 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800">
-            <div className="text-sm text-muted-foreground mb-1">Total Budgeted</div>
+            <div className="text-sm text-muted-foreground mb-1">{t('supplierServices.totalBudgeted')}</div>
             <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">${totalBudgeted.toFixed(2)}</div>
           </Card>
           <Card className="p-4 bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800">
-            <div className="text-sm text-muted-foreground mb-1">Total Actual</div>
+            <div className="text-sm text-muted-foreground mb-1">{t('supplierServices.totalActual')}</div>
             <div className="text-2xl font-bold text-green-700 dark:text-green-300">${totalActual.toFixed(2)}</div>
           </Card>
           <Card
             className={`p-4 ${variance > 0 ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800' : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800'}`}
           >
-            <div className="text-sm text-muted-foreground mb-1">Variance</div>
+            <div className="text-sm text-muted-foreground mb-1">{t('supplierServices.variance')}</div>
             <div
               className={`text-2xl font-bold flex items-center gap-2 ${variance > 0 ? 'text-red-700 dark:text-red-300' : 'text-emerald-700 dark:text-emerald-300'}`}
             >
@@ -157,10 +165,10 @@ export default function SupplierServices({ supplierId }) {
 
       {services.length === 0 ? (
         <Card className="p-8 text-center bg-card">
-          <p className="text-muted-foreground mb-4">No services added yet</p>
+          <p className="text-muted-foreground mb-4">{t('supplierServices.noServices')}</p>
           <Button onClick={() => openModal()} variant="outline">
             <Plus className="w-4 h-4 mr-2" />
-            Add First Service
+            {t('supplierServices.addFirstService')}
           </Button>
         </Card>
       ) : (
@@ -173,20 +181,22 @@ export default function SupplierServices({ supplierId }) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-semibold text-foreground">{service.service_name}</h4>
-                      <Badge className={STATUS_COLORS[service.status]}>{service.status}</Badge>
+                      <Badge className={STATUS_COLORS[service.status]}>
+                        {STATUS_LABEL_KEYS[service.status] ? t(STATUS_LABEL_KEYS[service.status]) : service.status}
+                      </Badge>
                     </div>
                     {service.description && <p className="text-sm text-muted-foreground mb-2">{service.description}</p>}
                     <div className="text-sm text-muted-foreground">{service.unit}</div>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="text-right">
-                      <div className="text-xs text-muted-foreground">Budgeted</div>
+                      <div className="text-xs text-muted-foreground">{t('supplierServices.budgetedLabel')}</div>
                       <div className="font-semibold text-blue-700 dark:text-blue-300">
                         ${(service.budgeted_cost || 0).toFixed(2)}
                       </div>
                       {service.actual_cost > 0 && (
                         <>
-                          <div className="text-xs text-muted-foreground mt-1">Actual</div>
+                          <div className="text-xs text-muted-foreground mt-1">{t('supplierServices.actualLabel')}</div>
                           <div className="font-semibold text-green-700 dark:text-green-300">
                             ${service.actual_cost.toFixed(2)}
                           </div>
@@ -220,11 +230,13 @@ export default function SupplierServices({ supplierId }) {
       <Dialog open={modalOpen} onOpenChange={closeModal}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingService ? 'Edit Service' : 'Add Service'}</DialogTitle>
+            <DialogTitle>
+              {editingService ? t('supplierServices.editServiceTitle') : t('supplierServices.addService')}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="service_name">Service Name *</Label>
+              <Label htmlFor="service_name">{t('supplierServices.serviceNameLabel')}</Label>
               <Input
                 id="service_name"
                 value={formData.service_name}
@@ -234,7 +246,7 @@ export default function SupplierServices({ supplierId }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('supplierServices.descriptionLabel')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -245,7 +257,7 @@ export default function SupplierServices({ supplierId }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="budgeted_cost">Budgeted Cost *</Label>
+                <Label htmlFor="budgeted_cost">{t('supplierServices.budgetedCostLabel')}</Label>
                 <Input
                   id="budgeted_cost"
                   type="number"
@@ -256,7 +268,7 @@ export default function SupplierServices({ supplierId }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="actual_cost">Actual Cost</Label>
+                <Label htmlFor="actual_cost">{t('supplierServices.actualCostLabel')}</Label>
                 <Input
                   id="actual_cost"
                   type="number"
@@ -269,7 +281,7 @@ export default function SupplierServices({ supplierId }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency">{t('supplierServices.currencyLabel')}</Label>
                 <Input
                   id="currency"
                   value={formData.currency}
@@ -277,33 +289,33 @@ export default function SupplierServices({ supplierId }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="unit">Unit</Label>
+                <Label htmlFor="unit">{t('supplierServices.unitLabel')}</Label>
                 <Input
                   id="unit"
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  placeholder="per person, per night, etc."
+                  placeholder={t('supplierServices.unitPlaceholder')}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">{t('supplierServices.statusLabel')}</Label>
               <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="quoted">Quoted</SelectItem>
-                  <SelectItem value="booked">Booked</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="quoted">{t('supplierServices.statusQuoted')}</SelectItem>
+                  <SelectItem value="booked">{t('supplierServices.statusBooked')}</SelectItem>
+                  <SelectItem value="paid">{t('supplierServices.statusPaid')}</SelectItem>
+                  <SelectItem value="cancelled">{t('supplierServices.statusCancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">{t('common.notes')}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
@@ -314,10 +326,10 @@ export default function SupplierServices({ supplierId }) {
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingService ? 'Update' : 'Add'} Service
+                {editingService ? t('supplierServices.updateServiceButton') : t('supplierServices.addService')}
               </Button>
             </div>
           </form>
