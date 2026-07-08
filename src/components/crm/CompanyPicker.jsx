@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Building, Check, ChevronsUpDown, Plus, X } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 /**
  * Select the Company a contact belongs to, or create a new one inline.
@@ -16,6 +17,7 @@ import { Building, Check, ChevronsUpDown, Plus, X } from 'lucide-react';
  *   denormalized `company` field in sync.
  */
 export default function CompanyPicker({ value, companyName, onChange }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [creating, setCreating] = useState(false);
@@ -74,7 +76,7 @@ export default function CompanyPicker({ value, companyName, onChange }) {
             <span className="flex items-center gap-1.5 min-w-0">
               <Building className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               <span className={`truncate ${label ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {label || 'No company'}
+                {label || t('companyPicker.noCompany')}
               </span>
             </span>
             <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
@@ -82,9 +84,9 @@ export default function CompanyPicker({ value, companyName, onChange }) {
         </PopoverTrigger>
         <PopoverContent className="p-0 w-[--radix-popover-trigger-width] min-w-[240px]" align="start">
           <Command shouldFilter={false}>
-            <CommandInput placeholder="Search or create company..." value={query} onValueChange={setQuery} />
+            <CommandInput placeholder={t('companyPicker.searchPlaceholder')} value={query} onValueChange={setQuery} />
             <CommandList>
-              {filtered.length === 0 && !query && <CommandEmpty>No companies yet.</CommandEmpty>}
+              {filtered.length === 0 && !query && <CommandEmpty>{t('companyPicker.noCompaniesYet')}</CommandEmpty>}
               <CommandGroup>
                 {filtered.map((company) => (
                   <CommandItem key={company.id} value={company.id} onSelect={() => select(company)}>
@@ -98,7 +100,9 @@ export default function CompanyPicker({ value, companyName, onChange }) {
                 <CommandGroup>
                   <CommandItem value={`__create__${query}`} onSelect={createAndSelect} disabled={creating}>
                     <Plus className="w-3.5 h-3.5 mr-2 text-blue-500 dark:text-blue-300" />
-                    <span>{creating ? 'Creating…' : `Create "${query.trim()}"`}</span>
+                    <span>
+                      {creating ? t('companyPicker.creating') : t('companyPicker.createLabel', { name: query.trim() })}
+                    </span>
                   </CommandItem>
                 </CommandGroup>
               )}
@@ -113,7 +117,7 @@ export default function CompanyPicker({ value, companyName, onChange }) {
           size="icon"
           className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-muted-foreground"
           onClick={clear}
-          title="Clear company"
+          title={t('companyPicker.clearTitle')}
         >
           <X className="w-3.5 h-3.5" />
         </Button>

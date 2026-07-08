@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { MapPin, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function TripMap({ events = [] }) {
+  const { t } = useT();
   const [MapComponents, setMapComponents] = useState(null);
   const [L, setL] = useState(null);
 
@@ -25,8 +27,8 @@ export default function TripMap({ events = [] }) {
     return (
       <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-xl border-2 border-dashed border-border text-muted-foreground">
         <MapPin className="w-10 h-10 mb-3 text-muted-foreground" />
-        <p className="text-sm">No locations to display on map</p>
-        <p className="text-xs mt-1">Add locations to your itinerary events to see them here</p>
+        <p className="text-sm">{t('tripMap.noLocationsTitle')}</p>
+        <p className="text-xs mt-1">{t('tripMap.noLocationsBody')}</p>
       </div>
     );
   }
@@ -61,8 +63,9 @@ export default function TripMap({ events = [] }) {
         <p className="text-sm text-muted-foreground flex items-center gap-2">
           <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-300" />
           <span>
-            <strong>{eventsWithLocations.length}</strong> stop{eventsWithLocations.length !== 1 ? 's' : ''} on your trip
-            route
+            {t(eventsWithLocations.length === 1 ? 'tripMap.stopSingular' : 'tripMap.stopPlural', {
+              count: eventsWithLocations.length,
+            })}
           </span>
         </p>
         <a
@@ -72,7 +75,7 @@ export default function TripMap({ events = [] }) {
           className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-300 hover:underline font-medium"
         >
           <ExternalLink className="w-3.5 h-3.5" />
-          Open full route in Google Maps
+          {t('tripMap.openFullRoute')}
         </a>
       </div>
 

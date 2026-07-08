@@ -7,6 +7,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, Search, UserPlus, X } from 'lucide-react';
 import NewClientForm from '@/components/crm/NewClientForm';
+import { useT } from '@/lib/i18n/I18nContext';
 
 // Search-existing-or-create-new-inline picker for linking a passenger to a
 // real Client record. Mirrors the Popover+Command client search already
@@ -14,6 +15,7 @@ import NewClientForm from '@/components/crm/NewClientForm';
 // NewClientForm as-is for the "create new" fallback instead of duplicating
 // a client-creation form.
 export default function ClientLinkPicker({ clientId, clientName, onSelect, onClear }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -55,16 +57,20 @@ export default function ClientLinkPicker({ clientId, clientName, onSelect, onCle
               {clientId ? (
                 <span className="font-medium truncate">{clientName}</span>
               ) : (
-                <span className="text-muted-foreground">Link existing client…</span>
+                <span className="text-muted-foreground">{t('clientLinkPicker.linkExisting')}</span>
               )}
               <Search className="ml-2 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
             <Command>
-              <CommandInput placeholder="Search by name, email or company…" value={search} onValueChange={setSearch} />
+              <CommandInput
+                placeholder={t('clientLinkPicker.searchPlaceholder')}
+                value={search}
+                onValueChange={setSearch}
+              />
               <CommandList>
-                <CommandEmpty>No client found</CommandEmpty>
+                <CommandEmpty>{t('clientLinkPicker.noClientFound')}</CommandEmpty>
                 <CommandGroup>
                   {filtered.map((c) => (
                     <CommandItem
@@ -92,7 +98,8 @@ export default function ClientLinkPicker({ clientId, clientName, onSelect, onCle
                     }}
                     className="text-blue-600 dark:text-blue-300"
                   >
-                    <UserPlus className="mr-2 h-4 w-4" />+ Create new client
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    {t('clientLinkPicker.createNewClient')}
                   </CommandItem>
                 </CommandGroup>
               </CommandList>
@@ -104,7 +111,7 @@ export default function ClientLinkPicker({ clientId, clientName, onSelect, onCle
             type="button"
             onClick={onClear}
             className="p-1.5 text-muted-foreground hover:text-red-500 dark:hover:text-red-300"
-            title="Unlink client"
+            title={t('clientLinkPicker.unlinkTitle')}
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -114,7 +121,7 @@ export default function ClientLinkPicker({ clientId, clientName, onSelect, onCle
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>New Client</DialogTitle>
+            <DialogTitle>{t('clientLinkPicker.newClientDialogTitle')}</DialogTitle>
           </DialogHeader>
           <NewClientForm onCreated={handleCreated} onCancel={() => setCreateOpen(false)} />
         </DialogContent>

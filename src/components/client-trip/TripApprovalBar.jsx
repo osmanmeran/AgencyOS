@@ -6,8 +6,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, XCircle, MessageSquare, Send, Clock } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function TripApprovalBar({ trip, clientId }) {
+  const { t } = useT();
   const [showComment, setShowComment] = useState(false);
   const [comment, setComment] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -43,25 +45,25 @@ export default function TripApprovalBar({ trip, clientId }) {
   const statusDisplay = {
     pending: {
       icon: Clock,
-      text: 'Awaiting your confirmation',
+      text: t('tripApprovalBar.awaitingConfirmation'),
       color:
         'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
     },
     sent: {
       icon: Clock,
-      text: 'Awaiting your confirmation',
+      text: t('tripApprovalBar.awaitingConfirmation'),
       color:
         'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
     },
     confirmed: {
       icon: CheckCircle2,
-      text: 'You confirmed this itinerary',
+      text: t('tripApprovalBar.confirmedItinerary'),
       color:
         'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800',
     },
     rejected: {
       icon: XCircle,
-      text: 'You requested changes',
+      text: t('tripApprovalBar.requestedChanges'),
       color: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800',
     },
   };
@@ -86,7 +88,7 @@ export default function TripApprovalBar({ trip, clientId }) {
               disabled={approveMutation.isPending}
             >
               <CheckCircle2 className="w-4 h-4" />
-              Approve Itinerary
+              {t('tripApprovalBar.approveItinerary')}
             </Button>
           )}
           {status !== 'rejected' && (
@@ -98,12 +100,12 @@ export default function TripApprovalBar({ trip, clientId }) {
               disabled={approveMutation.isPending}
             >
               <XCircle className="w-4 h-4" />
-              Request Changes
+              {t('tripApprovalBar.requestChanges')}
             </Button>
           )}
           <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowComment(!showComment)}>
             <MessageSquare className="w-4 h-4" />
-            Add Comment
+            {t('tripApprovalBar.addComment')}
           </Button>
         </div>
       </div>
@@ -111,7 +113,7 @@ export default function TripApprovalBar({ trip, clientId }) {
       {showComment && (
         <div className="mt-4 space-y-2">
           <Textarea
-            placeholder="Leave a comment or note for your travel agent..."
+            placeholder={t('tripApprovalBar.commentPlaceholder')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
@@ -119,11 +121,11 @@ export default function TripApprovalBar({ trip, clientId }) {
           />
           <div className="flex justify-end gap-2">
             <Button size="sm" variant="outline" onClick={() => setShowComment(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button size="sm" onClick={sendComment} disabled={isSending || !comment.trim()} className="gap-2">
               <Send className="w-4 h-4" />
-              {isSending ? 'Sending...' : 'Send Comment'}
+              {isSending ? t('tripApprovalBar.sending') : t('tripApprovalBar.sendComment')}
             </Button>
           </div>
         </div>
