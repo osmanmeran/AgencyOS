@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin, Navigation, Loader2 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 
 export default function LocationSearch({ value, onChange, onSelect = undefined, placeholder }) {
+  const { t } = useT();
   const [query, setQuery] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
@@ -102,7 +104,7 @@ export default function LocationSearch({ value, onChange, onSelect = undefined, 
           <Input
             value={query}
             onChange={(e) => handleInput(e.target.value)}
-            placeholder={placeholder || 'Search location...'}
+            placeholder={placeholder || t('locationSearch.placeholder')}
             className="h-9 text-sm pl-8 pr-8"
           />
           {loading && (
@@ -112,7 +114,7 @@ export default function LocationSearch({ value, onChange, onSelect = undefined, 
         <button
           type="button"
           onClick={useCurrentLocation}
-          title="Use current location"
+          title={t('locationSearch.useCurrentLocationTitle')}
           className="h-9 w-9 flex items-center justify-center rounded-md border border-border hover:bg-muted text-muted-foreground"
         >
           <Navigation className="w-4 h-4" />

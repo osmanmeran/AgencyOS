@@ -1,13 +1,14 @@
 import { MapPin, Calendar, Users, Star, Plane, ArrowRight, Clock, BedDouble } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const ROOM_LABELS = {
-  single: 'Single',
-  double: 'Double',
-  twin: 'Twin',
-  triple: 'Triple',
-  quad: 'Quad',
-  family: 'Family',
+const ROOM_LABEL_KEYS = {
+  single: 'quoteRichDetails.roomSingle',
+  double: 'quoteRichDetails.roomDouble',
+  twin: 'quoteRichDetails.roomTwin',
+  triple: 'quoteRichDetails.roomTriple',
+  quad: 'quoteRichDetails.roomQuad',
+  family: 'quoteRichDetails.roomFamily',
 };
 
 function fmt(d) {
@@ -23,6 +24,7 @@ function fmt(d) {
 // dates and passengers grouped by room. Renders nothing if the quote predates
 // the builder (no destination / dates / passengers).
 export function QuoteTripInfo({ quote }) {
+  const { t } = useT();
   const hasTrip = quote.destination || quote.start_date || quote.end_date;
   const passengers = Array.isArray(quote.passengers) ? quote.passengers : [];
   if (!hasTrip && passengers.length === 0) return null;
@@ -59,7 +61,9 @@ export function QuoteTripInfo({ quote }) {
           {passengers.length > 0 && (
             <span className="flex items-center gap-1.5 text-foreground">
               <Users className="w-4 h-4 text-muted-foreground" />
-              {passengers.length} passenger{passengers.length !== 1 ? 's' : ''}
+              {t(passengers.length === 1 ? 'quoteRichDetails.passengerSingular' : 'quoteRichDetails.passengerPlural', {
+                count: passengers.length,
+              })}
             </span>
           )}
         </div>
@@ -72,8 +76,10 @@ export function QuoteTripInfo({ quote }) {
             return (
               <div key={key} className="border border-border rounded-lg p-3 bg-muted">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Room {ri + 1}
-                  {room.type ? ` · ${ROOM_LABELS[room.type] || room.type}` : ''}
+                  {t('quoteRichDetails.roomNumber', { n: ri + 1 })}
+                  {room.type
+                    ? ` · ${room.type && ROOM_LABEL_KEYS[room.type] ? t(ROOM_LABEL_KEYS[room.type]) : room.type}`
+                    : ''}
                 </div>
                 <ul className="space-y-1">
                   {room.passengers.map((p, pi) => (
@@ -82,7 +88,9 @@ export function QuoteTripInfo({ quote }) {
                         <Star className="w-3 h-3 text-green-500 dark:text-green-300" fill="currentColor" />
                       )}
                       <span className={p.is_contact ? 'font-medium' : ''}>
-                        {p.name || <span className="text-muted-foreground italic">Unnamed</span>}
+                        {p.name || (
+                          <span className="text-muted-foreground italic">{t('quoteRichDetails.unnamed')}</span>
+                        )}
                       </span>
                       {p.age_category && p.age_category !== 'adult' && (
                         <span className="text-xs text-muted-foreground">({p.age_category})</span>
@@ -102,11 +110,15 @@ export function QuoteTripInfo({ quote }) {
 // Per-line trip details (nights, room type, transfer logistics, free notes).
 // Renders nothing when the line carries none of them.
 export function QuoteLineExtras({ item }) {
+  const { t } = useT();
   const bits = [];
   if (item.start_date || item.end_date) {
+    const nightsText = item.nights
+      ? ` · ${t(item.nights === 1 ? 'quoteRichDetails.nightSingular' : 'quoteRichDetails.nightPlural', { count: item.nights })}`
+      : '';
     bits.push({
       icon: Calendar,
-      text: `${fmt(item.start_date)}${item.end_date ? ` – ${fmt(item.end_date)}` : ''}${item.nights ? ` · ${item.nights} night${item.nights !== 1 ? 's' : ''}` : ''}`,
+      text: `${fmt(item.start_date)}${item.end_date ? ` – ${fmt(item.end_date)}` : ''}${nightsText}`,
     });
   }
   if (item.room_type) bits.push({ icon: BedDouble, text: item.room_type });

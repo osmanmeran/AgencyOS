@@ -6,15 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Lightbulb, Bug, Heart, Star, SendHorizontal, CheckCircle2 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const TYPES = [
-  { value: 'feature', label: 'Feature Request', icon: Star },
-  { value: 'bug', label: 'Bug Report', icon: Bug },
-  { value: 'improvement', label: 'Improvement', icon: Heart },
-  { value: 'other', label: 'Other', icon: Lightbulb },
-];
+const TYPE_ICONS = {
+  feature: Star,
+  bug: Bug,
+  improvement: Heart,
+  other: Lightbulb,
+};
 
 export default function SuggestionDialog({ open, onOpenChange }) {
+  const { t } = useT();
+  const TYPES = [
+    { value: 'feature', label: t('suggestionDialog.typeFeature'), icon: TYPE_ICONS.feature },
+    { value: 'bug', label: t('suggestionDialog.typeBug'), icon: TYPE_ICONS.bug },
+    { value: 'improvement', label: t('suggestionDialog.typeImprovement'), icon: TYPE_ICONS.improvement },
+    { value: 'other', label: t('suggestionDialog.typeOther'), icon: TYPE_ICONS.other },
+  ];
   const [type, setType] = useState('feature');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -44,7 +52,7 @@ export default function SuggestionDialog({ open, onOpenChange }) {
         });
         setSubmitted(true);
       } catch {
-        alert('Could not submit suggestion. Please try again.');
+        alert(t('suggestionDialog.submitError'));
       }
     }
     setSending(false);
@@ -66,13 +74,9 @@ export default function SuggestionDialog({ open, onOpenChange }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-amber-500 dark:text-amber-300" />
-            {submitted ? 'Thank You!' : 'Suggest an Improvement'}
+            {submitted ? t('suggestionDialog.thankYou') : t('suggestionDialog.suggestTitle')}
           </DialogTitle>
-          {!submitted && (
-            <DialogDescription>
-              Help us make Marvelops TravelPro better. Share your ideas, report bugs, or suggest improvements.
-            </DialogDescription>
-          )}
+          {!submitted && <DialogDescription>{t('suggestionDialog.suggestDescription')}</DialogDescription>}
         </DialogHeader>
 
         {submitted ? (
@@ -80,16 +84,16 @@ export default function SuggestionDialog({ open, onOpenChange }) {
             <div className="w-16 h-16 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-300" />
             </div>
-            <p className="font-medium text-lg">Suggestion Submitted</p>
-            <p className="text-sm text-muted-foreground mt-1">Our team will review it. Thank you for your input!</p>
+            <p className="font-medium text-lg">{t('suggestionDialog.submittedTitle')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('suggestionDialog.submittedBody')}</p>
             <Button variant="outline" className="mt-4" onClick={handleClose}>
-              Close
+              {t('common.close')}
             </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">Type</label>
+              <label className="text-sm font-medium text-foreground">{t('suggestionDialog.typeLabel')}</label>
               <div className="grid grid-cols-2 gap-2">
                 {TYPES.map((t) => {
                   const Icon = t.icon;
@@ -115,29 +119,29 @@ export default function SuggestionDialog({ open, onOpenChange }) {
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">Title *</label>
+              <label className="text-sm font-medium text-foreground">{t('suggestionDialog.titleLabel')}</label>
               <Input
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Brief summary of your suggestion"
+                placeholder={t('suggestionDialog.titlePlaceholder')}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">Description</label>
+              <label className="text-sm font-medium text-foreground">{t('suggestionDialog.descriptionLabel')}</label>
               <Textarea
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your suggestion in detail. What problem does it solve? How should it work?"
+                placeholder={t('suggestionDialog.descriptionPlaceholder')}
               />
             </div>
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={!title.trim() || sending}>
               {sending ? (
-                'Submitting...'
+                t('suggestionDialog.submitting')
               ) : (
                 <>
-                  <SendHorizontal className="w-4 h-4 mr-2" /> Submit Suggestion
+                  <SendHorizontal className="w-4 h-4 mr-2" /> {t('suggestionDialog.submitSuggestion')}
                 </>
               )}
             </Button>

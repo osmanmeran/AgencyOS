@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, MessageSquare, User, Briefcase } from 'lucide-react';
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function MessageThread({ clientId, referenceType = 'general', referenceId = null, isAgent = false }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [newMessage, setNewMessage] = useState('');
 
@@ -79,12 +81,12 @@ export default function MessageThread({ clientId, referenceType = 'general', ref
     <Card className="p-4 bg-card shadow-md">
       <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
         <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-        Messages
+        {t('messageThread.title')}
       </h3>
 
       <div className="h-80 overflow-y-auto mb-4 space-y-3 p-2 bg-muted rounded-lg">
         {messages.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No messages yet. Start the conversation!</div>
+          <div className="text-center py-8 text-muted-foreground">{t('messageThread.noMessagesYet')}</div>
         ) : (
           messages.map((message) => {
             const isOwnMessage =
@@ -118,7 +120,7 @@ export default function MessageThread({ clientId, referenceType = 'general', ref
         <Textarea
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
+          placeholder={t('messageThread.placeholder')}
           rows={2}
           className="flex-1"
           onKeyDown={(e) => {
