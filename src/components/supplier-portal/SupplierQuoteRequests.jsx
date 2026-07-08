@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MessageSquare, Calendar, Users, DollarSign, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300',
@@ -21,7 +22,16 @@ const STATUS_COLORS = {
   expired: 'bg-muted text-foreground',
 };
 
+const STATUS_LABEL_KEYS = {
+  pending: 'supplierQuoteRequests.statusPending',
+  quoted: 'supplierQuoteRequests.statusQuoted',
+  accepted: 'supplierQuoteRequests.statusAccepted',
+  rejected: 'supplierQuoteRequests.statusRejected',
+  expired: 'supplierQuoteRequests.statusExpired',
+};
+
 export default function SupplierQuoteRequests({ supplierId }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [quoteForm, setQuoteForm] = useState({
@@ -99,8 +109,8 @@ export default function SupplierQuoteRequests({ supplierId }) {
       {quoteRequests.length === 0 ? (
         <Card className="p-12 text-center">
           <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-foreground mb-2">No quote requests</h3>
-          <p className="text-muted-foreground">Custom quote requests from clients will appear here</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('supplierQuoteRequests.noQuoteRequestsTitle')}</h3>
+          <p className="text-muted-foreground">{t('supplierQuoteRequests.noQuoteRequestsBody')}</p>
         </Card>
       ) : (
         quoteRequests.map((request) => {
@@ -111,14 +121,24 @@ export default function SupplierQuoteRequests({ supplierId }) {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-bold text-foreground">Quote Request #{request.id.slice(-6)}</h3>
-                    <Badge className={STATUS_COLORS[request.status] || STATUS_COLORS.pending}>{request.status}</Badge>
+                    <h3 className="text-lg font-bold text-foreground">
+                      {t('supplierQuoteRequests.quoteRequestHash', { id: request.id.slice(-6) })}
+                    </h3>
+                    <Badge className={STATUS_COLORS[request.status] || STATUS_COLORS.pending}>
+                      {STATUS_LABEL_KEYS[request.status] ? t(STATUS_LABEL_KEYS[request.status]) : request.status}
+                    </Badge>
                   </div>
-                  <p className="text-muted-foreground text-sm">{trip?.name || 'Custom Request'}</p>
-                  {client && <p className="text-muted-foreground text-xs">Client: {client.name}</p>}
+                  <p className="text-muted-foreground text-sm">
+                    {trip?.name || t('supplierQuoteRequests.customRequestFallback')}
+                  </p>
+                  {client && (
+                    <p className="text-muted-foreground text-xs">
+                      {t('supplierQuoteRequests.clientLabel', { name: client.name })}
+                    </p>
+                  )}
                 </div>
                 <Button onClick={() => openQuoteModal(request)} className="bg-blue-600 hover:bg-blue-700">
-                  <Send className="w-4 h-4 mr-2" /> Respond
+                  <Send className="w-4 h-4 mr-2" /> {t('supplierQuoteRequests.respond')}
                 </Button>
               </div>
 
@@ -129,23 +149,31 @@ export default function SupplierQuoteRequests({ supplierId }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-foreground" />
-                  <span>{request.num_guests} guests</span>
+                  <span>{t('supplierQuoteRequests.guestsCount', { count: request.num_guests })}</span>
                 </div>
                 {request.total_cost > 0 && (
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-muted-foreground" />
-                    <span>Budget: ${request.total_cost.toFixed(2)}</span>
+                    <span>
+                      {t('supplierQuoteRequests.budgetLabel', { amount: `$${request.total_cost.toFixed(2)}` })}
+                    </span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span>Received: {format(new Date(request.created_date), 'MMM d')}</span>
+                  <span>
+                    {t('supplierQuoteRequests.receivedLabel', {
+                      date: format(new Date(request.created_date), 'MMM d'),
+                    })}
+                  </span>
                 </div>
               </div>
 
               {request.service_details && (
                 <div className="p-3 bg-muted rounded-lg">
-                  <Label className="text-xs text-muted-foreground">Request Details:</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {t('supplierQuoteRequests.requestDetailsLabel')}
+                  </Label>
                   <p className="text-sm text-foreground mt-1">{request.service_details}</p>
                 </div>
               )}
@@ -158,27 +186,28 @@ export default function SupplierQuoteRequests({ supplierId }) {
       <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Respond to Quote Request</DialogTitle>
+            <DialogTitle>{t('supplierQuoteRequests.respondToQuoteTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {selectedRequest && (
               <div className="p-4 bg-muted rounded-lg">
                 <div className="text-sm text-muted-foreground mb-2">
-                  <strong>Service Date:</strong> {format(new Date(selectedRequest.service_date), 'MMM d, yyyy')}
+                  <strong>{t('supplierQuoteRequests.serviceDateLabel')}</strong>{' '}
+                  {format(new Date(selectedRequest.service_date), 'MMM d, yyyy')}
                 </div>
                 <div className="text-sm text-muted-foreground mb-2">
-                  <strong>Guests:</strong> {selectedRequest.num_guests}
+                  <strong>{t('supplierQuoteRequests.guestsLabel')}</strong> {selectedRequest.num_guests}
                 </div>
                 {selectedRequest.service_details && (
                   <div className="text-sm text-muted-foreground">
-                    <strong>Details:</strong> {selectedRequest.service_details}
+                    <strong>{t('supplierQuoteRequests.detailsLabel')}</strong> {selectedRequest.service_details}
                   </div>
                 )}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label>Your Quote Price *</Label>
+              <Label>{t('supplierQuoteRequests.yourQuotePriceLabel')}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -189,7 +218,7 @@ export default function SupplierQuoteRequests({ supplierId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Quote Valid Until</Label>
+              <Label>{t('supplierQuoteRequests.quoteValidUntilLabel')}</Label>
               <Input
                 type="date"
                 value={quoteForm.valid_until}
@@ -198,11 +227,11 @@ export default function SupplierQuoteRequests({ supplierId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Response Notes</Label>
+              <Label>{t('supplierQuoteRequests.responseNotesLabel')}</Label>
               <Textarea
                 value={quoteForm.response_notes}
                 onChange={(e) => setQuoteForm({ ...quoteForm, response_notes: e.target.value })}
-                placeholder="Additional details about your quote..."
+                placeholder={t('supplierQuoteRequests.responseNotesPlaceholder')}
                 rows={3}
               />
             </div>
@@ -213,14 +242,14 @@ export default function SupplierQuoteRequests({ supplierId }) {
                 className="flex-1 bg-green-600 hover:bg-green-700"
                 disabled={!quoteForm.quoted_price}
               >
-                <CheckCircle className="w-4 h-4 mr-2" /> Send Quote
+                <CheckCircle className="w-4 h-4 mr-2" /> {t('supplierQuoteRequests.sendQuote')}
               </Button>
               <Button
                 onClick={() => respondMutation.mutate({ id: selectedRequest.id, data: quoteForm, action: 'decline' })}
                 variant="destructive"
                 className="flex-1"
               >
-                <XCircle className="w-4 h-4 mr-2" /> Decline
+                <XCircle className="w-4 h-4 mr-2" /> {t('supplierQuoteRequests.decline')}
               </Button>
             </div>
           </div>
