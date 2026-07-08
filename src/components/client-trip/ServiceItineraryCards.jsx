@@ -1,9 +1,10 @@
 import { format } from 'date-fns';
 import { Calendar, MapPin, Building, ArrowRightLeft, User, Coffee, Plane, Map, Zap, Sun } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const CATEGORY_MAP = {
   lodging: {
-    label: 'Lodging',
+    labelKey: 'serviceItineraryCards.categoryLodging',
     icon: Building,
     color: 'bg-blue-500',
     bg: 'bg-blue-50 dark:bg-blue-950/40',
@@ -11,7 +12,7 @@ const CATEGORY_MAP = {
     border: 'border-blue-200 dark:border-blue-800',
   },
   transfers: {
-    label: 'Transfer',
+    labelKey: 'serviceItineraryCards.categoryTransfer',
     icon: ArrowRightLeft,
     color: 'bg-green-500',
     bg: 'bg-green-50 dark:bg-green-950/40',
@@ -19,7 +20,7 @@ const CATEGORY_MAP = {
     border: 'border-green-200 dark:border-green-800',
   },
   guides: {
-    label: 'Guide',
+    labelKey: 'serviceItineraryCards.categoryGuide',
     icon: User,
     color: 'bg-amber-500',
     bg: 'bg-amber-50 dark:bg-amber-950/40',
@@ -27,7 +28,7 @@ const CATEGORY_MAP = {
     border: 'border-amber-200 dark:border-amber-800',
   },
   restaurants: {
-    label: 'Restaurant',
+    labelKey: 'serviceItineraryCards.categoryRestaurant',
     icon: Coffee,
     color: 'bg-orange-500',
     bg: 'bg-orange-50 dark:bg-orange-950/40',
@@ -35,7 +36,7 @@ const CATEGORY_MAP = {
     border: 'border-orange-200 dark:border-orange-800',
   },
   transportation: {
-    label: 'Transport',
+    labelKey: 'serviceItineraryCards.categoryTransport',
     icon: Plane,
     color: 'bg-indigo-500',
     bg: 'bg-indigo-50 dark:bg-indigo-950/40',
@@ -43,7 +44,7 @@ const CATEGORY_MAP = {
     border: 'border-indigo-200 dark:border-indigo-800',
   },
   guided_tours: {
-    label: 'Guided Tour',
+    labelKey: 'serviceItineraryCards.categoryGuidedTour',
     icon: Map,
     color: 'bg-purple-500',
     bg: 'bg-purple-50 dark:bg-purple-950/40',
@@ -51,7 +52,7 @@ const CATEGORY_MAP = {
     border: 'border-purple-200 dark:border-purple-800',
   },
   extra_activities: {
-    label: 'Activity',
+    labelKey: 'serviceItineraryCards.categoryActivity',
     icon: Zap,
     color: 'bg-pink-500',
     bg: 'bg-pink-50 dark:bg-pink-950/40',
@@ -69,7 +70,8 @@ const detectCategory = (cat) => {
     .replace(/^tour$|^guide$|^excursion$|^activity$/, 'guided_tours');
   return (
     CATEGORY_MAP[key] || {
-      label: cat || 'Service',
+      labelKey: null,
+      fallbackLabel: cat,
       icon: Sun,
       color: 'bg-slate-500',
       bg: 'bg-muted',
@@ -80,7 +82,11 @@ const detectCategory = (cat) => {
 };
 
 export function ServiceCard({ service }) {
+  const { t } = useT();
   const cfg = detectCategory(service.category);
+  const categoryLabel = cfg.labelKey
+    ? t(cfg.labelKey)
+    : cfg.fallbackLabel || t('serviceItineraryCards.categoryService');
   const Icon = cfg.icon;
   const hasTimes =
     service.pickup_time || service.transfer_flight_number || (!service._isReturnLeg && service.return_leg?.enabled);
@@ -99,11 +105,11 @@ export function ServiceCard({ service }) {
               <h4 className="font-semibold text-foreground">{service.name}</h4>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
-                  {cfg.label}
+                  {categoryLabel}
                 </span>
                 {service._isReturnLeg && (
                   <span className="inline-block text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300">
-                    Return
+                    {t('serviceItineraryCards.returnBadge')}
                   </span>
                 )}
               </div>
@@ -120,25 +126,27 @@ export function ServiceCard({ service }) {
           {service.pickup_location && (
             <div className="mt-2 space-y-0.5 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
-                <span className="font-medium text-muted-foreground">Pick up:</span>
+                <span className="font-medium text-muted-foreground">{t('serviceItineraryCards.pickUp')}</span>
                 <span>{service.pickup_location}</span>
                 {service.pickup_time && <span className="text-muted-foreground">@ {service.pickup_time}</span>}
               </div>
               <div className="flex items-center gap-1">
-                <span className="font-medium text-muted-foreground">Drop off:</span>
+                <span className="font-medium text-muted-foreground">{t('serviceItineraryCards.dropOff')}</span>
                 <span>{service.dropoff_location || '—'}</span>
               </div>
               {service.transfer_flight_number && (
                 <div className="flex items-center gap-1">
-                  <span className="font-medium text-muted-foreground">Flight:</span>
+                  <span className="font-medium text-muted-foreground">{t('serviceItineraryCards.flight')}</span>
                   <span>{service.transfer_flight_number}</span>
                 </div>
               )}
               {!service._isReturnLeg && service.return_leg?.enabled && (
                 <div className="mt-1.5 pt-1.5 border-t border-orange-200 dark:border-orange-800">
-                  <div className="text-xs font-medium text-orange-600 dark:text-orange-300">Return Leg</div>
+                  <div className="text-xs font-medium text-orange-600 dark:text-orange-300">
+                    {t('serviceItineraryCards.returnLeg')}
+                  </div>
                   <div>
-                    <span className="font-medium text-muted-foreground">Date:</span>{' '}
+                    <span className="font-medium text-muted-foreground">{t('serviceItineraryCards.date')}</span>{' '}
                     {format(new Date(service.return_leg.date), 'MMM d, yyyy')}
                     {service.return_leg.pickup_time ? ` @ ${service.return_leg.pickup_time}` : ''}
                   </div>
@@ -166,11 +174,14 @@ export function ServiceCard({ service }) {
 }
 
 export function DaySection({ date, services, dayIndex }) {
+  const { t } = useT();
   return (
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-5">
         <div className="flex flex-col items-center bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-xl px-5 py-2.5 shadow-md min-w-[90px]">
-          <span className="text-[10px] font-medium uppercase tracking-wider opacity-80">Day {dayIndex + 1}</span>
+          <span className="text-[10px] font-medium uppercase tracking-wider opacity-80">
+            {t('itineraryTimeline.day', { n: dayIndex + 1 })}
+          </span>
           <span className="text-sm font-bold">{format(new Date(date), 'EEE, MMM d')}</span>
         </div>
         <div className="flex-1 h-px bg-gradient-to-r from-slate-200 to-transparent" />
