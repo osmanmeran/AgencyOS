@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const emptyExtra = () => ({
   _key: `extra-${Date.now()}-${Math.random()}`,
@@ -38,6 +39,7 @@ const emptyExtra = () => ({
 });
 
 export default function ClientProfile({ client, clientId }) {
+  const { t } = useT();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -132,11 +134,11 @@ export default function ClientProfile({ client, clientId }) {
   };
 
   const socialLinks = [
-    { key: 'website', icon: Globe, label: 'Website', prefix: '' },
-    { key: 'instagram', icon: Instagram, label: 'Instagram', prefix: 'https://instagram.com/' },
-    { key: 'linkedin', icon: Linkedin, label: 'LinkedIn', prefix: '' },
-    { key: 'facebook', icon: Facebook, label: 'Facebook', prefix: '' },
-    { key: 'twitter', icon: Twitter, label: 'Twitter/X', prefix: 'https://twitter.com/' },
+    { key: 'website', icon: Globe, label: t('companyDetails.website'), prefix: '' },
+    { key: 'instagram', icon: Instagram, label: t('clientProfile.instagram'), prefix: 'https://instagram.com/' },
+    { key: 'linkedin', icon: Linkedin, label: t('clientProfile.linkedin'), prefix: '' },
+    { key: 'facebook', icon: Facebook, label: t('clientProfile.facebook'), prefix: '' },
+    { key: 'twitter', icon: Twitter, label: t('clientProfile.twitter'), prefix: 'https://twitter.com/' },
   ];
 
   return (
@@ -146,21 +148,22 @@ export default function ClientProfile({ client, clientId }) {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-foreground text-lg flex items-center gap-2">
             <Building className="w-5 h-5 text-blue-500 dark:text-blue-300" />
-            Business Profile
+            {t('clientProfile.businessProfile')}
           </h3>
           {!editing ? (
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               <Edit2 className="w-4 h-4 mr-1" />
-              Edit
+              {t('common.edit')}
             </Button>
           ) : (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={handleCancel}>
                 <X className="w-4 h-4 mr-1" />
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button size="sm" onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-                {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}Save
+                {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
+                {t('common.save')}
               </Button>
             </div>
           )}
@@ -183,7 +186,7 @@ export default function ClientProfile({ client, clientId }) {
             {editing && (
               <label className="mt-2 flex items-center gap-1 text-xs text-blue-600 dark:text-blue-300 cursor-pointer hover:underline">
                 <Upload className="w-3 h-3" />
-                {uploadingLogo ? 'Uploading...' : 'Upload logo'}
+                {uploadingLogo ? t('clientProfile.uploading') : t('clientProfile.uploadLogo')}
                 <input
                   type="file"
                   accept="image/*"
@@ -197,19 +200,19 @@ export default function ClientProfile({ client, clientId }) {
 
           {/* Business Description */}
           <div className="flex-1">
-            <Label className="text-sm text-muted-foreground">Business Description</Label>
+            <Label className="text-sm text-muted-foreground">{t('clientProfile.businessDescription')}</Label>
             {editing ? (
               <Textarea
                 value={form.business_description}
                 onChange={(e) => setForm((f) => ({ ...f, business_description: e.target.value }))}
                 rows={3}
                 className="mt-1"
-                placeholder="Describe the client's business..."
+                placeholder={t('clientProfile.businessDescriptionPlaceholder')}
               />
             ) : (
               <p className="mt-1 text-foreground text-sm whitespace-pre-wrap">
                 {client.business_description || (
-                  <span className="text-muted-foreground italic">No description added</span>
+                  <span className="text-muted-foreground italic">{t('clientProfile.noDescription')}</span>
                 )}
               </p>
             )}
@@ -229,7 +232,7 @@ export default function ClientProfile({ client, clientId }) {
                   value={form[key]}
                   onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                   className="mt-1 h-8 text-sm"
-                  placeholder={`${label} URL`}
+                  placeholder={t('clientProfile.urlPlaceholder', { label })}
                 />
               ) : client[key] ? (
                 <a
@@ -242,7 +245,7 @@ export default function ClientProfile({ client, clientId }) {
                   {client[key]}
                 </a>
               ) : (
-                <p className="mt-1 text-sm text-muted-foreground italic">Not set</p>
+                <p className="mt-1 text-sm text-muted-foreground italic">{t('common.notSet')}</p>
               )}
             </div>
           ))}
@@ -251,17 +254,17 @@ export default function ClientProfile({ client, clientId }) {
 
       {/* Internal Notes */}
       <Card className="p-6 bg-card">
-        <h3 className="font-bold text-foreground text-lg mb-3">Internal Notes</h3>
+        <h3 className="font-bold text-foreground text-lg mb-3">{t('clientProfile.internalNotes')}</h3>
         {editing ? (
           <Textarea
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             rows={5}
-            placeholder="Add any internal notes about this client..."
+            placeholder={t('clientProfile.notesPlaceholder')}
           />
         ) : (
           <p className="text-foreground text-sm whitespace-pre-wrap">
-            {client.notes || <span className="text-muted-foreground italic">No notes yet. Click Edit to add.</span>}
+            {client.notes || <span className="text-muted-foreground italic">{t('clientProfile.noNotes')}</span>}
           </p>
         )}
       </Card>
@@ -271,18 +274,18 @@ export default function ClientProfile({ client, clientId }) {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-foreground text-lg flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-500 dark:text-amber-300" />
-            Fixed Extras
+            {t('clientProfile.fixedExtras')}
           </h3>
           {!extrasEditing ? (
             <Button variant="outline" size="sm" onClick={() => setExtrasEditing(true)}>
               <Edit2 className="w-4 h-4 mr-1" />
-              Edit
+              {t('common.edit')}
             </Button>
           ) : (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={handleExtrasCancel}>
                 <X className="w-4 h-4 mr-1" />
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 size="sm"
@@ -291,19 +294,16 @@ export default function ClientProfile({ client, clientId }) {
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {extrasSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
-                Save
+                {t('common.save')}
               </Button>
             </div>
           )}
         </div>
-        <p className="text-xs text-muted-foreground mb-3">
-          Optional add-ons (e.g. hamam, private transfer) offered when generating a booking from a Tour Contract for
-          this client.
-        </p>
+        <p className="text-xs text-muted-foreground mb-3">{t('clientProfile.fixedExtrasHint')}</p>
 
         {!extrasEditing ? (
           extras.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No fixed extras yet. Click Edit to add one.</p>
+            <p className="text-sm text-muted-foreground italic">{t('clientProfile.noExtras')}</p>
           ) : (
             <div className="space-y-2">
               {extras.map((x) => (
@@ -326,12 +326,12 @@ export default function ClientProfile({ client, clientId }) {
                 <Input
                   value={x.name}
                   onChange={(e) => updateExtra(x._key, 'name', e.target.value)}
-                  placeholder="e.g., Hamam"
+                  placeholder={t('clientProfile.namePlaceholder')}
                   className="text-sm"
                 />
                 <Select value={x.supplier_id || ''} onValueChange={(v) => updateExtra(x._key, 'supplier_id', v)}>
                   <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="Supplier (optional)" />
+                    <SelectValue placeholder={t('clientProfile.supplierOptionalPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {suppliers.map((s) => (
@@ -346,18 +346,18 @@ export default function ClientProfile({ client, clientId }) {
                   step="0.01"
                   value={x.acquiring_price}
                   onChange={(e) => updateExtra(x._key, 'acquiring_price', e.target.value)}
-                  placeholder="Cost"
+                  placeholder={t('clientProfile.costPlaceholder')}
                   className="text-sm"
-                  title="Supplier cost (for margin tracking)"
+                  title={t('clientProfile.costTitle')}
                 />
                 <Input
                   type="number"
                   step="0.01"
                   value={x.selling_price}
                   onChange={(e) => updateExtra(x._key, 'selling_price', e.target.value)}
-                  placeholder="Price"
+                  placeholder={t('clientProfile.pricePlaceholder')}
                   className="text-sm"
-                  title="Client price"
+                  title={t('clientProfile.priceTitle')}
                 />
                 <Select value={x.currency} onValueChange={(v) => updateExtra(x._key, 'currency', v)}>
                   <SelectTrigger className="text-sm">
@@ -378,7 +378,7 @@ export default function ClientProfile({ client, clientId }) {
             ))}
             <Button type="button" variant="outline" size="sm" onClick={addExtra}>
               <Plus className="w-4 h-4 mr-1" />
-              Add Extra
+              {t('clientProfile.addExtra')}
             </Button>
           </div>
         )}

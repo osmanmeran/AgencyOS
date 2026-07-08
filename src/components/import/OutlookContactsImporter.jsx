@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, Users, CheckCircle, XCircle, AlertTriangle, Loader2, Download, Eye, EyeOff } from 'lucide-react';
 import { parseCsv } from '@/lib/csv';
+import { useT } from '@/lib/i18n/I18nContext';
 
 function parseOutlookCSV(text) {
   const rows = parseCsv(text);
@@ -66,6 +67,7 @@ function parseOutlookCSV(text) {
 }
 
 export default function OutlookContactsImporter() {
+  const { t } = useT();
   const [contacts, setContacts] = useState([]);
   const [selected, setSelected] = useState(/** @type {any} */ ({}));
   const [importing, setImporting] = useState(false);
@@ -151,15 +153,13 @@ export default function OutlookContactsImporter() {
       <Card className="p-5 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800">
         <h3 className="font-bold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2">
           <Users className="w-4 h-4" />
-          Import Outlook Contacts to CRM
+          {t('outlookImporter.title')}
         </h3>
         <ol className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-decimal ml-4">
-          <li>
-            In Outlook: go to <strong>People → Manage → Export contacts</strong> → choose "All contacts" → Save as CSV
-          </li>
-          <li>Upload the CSV file below</li>
-          <li>Review the contacts and deselect any you don't want to import</li>
-          <li>Click Import — duplicates (by email) are automatically skipped</li>
+          <li>{t('outlookImporter.step1')}</li>
+          <li>{t('outlookImporter.step2')}</li>
+          <li>{t('outlookImporter.step3')}</li>
+          <li>{t('outlookImporter.step4')}</li>
         </ol>
         <Button
           variant="outline"
@@ -176,7 +176,7 @@ export default function OutlookContactsImporter() {
           }}
         >
           <Download className="w-3.5 h-3.5 mr-1" />
-          Download Sample CSV
+          {t('outlookImporter.downloadSample')}
         </Button>
       </Card>
 
@@ -197,8 +197,8 @@ export default function OutlookContactsImporter() {
           onClick={() => fileRef.current?.click()}
         >
           <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-lg font-medium text-foreground">Drop your Outlook CSV here</p>
-          <p className="text-sm text-muted-foreground mt-1">or click to browse</p>
+          <p className="text-lg font-medium text-foreground">{t('outlookImporter.dropHere')}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('outlookImporter.orClickBrowse')}</p>
           <input
             ref={fileRef}
             type="file"
@@ -214,19 +214,25 @@ export default function OutlookContactsImporter() {
         <Card className="p-6 bg-card shadow-sm">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
-              <h3 className="font-bold text-foreground text-lg">{contacts.length} contacts found</h3>
-              <p className="text-sm text-muted-foreground">{selectedContacts.length} selected for import</p>
+              <h3 className="font-bold text-foreground text-lg">
+                {contacts.length === 1
+                  ? t('outlookImporter.contactsFoundSingular', { count: contacts.length })
+                  : t('outlookImporter.contactsFoundPlural', { count: contacts.length })}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {t('outlookImporter.selectedForImport', { count: selectedContacts.length })}
+              </p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => setShowPreview((p) => !p)}>
                 {showPreview ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
-                {showPreview ? 'Hide' : 'Show'} Preview
+                {showPreview ? t('outlookImporter.hidePreview') : t('outlookImporter.showPreviewLabel')}
               </Button>
               <Button variant="outline" size="sm" onClick={() => toggleAll(true)}>
-                Select All
+                {t('common.selectAll')}
               </Button>
               <Button variant="outline" size="sm" onClick={() => toggleAll(false)}>
-                Deselect All
+                {t('common.deselectAll')}
               </Button>
               <Button
                 variant="outline"
@@ -237,7 +243,7 @@ export default function OutlookContactsImporter() {
                 }}
                 className="text-red-600 dark:text-red-300 border-red-200 dark:border-red-800"
               >
-                Clear
+                {t('outlookImporter.clear')}
               </Button>
               <Button
                 onClick={handleImport}
@@ -247,12 +253,12 @@ export default function OutlookContactsImporter() {
                 {importing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Importing...
+                    {t('outlookImporter.importing')}
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4 mr-2" />
-                    Import {selectedContacts.length} Contacts
+                    {t('outlookImporter.importCount', { count: selectedContacts.length })}
                   </>
                 )}
               </Button>
@@ -265,12 +271,12 @@ export default function OutlookContactsImporter() {
                 <thead className="bg-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left w-8"></th>
-                    <th className="px-3 py-2 text-left text-muted-foreground">Name</th>
-                    <th className="px-3 py-2 text-left text-muted-foreground">Email</th>
-                    <th className="px-3 py-2 text-left text-muted-foreground">Phone</th>
-                    <th className="px-3 py-2 text-left text-muted-foreground">Company</th>
-                    <th className="px-3 py-2 text-left text-muted-foreground">City</th>
-                    <th className="px-3 py-2 text-left text-muted-foreground">Country</th>
+                    <th className="px-3 py-2 text-left text-muted-foreground">{t('common.name')}</th>
+                    <th className="px-3 py-2 text-left text-muted-foreground">{t('common.email')}</th>
+                    <th className="px-3 py-2 text-left text-muted-foreground">{t('common.phone')}</th>
+                    <th className="px-3 py-2 text-left text-muted-foreground">{t('common.company')}</th>
+                    <th className="px-3 py-2 text-left text-muted-foreground">{t('common.city')}</th>
+                    <th className="px-3 py-2 text-left text-muted-foreground">{t('common.country')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -302,22 +308,22 @@ export default function OutlookContactsImporter() {
       {/* Results */}
       {results && (
         <Card className="p-6 bg-card shadow-sm">
-          <h3 className="font-bold text-foreground text-lg mb-4">Import Complete</h3>
+          <h3 className="font-bold text-foreground text-lg mb-4">{t('outlookImporter.importComplete')}</h3>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="bg-green-50 dark:bg-green-950/40 rounded-lg p-4 text-center">
               <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-300 mx-auto mb-1" />
               <div className="text-2xl font-bold text-green-700 dark:text-green-300">{results.ok}</div>
-              <div className="text-sm text-green-600 dark:text-green-300">Imported</div>
+              <div className="text-sm text-green-600 dark:text-green-300">{t('outlookImporter.imported')}</div>
             </div>
             <div className="bg-amber-50 dark:bg-amber-950/40 rounded-lg p-4 text-center">
               <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-300 mx-auto mb-1" />
               <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{results.skip}</div>
-              <div className="text-sm text-amber-600 dark:text-amber-300">Skipped (duplicates)</div>
+              <div className="text-sm text-amber-600 dark:text-amber-300">{t('outlookImporter.skippedDuplicates')}</div>
             </div>
             <div className="bg-red-50 dark:bg-red-950/40 rounded-lg p-4 text-center">
               <XCircle className="w-6 h-6 text-red-600 dark:text-red-300 mx-auto mb-1" />
               <div className="text-2xl font-bold text-red-700 dark:text-red-300">{results.fail}</div>
-              <div className="text-sm text-red-600 dark:text-red-300">Failed</div>
+              <div className="text-sm text-red-600 dark:text-red-300">{t('outlookImporter.failed')}</div>
             </div>
           </div>
           {results.errors.length > 0 && (
@@ -335,7 +341,7 @@ export default function OutlookContactsImporter() {
               setResults(null);
             }}
           >
-            Import More
+            {t('outlookImporter.importMore')}
           </Button>
         </Card>
       )}
