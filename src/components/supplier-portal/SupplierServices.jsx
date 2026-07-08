@@ -12,35 +12,45 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Package, DollarSign, Plus, Edit, Trash2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const UNIT_LABELS = {
-  per_person: 'Per Person',
-  per_night: 'Per Night',
-  per_trip: 'Per Trip',
-  per_hour: 'Per Hour',
-  per_day: 'Per Day',
-  flat_rate: 'Flat Rate',
+const UNIT_LABEL_KEYS = {
+  per_person: 'supplierPortalServices.unitPerPerson',
+  per_night: 'supplierPortalServices.unitPerNight',
+  per_trip: 'supplierPortalServices.unitPerTrip',
+  per_hour: 'supplierPortalServices.unitPerHour',
+  per_day: 'supplierPortalServices.unitPerDay',
+  flat_rate: 'supplierPortalServices.unitFlatRate',
 };
 
-const APPROVAL_STATUS = {
+const SEASON_LABEL_KEYS = {
+  all_year: 'supplierPortalServices.seasonAllYear',
+  high_season: 'supplierPortalServices.seasonHigh',
+  low_season: 'supplierPortalServices.seasonLow',
+  peak: 'supplierPortalServices.seasonPeak',
+  custom: 'supplierPortalServices.seasonCustom',
+};
+
+const APPROVAL_STATUS_CONFIG = {
   pending: {
-    label: 'Pending Approval',
+    labelKey: 'supplierPortalServices.approvalPending',
     color: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300',
     icon: Clock,
   },
   approved: {
-    label: 'Approved',
+    labelKey: 'supplierPortalServices.approvalApproved',
     color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
     icon: CheckCircle,
   },
   rejected: {
-    label: 'Rejected',
+    labelKey: 'supplierPortalServices.approvalRejected',
     color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
     icon: AlertCircle,
   },
 };
 
 export default function SupplierServices({ supplierId }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
@@ -267,12 +277,12 @@ export default function SupplierServices({ supplierId }) {
   };
 
   const getApprovalBadge = (status) => {
-    const config = APPROVAL_STATUS[status] || APPROVAL_STATUS.pending;
+    const config = APPROVAL_STATUS_CONFIG[status] || APPROVAL_STATUS_CONFIG.pending;
     const Icon = config.icon;
     return (
       <Badge className={config.color}>
         <Icon className="w-3 h-3 mr-1" />
-        {config.label}
+        {t(config.labelKey)}
       </Badge>
     );
   };
@@ -282,17 +292,17 @@ export default function SupplierServices({ supplierId }) {
       {/* Action Buttons */}
       <div className="flex gap-3">
         <Button onClick={() => openServiceModal()} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" /> Add Service
+          <Plus className="w-4 h-4 mr-2" /> {t('supplierPortalServices.addService')}
         </Button>
         <Button onClick={() => openPricingModal()} variant="outline">
-          <Plus className="w-4 h-4 mr-2" /> Add Pricing Tier
+          <Plus className="w-4 h-4 mr-2" /> {t('supplierPortalServices.addPricingTier')}
         </Button>
       </div>
 
       {/* Subcategories */}
       {subcategories.length > 0 && (
         <Card className="p-6 bg-card">
-          <h3 className="text-lg font-bold text-foreground mb-4">Service Categories</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">{t('supplierPortalServices.serviceCategories')}</h3>
           <div className="flex flex-wrap gap-2">
             {subcategories.map((sub) => (
               <Badge key={sub.id} variant="outline" className="px-3 py-1">
@@ -305,11 +315,11 @@ export default function SupplierServices({ supplierId }) {
 
       {/* Services */}
       <Card className="p-6 bg-card">
-        <h3 className="text-lg font-bold text-foreground mb-4">Your Services</h3>
+        <h3 className="text-lg font-bold text-foreground mb-4">{t('supplierPortalServices.yourServices')}</h3>
         {services.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p>No services yet. Add your first service above.</p>
+            <p>{t('supplierPortalServices.noServicesBody')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -323,7 +333,7 @@ export default function SupplierServices({ supplierId }) {
                     </div>
                     {service.description && <p className="text-sm text-muted-foreground mt-1">{service.description}</p>}
                     <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>{UNIT_LABELS[service.unit] || service.unit}</span>
+                      <span>{UNIT_LABEL_KEYS[service.unit] ? t(UNIT_LABEL_KEYS[service.unit]) : service.unit}</span>
                       {service.budgeted_cost > 0 && (
                         <span className="text-green-700 dark:text-green-300 font-semibold">
                           ${service.budgeted_cost.toFixed(2)}
@@ -348,11 +358,11 @@ export default function SupplierServices({ supplierId }) {
 
       {/* Pricing Tiers */}
       <Card className="p-6 bg-card">
-        <h3 className="text-lg font-bold text-foreground mb-4">Pricing Tiers</h3>
+        <h3 className="text-lg font-bold text-foreground mb-4">{t('supplierPortalServices.pricingTiers')}</h3>
         {pricings.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <DollarSign className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p>No pricing tiers yet. Add your first pricing tier above.</p>
+            <p>{t('supplierPortalServices.noPricingBody')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -381,14 +391,18 @@ export default function SupplierServices({ supplierId }) {
                         : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
                   }
                 >
-                  {pricing.season_type?.replace('_', ' ') || 'All Year'}
+                  {pricing.season_type && SEASON_LABEL_KEYS[pricing.season_type]
+                    ? t(SEASON_LABEL_KEYS[pricing.season_type])
+                    : t('supplierPortalServices.seasonAllYear')}
                 </Badge>
                 <div className="flex items-center gap-2 mt-2 text-sm">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
                   <span className="font-semibold text-green-700 dark:text-green-300">
                     ${pricing.base_price?.toFixed(2)}
                   </span>
-                  <span className="text-muted-foreground">({UNIT_LABELS[pricing.unit] || pricing.unit})</span>
+                  <span className="text-muted-foreground">
+                    ({UNIT_LABEL_KEYS[pricing.unit] ? t(UNIT_LABEL_KEYS[pricing.unit]) : pricing.unit})
+                  </span>
                 </div>
               </div>
             ))}
@@ -400,11 +414,15 @@ export default function SupplierServices({ supplierId }) {
       <Dialog open={serviceModalOpen} onOpenChange={closeServiceModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingService ? 'Edit Service' : 'Add New Service'}</DialogTitle>
+            <DialogTitle>
+              {editingService
+                ? t('supplierPortalServices.editServiceTitle')
+                : t('supplierPortalServices.addNewServiceTitle')}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleServiceSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Service Name *</Label>
+              <Label>{t('supplierPortalServices.serviceNameLabel')}</Label>
               <Input
                 value={serviceForm.service_name}
                 onChange={(e) => setServiceForm({ ...serviceForm, service_name: e.target.value })}
@@ -412,7 +430,7 @@ export default function SupplierServices({ supplierId }) {
               />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t('supplierPortalServices.descriptionLabel')}</Label>
               <Textarea
                 value={serviceForm.description}
                 onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
@@ -421,7 +439,7 @@ export default function SupplierServices({ supplierId }) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Price</Label>
+                <Label>{t('supplierPortalServices.priceLabel')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -430,15 +448,15 @@ export default function SupplierServices({ supplierId }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Unit</Label>
+                <Label>{t('supplierPortalServices.unitLabel')}</Label>
                 <Select value={serviceForm.unit} onValueChange={(v) => setServiceForm({ ...serviceForm, unit: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(UNIT_LABELS).map(([key, label]) => (
+                    {Object.entries(UNIT_LABEL_KEYS).map(([key, labelKey]) => (
                       <SelectItem key={key} value={key}>
-                        {label}
+                        {t(labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -446,7 +464,7 @@ export default function SupplierServices({ supplierId }) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>{t('common.notes')}</Label>
               <Textarea
                 value={serviceForm.notes}
                 onChange={(e) => setServiceForm({ ...serviceForm, notes: e.target.value })}
@@ -454,14 +472,16 @@ export default function SupplierServices({ supplierId }) {
               />
             </div>
             <div className="p-3 bg-yellow-50 dark:bg-yellow-950/40 rounded-lg text-sm text-yellow-800 dark:text-yellow-300">
-              New services require admin approval before becoming visible.
+              {t('supplierPortalServices.approvalNoticeService')}
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={closeServiceModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingService ? 'Update' : 'Submit for Approval'}
+                {editingService
+                  ? t('supplierPortalServices.updateButton')
+                  : t('supplierPortalServices.submitForApproval')}
               </Button>
             </div>
           </form>
@@ -472,12 +492,16 @@ export default function SupplierServices({ supplierId }) {
       <Dialog open={pricingModalOpen} onOpenChange={closePricingModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingPricing ? 'Edit Pricing Tier' : 'Add Pricing Tier'}</DialogTitle>
+            <DialogTitle>
+              {editingPricing
+                ? t('supplierPortalServices.editPricingTierTitle')
+                : t('supplierPortalServices.addPricingTier')}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handlePricingSubmit} className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Tier Name *</Label>
+                <Label>{t('supplierPortalServices.tierNameLabel')}</Label>
                 <Input
                   value={pricingForm.name}
                   onChange={(e) => setPricingForm({ ...pricingForm, name: e.target.value })}
@@ -485,7 +509,7 @@ export default function SupplierServices({ supplierId }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Base Price *</Label>
+                <Label>{t('supplierPortalServices.basePriceLabel')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -497,22 +521,22 @@ export default function SupplierServices({ supplierId }) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Unit</Label>
+                <Label>{t('supplierPortalServices.unitLabel')}</Label>
                 <Select value={pricingForm.unit} onValueChange={(v) => setPricingForm({ ...pricingForm, unit: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(UNIT_LABELS).map(([key, label]) => (
+                    {Object.entries(UNIT_LABEL_KEYS).map(([key, labelKey]) => (
                       <SelectItem key={key} value={key}>
-                        {label}
+                        {t(labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Season</Label>
+                <Label>{t('supplierPortalServices.seasonLabel')}</Label>
                 <Select
                   value={pricingForm.season_type}
                   onValueChange={(v) => setPricingForm({ ...pricingForm, season_type: v })}
@@ -521,11 +545,11 @@ export default function SupplierServices({ supplierId }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all_year">All Year</SelectItem>
-                    <SelectItem value="high_season">High Season</SelectItem>
-                    <SelectItem value="low_season">Low Season</SelectItem>
-                    <SelectItem value="peak">Peak</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
+                    <SelectItem value="all_year">{t('supplierPortalServices.seasonAllYear')}</SelectItem>
+                    <SelectItem value="high_season">{t('supplierPortalServices.seasonHigh')}</SelectItem>
+                    <SelectItem value="low_season">{t('supplierPortalServices.seasonLow')}</SelectItem>
+                    <SelectItem value="peak">{t('supplierPortalServices.seasonPeak')}</SelectItem>
+                    <SelectItem value="custom">{t('supplierPortalServices.seasonCustom')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -533,7 +557,7 @@ export default function SupplierServices({ supplierId }) {
             {pricingForm.season_type === 'custom' && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Season Start</Label>
+                  <Label>{t('supplierPortalServices.seasonStartLabel')}</Label>
                   <Input
                     type="date"
                     value={pricingForm.season_start}
@@ -541,7 +565,7 @@ export default function SupplierServices({ supplierId }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Season End</Label>
+                  <Label>{t('supplierPortalServices.seasonEndLabel')}</Label>
                   <Input
                     type="date"
                     value={pricingForm.season_end}
@@ -552,7 +576,7 @@ export default function SupplierServices({ supplierId }) {
             )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Min Quantity</Label>
+                <Label>{t('supplierPortalServices.minQuantityLabel')}</Label>
                 <Input
                   type="number"
                   value={pricingForm.min_quantity}
@@ -560,17 +584,17 @@ export default function SupplierServices({ supplierId }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Max Quantity</Label>
+                <Label>{t('supplierPortalServices.maxQuantityLabel')}</Label>
                 <Input
                   type="number"
                   value={pricingForm.max_quantity}
                   onChange={(e) => setPricingForm({ ...pricingForm, max_quantity: e.target.value })}
-                  placeholder="No limit"
+                  placeholder={t('supplierPortalServices.noLimitPlaceholder')}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t('supplierPortalServices.descriptionLabel')}</Label>
               <Textarea
                 value={pricingForm.description}
                 onChange={(e) => setPricingForm({ ...pricingForm, description: e.target.value })}
@@ -578,14 +602,16 @@ export default function SupplierServices({ supplierId }) {
               />
             </div>
             <div className="p-3 bg-yellow-50 dark:bg-yellow-950/40 rounded-lg text-sm text-yellow-800 dark:text-yellow-300">
-              Pricing tiers require admin approval before becoming active.
+              {t('supplierPortalServices.approvalNoticePricing')}
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={closePricingModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingPricing ? 'Update' : 'Submit for Approval'}
+                {editingPricing
+                  ? t('supplierPortalServices.updateButton')
+                  : t('supplierPortalServices.submitForApproval')}
               </Button>
             </div>
           </form>
