@@ -14,6 +14,14 @@ import CompanyPicker from './CompanyPicker';
 import LocationSearch from '@/components/services/LocationSearch';
 
 const PAYMENT_METHODS = ['credit_card', 'bank_transfer', 'paypal', 'check', 'cash', 'other'];
+const PAYMENT_METHOD_LABEL_KEYS = {
+  credit_card: 'createClient.paymentCreditCard',
+  bank_transfer: 'createClient.paymentBankTransfer',
+  paypal: 'createClient.paymentPaypal',
+  check: 'createClient.paymentCheck',
+  cash: 'createClient.paymentCash',
+  other: 'createClient.paymentOther',
+};
 
 export default function NewClientForm({ onCreated, onCancel }) {
   const { t } = useT();
@@ -94,9 +102,9 @@ export default function NewClientForm({ onCreated, onCancel }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="active">{t('common.active')}</SelectItem>
                 <SelectItem value="vip">VIP</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -163,7 +171,7 @@ export default function NewClientForm({ onCreated, onCancel }) {
               <SelectContent>
                 {PAYMENT_METHODS.map((m) => (
                   <SelectItem key={m} value={m}>
-                    {m.replace('_', ' ')}
+                    {t(PAYMENT_METHOD_LABEL_KEYS[m])}
                   </SelectItem>
                 ))}
               </SelectContent>
