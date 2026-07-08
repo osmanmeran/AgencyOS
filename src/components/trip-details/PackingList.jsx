@@ -9,10 +9,21 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const CATEGORIES = ['Clothing', 'Toiletries', 'Electronics', 'Documents', 'Medication', 'Activities', 'Other'];
+const CATEGORY_LABEL_KEYS = {
+  Clothing: 'packingList.categoryClothing',
+  Toiletries: 'packingList.categoryToiletries',
+  Electronics: 'packingList.categoryElectronics',
+  Documents: 'packingList.categoryDocuments',
+  Medication: 'packingList.categoryMedication',
+  Activities: 'packingList.categoryActivities',
+  Other: 'packingList.categoryOther',
+};
 
 export default function PackingList({ tripId, items }) {
+  const { t } = useT();
   const [newItem, setNewItem] = useState({ item_name: '', category: 'Other', quantity: 1 });
   const queryClient = useQueryClient();
 
@@ -56,7 +67,7 @@ export default function PackingList({ tripId, items }) {
       {totalCount > 0 && (
         <Card className="p-6 bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-card border-0 shadow-md">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="font-semibold text-foreground">Packing Progress</h3>
+            <h3 className="font-semibold text-foreground">{t('packingList.packingProgress')}</h3>
             <span className="text-2xl font-bold text-blue-600 dark:text-blue-300">
               {packedCount}/{totalCount}
             </span>
@@ -72,10 +83,10 @@ export default function PackingList({ tripId, items }) {
 
       {/* Add New Item */}
       <Card className="p-6 bg-card shadow-md">
-        <h3 className="font-semibold text-foreground mb-4">Add Item</h3>
+        <h3 className="font-semibold text-foreground mb-4">{t('packingList.addItem')}</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
-            placeholder="Item name"
+            placeholder={t('packingList.itemNamePlaceholder')}
             value={newItem.item_name}
             onChange={(e) => setNewItem({ ...newItem, item_name: e.target.value })}
             className="flex-1"
@@ -87,7 +98,7 @@ export default function PackingList({ tripId, items }) {
             <SelectContent>
               {CATEGORIES.map((cat) => (
                 <SelectItem key={cat} value={cat}>
-                  {cat}
+                  {t(CATEGORY_LABEL_KEYS[cat])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -104,7 +115,7 @@ export default function PackingList({ tripId, items }) {
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add
+            {t('packingList.add')}
           </Button>
         </div>
       </Card>
@@ -117,7 +128,7 @@ export default function PackingList({ tripId, items }) {
         return (
           <Card key={category} className="p-6 bg-card shadow-md">
             <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-              {category}
+              {t(CATEGORY_LABEL_KEYS[category])}
               <span className="text-sm text-muted-foreground font-normal">({categoryItems.length})</span>
             </h3>
             <div className="space-y-3">

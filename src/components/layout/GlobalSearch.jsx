@@ -2,7 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, UserCircle, Users, Plane, FileText, CalendarCheck, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '@/components/ui/command';
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandGroup,
+  CommandItem,
+  CommandEmpty,
+} from '@/components/ui/command';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const ICON_MAP = {
   UserCircle: UserCircle,
@@ -14,6 +22,7 @@ const ICON_MAP = {
 };
 
 export default function GlobalSearch() {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -90,29 +99,25 @@ export default function GlobalSearch() {
         onClick={() => setOpen(true)}
       >
         <Search className="mr-2 h-3.5 w-3.5" />
-        <span>Search...</span>
+        <span>{t('globalSearch.searchButton')}</span>
         <kbd className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
           <span className="text-xs">⌘</span>K
         </kbd>
       </Button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput
-          placeholder="Search clients, suppliers, trips..."
-          value={query}
-          onValueChange={setQuery}
-        />
+        <CommandInput placeholder={t('globalSearch.placeholder')} value={query} onValueChange={setQuery} />
         <CommandList>
           <CommandEmpty>
             {loading ? (
               <div className="flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Searching...
+                {t('globalSearch.searching')}
               </div>
             ) : query.trim().length >= 2 ? (
-              'No results found.'
+              t('globalSearch.noResults')
             ) : (
-              'Type at least 2 characters to search.'
+              t('globalSearch.typeToSearch')
             )}
           </CommandEmpty>
 
@@ -130,9 +135,7 @@ export default function GlobalSearch() {
                     <Icon className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />
                     <div className="flex flex-col min-w-0">
                       <span className="truncate font-medium">{item.label}</span>
-                      {item.subtitle && (
-                        <span className="truncate text-xs text-muted-foreground">{item.subtitle}</span>
-                      )}
+                      {item.subtitle && <span className="truncate text-xs text-muted-foreground">{item.subtitle}</span>}
                     </div>
                     {item.badge && (
                       <span className="ml-auto shrink-0 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 text-[10px] font-medium uppercase">

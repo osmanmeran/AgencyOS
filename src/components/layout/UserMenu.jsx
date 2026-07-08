@@ -41,7 +41,7 @@ const LANGUAGES = [
 export default function UserMenu() {
   const [user, setUser] = useState(null);
   const [suggestOpen, setSuggestOpen] = useState(false);
-  const { language, setLanguage } = useT();
+  const { t, language, setLanguage } = useT();
 
   useEffect(() => {
     db.auth
@@ -63,7 +63,7 @@ export default function UserMenu() {
     return (
       <Button variant="outline" size="sm" onClick={() => db.auth.redirectToLogin()}>
         <User className="w-4 h-4 mr-2" />
-        Login
+        {t('userMenu.login')}
       </Button>
     );
   }
@@ -83,7 +83,7 @@ export default function UserMenu() {
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.full_name || 'User'}</p>
+            <p className="text-sm font-medium leading-none">{user.full_name || t('userMenu.defaultUser')}</p>
             <p className="text-xs leading-none text-muted-foreground flex items-center gap-1">
               <Mail className="w-3 h-3" />
               {user.email}
@@ -91,7 +91,7 @@ export default function UserMenu() {
             {user.role && (
               <p className="text-xs leading-none text-muted-foreground flex items-center gap-1 mt-1">
                 <Shield className="w-3 h-3" />
-                Role: {user.role}
+                {t('userMenu.roleLabel', { role: user.role })}
               </p>
             )}
           </div>
@@ -100,7 +100,7 @@ export default function UserMenu() {
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="cursor-pointer">
             <Globe className="w-4 h-4 mr-2" />
-            Language
+            {t('userMenu.language')}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             {LANGUAGES.map((lang) => (
@@ -119,7 +119,7 @@ export default function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" onClick={() => (window.location.href = '/Profile')}>
           <UserCircle className="w-4 h-4 mr-2" />
-          Profile
+          {t('userMenu.profile')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -129,21 +129,21 @@ export default function UserMenu() {
           }}
         >
           <Lightbulb className="w-4 h-4 mr-2" />
-          Suggest a Feature
+          {t('userMenu.suggestFeature')}
         </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer" onClick={() => (window.location.href = '/FAQ')}>
           <HelpCircle className="w-4 h-4 mr-2" />
-          FAQ
+          {t('userMenu.faq')}
         </DropdownMenuItem>
         {(user.user_tier === 'admin' || user.role === 'admin') && (
           <>
             <DropdownMenuItem className="cursor-pointer" onClick={() => (window.location.href = '/SuggestionsManager')}>
               <Lightbulb className="w-4 h-4 mr-2" />
-              Manage Suggestions
+              {t('userMenu.manageSuggestions')}
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer" onClick={() => (window.location.href = '/TestingArea')}>
               <FlaskConical className="w-4 h-4 mr-2" />
-              Testing Area
+              {t('testingArea.title')}
             </DropdownMenuItem>
           </>
         )}
@@ -151,7 +151,7 @@ export default function UserMenu() {
         <SuggestionDialog open={suggestOpen} onOpenChange={setSuggestOpen} />
         <DropdownMenuItem className="text-red-600 dark:text-red-300 cursor-pointer" onClick={handleLogout}>
           <LogOut className="w-4 h-4 mr-2" />
-          Logout
+          {t('userMenu.logout')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

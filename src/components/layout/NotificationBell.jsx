@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { acquireRealtime, releaseRealtime, onRealtimeMessage } from '@/lib/realtime';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const TYPE_ICONS = {
   info: Info,
@@ -40,6 +41,7 @@ async function api(path, opts = {}) {
 }
 
 export default function NotificationBell() {
+  const { t } = useT();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
@@ -111,10 +113,10 @@ export default function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
+          <span>{t('notificationBell.notifications')}</span>
           {unread > 0 && (
             <Button variant="ghost" size="sm" className="text-xs h-6 gap-1" onClick={markAllRead}>
-              <CheckCheck className="w-3 h-3" /> Mark all read
+              <CheckCheck className="w-3 h-3" /> {t('notificationBell.markAllRead')}
             </Button>
           )}
         </DropdownMenuLabel>
@@ -125,7 +127,9 @@ export default function NotificationBell() {
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">No notifications</div>
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              {t('notificationBell.noNotifications')}
+            </div>
           ) : (
             notifications.map((n) => {
               const Icon = TYPE_ICONS[n.type] || Info;
