@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Link2, Copy, CheckCircle, CreditCard } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 function signPaymentPayload(payload) {
   const data = JSON.stringify(payload);
@@ -19,6 +20,7 @@ function signPaymentPayload(payload) {
  * In production, the server verifies the token before processing payment.
  */
 export default function PaymentLinkPanel({ invoice, client }) {
+  const { t } = useT();
   const [copied, setCopied] = useState(false);
 
   if (!invoice || invoice.status === 'paid' || invoice.status === 'cancelled') return null;
@@ -43,13 +45,17 @@ export default function PaymentLinkPanel({ invoice, client }) {
         <div className="bg-blue-600 p-1.5 rounded-lg">
           <CreditCard className="w-4 h-4 text-white" />
         </div>
-        <h3 className="font-semibold text-foreground">Online Payment</h3>
-        <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs">Simulated</Badge>
+        <h3 className="font-semibold text-foreground">{t('paymentLink.title')}</h3>
+        <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs">
+          {t('paymentLink.simulatedBadge')}
+        </Badge>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Share this signed link with <strong>{client?.name || 'the client'}</strong> to collect the payment of{' '}
-        <strong>${invoice.amount_due?.toFixed(2)}</strong> online.
+        {t('paymentLink.shareText', {
+          client: client?.name || t('paymentLink.defaultClient'),
+          amount: `$${invoice.amount_due?.toFixed(2)}`,
+        })}
       </p>
 
       <div className="flex gap-2">
@@ -66,14 +72,11 @@ export default function PaymentLinkPanel({ invoice, client }) {
       <div className="flex gap-2 pt-1">
         <Button onClick={handleCopy} className="bg-blue-600 hover:bg-blue-700 flex-1">
           <Link2 className="w-4 h-4 mr-2" />
-          {copied ? 'Link Copied!' : 'Copy Payment Link'}
+          {copied ? t('paymentLink.linkCopied') : t('paymentLink.copyPaymentLink')}
         </Button>
       </div>
 
-      <p className="text-xs text-muted-foreground text-center">
-        💡 Token includes signed payload (amount, ref) — tamper-proof. Connect a payment gateway (e.g. Stripe) to
-        process real online payments.
-      </p>
+      <p className="text-xs text-muted-foreground text-center">💡 {t('paymentLink.footerTip')}</p>
     </div>
   );
 }
