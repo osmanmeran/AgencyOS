@@ -11,7 +11,6 @@ import { ArrowRightLeft, RefreshCw, Loader2 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 
 const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'TRY', 'JPY', 'CHF', 'AUD', 'CAD'];
-const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', TRY: '₺', JPY: '¥', CHF: 'CHF', AUD: 'A$', CAD: 'C$' };
 const CURRENCY_NAME_KEYS = {
   USD: 'currencyConverter.currencyUSD',
   EUR: 'currencyConverter.currencyEUR',
@@ -27,7 +26,7 @@ export default function CurrencyConverter({ compact = false }) {
   const { t } = useT();
   const CURRENCIES = CURRENCY_CODES.map((code) => ({
     code,
-    symbol: CURRENCY_SYMBOLS[code],
+    symbol: getCurrencySymbol(code),
     name: t(CURRENCY_NAME_KEYS[code]),
   }));
   const [amount, setAmount] = useState('100');

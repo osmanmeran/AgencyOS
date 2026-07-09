@@ -1,16 +1,14 @@
+import { getCurrencySymbol } from './currencies';
+
 /** Formats a number as localized currency (e.g. `$1,234.56`), falling back to a plain `CUR amount` string for unsupported currency codes. */
 export function formatCurrency(amount, currency = 'USD') {
   if (amount == null || isNaN(amount)) return '$0.00';
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  } catch {
-    return `${currency} ${Number(amount).toFixed(2)}`;
-  }
+  const symbol = getCurrencySymbol(currency);
+  const num = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(amount));
+  return `${symbol}${num}`;
 }
 
 /** Formats a date as e.g. `Jan 5, 2026`. */

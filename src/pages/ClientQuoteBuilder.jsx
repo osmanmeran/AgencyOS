@@ -30,26 +30,12 @@ import {
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
+import { getCurrencySymbol } from '@/lib/currencies';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import LocationSearch from '@/components/services/LocationSearch';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
 
-const CURRENCY_SYMBOLS = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  TRY: '₺',
-  AED: 'د.إ',
-  SAR: '﷼',
-  EGP: 'E£',
-  MAD: 'MAD',
-  JPY: '¥',
-  CHF: 'CHF',
-  CAD: 'CA$',
-  AUD: 'A$',
-};
-const sym = (cur) => CURRENCY_SYMBOLS[cur] || `${cur} `;
-
+const { sym } = { sym: (cur) => getCurrencySymbol(cur) };
 const AGE_CATEGORIES = [
   { value: 'adult', label: 'Adult' },
   { value: 'children', label: 'Child (3–11)' },
