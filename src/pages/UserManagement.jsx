@@ -131,6 +131,12 @@ export default function UserManagement() {
   const [addPermissions, setAddPermissions] = useState([]);
   const [addDepartments, setAddDepartments] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [resetPwdUser, setResetPwdUser] = useState(null);
+  const [resetPwdNew, setResetPwdNew] = useState('');
+  const [resetPwdConfirm, setResetPwdConfirm] = useState('');
+  const [resetPwdResult, setResetPwdResult] = useState('');
+  const [resetPwdError, setResetPwdError] = useState('');
+  const [resetPwdSaving, setResetPwdSaving] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({
     email: '',
@@ -236,6 +242,30 @@ export default function UserManagement() {
       setSuccess('User updated');
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setResetPwdError('');
+    if (!resetPwdUser) return;
+    const pwErr = passwordError(resetPwdNew);
+    if (pwErr) {
+      setResetPwdError(pwErr);
+      return;
+    }
+    if (resetPwdNew !== resetPwdConfirm) {
+      setResetPwdError('Passwords do not match');
+      return;
+    }
+    setResetPwdSaving(true);
+    try {
+      await db.auth.updateUser(resetPwdUser.id, { password: resetPwdNew });
+      setResetPwdResult(resetPwdNew);
+      setSuccess(`Password reset for "${resetPwdUser.name}"`);
+    } catch (err) {
+      setResetPwdError(err.message);
+    } finally {
+      setResetPwdSaving(false);
     }
   };
 
@@ -1104,19 +1134,29 @@ export default function UserManagement() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex justify-end gap-3 pt-2">
+                  <div className="flex items-center justify-between gap-3 pt-2">
                     <button
-                      onClick={() => setSelectedUser(null)}
-                      className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
+                      type="button"
+                      onClick={() => setResetPwdUser(selectedUser)}
+                      className="px-3 py-2 text-sm border border-orange-300 dark:border-orange-800 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/40 flex items-center gap-1.5"
                     >
-                      Cancel
+                      <KeyRound className="w-3.5 h-3.5" />
+                      Reset Password
                     </button>
-                    <button
-                      onClick={handleSaveUser}
-                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      Save Changes
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setSelectedUser(null)}
+                        className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveUser}
+                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1152,6 +1192,98 @@ export default function UserManagement() {
                     Delete
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reset Password Dialog */}
+          {resetPwdUser && (
+            <div
+              className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+              onClick={() => {
+                setResetPwdUser(null);
+                setResetPwdResult('');
+              }}
+            >
+              <div
+                className="bg-card rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {resetPwdResult ? (
+                  <>
+                    <h3 className="text-lg font-bold text-foreground mb-2">Password Reset Successfully</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Share this new password with <strong>{resetPwdUser.name}</strong>:
+                    </p>
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-center mb-4">
+                      <code className="text-lg font-mono font-bold text-foreground select-all">{resetPwdResult}</code>
+                    </div>
+                    <p className="text-xs text-red-600 dark:text-red-300 mb-4">
+                      Make sure to share this securely — it will not be shown again.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setResetPwdUser(null);
+                        setResetPwdResult('');
+                        setResetPwdNew('');
+                        setResetPwdConfirm('');
+                      }}
+                      className="w-full"
+                    >
+                      Done
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-bold text-foreground mb-2">Reset Password: {resetPwdUser.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Enter a new password for this user. The password will be shown once after saving.
+                    </p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-1">New Password</label>
+                        <input
+                          type="text"
+                          value={resetPwdNew}
+                          onChange={(e) => setResetPwdNew(e.target.value)}
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                          placeholder="At least 8 chars, uppercase, lowercase, number"
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-1">Confirm Password</label>
+                        <input
+                          type="text"
+                          value={resetPwdConfirm}
+                          onChange={(e) => setResetPwdConfirm(e.target.value)}
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                          placeholder="Re-enter the password"
+                        />
+                      </div>
+                      {resetPwdError && <p className="text-xs text-red-600 dark:text-red-300">{resetPwdError}</p>}
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <button
+                        onClick={() => {
+                          setResetPwdUser(null);
+                          setResetPwdNew('');
+                          setResetPwdConfirm('');
+                        }}
+                        className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleResetPassword}
+                        disabled={resetPwdSaving}
+                        className="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                      >
+                        {resetPwdSaving ? 'Saving...' : 'Set New Password'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
