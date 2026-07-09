@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,7 +18,7 @@ import { buildTripFromContract, emptyPassenger } from '@/lib/contractBooking';
 import PassengerFieldsRow from '../components/passengers/PassengerFieldsRow';
 import { useT } from '@/lib/i18n/I18nContext';
 
-const currSymbol = (cur) => ({ USD: '$', EUR: '€', GBP: '£', TRY: '₺', AED: 'د.إ' })[cur] || cur;
+const currSymbol = (cur) => getCurrencySymbol(cur);
 
 export default function GenerateFromContract() {
   const { t } = useT();

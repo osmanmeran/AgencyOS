@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRightLeft, RefreshCw, Loader2 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'TRY', 'JPY', 'CHF', 'AUD', 'CAD'];
 const CURRENCY_NAME_KEYS = {
@@ -58,8 +59,6 @@ export default function CurrencyConverter({ compact = false }) {
     setToCurrency(fromCurrency);
     setResult(null);
   };
-
-  const getCurrencySymbol = (code) => CURRENCIES.find((c) => c.code === code)?.symbol || code;
 
   if (compact) {
     return (

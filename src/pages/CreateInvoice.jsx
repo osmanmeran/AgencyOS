@@ -16,21 +16,9 @@ import { createPageUrl } from '../utils';
 import { parseISO, isBefore } from 'date-fns';
 import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { getCurrencySymbol } from '@/lib/formatters';
 
-const CURRENCIES = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  TRY: '₺',
-  AED: 'د.إ',
-  SAR: '﷼',
-  EGP: 'E£',
-  MAD: 'MAD',
-  JPY: '¥',
-  CHF: 'CHF',
-  CAD: 'CA$',
-  AUD: 'A$',
-};
+const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 
 export default function CreateInvoice() {
   const navigate = useNavigate();
@@ -211,7 +199,7 @@ export default function CreateInvoice() {
   const subtotal = formData.line_items.reduce((sum, item) => sum + item.amount, 0);
   const taxAmount = subtotal * (formData.tax_rate / 100);
   const totalAmount = subtotal + taxAmount;
-  const cs = CURRENCIES[formData.currency || 'USD'] || '$';
+  const cs = getCurrencySymbol(formData.currency || 'USD');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -297,9 +285,9 @@ export default function CreateInvoice() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(CURRENCIES).map((cur) => (
+                  {Object.keys(CURRENCY_CODES).map((cur) => (
                     <SelectItem key={cur} value={cur}>
-                      {CURRENCIES[cur]} {cur}
+                      {getCurrencySymbol(cur)} {cur}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -50,21 +51,7 @@ import ServiceLineEditor from '../components/services/ServiceLineEditor';
 import TripCostSummary from '../components/reservations/TripCostSummary';
 import { applyMarkup } from '@/lib/pricing';
 
-const currSymbol = (cur) =>
-  ({
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    TRY: '₺',
-    AED: 'د.إ',
-    SAR: '﷼',
-    EGP: 'E£',
-    MAD: 'MAD',
-    JPY: '¥',
-    CHF: 'CHF',
-    CAD: 'CA$',
-    AUD: 'A$',
-  })[cur] || cur;
+const currSymbol = (cur) => getCurrencySymbol(cur);
 
 const PROPOSAL_STATUS_CONFIG = {
   pending: {
@@ -1204,36 +1191,8 @@ export default function ReservationDetails() {
                   );
                 }
                 const supplierName = service.supplier_id ? supplierMap[service.supplier_id] || '—' : null;
-                const scSupplier =
-                  {
-                    USD: '$',
-                    EUR: '€',
-                    GBP: '£',
-                    TRY: '₺',
-                    AED: 'د.إ',
-                    SAR: '﷼',
-                    EGP: 'E£',
-                    MAD: 'MAD',
-                    JPY: '¥',
-                    CHF: 'CHF',
-                    CAD: 'CA$',
-                    AUD: 'A$',
-                  }[service.supplier_currency] || service.supplier_currency;
-                const scClient =
-                  {
-                    USD: '$',
-                    EUR: '€',
-                    GBP: '£',
-                    TRY: '₺',
-                    AED: 'د.إ',
-                    SAR: '﷼',
-                    EGP: 'E£',
-                    MAD: 'MAD',
-                    JPY: '¥',
-                    CHF: 'CHF',
-                    CAD: 'CA$',
-                    AUD: 'A$',
-                  }[service.client_currency] || service.client_currency;
+                const scSupplier = getCurrencySymbol(service.supplier_currency);
+                const scClient = getCurrencySymbol(service.client_currency);
                 const serviceEffQty = (s) => {
                   const qty = parseInt(s.quantity) || 1;
                   if (s.unit === 'per_night' || s.unit === 'per_day') {

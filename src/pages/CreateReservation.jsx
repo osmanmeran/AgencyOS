@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -49,21 +50,7 @@ import { applyMarkup } from '@/lib/pricing';
 import { categoryIdsBySupplier, getSupplierCategoryIds, createSupplierWithCategory } from '@/lib/supplierCategories';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
-const currSymbol = (cur) =>
-  ({
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    TRY: '₺',
-    AED: 'د.إ',
-    SAR: '﷼',
-    EGP: 'E£',
-    MAD: 'MAD',
-    JPY: '¥',
-    CHF: 'CHF',
-    CAD: 'CA$',
-    AUD: 'A$',
-  })[cur] || cur;
+const currSymbol = (cur) => getCurrencySymbol(cur);
 
 const newPassenger = () => ({
   id: `pax-${Date.now()}-${Math.random()}`,

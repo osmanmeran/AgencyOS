@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -12,20 +13,7 @@ import { X, Calendar, Save, RefreshCw, AlertCircle, Copy, CalendarOff } from 'lu
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
 
-const CURRENCIES = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  TRY: '₺',
-  AED: 'د.إ',
-  SAR: '﷼',
-  EGP: 'E£',
-  MAD: 'MAD',
-  JPY: '¥',
-  CHF: 'CHF',
-  CAD: 'CA$',
-  AUD: 'A$',
-};
+const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 const HOTEL_TREATMENTS = [
   'Room Only',
   'Bed & Breakfast',
@@ -888,7 +876,7 @@ export default function ServiceLineEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(CURRENCIES).map((cur) => (
+                      {Object.keys(CURRENCY_CODES).map((cur) => (
                         <SelectItem key={cur} value={cur}>
                           {cur}
                         </SelectItem>
@@ -914,7 +902,7 @@ export default function ServiceLineEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(CURRENCIES).map((cur) => (
+                      {Object.keys(CURRENCY_CODES).map((cur) => (
                         <SelectItem key={cur} value={cur}>
                           {cur}
                         </SelectItem>
@@ -935,7 +923,7 @@ export default function ServiceLineEditor({
               <div>
                 <Label className="text-xs text-muted-foreground mb-1 block">Total Cost</Label>
                 <div className="text-sm font-bold text-foreground p-2 bg-amber-50 dark:bg-amber-950/40 rounded border">
-                  {CURRENCIES[formData.supplier_currency || 'USD']}
+                  {getCurrencySymbol(formData.supplier_currency || 'USD')}
                   {totalCost.toFixed(2)}
                 </div>
               </div>
@@ -966,7 +954,7 @@ export default function ServiceLineEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(CURRENCIES).map((cur) => (
+                      {Object.keys(CURRENCY_CODES).map((cur) => (
                         <SelectItem key={cur} value={cur}>
                           {cur}
                         </SelectItem>
@@ -992,7 +980,7 @@ export default function ServiceLineEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(CURRENCIES).map((cur) => (
+                      {Object.keys(CURRENCY_CODES).map((cur) => (
                         <SelectItem key={cur} value={cur}>
                           {cur}
                         </SelectItem>
@@ -1013,7 +1001,7 @@ export default function ServiceLineEditor({
               <div>
                 <Label className="text-xs text-muted-foreground mb-1 block">Total Selling</Label>
                 <div className="text-sm font-bold text-green-700 dark:text-green-300 p-2 bg-green-50 dark:bg-green-950/40 rounded border">
-                  {CURRENCIES[formData.client_currency || 'USD']}
+                  {getCurrencySymbol(formData.client_currency || 'USD')}
                   {totalSell.toFixed(2)}
                 </div>
               </div>

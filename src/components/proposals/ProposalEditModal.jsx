@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -246,21 +247,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
     });
   };
 
-  const currSymbol = (cur) =>
-    ({
-      USD: '$',
-      EUR: '€',
-      GBP: '£',
-      TRY: '₺',
-      AED: 'د.إ',
-      SAR: '﷼',
-      EGP: 'E£',
-      MAD: 'MAD',
-      JPY: '¥',
-      CHF: 'CHF',
-      CAD: 'CA$',
-      AUD: 'A$',
-    })[cur] || cur;
+  const currSymbol = (cur) => getCurrencySymbol(cur);
 
   return (
     <Dialog

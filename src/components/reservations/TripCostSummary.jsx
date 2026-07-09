@@ -2,24 +2,9 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
-const currSymbol = (cur) =>
-  ({
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    TRY: '₺',
-    AED: 'د.إ',
-    SAR: '﷼',
-    EGP: 'E£',
-    MAD: 'MAD',
-    JPY: '¥',
-    CHF: 'CHF',
-    CAD: 'CA$',
-    AUD: 'A$',
-  })[cur] ||
-  cur ||
-  '$';
+const currSymbol = (cur) => getCurrencySymbol(cur);
 
 export default function TripCostSummary({ trip }) {
   const { t } = useT();

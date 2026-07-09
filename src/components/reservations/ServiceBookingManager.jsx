@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -469,7 +470,7 @@ function buildRoomingBreakdown(passengers) {
 }
 
 function buildBookingEmailBody(trip, service, note) {
-  const sc = { USD: '$', EUR: '€', GBP: '£', TRY: '₺' }[trip.selling_currency] || trip.selling_currency;
+  const sc = getCurrencySymbol(trip.selling_currency);
   const quantity = parseInt(service.quantity) || 1;
   const total = (parseFloat(service.acquiring_price) || 0) * quantity;
   const paxInfo = buildRoomingBreakdown(trip.passengers);

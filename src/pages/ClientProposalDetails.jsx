@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMyClient } from '@/hooks/useMyClient';
@@ -119,23 +120,7 @@ export default function ClientProposalDetails() {
         {proposal.services && proposal.services.length > 0 ? (
           <div className="space-y-4">
             {proposal.services.map((service, index) => {
-              const sc =
-                {
-                  USD: '$',
-                  EUR: '€',
-                  GBP: '£',
-                  TRY: '₺',
-                  AED: 'د.إ',
-                  SAR: '﷼',
-                  EGP: 'E£',
-                  MAD: 'MAD',
-                  JPY: '¥',
-                  CHF: 'CHF',
-                  CAD: 'CA$',
-                  AUD: 'A$',
-                }[service.client_currency] ||
-                service.client_currency ||
-                '$';
+              const sc = getCurrencySymbol(service.client_currency);
               return (
                 <div key={index} className="border-b border-border pb-4 last:border-0">
                   <div className="flex justify-between items-start mb-2">
@@ -174,23 +159,7 @@ export default function ClientProposalDetails() {
                     const currencies = [
                       ...new Set((proposal.services || []).map((s) => s.client_currency).filter(Boolean)),
                     ];
-                    const sc =
-                      {
-                        USD: '$',
-                        EUR: '€',
-                        GBP: '£',
-                        TRY: '₺',
-                        AED: 'د.إ',
-                        SAR: '﷼',
-                        EGP: 'E£',
-                        MAD: 'MAD',
-                        JPY: '¥',
-                        CHF: 'CHF',
-                        CAD: 'CA$',
-                        AUD: 'A$',
-                      }[currencies[0] || 'USD'] ||
-                      currencies[0] ||
-                      '$';
+                    const sc = getCurrencySymbol(currencies[0] || 'USD');
                     return <span>{sc}</span>;
                   })()}
                   {(proposal.total_cost || 0).toFixed(2)}

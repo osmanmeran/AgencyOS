@@ -62,22 +62,9 @@ import PastReservationsSearch from '../components/reservations/PastReservationsS
 import BulkActionsBar from '@/components/shared/BulkActionsBar';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
+import { getCurrencySymbol } from '@/lib/formatters';
 
-const currSymbol = (cur) =>
-  ({
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    TRY: '₺',
-    AED: 'د.إ',
-    SAR: '﷼',
-    EGP: 'E£',
-    MAD: 'MAD',
-    JPY: '¥',
-    CHF: 'CHF',
-    CAD: 'CA$',
-    AUD: 'A$',
-  })[cur] || cur;
+const currSymbol = (cur) => getCurrencySymbol(cur);
 
 const PROPOSAL_STATUS_CONFIG = {
   pending: { color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300', icon: Clock },

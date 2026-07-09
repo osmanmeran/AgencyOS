@@ -16,24 +16,9 @@ import PaymentReminderButton from '../components/invoices/PaymentReminderButton'
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
+import { getCurrencySymbol } from '@/lib/formatters';
 
-const currSymbol = (cur) =>
-  ({
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    TRY: '₺',
-    AED: 'د.إ',
-    SAR: '﷼',
-    EGP: 'E£',
-    MAD: 'MAD',
-    JPY: '¥',
-    CHF: 'CHF',
-    CAD: 'CA$',
-    AUD: 'A$',
-  })[cur] ||
-  cur ||
-  '$';
+const currSymbol = (cur) => getCurrencySymbol(cur);
 
 const STATUS_COLORS = {
   draft: 'bg-muted text-foreground',

@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -239,23 +240,7 @@ export default function ProposalDetails() {
   };
 
   const proposalCurrencies = [...new Set((proposal.services || []).map((s) => s.client_currency).filter(Boolean))];
-  const proposalCurrencySymbol =
-    {
-      USD: '$',
-      EUR: '€',
-      GBP: '£',
-      TRY: '₺',
-      AED: 'د.إ',
-      SAR: '﷼',
-      EGP: 'E£',
-      MAD: 'MAD',
-      JPY: '¥',
-      CHF: 'CHF',
-      CAD: 'CA$',
-      AUD: 'A$',
-    }[proposalCurrencies[0] || 'USD'] ||
-    proposalCurrencies[0] ||
-    '$';
+  const proposalCurrencySymbol = getCurrencySymbol(proposalCurrencies[0] || 'USD');
 
   return (
     <div className="space-y-6 print:space-y-4">
@@ -438,23 +423,7 @@ export default function ProposalDetails() {
             {proposal.services.map((service, index) => {
               const bsConfig = BOOKING_STATUS_CONFIG[service.booking_status || 'not_requested'];
               const BsIcon = bsConfig.icon;
-              const sc =
-                {
-                  USD: '$',
-                  EUR: '€',
-                  GBP: '£',
-                  TRY: '₺',
-                  AED: 'د.إ',
-                  SAR: '﷼',
-                  EGP: 'E£',
-                  MAD: 'MAD',
-                  JPY: '¥',
-                  CHF: 'CHF',
-                  CAD: 'CA$',
-                  AUD: 'A$',
-                }[service.client_currency] ||
-                service.client_currency ||
-                '$';
+              const sc = getCurrencySymbol(service.client_currency);
               return (
                 <div key={index} className="border border-border rounded-lg p-5">
                   <div className="flex justify-between items-start mb-3">

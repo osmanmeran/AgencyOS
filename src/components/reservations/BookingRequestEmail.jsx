@@ -3,22 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Send, Download, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
-const currSymbol = (cur) =>
-  ({
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    TRY: '₺',
-    AED: 'د.إ',
-    SAR: '﷼',
-    EGP: 'E£',
-    MAD: 'MAD',
-    JPY: '¥',
-    CHF: 'CHF',
-    CAD: 'CA$',
-    AUD: 'A$',
-  })[cur] || cur;
+const currSymbol = (cur) => getCurrencySymbol(cur);
 
 export default function BookingRequestEmail({
   open,

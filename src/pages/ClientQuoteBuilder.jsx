@@ -30,7 +30,7 @@ import {
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
-import { getCurrencySymbol } from '@/lib/currencies';
+import { getCurrencySymbol } from '@/lib/formatters';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import LocationSearch from '@/components/services/LocationSearch';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
