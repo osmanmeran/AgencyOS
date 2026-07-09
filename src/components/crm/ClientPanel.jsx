@@ -171,11 +171,11 @@ export default function ClientPanel({ client, onClientUpdated }) {
     ...messages.map((m) => ({ type: 'message', date: m.created_date, item: m })),
     ...proposals.map((p) => ({ type: 'proposal', date: p.created_date, item: p })),
     ...invoices.map((i) => ({ type: 'invoice', date: i.created_date, item: i })),
-    ...trips.map((t) => ({ type: 'trip', date: t.created_date, item: t })),
+    ...trips.map((trip) => ({ type: 'trip', date: trip.created_date, item: trip })),
     ...emailLogs.map((e) => ({ type: 'email', date: e.created_date, item: e })),
   ].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 
-  const pendingTasks = tasks.filter((t) => t.status !== 'done');
+  const pendingTasks = tasks.filter((task) => task.status !== 'done');
 
   const handleAddTask = () => {
     if (!newTaskTitle.trim()) return;
@@ -778,19 +778,19 @@ export default function ClientPanel({ client, onClientUpdated }) {
             {trips.length === 0 ? (
               <EmptyState icon={Plane} label={t('clientPanel.noTripsYet')} />
             ) : (
-              trips.map((t) => (
-                <Link key={t.id} to={createPageUrl(`ReservationDetails?id=${t.id}`)}>
+              trips.map((trip) => (
+                <Link key={trip.id} to={createPageUrl(`ReservationDetails?id=${trip.id}`)}>
                   <div className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-muted hover:border-blue-200 dark:hover:border-blue-800 transition-all">
                     <div>
-                      <div className="font-medium text-foreground text-sm">{t.name}</div>
+                      <div className="font-medium text-foreground text-sm">{trip.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {t.destination} · {t.start_date ? format(new Date(t.start_date), 'MMM d') : ''} –{' '}
-                        {t.end_date ? format(new Date(t.end_date), 'MMM d, yyyy') : ''}
+                        {trip.destination} · {trip.start_date ? format(new Date(trip.start_date), 'MMM d') : ''} –{' '}
+                        {trip.end_date ? format(new Date(trip.end_date), 'MMM d, yyyy') : ''}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs capitalize">
-                        {t.status}
+                        {trip.status}
                       </Badge>
                       <ExternalLink className="w-3 h-3 text-muted-foreground" />
                     </div>
