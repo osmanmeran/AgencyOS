@@ -473,12 +473,27 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
 
   // Every rate tier for the chosen supplier + room type, and which one (if
   // any) unambiguously applies to the current check-in date.
+  const mealTreatmentCode = line.hotel_treatment
+    ? {
+        'Room Only': 'RO',
+        'Bed & Breakfast': 'BB',
+        'Half Board': 'HB',
+        'Full Board': 'FB',
+        'All Inclusive': 'AI',
+        'Ultra All Inclusive': 'UAI',
+      }[line.hotel_treatment] || ''
+    : '';
   const roomCandidates = useMemo(
     () =>
       line.room_occupancy && line.supplier_id
-        ? services.filter((s) => s.supplier_id === line.supplier_id && s.occupancy === line.room_occupancy)
+        ? services.filter(
+            (s) =>
+              s.supplier_id === line.supplier_id &&
+              s.occupancy === line.room_occupancy &&
+              (!mealTreatmentCode || !s.meal_treatment || s.meal_treatment === mealTreatmentCode),
+          )
         : [],
-    [services, line.supplier_id, line.room_occupancy],
+    [services, line.supplier_id, line.room_occupancy, mealTreatmentCode],
   );
   const { rate: resolvedRate, candidates: rateOptions } = useMemo(
     () => resolveRoomRate(roomCandidates, line.start_date),

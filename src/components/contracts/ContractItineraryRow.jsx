@@ -155,11 +155,19 @@ export default function ContractItineraryRow({ item, categories, onUpdate, onRem
               <SelectValue placeholder="Select a pricing tier to auto-fill..." />
             </SelectTrigger>
             <SelectContent>
-              {activePricings.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name} — {p.currency} {p.base_price}/{p.unit?.replace('_', ' ')}
-                </SelectItem>
-              ))}
+              {activePricings.map((p) => {
+                const occLabel = p.occupancy ? ` | ${p.occupancy.charAt(0).toUpperCase() + p.occupancy.slice(1)}` : '';
+                const mealLabel = p.meal_treatment
+                  ? ` | ${{ RO: 'Room Only', BB: 'B&B', HB: 'Half Board', FB: 'Full Board', AI: 'All Inc.', UAI: 'Ultra AI' }[p.meal_treatment] || p.meal_treatment}`
+                  : '';
+                return (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name} — {p.currency} {p.base_price}/{p.unit?.replace('_', ' ')}
+                    {occLabel}
+                    {mealLabel}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
