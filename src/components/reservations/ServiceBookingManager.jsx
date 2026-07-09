@@ -13,22 +13,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, CheckCircle, Clock, AlertCircle, Plus, Mail } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BookingRequestEmail from './BookingRequestEmail';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const SERVICE_BOOKING_STATUS = {
-  not_requested: { label: 'Not Requested', color: 'bg-muted text-foreground', icon: AlertCircle },
+const SERVICE_BOOKING_STATUS_CONFIG = {
+  not_requested: {
+    labelKey: 'serviceBookingManager.statusNotRequested',
+    color: 'bg-muted text-foreground',
+    icon: AlertCircle,
+  },
   requested: {
-    label: 'Requested',
+    labelKey: 'serviceBookingManager.statusRequested',
     color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
     icon: Clock,
   },
   confirmed: {
-    label: 'Confirmed',
+    labelKey: 'common.confirmed',
     color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
     icon: CheckCircle,
   },
 };
 
 export default function ServiceBookingManager({ trip, user, suppliers, appSettings }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
@@ -144,15 +150,13 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
       <Card className="p-6 bg-card shadow-lg print:shadow-none">
         <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
           <Mail className="w-5 h-5 text-purple-600 dark:text-purple-300" />
-          Supplier Booking Management
+          {t('serviceBookingManager.title')}
         </h2>
 
         {!isConfirmed && (
           <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-300 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800 dark:text-amber-300">
-              Confirm the reservation first to send booking requests to suppliers.
-            </p>
+            <p className="text-sm text-amber-800 dark:text-amber-300">{t('serviceBookingManager.confirmFirstHint')}</p>
           </div>
         )}
 
@@ -173,7 +177,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
             .map((service) => {
               const idx = trip.services.indexOf(service);
               const status = service.booking_status || 'not_requested';
-              const statusConfig = SERVICE_BOOKING_STATUS[status];
+              const statusConfig = SERVICE_BOOKING_STATUS_CONFIG[status];
               const StatusIcon = statusConfig.icon;
               const supplierName = service.supplier_id
                 ? suppliers.find((s) => s.id === service.supplier_id)?.name || '—'
@@ -188,7 +192,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                     </div>
                     <Badge className={`${statusConfig.color} flex items-center gap-1.5 flex-shrink-0`}>
                       <StatusIcon className="w-3.5 h-3.5" />
-                      {statusConfig.label}
+                      {t(statusConfig.labelKey)}
                     </Badge>
                   </div>
 
@@ -196,8 +200,10 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                     <div className="text-xs text-muted-foreground space-y-0.5 mb-3">
                       {service.booking_requested_date && (
                         <p>
-                          Requested {new Date(service.booking_requested_date).toLocaleDateString()} to{' '}
-                          {service.booking_requested_email}
+                          {t('serviceBookingManager.requestedOnLabel', {
+                            date: new Date(service.booking_requested_date).toLocaleDateString(),
+                            email: service.booking_requested_email,
+                          })}
                         </p>
                       )}
                       {service.booking_note && (
@@ -216,7 +222,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                         onClick={() => openBookingModal(idx)}
                       >
                         <Send className="w-3.5 h-3.5 mr-1" />
-                        Send to Supplier
+                        {t('serviceBookingManager.sendToSupplier')}
                       </Button>
                     )}
                     {status === 'requested' && isConfirmed && (
@@ -228,7 +234,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                           onClick={() => openBookingModal(idx)}
                         >
                           <Send className="w-3.5 h-3.5 mr-1" />
-                          Resend
+                          {t('serviceBookingManager.resend')}
                         </Button>
                         <Button
                           size="sm"
@@ -236,7 +242,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                           onClick={() => confirmServiceMutation.mutate(idx)}
                         >
                           <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                          Mark Confirmed
+                          {t('serviceBookingManager.markConfirmed')}
                         </Button>
                       </>
                     )}
@@ -248,7 +254,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                         onClick={() => confirmServiceMutation.mutate(idx)}
                       >
                         <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                        Mark Confirmed (No Email)
+                        {t('serviceBookingManager.markConfirmedNoEmail')}
                       </Button>
                     )}
                   </div>
@@ -262,18 +268,18 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
       <Dialog open={bookingModalOpen} onOpenChange={setBookingModalOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Send Booking Request to Supplier</DialogTitle>
+            <DialogTitle>{t('serviceBookingManager.sendBookingRequestTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Service</Label>
+              <Label>{t('serviceBookingManager.serviceLabel')}</Label>
               <div className="p-2 bg-muted rounded border text-sm font-medium text-foreground">
                 {selectedServiceIdx !== null && trip.services[selectedServiceIdx]?.name}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Send To</Label>
+              <Label>{t('serviceBookingManager.sendToLabel')}</Label>
               <div className="flex items-center gap-2 mb-2">
                 <input
                   type="radio"
@@ -284,7 +290,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                   onChange={() => setSupplierChoice('existing')}
                 />
                 <label htmlFor="existing" className="text-sm cursor-pointer">
-                  Existing Supplier
+                  {t('serviceBookingManager.existingSupplierLabel')}
                 </label>
               </div>
               {supplierChoice === 'existing' && (
@@ -298,7 +304,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select supplier" />
+                      <SelectValue placeholder={t('tripItinerary.selectSupplierPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {suppliers.map((s) => (
@@ -324,13 +330,13 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                   onChange={() => setSupplierChoice('manual')}
                 />
                 <label htmlFor="manual" className="text-sm cursor-pointer">
-                  Manual Email
+                  {t('serviceBookingManager.manualEmailLabel')}
                 </label>
               </div>
               {supplierChoice === 'manual' && (
                 <Input
                   type="email"
-                  placeholder="Supplier email address"
+                  placeholder={t('serviceBookingManager.manualEmailPlaceholder')}
                   value={newSupplierEmail}
                   onChange={(e) => setNewSupplierEmail(e.target.value)}
                 />
@@ -343,14 +349,14 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                 onClick={() => setCreateSupplierOpen(true)}
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
-                Create New Supplier
+                {t('serviceBookingManager.createNewSupplier')}
               </Button>
             </div>
 
             <div className="space-y-2">
-              <Label>Booking Note</Label>
+              <Label>{t('serviceBookingManager.bookingNoteLabel')}</Label>
               <Textarea
-                placeholder="Add specific requirements or details for this booking..."
+                placeholder={t('serviceBookingManager.bookingNotePlaceholder')}
                 value={bookingNote}
                 onChange={(e) => setBookingNote(e.target.value)}
                 rows={3}
@@ -359,7 +365,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setBookingModalOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 className="bg-purple-600 hover:bg-purple-700"
@@ -370,7 +376,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                 disabled={!supplierEmail && !newSupplierEmail}
               >
                 <Send className="w-4 h-4 mr-2" />
-                Preview & Send
+                {t('serviceBookingManager.previewAndSend')}
               </Button>
             </div>
           </div>
@@ -406,19 +412,19 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
       <Dialog open={createSupplierOpen} onOpenChange={setCreateSupplierOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Create New Supplier</DialogTitle>
+            <DialogTitle>{t('serviceBookingManager.createNewSupplier')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Supplier Name</Label>
+              <Label>{t('serviceBookingManager.supplierNameLabel')}</Label>
               <Input
-                placeholder="e.g., Hotel XYZ"
+                placeholder={t('serviceBookingManager.supplierNamePlaceholder')}
                 value={newSupplierData.name}
                 onChange={(e) => setNewSupplierData({ ...newSupplierData, name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>{t('common.email')}</Label>
               <Input
                 type="email"
                 placeholder="supplier@example.com"
@@ -427,7 +433,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
               />
             </div>
             <div className="space-y-2">
-              <Label>Phone (Optional)</Label>
+              <Label>{t('serviceBookingManager.phoneOptionalLabel')}</Label>
               <Input
                 placeholder="+1 (555) 123-4567"
                 value={newSupplierData.phone}
@@ -436,14 +442,14 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setCreateSupplierOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={() => createSupplierMutation.mutate(newSupplierData)}
                 disabled={!newSupplierData.name || !newSupplierData.email}
               >
-                Create & Use
+                {t('serviceBookingManager.createAndUse')}
               </Button>
             </div>
           </div>
