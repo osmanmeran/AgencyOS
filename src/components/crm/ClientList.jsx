@@ -162,7 +162,12 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
 
   return (
     <div className="space-y-3">
-      <BulkActionsBar count={selectedCount} labelSingular="client" labelPlural="clients" onDeselectAll={clear}>
+      <BulkActionsBar
+        count={selectedCount}
+        labelSingular={t('clientList.clientNoun')}
+        labelPlural={t('clientList.clientNounPlural')}
+        onDeselectAll={clear}
+      >
         <Select onValueChange={handleBulkStatusChange} disabled={isBulkUpdating}>
           <SelectTrigger className="w-44 h-9 bg-card">
             <SelectValue placeholder={t('reservations.changeStatusPlaceholder')} />
