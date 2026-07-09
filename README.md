@@ -265,3 +265,58 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 - **No mobile app** — Responsive web only
 - **OCR requires Python** — `server/ocr_parse.py` is called as a subprocess and is not in the repo
 - **Google OAuth** — Environment variables documented but server-side code is not implemented
+
+## Code Review Findings — Next Actions
+
+Reviewed `server/` (auth, permissions, entities, b2b, integrations, app) and `src/lib/`. The codebase is generally solid — all SQL is parameterized, there are prototype-pollution guards, audit logging, Helmet, rate limiting, and email HTML escaping. The items below are the gaps to close, ordered by priority.
+
+### 🔴 HIGH — Enforce read permissions server-side (broken access control)
+
+`server/services/entities.js` → `userCanAccessEntity` (line ~168) returns `true` for **any** `agent` or `accounting` user regardless of the per-type `read` permission declared in `ENTITY_PERMISSION_MAP` (lines ~8-79). The generic REST list/get API (`routes/entities.js` → `findEntities` / `findEntityById`) only calls `userCanAccessEntity` and never the `read` key from the map.
+
+- **Impact:** an `accounting` user (documented as read-only for trips/invoices/reports/search) — and any `agent` — can read **all** entity types via the API directly: `Supplier`, `Client`, `Proposal`, `Service`, `Category`, `TourContract`, `AppSettings`, etc. The read permission model is effectively unenforced; only client/portal scoping and create/update/delete are truly gated. This relies on the frontend hiding UI, which is not a security boundary.
+- **Fix:** In `findEntities` / `findEntityById`, also call `requireEntityPermission(user, type, 'read')` (or fold the `read` permission into `userCanAccessEntity`), mirroring how `create`/`update`/`delete` are already gated.
+
+### 🟡 MEDIUM — SSO-created users get a password derived from their Microsoft `oid`
+
+`server/services/auth.js` → `authenticateMicrosoft` (line ~147) sets `bcrypt.hashSync(microsoftId, 10)` as the local password for auto-provisioned SSO users. A Microsoft `oid` is opaque but not secret; anyone who learns it could authenticate locally.
+
+- **Fix:** Store an unusable random password for SSO-provisioned accounts, and consider rejecting local password login when `microsoft_id` is set.
+
+### 🟡 MEDIUM — JWT embeds permissions at login time
+
+`server/middleware/auth.js` → `generateToken` (line ~19) bakes `user_tier` / `custom_permissions` into the token, and `middleware/permissions.js` trusts those claims. Permission/tier changes only take effect on next login (up to 24h).
+
+- **Fix:** Re-read effective permissions from the DB per request for sensitive routes, or shorten token lifetime + add refresh rotation (see roadmap).
+
+### 🟡 MEDIUM — Inline admin endpoints bypass audit logging and rate limiting
+
+`server/app.js` (lines ~167-227): `/api/admin/fix-user`, `/api/admin/fix-trip-agents`, `/api/admin/list-users`, plus `/api/email/test*`, `/api/app-logs` are **not** under `auditMiddleware` (only the mounted routers at lines ~116-127 are), so admin tier changes and user fixes leave no audit trail.
+
+- **Fix:** Move these into a dedicated admin route module mounted with `auditMiddleware` (already noted in the roadmap). Add rate limiting if not covered by the global limiter.
+
+### 🟢 LOW — Helmet CSP allows `unsafe-eval` and `unsafe-inline`
+
+`server/app.js` (line ~48): `scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"]` significantly weakens XSS protection.
+
+- **Fix:** Drop `unsafe-eval` if MUI/Recharts don't require it; move toward nonces instead of `unsafe-inline`.
+
+### 🟢 LOW — `schemas.entityData` is dead code
+
+`server/middleware/validate.js` (line ~238) defines a prohibited-keys schema that is never wired into `routes/entities.js` POST/PUT. Body safety currently relies only on `sanitizeEntityData` (which is sufficient), but the Zod schema's intent is unused.
+
+- **Fix:** Apply `validate(schemas.entityData, 'body')` on entity write routes, or remove the unused schema.
+
+### 🟢 LOW — Quality / consistency notes
+
+- **In-memory entity queries:** `findEntities` loads the full entity table then filters/sorts in JS (`entities.js` lines ~293-304). Acceptable at current scale; push to SQL when data grows (roadmap item).
+- **SSO auto-provisioning:** any tenant member is auto-created as `agent` (`auth.js` ~139) — confirm this is intended for a single-org tenant.
+- **Mixed-language strings:** `sendOutlookEmail` and the test email endpoints still contain Italian (`"non connesso"`, `"Funziona correttamente"`) — finish the English-unification pass.
+- **Confirm document upload limits:** global `express.json({ limit: '10mb' })` is fine; verify `routes/documents.js` enforces its own multer size limit.
+
+### Suggested execution order
+
+1. HIGH — server-side read-permission enforcement.
+2. MEDIUM — audit-log the inline admin endpoints.
+3. MEDIUM — unusable SSO passwords + per-request permission refresh.
+4. LOW — tighten CSP, wire/remove `entityData` schema, clean up i18n.
