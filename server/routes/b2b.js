@@ -225,6 +225,7 @@ function getActiveCatalogItems(db, markupPct) {
       min_quantity: p.min_quantity || 1,
       max_quantity: p.max_quantity ?? null,
       occupancy: p.occupancy || null,
+      meal_treatment: p.meal_treatment || null,
       season_type: p.season_type || 'all_year',
       season_start: p.season_start || null,
       season_end: p.season_end || null,
