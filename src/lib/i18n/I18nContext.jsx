@@ -788,6 +788,22 @@ const translations = {
       statusCancelled: 'Cancelled',
       updateServiceButton: 'Update Service',
     },
+    bookingEmailSender: {
+      dialogTitle: 'Send Booking Request Email',
+      recipientEmailLabel: 'Recipient Email *',
+      emailTemplateLabel: 'Email Template',
+      defaultTemplateOption: 'Default Template',
+      customHtmlOption: 'Custom HTML',
+      customHtmlLabel: 'Custom HTML',
+      customHtmlPlaceholder: 'Enter custom HTML... Use placeholders like {{reference_number}}, {{service_date}}, etc.',
+      availablePlaceholders: 'Available placeholders:',
+      previewTab: 'Preview',
+      htmlSourceTab: 'HTML Source',
+    },
+    paginationControls: {
+      showingRange: 'Showing {start}-{end} of {total}',
+      pageOfLabel: 'Page {page} of {count}',
+    },
     autoInvoiceGenerator: {
       autoGenerateInvoice: 'Auto-Generate Invoice',
       milestoneDepositLabel: 'Deposit (30%)',
@@ -2521,6 +2537,23 @@ const translations = {
       statusPaid: 'Pagado',
       statusCancelled: 'Cancelado',
       updateServiceButton: 'Actualizar Servicio',
+    },
+    bookingEmailSender: {
+      dialogTitle: 'Enviar Correo de Solicitud de Reserva',
+      recipientEmailLabel: 'Correo del Destinatario *',
+      emailTemplateLabel: 'Plantilla de Correo',
+      defaultTemplateOption: 'Plantilla Predeterminada',
+      customHtmlOption: 'HTML Personalizado',
+      customHtmlLabel: 'HTML Personalizado',
+      customHtmlPlaceholder:
+        'Introduce HTML personalizado... Usa marcadores como {{reference_number}}, {{service_date}}, etc.',
+      availablePlaceholders: 'Marcadores disponibles:',
+      previewTab: 'Vista Previa',
+      htmlSourceTab: 'Código HTML',
+    },
+    paginationControls: {
+      showingRange: 'Mostrando {start}-{end} de {total}',
+      pageOfLabel: 'Página {page} de {count}',
     },
     autoInvoiceGenerator: {
       autoGenerateInvoice: 'Generar Factura Automáticamente',
@@ -4263,6 +4296,23 @@ const translations = {
       statusCancelled: 'Annulé',
       updateServiceButton: 'Mettre à Jour le Service',
     },
+    bookingEmailSender: {
+      dialogTitle: 'Envoyer un E-mail de Demande de Réservation',
+      recipientEmailLabel: 'E-mail du Destinataire *',
+      emailTemplateLabel: "Modèle d'E-mail",
+      defaultTemplateOption: 'Modèle par Défaut',
+      customHtmlOption: 'HTML Personnalisé',
+      customHtmlLabel: 'HTML Personnalisé',
+      customHtmlPlaceholder:
+        'Entrez du HTML personnalisé... Utilisez des espaces réservés comme {{reference_number}}, {{service_date}}, etc.',
+      availablePlaceholders: 'Espaces réservés disponibles :',
+      previewTab: 'Aperçu',
+      htmlSourceTab: 'Source HTML',
+    },
+    paginationControls: {
+      showingRange: 'Affichage de {start}-{end} sur {total}',
+      pageOfLabel: 'Page {page} sur {count}',
+    },
     autoInvoiceGenerator: {
       autoGenerateInvoice: 'Générer Automatiquement une Facture',
       milestoneDepositLabel: 'Acompte (30%)',
@@ -6000,6 +6050,22 @@ const translations = {
       statusPaid: 'Ödendi',
       statusCancelled: 'İptal Edildi',
       updateServiceButton: 'Hizmeti Güncelle',
+    },
+    bookingEmailSender: {
+      dialogTitle: 'Rezervasyon Talebi E-postası Gönder',
+      recipientEmailLabel: 'Alıcı E-postası *',
+      emailTemplateLabel: 'E-posta Şablonu',
+      defaultTemplateOption: 'Varsayılan Şablon',
+      customHtmlOption: 'Özel HTML',
+      customHtmlLabel: 'Özel HTML',
+      customHtmlPlaceholder: 'Özel HTML girin... {{reference_number}}, {{service_date}} gibi yer tutucuları kullanın.',
+      availablePlaceholders: 'Kullanılabilir yer tutucular:',
+      previewTab: 'Önizleme',
+      htmlSourceTab: 'HTML Kaynağı',
+    },
+    paginationControls: {
+      showingRange: '{total} kayıttan {start}-{end} arası gösteriliyor',
+      pageOfLabel: 'Sayfa {page} / {count}',
     },
     autoInvoiceGenerator: {
       autoGenerateInvoice: 'Otomatik Fatura Oluştur',
@@ -7749,6 +7815,23 @@ const translations = {
       statusCancelled: 'Storniert',
       updateServiceButton: 'Dienstleistung aktualisieren',
     },
+    bookingEmailSender: {
+      dialogTitle: 'Buchungsanfrage-E-Mail Senden',
+      recipientEmailLabel: 'Empfänger-E-Mail *',
+      emailTemplateLabel: 'E-Mail-Vorlage',
+      defaultTemplateOption: 'Standardvorlage',
+      customHtmlOption: 'Benutzerdefiniertes HTML',
+      customHtmlLabel: 'Benutzerdefiniertes HTML',
+      customHtmlPlaceholder:
+        'Geben Sie benutzerdefiniertes HTML ein... Verwenden Sie Platzhalter wie {{reference_number}}, {{service_date}} usw.',
+      availablePlaceholders: 'Verfügbare Platzhalter:',
+      previewTab: 'Vorschau',
+      htmlSourceTab: 'HTML-Quelle',
+    },
+    paginationControls: {
+      showingRange: 'Zeige {start}-{end} von {total}',
+      pageOfLabel: 'Seite {page} von {count}',
+    },
     autoInvoiceGenerator: {
       autoGenerateInvoice: 'Rechnung Automatisch Erstellen',
       milestoneDepositLabel: 'Anzahlung (30%)',
@@ -9496,6 +9579,23 @@ const translations = {
       statusPaid: 'Pagato',
       statusCancelled: 'Annullato',
       updateServiceButton: 'Aggiorna Servizio',
+    },
+    bookingEmailSender: {
+      dialogTitle: 'Invia Email di Richiesta Prenotazione',
+      recipientEmailLabel: 'Email del Destinatario *',
+      emailTemplateLabel: 'Modello di Email',
+      defaultTemplateOption: 'Modello Predefinito',
+      customHtmlOption: 'HTML Personalizzato',
+      customHtmlLabel: 'HTML Personalizzato',
+      customHtmlPlaceholder:
+        'Inserisci HTML personalizzato... Usa segnaposto come {{reference_number}}, {{service_date}}, ecc.',
+      availablePlaceholders: 'Segnaposto disponibili:',
+      previewTab: 'Anteprima',
+      htmlSourceTab: 'Sorgente HTML',
+    },
+    paginationControls: {
+      showingRange: 'Visualizzazione di {start}-{end} su {total}',
+      pageOfLabel: 'Pagina {page} di {count}',
     },
     autoInvoiceGenerator: {
       autoGenerateInvoice: 'Genera Fattura Automaticamente',
