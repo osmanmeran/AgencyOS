@@ -14,20 +14,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Users, Loader2, CheckCircle, CalendarOff } from 'lucide-react';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const MEAL_BASIS = [
-  { value: 'RO', label: 'RO – Room Only' },
-  { value: 'BB', label: 'BB – Bed & Breakfast' },
-  { value: 'HB', label: 'HB – Half Board' },
-  { value: 'FB', label: 'FB – Full Board' },
-  { value: 'AI', label: 'AI – All Inclusive' },
-  { value: 'UAI', label: 'UAI – Ultra All Inclusive' },
+const MEAL_BASIS_KEYS = [
+  { value: 'RO', labelKey: 'supplierBookingForm.mealRO' },
+  { value: 'BB', labelKey: 'supplierBookingForm.mealBB' },
+  { value: 'HB', labelKey: 'supplierBookingForm.mealHB' },
+  { value: 'FB', labelKey: 'supplierBookingForm.mealFB' },
+  { value: 'AI', labelKey: 'supplierBookingForm.mealAI' },
+  { value: 'UAI', labelKey: 'supplierBookingForm.mealUAI' },
 ];
 
-const TRANSFER_TYPES = [
-  { value: 'airport_pickup', label: 'Airport Pick-up' },
-  { value: 'airport_dropoff', label: 'Airport Drop-off' },
-  { value: 'point_to_point', label: 'Point to Point' },
+const TRANSFER_TYPE_KEYS = [
+  { value: 'airport_pickup', labelKey: 'supplierBookingForm.transferTypeAirportPickup' },
+  { value: 'airport_dropoff', labelKey: 'supplierBookingForm.transferTypeAirportDropoff' },
+  { value: 'point_to_point', labelKey: 'supplierBookingForm.transferTypePointToPoint' },
 ];
 
 function isHotel(categoryName) {
@@ -38,6 +39,7 @@ function isTransfer(categoryName) {
 }
 
 export default function SupplierBookingForm({ open, onClose, onCreated, supplier, categoryName }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [success, setSuccess] = useState(false);
   const [createdBookingId, setCreatedBookingId] = useState(null);
@@ -209,19 +211,19 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
         <DialogContent className="max-w-md">
           <div className="flex flex-col items-center py-8 gap-4 text-center">
             <CheckCircle className="w-16 h-16 text-green-500 dark:text-green-300" />
-            <h2 className="text-xl font-bold text-foreground">Booking Submitted!</h2>
+            <h2 className="text-xl font-bold text-foreground">{t('supplierBookingForm.bookingSubmittedTitle')}</h2>
             <p className="text-muted-foreground">
-              Your booking request for <strong>{supplier?.name}</strong> has been saved with status{' '}
-              <Badge>Pending</Badge>.
+              {t('supplierBookingForm.bookingSubmittedMessage', { name: supplier?.name })}{' '}
+              <Badge>{t('common.pending')}</Badge>.
             </p>
             <div className="flex gap-3 mt-2">
               {createdBookingId && (
                 <Link to={createPageUrl(`SupplierBookingDetails?id=${createdBookingId}`)}>
-                  <Button className="bg-blue-600 hover:bg-blue-700">View Details</Button>
+                  <Button className="bg-blue-600 hover:bg-blue-700">{t('common.viewDetails')}</Button>
                 </Link>
               )}
               <Button variant="outline" onClick={onClose}>
-                Close
+                {t('common.close')}
               </Button>
             </div>
           </div>
@@ -236,7 +238,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarDays className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-            Book: {supplier?.name}
+            {t('supplierBookingForm.title', { name: supplier?.name })}
             {categoryName && (
               <Badge variant="outline" className="ml-2">
                 {categoryName}
@@ -250,8 +252,11 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
             <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-sm text-red-800 dark:text-red-300">
               <CalendarOff className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>
-                This provider is in stop sales {stopSale.start_date} – {stopSale.end_date}
-                {stopSale.reason ? ` (${stopSale.reason})` : ''}. Choose different dates to book.
+                {t('supplierBookingForm.stopSaleWarning', {
+                  start: stopSale.start_date,
+                  end: stopSale.end_date,
+                  reasonSuffix: stopSale.reason ? ` (${stopSale.reason})` : '',
+                })}
               </span>
             </div>
           )}
@@ -259,7 +264,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
           <div className="grid grid-cols-2 gap-4">
             {!isHotel(categoryName) && (
               <div className="space-y-2">
-                <Label>Service Date *</Label>
+                <Label>{t('supplierBookingForm.serviceDateLabel')}</Label>
                 <Input
                   type="date"
                   value={form.service_date}
@@ -270,7 +275,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
             )}
             <div className="space-y-2">
               <Label className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" /> Number of People *
+                <Users className="w-3.5 h-3.5" /> {t('supplierBookingForm.numberOfPeopleLabel')}
               </Label>
               <Input
                 type="number"
@@ -283,11 +288,11 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
           </div>
 
           <div className="space-y-2">
-            <Label>Service Type / Description *</Label>
+            <Label>{t('supplierBookingForm.serviceTypeLabel')}</Label>
             <Input
               value={form.service_type}
               onChange={(e) => set('service_type', e.target.value)}
-              placeholder="e.g. Private Tour, Airport Transfer, Deluxe Room..."
+              placeholder={t('supplierBookingForm.serviceTypePlaceholder')}
               required
             />
           </div>
@@ -296,10 +301,10 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
           {pricings.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Select Pricing Tier</Label>
+                <Label>{t('supplierBookingForm.selectPricingTier')}</Label>
                 {Number(form.num_people) >= 12 && (
                   <Badge className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800">
-                    Group rate (12+ pax)
+                    {t('supplierBookingForm.groupRateBadge')}
                   </Badge>
                 )}
                 {Number(form.num_people) < 12 && (
@@ -307,13 +312,13 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                     variant="secondary"
                     className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300"
                   >
-                    Individual rate
+                    {t('supplierBookingForm.individualRateBadge')}
                   </Badge>
                 )}
               </div>
               <Select value={form.pricing_id} onValueChange={handlePricingSelect}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a pricing option..." />
+                  <SelectValue placeholder={t('supplierBookingForm.choosePricingPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {pricings
@@ -340,7 +345,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
           {/* Cost */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Estimated Cost</Label>
+              <Label>{t('supplierBookingForm.estimatedCostLabel')}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -350,7 +355,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
               />
             </div>
             <div className="space-y-2">
-              <Label>Currency</Label>
+              <Label>{t('supplierBookingForm.currencyLabel')}</Label>
               <Select value={form.currency} onValueChange={(v) => set('currency', v)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -369,17 +374,19 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
           {/* TRANSFER-SPECIFIC FIELDS */}
           {isTransfer(categoryName) && (
             <div className="border rounded-lg p-4 space-y-4 bg-blue-50 dark:bg-blue-950/40">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-300 text-sm">Transfer Details</h3>
+              <h3 className="font-semibold text-blue-900 dark:text-blue-300 text-sm">
+                {t('supplierBookingForm.transferDetailsTitle')}
+              </h3>
               <div className="space-y-2">
-                <Label>Transfer Type *</Label>
+                <Label>{t('supplierBookingForm.transferTypeLabel')}</Label>
                 <Select value={form.transfer_type} onValueChange={(v) => set('transfer_type', v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TRANSFER_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
+                    {TRANSFER_TYPE_KEYS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {t(opt.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -389,7 +396,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
               {/* Origin / Destination Supplier Selectors */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Origin</Label>
+                  <Label>{t('supplierBookingForm.originLabel')}</Label>
                   <Select
                     value={form.origin_supplier_id}
                     onValueChange={(v) => {
@@ -403,7 +410,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a supplier..." />
+                      <SelectValue placeholder={t('supplierBookingForm.selectSupplierPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {allSuppliers.map((s) => (
@@ -415,7 +422,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Destination</Label>
+                  <Label>{t('supplierBookingForm.destinationLabel')}</Label>
                   <Select
                     value={form.destination_supplier_id}
                     onValueChange={(v) => {
@@ -429,7 +436,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a supplier..." />
+                      <SelectValue placeholder={t('supplierBookingForm.selectSupplierPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {allSuppliers.map((s) => (
@@ -445,11 +452,14 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
               {/* Car capacity info */}
               {selectedPricing && selectedPricing.unit === 'per_car' && selectedPricing.car_capacity && (
                 <div className="bg-card rounded p-3 text-sm border border-blue-200 dark:border-blue-800">
-                  <span className="font-semibold">Car capacity:</span> up to {selectedPricing.car_capacity} pax per car
+                  <span className="font-semibold">{t('supplierBookingForm.carCapacityLabel')}</span>{' '}
+                  {t('supplierBookingForm.carCapacityInfo', { capacity: selectedPricing.car_capacity })}
                   {Number(form.num_people) > 0 && (
                     <span className="ml-2">
-                      → {Math.ceil(Number(form.num_people) / Number(selectedPricing.car_capacity))} car(s) needed for{' '}
-                      {form.num_people} pax
+                      {t('supplierBookingForm.carsNeededInfo', {
+                        cars: Math.ceil(Number(form.num_people) / Number(selectedPricing.car_capacity)),
+                        pax: form.num_people,
+                      })}
                     </span>
                   )}
                 </div>
@@ -459,56 +469,58 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                 <div className="space-y-2">
                   <Label>
                     {form.transfer_type === 'airport_pickup'
-                      ? 'Pickup: Airport Name'
+                      ? t('supplierBookingForm.pickupAirportNameLabel')
                       : form.transfer_type === 'airport_dropoff'
-                        ? 'Drop-off: Airport Name'
-                        : 'Pickup Location'}
+                        ? t('supplierBookingForm.dropoffAirportNameLabel')
+                        : t('supplierBookingForm.pickupLocationLabel')}
                   </Label>
                   <Input
                     value={form.pickup_location}
                     onChange={(e) => set('pickup_location', e.target.value)}
                     placeholder={
-                      form.transfer_type?.includes('airport') ? 'e.g., Istanbul Sabiha' : 'e.g., Hotel lobby'
+                      form.transfer_type?.includes('airport')
+                        ? t('supplierBookingForm.pickupPlaceholderAirport')
+                        : t('supplierBookingForm.pickupPlaceholderHotel')
                     }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>
                     {form.transfer_type === 'airport_pickup'
-                      ? 'Drop-off Destination'
+                      ? t('supplierBookingForm.dropoffDestinationLabel')
                       : form.transfer_type === 'airport_dropoff'
-                        ? 'Pickup Location'
-                        : 'Drop-off Location'}
+                        ? t('supplierBookingForm.pickupLocationLabel')
+                        : t('supplierBookingForm.dropoffLocationLabel')}
                   </Label>
                   <Input
                     value={form.dropoff_location}
                     onChange={(e) => set('dropoff_location', e.target.value)}
-                    placeholder="e.g., Hotel name / address"
+                    placeholder={t('supplierBookingForm.dropoffPlaceholder')}
                   />
                 </div>
               </div>
               {(form.transfer_type === 'airport_pickup' || form.transfer_type === 'airport_dropoff') && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Flight Number</Label>
+                    <Label>{t('supplierBookingForm.flightNumberLabel')}</Label>
                     <Input
                       value={form.flight_number}
                       onChange={(e) => set('flight_number', e.target.value)}
-                      placeholder="e.g., TK1234"
+                      placeholder={t('supplierBookingForm.flightNumberPlaceholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Flight Time</Label>
+                    <Label>{t('supplierBookingForm.flightTimeLabel')}</Label>
                     <Input type="time" value={form.flight_time} onChange={(e) => set('flight_time', e.target.value)} />
                   </div>
                 </div>
               )}
               <div className="space-y-2">
-                <Label>Client Phone Number</Label>
+                <Label>{t('supplierBookingForm.clientPhoneNumberLabel')}</Label>
                 <Input
                   value={form.client_phone}
                   onChange={(e) => set('client_phone', e.target.value)}
-                  placeholder="+90 555 000 0000"
+                  placeholder={t('supplierBookingForm.clientPhonePlaceholder')}
                 />
               </div>
             </div>
@@ -517,10 +529,12 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
           {/* HOTEL-SPECIFIC FIELDS */}
           {isHotel(categoryName) && (
             <div className="border rounded-lg p-4 space-y-4 bg-green-50 dark:bg-green-950/40">
-              <h3 className="font-semibold text-green-900 dark:text-green-300 text-sm">Hotel Details</h3>
+              <h3 className="font-semibold text-green-900 dark:text-green-300 text-sm">
+                {t('supplierBookingForm.hotelDetailsTitle')}
+              </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Check-in Date *</Label>
+                  <Label>{t('supplierBookingForm.checkInDateLabel')}</Label>
                   <Input
                     type="date"
                     value={form.check_in_date}
@@ -529,7 +543,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Number of Nights *</Label>
+                  <Label>{t('supplierBookingForm.numberOfNightsLabel')}</Label>
                   <Input
                     type="number"
                     min={1}
@@ -539,7 +553,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Check-out Date</Label>
+                  <Label>{t('supplierBookingForm.checkOutDateLabel')}</Label>
                   <Input
                     type="date"
                     value={form.check_out_date}
@@ -550,11 +564,11 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Room Category</Label>
+                  <Label>{t('supplierBookingForm.roomCategoryLabel')}</Label>
                   {subcategories.length > 0 ? (
                     <Select value={form.room_category} onValueChange={(v) => set('room_category', v)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select room type" />
+                        <SelectValue placeholder={t('supplierBookingForm.selectRoomTypePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {subcategories.map((s) => (
@@ -568,20 +582,20 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                     <Input
                       value={form.room_category}
                       onChange={(e) => set('room_category', e.target.value)}
-                      placeholder="e.g., Standard, Deluxe, Suite"
+                      placeholder={t('supplierBookingForm.roomCategoryPlaceholder')}
                     />
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Meal Basis *</Label>
+                  <Label>{t('supplierBookingForm.mealBasisLabel')}</Label>
                   <Select value={form.meal_basis} onValueChange={(v) => set('meal_basis', v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {MEAL_BASIS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
+                      {MEAL_BASIS_KEYS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {t(opt.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -593,18 +607,18 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label>Additional Notes</Label>
+            <Label>{t('supplierBookingForm.additionalNotesLabel')}</Label>
             <Textarea
               value={form.notes}
               onChange={(e) => set('notes', e.target.value)}
               rows={2}
-              placeholder="Any special requests or details..."
+              placeholder={t('supplierBookingForm.notesPlaceholder')}
             />
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
@@ -614,10 +628,10 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
               {createMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
+                  {t('common.saving')}
                 </>
               ) : (
-                'Submit Booking'
+                t('supplierBookingForm.submitBooking')
               )}
             </Button>
           </div>

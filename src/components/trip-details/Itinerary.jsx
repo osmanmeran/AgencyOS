@@ -12,8 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, MapPin, Clock, DollarSign, Trash2, Edit } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function Itinerary({ tripId, trip, events }) {
+  const { t } = useT();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState({
@@ -196,7 +198,7 @@ export default function Itinerary({ tripId, trip, events }) {
       <div className="flex justify-end">
         <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-2" />
-          Add Event
+          {t('tripItinerary.addEvent')}
         </Button>
       </div>
 
@@ -206,11 +208,11 @@ export default function Itinerary({ tripId, trip, events }) {
           <div className="bg-blue-100 dark:bg-blue-900/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <Clock className="w-8 h-8 text-blue-600 dark:text-blue-300" />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">No events yet</h3>
-          <p className="text-muted-foreground mb-6">Start building your itinerary</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('tripItinerary.noEventsTitle')}</h3>
+          <p className="text-muted-foreground mb-6">{t('tripItinerary.noEventsBody')}</p>
           <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
-            Add First Event
+            {t('tripItinerary.addFirstEvent')}
           </Button>
         </Card>
       ) : (
@@ -250,7 +252,7 @@ export default function Itinerary({ tripId, trip, events }) {
                           {event.description && <p className="text-muted-foreground text-sm">{event.description}</p>}
                           {supplier && (
                             <p className="text-sm text-blue-600 dark:text-blue-300 mt-2">
-                              Supplier: {supplier.name}
+                              {t('tripItinerary.supplierLabel', { name: supplier.name })}
                               {service && ` - ${service.service_name}`}
                             </p>
                           )}
@@ -260,7 +262,9 @@ export default function Itinerary({ tripId, trip, events }) {
                             <div className="text-right">
                               {event.supplier_cost && (
                                 <div className="text-xs text-muted-foreground">
-                                  Cost: {parseFloat(event.supplier_cost).toFixed(2)}
+                                  {t('tripItinerary.costLabel', {
+                                    amount: parseFloat(event.supplier_cost).toFixed(2),
+                                  })}
                                 </div>
                               )}
                               {event.cost && (
@@ -302,11 +306,11 @@ export default function Itinerary({ tripId, trip, events }) {
       <Dialog open={modalOpen} onOpenChange={closeModal}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingEvent ? 'Edit Event' : 'Add Event'}</DialogTitle>
+            <DialogTitle>{editingEvent ? t('tripItinerary.editEventTitle') : t('tripItinerary.addEvent')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Event Title *</Label>
+              <Label htmlFor="title">{t('tripItinerary.eventTitleLabel')}</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -317,7 +321,7 @@ export default function Itinerary({ tripId, trip, events }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date *</Label>
+                <Label htmlFor="date">{t('tripItinerary.dateLabel')}</Label>
                 <Input
                   id="date"
                   type="date"
@@ -327,7 +331,7 @@ export default function Itinerary({ tripId, trip, events }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
+                <Label htmlFor="time">{t('tripItinerary.timeLabel')}</Label>
                 <Input
                   id="time"
                   type="time"
@@ -338,17 +342,17 @@ export default function Itinerary({ tripId, trip, events }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
+              <Label htmlFor="location">{t('tripItinerary.locationLabel')}</Label>
               <Input
                 id="location"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="Address or venue"
+                placeholder={t('tripItinerary.locationPlaceholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('common.description')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -359,16 +363,16 @@ export default function Itinerary({ tripId, trip, events }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="supplier">Supplier (Optional)</Label>
+                <Label htmlFor="supplier">{t('tripItinerary.supplierOptionalLabel')}</Label>
                 <Select
                   value={formData.supplier_id}
                   onValueChange={(v) => setFormData({ ...formData, supplier_id: v })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select supplier" />
+                    <SelectValue placeholder={t('tripItinerary.selectSupplierPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
+                    <SelectItem value={null}>{t('common.none')}</SelectItem>
                     {suppliers.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
@@ -378,13 +382,13 @@ export default function Itinerary({ tripId, trip, events }) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Price Tier (Optional)</Label>
+                <Label>{t('tripItinerary.priceTierOptionalLabel')}</Label>
                 <Select value={formData.pricing_id} onValueChange={handlePricingChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select pricing" />
+                    <SelectValue placeholder={t('tripItinerary.selectPricingPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
+                    <SelectItem value={null}>{t('common.none')}</SelectItem>
                     {allPricings
                       .filter(
                         (p) =>
@@ -407,7 +411,7 @@ export default function Itinerary({ tripId, trip, events }) {
 
             <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg border border-border">
               <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity / Pax</Label>
+                <Label htmlFor="quantity">{t('tripItinerary.quantityPaxLabel')}</Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -418,7 +422,7 @@ export default function Itinerary({ tripId, trip, events }) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="supplier_cost" className="text-foreground font-semibold">
-                  Supplier Cost
+                  {t('tripItinerary.supplierCostLabel')}
                 </Label>
                 <Input
                   id="supplier_cost"
@@ -428,11 +432,11 @@ export default function Itinerary({ tripId, trip, events }) {
                   onChange={(e) => setFormData({ ...formData, supplier_cost: e.target.value })}
                   placeholder="0.00"
                 />
-                <p className="text-xs text-muted-foreground">What you pay</p>
+                <p className="text-xs text-muted-foreground">{t('tripItinerary.whatYouPay')}</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cost" className="text-blue-700 dark:text-blue-300 font-semibold">
-                  Client Price
+                  {t('tripItinerary.clientPriceLabel')}
                 </Label>
                 <Input
                   id="cost"
@@ -443,16 +447,16 @@ export default function Itinerary({ tripId, trip, events }) {
                   placeholder="0.00"
                   className="border-blue-300 dark:border-blue-800"
                 />
-                <p className="text-xs text-muted-foreground">What you charge</p>
+                <p className="text-xs text-muted-foreground">{t('tripItinerary.whatYouCharge')}</p>
               </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingEvent ? 'Update' : 'Add'} Event
+                {editingEvent ? t('tripItinerary.updateEventButton') : t('tripItinerary.addEvent')}
               </Button>
             </div>
           </form>

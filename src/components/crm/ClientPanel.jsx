@@ -39,6 +39,7 @@ import { format } from 'date-fns';
 import EmailComposer from './EmailComposer';
 import { colleaguesOf } from '../../lib/companySearch';
 import CompanyPicker from './CompanyPicker';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
@@ -63,6 +64,13 @@ const INVOICE_STATUS_COLORS = {
 };
 
 export default function ClientPanel({ client, onClientUpdated }) {
+  const { t } = useT();
+  const STATUS_LABEL_KEYS = {
+    active: t('common.active'),
+    vip: t('clientCRM.vip'),
+    inactive: t('common.inactive'),
+    cancelled: t('common.cancelled'),
+  };
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState(/** @type {any} */ ({}));
   const [composerState, setComposerState] = useState({ open: false, proposal: null, invoice: null });
@@ -163,11 +171,11 @@ export default function ClientPanel({ client, onClientUpdated }) {
     ...messages.map((m) => ({ type: 'message', date: m.created_date, item: m })),
     ...proposals.map((p) => ({ type: 'proposal', date: p.created_date, item: p })),
     ...invoices.map((i) => ({ type: 'invoice', date: i.created_date, item: i })),
-    ...trips.map((t) => ({ type: 'trip', date: t.created_date, item: t })),
+    ...trips.map((trip) => ({ type: 'trip', date: trip.created_date, item: trip })),
     ...emailLogs.map((e) => ({ type: 'email', date: e.created_date, item: e })),
   ].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 
-  const pendingTasks = tasks.filter((t) => t.status !== 'done');
+  const pendingTasks = tasks.filter((task) => task.status !== 'done');
 
   const handleAddTask = () => {
     if (!newTaskTitle.trim()) return;
@@ -204,7 +212,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                   <Star className="w-4 h-4 text-purple-500 dark:text-purple-300 fill-purple-500" />
                 )}
                 <Badge className={`text-[10px] font-medium border ${STATUS_COLORS[client.status]}`}>
-                  {client.status === 'vip' ? 'VIP' : client.status || 'active'}
+                  {STATUS_LABEL_KEYS[client.status] || client.status || STATUS_LABEL_KEYS.active}
                 </Badge>
               </div>
               {client.company && (
@@ -222,7 +230,10 @@ export default function ClientPanel({ client, onClientUpdated }) {
                   )}
                   {colleagues.length > 0 && (
                     <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
-                      +{colleagues.length} {colleagues.length === 1 ? 'colleague' : 'colleagues'}
+                      +
+                      {colleagues.length === 1
+                        ? t('clientPanel.colleagueSingular', { count: colleagues.length })
+                        : t('clientPanel.colleaguePlural', { count: colleagues.length })}
                     </span>
                   )}
                 </div>
@@ -232,7 +243,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
           <div className="flex gap-1.5">
             <Button variant="outline" size="sm" className="h-8 text-xs" onClick={startEdit}>
               <Edit2 className="w-3 h-3 mr-1" />
-              Edit
+              {t('common.edit')}
             </Button>
             <Button
               variant="outline"
@@ -241,12 +252,12 @@ export default function ClientPanel({ client, onClientUpdated }) {
               onClick={() => setComposerState({ open: true, proposal: null, invoice: null })}
             >
               <Send className="w-3 h-3 mr-1" />
-              Email
+              {t('common.email')}
             </Button>
             <Link to={createPageUrl(`ClientDetails?id=${client.id}`)}>
               <Button variant="ghost" size="sm" className="h-8 text-xs">
                 <ExternalLink className="w-3 h-3 mr-1" />
-                Full Profile
+                {t('clientPanel.fullProfile')}
               </Button>
             </Link>
           </div>
@@ -284,21 +295,25 @@ export default function ClientPanel({ client, onClientUpdated }) {
         <div className="grid grid-cols-4 gap-3 mt-4">
           <div className="bg-card rounded-xl p-3 shadow-sm border border-border">
             <div className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">
-              Proposals
+              {t('clientPanel.proposalsStat')}
             </div>
             <div className="font-bold text-foreground text-lg">{proposals.length}</div>
           </div>
           <div className="bg-card rounded-xl p-3 shadow-sm border border-border">
-            <div className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">Trips</div>
+            <div className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">
+              {t('clientPanel.tripsStat')}
+            </div>
             <div className="font-bold text-foreground text-lg">{trips.length}</div>
           </div>
           <div className="bg-card rounded-xl p-3 shadow-sm border border-border">
-            <div className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">Paid</div>
+            <div className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">
+              {t('clientPanel.paidStat')}
+            </div>
             <div className="font-bold text-green-700 dark:text-green-300 text-lg">${totalPaid.toFixed(0)}</div>
           </div>
           <div className="bg-card rounded-xl p-3 shadow-sm border border-border">
             <div className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">
-              Outstanding
+              {t('clientPanel.outstandingStat')}
             </div>
             <div className="font-bold text-orange-600 dark:text-orange-300 text-lg">${totalOwed.toFixed(0)}</div>
           </div>
@@ -318,22 +333,22 @@ export default function ClientPanel({ client, onClientUpdated }) {
         <Tabs defaultValue="activity" className="h-full flex flex-col">
           <TabsList className="mx-4 mt-3 mb-0 bg-muted p-0.5 gap-0">
             <TabsTrigger value="activity" className="text-xs data-[state=active]:bg-card">
-              Activity
+              {t('clientPanel.activityTab')}
             </TabsTrigger>
             <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-card">
-              Details
+              {t('clientPanel.detailsTab')}
             </TabsTrigger>
             <TabsTrigger value="tasks" className="text-xs data-[state=active]:bg-card">
-              Tasks {pendingTasks.length > 0 && `(${pendingTasks.length})`}
+              {t('clientPanel.tasksTab')} {pendingTasks.length > 0 && `(${pendingTasks.length})`}
             </TabsTrigger>
             <TabsTrigger value="proposals" className="text-xs data-[state=active]:bg-card">
-              Proposals ({proposals.length})
+              {t('clientPanel.proposalsTab', { count: proposals.length })}
             </TabsTrigger>
             <TabsTrigger value="invoices" className="text-xs data-[state=active]:bg-card">
-              Invoices ({invoices.length})
+              {t('clientPanel.invoicesTab', { count: invoices.length })}
             </TabsTrigger>
             <TabsTrigger value="trips" className="text-xs data-[state=active]:bg-card">
-              Trips ({trips.length})
+              {t('clientPanel.tripsTab', { count: trips.length })}
             </TabsTrigger>
           </TabsList>
 
@@ -342,7 +357,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
             {timeline.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <Clock className="w-12 h-12 mb-3 opacity-20" />
-                <p className="text-sm">No activity yet</p>
+                <p className="text-sm">{t('clientPanel.noActivityYet')}</p>
               </div>
             ) : (
               <div className="space-y-1">
@@ -358,18 +373,19 @@ export default function ClientPanel({ client, onClientUpdated }) {
                   if (isEmail) {
                     Icon = Mail;
                     color = 'bg-violet-100 text-violet-600';
-                    label = 'Email sent';
+                    label = t('clientPanel.emailSent');
                     sublabel = item.subject;
                   } else if (isMessage) {
                     Icon = MessageSquare;
                     color = 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-300';
-                    label = item.sender_type === 'client' ? 'Client message' : 'Agent message';
+                    label =
+                      item.sender_type === 'client' ? t('clientPanel.clientMessage') : t('clientPanel.agentMessage');
                     sublabel = item.content?.slice(0, 80);
                   } else if (isProposal) {
                     Icon = FileText;
                     color = 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300';
                     label = item.title;
-                    sublabel = `Proposal · ${item.status}`;
+                    sublabel = t('clientPanel.proposalSublabel', { status: item.status });
                     href = createPageUrl(`ProposalDetails?id=${item.id}`);
                   } else if (isInvoice) {
                     Icon = DollarSign;
@@ -381,7 +397,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                     Icon = Plane;
                     color = 'bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-300';
                     label = item.name;
-                    sublabel = item.destination || 'Trip';
+                    sublabel = item.destination || t('clientPanel.tripFallbackLabel');
                     href = createPageUrl(`ReservationDetails?id=${item.id}`);
                   }
 
@@ -404,7 +420,9 @@ export default function ClientPanel({ client, onClientUpdated }) {
                           <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.content}</div>
                         )}
                         {isEmail && item.to_email && (
-                          <div className="text-[10px] text-muted-foreground mt-0.5">To: {item.to_email}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {t('clientPanel.toEmailLabel', { email: item.to_email })}
+                          </div>
                         )}
                       </div>
                       {href && (
@@ -429,10 +447,12 @@ export default function ClientPanel({ client, onClientUpdated }) {
           <TabsContent value="overview" className="px-6 py-4 flex-1 overflow-y-auto space-y-6">
             {editing ? (
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Edit Contact</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t('clientPanel.editContactTitle')}
+                </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1 col-span-2">
-                    <Label className="text-xs">Company</Label>
+                    <Label className="text-xs">{t('crm.company')}</Label>
                     <CompanyPicker
                       value={editForm.company_id}
                       companyName={editForm.company}
@@ -440,17 +460,17 @@ export default function ClientPanel({ client, onClientUpdated }) {
                     />
                   </div>
                   {[
-                    ['name', 'Full Name', 'text'],
-                    ['email', 'Email', 'email'],
-                    ['phone', 'Phone', 'text'],
-                    ['address', 'Address', 'text'],
-                    ['city', 'City', 'text'],
-                    ['region', 'Region / State', 'text'],
-                    ['country', 'Country', 'text'],
-                    ['website', 'Website', 'text'],
-                    ['passport_number', 'Passport', 'text'],
-                    ['tax_id', 'Tax ID', 'text'],
-                    ['date_of_birth', 'Date of Birth', 'date'],
+                    ['name', t('crm.fullName'), 'text'],
+                    ['email', t('common.email'), 'email'],
+                    ['phone', t('common.phone'), 'text'],
+                    ['address', t('common.address'), 'text'],
+                    ['city', t('common.city'), 'text'],
+                    ['region', t('companyDetails.region'), 'text'],
+                    ['country', t('common.country'), 'text'],
+                    ['website', t('companyDetails.website'), 'text'],
+                    ['passport_number', t('clientPanel.passportLabel'), 'text'],
+                    ['tax_id', t('crm.taxId'), 'text'],
+                    ['date_of_birth', t('crm.dateOfBirth'), 'date'],
                   ].map(([field, label, type]) => (
                     <div key={field} className="space-y-1">
                       <Label className="text-xs">{label}</Label>
@@ -463,35 +483,35 @@ export default function ClientPanel({ client, onClientUpdated }) {
                     </div>
                   ))}
                   <div className="space-y-1">
-                    <Label className="text-xs">Status</Label>
+                    <Label className="text-xs">{t('common.status')}</Label>
                     <Select value={editForm.status || 'active'} onValueChange={(v) => set('status', v)}>
                       <SelectTrigger className="h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="vip">VIP</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="active">{t('common.active')}</SelectItem>
+                        <SelectItem value="vip">{t('clientCRM.vip')}</SelectItem>
+                        <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+                        <SelectItem value="cancelled">{t('common.cancelled')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Type</Label>
+                    <Label className="text-xs">{t('clientPanel.typeLabel')}</Label>
                     <Select value={editForm.type || 'client'} onValueChange={(v) => set('type', v)}>
                       <SelectTrigger className="h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="client">Client</SelectItem>
-                        <SelectItem value="supplier">Supplier</SelectItem>
-                        <SelectItem value="representative">Representative</SelectItem>
+                        <SelectItem value="client">{t('clientPanel.clientTypeOption')}</SelectItem>
+                        <SelectItem value="supplier">{t('clientPanel.supplierTypeOption')}</SelectItem>
+                        <SelectItem value="representative">{t('clientPanel.representativeTypeOption')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Notes</Label>
+                  <Label className="text-xs">{t('common.notes')}</Label>
                   <Textarea
                     value={editForm.notes || ''}
                     onChange={(e) => set('notes', e.target.value)}
@@ -502,7 +522,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" size="sm" onClick={() => setEditing(false)}>
                     <X className="w-3.5 h-3.5 mr-1" />
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     size="sm"
@@ -511,7 +531,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                     disabled={updateMutation.isPending}
                   >
                     <Check className="w-3.5 h-3.5 mr-1" />
-                    {updateMutation.isPending ? 'Saving...' : 'Save'}
+                    {updateMutation.isPending ? t('common.saving') : t('common.save')}
                   </Button>
                 </div>
               </div>
@@ -520,36 +540,42 @@ export default function ClientPanel({ client, onClientUpdated }) {
                 {/* Contact info grid */}
                 <div className="grid grid-cols-2 gap-y-4 gap-x-6">
                   {client.email && (
-                    <Info icon={Mail} label="Email" value={client.email} href={`mailto:${client.email}`} />
+                    <Info icon={Mail} label={t('common.email')} value={client.email} href={`mailto:${client.email}`} />
                   )}
                   {client.phone && (
-                    <Info icon={Phone} label="Phone" value={client.phone} href={`tel:${client.phone}`} />
+                    <Info icon={Phone} label={t('common.phone')} value={client.phone} href={`tel:${client.phone}`} />
                   )}
                   {(client.city || client.country) && (
                     <Info
                       icon={MapPin}
-                      label="Location"
+                      label={t('clientPanel.locationLabel')}
                       value={[client.city, client.country].filter(Boolean).join(', ')}
                     />
                   )}
-                  {client.company && <Info icon={Building} label="Company" value={client.company} />}
+                  {client.company && <Info icon={Building} label={t('crm.company')} value={client.company} />}
                   {client.payment_method && (
-                    <Info icon={CreditCard} label="Payment" value={client.payment_method.replace('_', ' ')} />
+                    <Info
+                      icon={CreditCard}
+                      label={t('clientPanel.paymentLabel')}
+                      value={client.payment_method.replace('_', ' ')}
+                    />
                   )}
                   {client.website && (
                     <Info
                       icon={Globe}
-                      label="Website"
+                      label={t('companyDetails.website')}
                       value={client.website}
                       href={client.website.startsWith('http') ? client.website : `https://${client.website}`}
                     />
                   )}
-                  {client.passport_number && <Info icon={FileText} label="Passport" value={client.passport_number} />}
-                  {client.tax_id && <Info icon={FileText} label="Tax ID" value={client.tax_id} />}
+                  {client.passport_number && (
+                    <Info icon={FileText} label={t('clientPanel.passportLabel')} value={client.passport_number} />
+                  )}
+                  {client.tax_id && <Info icon={FileText} label={t('crm.taxId')} value={client.tax_id} />}
                   {client.date_of_birth && (
                     <Info
                       icon={Clock}
-                      label="Date of Birth"
+                      label={t('crm.dateOfBirth')}
                       value={format(new Date(client.date_of_birth), 'MMM d, yyyy')}
                     />
                   )}
@@ -559,7 +585,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                     <div className="flex items-center gap-1.5 mb-2">
                       <Building className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        Also at {client.company} · {colleagues.length}
+                        {t('clientPanel.alsoAtLabel', { company: client.company, count: colleagues.length })}
                       </span>
                     </div>
                     <div className="space-y-1">
@@ -590,7 +616,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                 {client.address && (
                   <div className="bg-muted rounded-xl p-4">
                     <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">
-                      Address
+                      {t('common.address')}
                     </div>
                     <div className="text-sm text-foreground">{client.address}</div>
                   </div>
@@ -598,7 +624,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                 {client.notes && (
                   <div className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-100 rounded-xl p-4">
                     <div className="text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 uppercase tracking-wider mb-1">
-                      Internal Notes
+                      {t('clientProfile.internalNotes')}
                     </div>
                     <div className="text-sm text-foreground whitespace-pre-wrap">{client.notes}</div>
                   </div>
@@ -611,7 +637,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
           <TabsContent value="tasks" className="px-6 py-4 flex-1 overflow-y-auto space-y-4">
             <div className="flex items-center gap-2">
               <Input
-                placeholder="Add a task..."
+                placeholder={t('clientPanel.addTaskPlaceholder')}
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 className="h-8 text-sm flex-1"
@@ -624,7 +650,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
             {tasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                 <CheckCircle2 className="w-10 h-10 mb-2 opacity-20" />
-                <p className="text-sm">No tasks yet</p>
+                <p className="text-sm">{t('clientPanel.noTasksYet')}</p>
               </div>
             ) : (
               <div className="space-y-1">
@@ -655,7 +681,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                     </span>
                     {task.priority === 'high' && (
                       <Badge className="text-[9px] bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                        High
+                        {t('priority.high')}
                       </Badge>
                     )}
                     {task.due_date && (
@@ -672,7 +698,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
           {/* PROPOSALS, INVOICES, TRIPS (same as before) */}
           <TabsContent value="proposals" className="px-6 py-4 space-y-3 flex-1 overflow-y-auto">
             {proposals.length === 0 ? (
-              <EmptyState icon={FileText} label="No proposals yet" />
+              <EmptyState icon={FileText} label={t('clientPanel.noProposalsYet')} />
             ) : (
               proposals.map((p) => (
                 <div
@@ -699,7 +725,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                       onClick={() => setComposerState({ open: true, proposal: p, invoice: null })}
                     >
                       <Send className="w-3 h-3" />
-                      Send
+                      {t('clientPanel.sendButton')}
                     </Button>
                     <Link to={createPageUrl(`ProposalDetails?id=${p.id}`)}>
                       <ExternalLink className="w-3 h-3 text-muted-foreground" />
@@ -712,7 +738,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
 
           <TabsContent value="invoices" className="px-6 py-4 space-y-3 flex-1 overflow-y-auto">
             {invoices.length === 0 ? (
-              <EmptyState icon={DollarSign} label="No invoices yet" />
+              <EmptyState icon={DollarSign} label={t('clientPanel.noInvoicesYet')} />
             ) : (
               invoices.map((inv) => (
                 <div
@@ -722,7 +748,9 @@ export default function ClientPanel({ client, onClientUpdated }) {
                   <Link to={createPageUrl(`InvoiceDetails?id=${inv.id}`)} className="flex-1 min-w-0">
                     <div className="font-medium text-foreground text-sm">{inv.invoice_number}</div>
                     <div className="text-xs text-muted-foreground">
-                      Due {inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—'}
+                      {t('clientPanel.dueLabel', {
+                        date: inv.due_date ? format(new Date(inv.due_date), 'MMM d, yyyy') : '—',
+                      })}
                     </div>
                   </Link>
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -735,7 +763,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                       onClick={() => setComposerState({ open: true, proposal: null, invoice: inv })}
                     >
                       <Send className="w-3 h-3" />
-                      Send
+                      {t('clientPanel.sendButton')}
                     </Button>
                     <Link to={createPageUrl(`InvoiceDetails?id=${inv.id}`)}>
                       <ExternalLink className="w-3 h-3 text-muted-foreground" />
@@ -748,21 +776,21 @@ export default function ClientPanel({ client, onClientUpdated }) {
 
           <TabsContent value="trips" className="px-6 py-4 space-y-3 flex-1 overflow-y-auto">
             {trips.length === 0 ? (
-              <EmptyState icon={Plane} label="No trips yet" />
+              <EmptyState icon={Plane} label={t('clientPanel.noTripsYet')} />
             ) : (
-              trips.map((t) => (
-                <Link key={t.id} to={createPageUrl(`ReservationDetails?id=${t.id}`)}>
+              trips.map((trip) => (
+                <Link key={trip.id} to={createPageUrl(`ReservationDetails?id=${trip.id}`)}>
                   <div className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-muted hover:border-blue-200 dark:hover:border-blue-800 transition-all">
                     <div>
-                      <div className="font-medium text-foreground text-sm">{t.name}</div>
+                      <div className="font-medium text-foreground text-sm">{trip.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {t.destination} · {t.start_date ? format(new Date(t.start_date), 'MMM d') : ''} –{' '}
-                        {t.end_date ? format(new Date(t.end_date), 'MMM d, yyyy') : ''}
+                        {trip.destination} · {trip.start_date ? format(new Date(trip.start_date), 'MMM d') : ''} –{' '}
+                        {trip.end_date ? format(new Date(trip.end_date), 'MMM d, yyyy') : ''}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs capitalize">
-                        {t.status}
+                        {trip.status}
                       </Badge>
                       <ExternalLink className="w-3 h-3 text-muted-foreground" />
                     </div>

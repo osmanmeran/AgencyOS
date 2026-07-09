@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Send, Eye, Loader2, FileCode } from 'lucide-react';
 import { escapeHtml, sanitizeEmailHtml } from '@/lib/sanitize';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const DEFAULT_TEMPLATE = `<!DOCTYPE html>
 <html>
@@ -57,6 +58,7 @@ body { font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding
 </html>`;
 
 export default function BookingEmailSender({ open, onClose, booking, supplier, trip, client }) {
+  const { t } = useT();
   const [recipientEmail, setRecipientEmail] = useState(supplier?.email || '');
   const [subject, setSubject] = useState(`Booking Request - ${booking?.reference_number || ''}`);
   const [selectedTemplate, setSelectedTemplate] = useState('default');
@@ -87,7 +89,7 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
         ? customHtml
         : selectedTemplate === 'default'
           ? DEFAULT_TEMPLATE
-          : templates.find((t) => t.id === selectedTemplate)?.html_content || DEFAULT_TEMPLATE;
+          : templates.find((tpl) => tpl.id === selectedTemplate)?.html_content || DEFAULT_TEMPLATE;
 
     // Replace placeholders (escape all user-controlled values)
     const replacements = {
@@ -126,12 +128,12 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Send Booking Request Email</DialogTitle>
+          <DialogTitle>{t('bookingEmailSender.dialogTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Recipient Email *</Label>
+              <Label>{t('bookingEmailSender.recipientEmailLabel')}</Label>
               <Input
                 type="email"
                 value={recipientEmail}
@@ -140,54 +142,54 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
               />
             </div>
             <div className="space-y-2">
-              <Label>Subject</Label>
+              <Label>{t('emailComposer.subjectLabel')}</Label>
               <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Email Template</Label>
+            <Label>{t('bookingEmailSender.emailTemplateLabel')}</Label>
             <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="default">Default Template</SelectItem>
-                {templates.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
+                <SelectItem value="default">{t('bookingEmailSender.defaultTemplateOption')}</SelectItem>
+                {templates.map((tpl) => (
+                  <SelectItem key={tpl.id} value={tpl.id}>
+                    {tpl.name}
                   </SelectItem>
                 ))}
-                <SelectItem value="custom">Custom HTML</SelectItem>
+                <SelectItem value="custom">{t('bookingEmailSender.customHtmlOption')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {selectedTemplate === 'custom' && (
             <div className="space-y-2">
-              <Label>Custom HTML</Label>
+              <Label>{t('bookingEmailSender.customHtmlLabel')}</Label>
               <Textarea
                 value={customHtml}
                 onChange={(e) => setCustomHtml(e.target.value)}
                 rows={10}
-                placeholder="Enter custom HTML... Use placeholders like {{reference_number}}, {{service_date}}, etc."
+                placeholder={t('bookingEmailSender.customHtmlPlaceholder')}
                 className="font-mono text-sm"
               />
             </div>
           )}
 
           <div className="p-3 bg-muted rounded-lg text-xs text-muted-foreground">
-            <strong>Available placeholders:</strong>{' '}
+            <strong>{t('bookingEmailSender.availablePlaceholders')}</strong>{' '}
             {`{{reference_number}}, {{service_date}}, {{num_guests}}, {{trip_name}}, {{client_name}}, {{total_cost}}, {{service_details}}, {{supplier_name}}, {{company_name}}`}
           </div>
 
           <Tabs defaultValue="preview">
             <TabsList>
               <TabsTrigger value="preview">
-                <Eye className="w-4 h-4 mr-2" /> Preview
+                <Eye className="w-4 h-4 mr-2" /> {t('bookingEmailSender.previewTab')}
               </TabsTrigger>
               <TabsTrigger value="source">
-                <FileCode className="w-4 h-4 mr-2" /> HTML Source
+                <FileCode className="w-4 h-4 mr-2" /> {t('bookingEmailSender.htmlSourceTab')}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="preview" className="border rounded-lg p-4 bg-card min-h-[300px]">
@@ -202,16 +204,16 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
 
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={sendEmail} disabled={!recipientEmail || sending} className="bg-blue-600 hover:bg-blue-700">
               {sending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('emailComposer.sending')}
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4 mr-2" /> Send Email
+                  <Send className="w-4 h-4 mr-2" /> {t('emailComposer.sendEmailButton')}
                 </>
               )}
             </Button>

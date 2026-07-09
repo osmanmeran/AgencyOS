@@ -26,6 +26,7 @@ import { useExport } from '@/hooks/useExport';
 import BulkActionsBar from '@/components/shared/BulkActionsBar';
 import PaginationControls from '@/components/shared/PaginationControls';
 import { showSuccess, showError } from '@/lib/toast';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
@@ -38,6 +39,7 @@ const STATUS_OPTIONS = ['active', 'inactive', 'vip'];
 const PAGE_SIZE = 24;
 
 export default function ClientList({ clients, colleagueIds, isLoading, selectedId, onSelect, onClientsDeleted }) {
+  const { t } = useT();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -109,10 +111,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
     const results = await Promise.allSettled([...deletedIds].map((id) => db.entities.Client.delete(id)));
     const failed = results.filter((r) => r.status === 'rejected');
     if (failed.length > 0) {
-      showError(
-        `Failed to delete ${failed.length} contact(s)`,
-        'You may not have permission (admin/manager role required).',
-      );
+      showError(t('clientList.deleteFailedTitle', { count: failed.length }), t('clientList.deleteFailedBody'));
     }
     const succeeded = [...deletedIds].filter((_, i) => results[i].status === 'fulfilled');
     clear();
@@ -126,10 +125,14 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
     try {
       const ids = [...selectedIds];
       await db.entities.Client.bulkUpdate(ids, { status });
-      showSuccess(`Updated ${ids.length} client${ids.length > 1 ? 's' : ''} to "${status}"`);
+      showSuccess(
+        ids.length === 1
+          ? t('clientList.bulkUpdateSuccessSingular', { count: ids.length, status })
+          : t('clientList.bulkUpdateSuccessPlural', { count: ids.length, status }),
+      );
       clear();
     } catch (error) {
-      showError('Failed to update clients', error.message);
+      showError(t('clientList.bulkUpdateError'), error.message);
     }
     setIsBulkUpdating(false);
   };
@@ -138,14 +141,14 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
     setIsExporting(true);
     try {
       exportCSV(filtered, 'clients', [
-        { label: 'Name', accessor: (c) => c.name },
-        { label: 'Email', accessor: (c) => c.email },
-        { label: 'Phone', accessor: (c) => c.phone },
-        { label: 'Company', accessor: (c) => c.company },
-        { label: 'City', accessor: (c) => c.city },
-        { label: 'Status', accessor: (c) => c.status },
-        { label: 'Total Paid', accessor: (c) => c.total_paid },
-        { label: 'Total Owed', accessor: (c) => c.total_owed },
+        { label: t('common.name'), accessor: (c) => c.name },
+        { label: t('common.email'), accessor: (c) => c.email },
+        { label: t('common.phone'), accessor: (c) => c.phone },
+        { label: t('clientList.companyColumn'), accessor: (c) => c.company },
+        { label: t('common.city'), accessor: (c) => c.city },
+        { label: t('common.status'), accessor: (c) => c.status },
+        { label: t('clientList.totalPaidColumn'), accessor: (c) => c.total_paid },
+        { label: t('clientList.totalOwedColumn'), accessor: (c) => c.total_owed },
       ]);
     } finally {
       setIsExporting(false);
@@ -159,10 +162,15 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
 
   return (
     <div className="space-y-3">
-      <BulkActionsBar count={selectedCount} labelSingular="client" labelPlural="clients" onDeselectAll={clear}>
+      <BulkActionsBar
+        count={selectedCount}
+        labelSingular={t('clientList.clientNoun')}
+        labelPlural={t('clientList.clientNounPlural')}
+        onDeselectAll={clear}
+      >
         <Select onValueChange={handleBulkStatusChange} disabled={isBulkUpdating}>
           <SelectTrigger className="w-44 h-9 bg-card">
-            <SelectValue placeholder="Change status" />
+            <SelectValue placeholder={t('reservations.changeStatusPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((s) => (
@@ -174,7 +182,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
         </Select>
         <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setConfirmOpen(true)}>
           <XCircle className="w-4 h-4 mr-2" />
-          Delete {selectedCount}
+          {t('reservations.deleteCount', { count: selectedCount })}
         </Button>
       </BulkActionsBar>
 
@@ -184,38 +192,38 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Search name, email, company..."
+              placeholder={t('clientList.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 text-sm h-8"
             />
             {search && colleagueSet.size > 0 && (
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-blue-500 dark:text-blue-300 font-medium">
-                +{colleagueSet.size} via company
+                {t('clientList.viaCompanyBadge', { count: colleagueSet.size })}
               </span>
             )}
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="h-8 text-xs w-[110px] border-border">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('clientList.statusFilterPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="all">{t('clientList.allStatus')}</SelectItem>
+              <SelectItem value="active">{t('common.active')}</SelectItem>
               <SelectItem value="vip">VIP</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+              <SelectItem value="cancelled">{t('common.cancelled')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="h-8 text-xs w-[110px] border-border">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t('clientList.typeFilterPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="client">Client</SelectItem>
-              <SelectItem value="supplier">Supplier</SelectItem>
-              <SelectItem value="representative">Representative</SelectItem>
+              <SelectItem value="all">{t('clientList.allTypes')}</SelectItem>
+              <SelectItem value="client">{t('clientList.typeClient')}</SelectItem>
+              <SelectItem value="supplier">{t('clientList.typeSupplier')}</SelectItem>
+              <SelectItem value="representative">{t('clientList.typeRepresentative')}</SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -230,10 +238,10 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
             ) : (
               <Download className="w-3.5 h-3.5 mr-1.5" />
             )}
-            Export CSV
+            {t('common.exportCsv')}
           </Button>
           <span className="text-xs text-muted-foreground ml-auto">
-            {filtered.length} of {clients.length}
+            {t('clientList.filteredOfTotal', { filtered: filtered.length, total: clients.length })}
           </span>
         </div>
 
@@ -250,18 +258,18 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                   />
                 </th>
                 <th className="px-3 py-2.5 text-left cursor-pointer select-none" onClick={() => toggleSort('name')}>
-                  Contact <SortIcon field="name" />
+                  {t('clientList.contactColumn')} <SortIcon field="name" />
                 </th>
                 <th className="px-3 py-2.5 text-left cursor-pointer select-none" onClick={() => toggleSort('company')}>
-                  Company <SortIcon field="company" />
+                  {t('clientList.companyColumn')} <SortIcon field="company" />
                 </th>
-                <th className="px-3 py-2.5 text-left">Contact Info</th>
-                <th className="px-3 py-2.5 text-left">Location</th>
+                <th className="px-3 py-2.5 text-left">{t('clientList.contactInfoColumn')}</th>
+                <th className="px-3 py-2.5 text-left">{t('clientList.locationColumn')}</th>
                 <th className="px-3 py-2.5 text-left cursor-pointer select-none" onClick={() => toggleSort('status')}>
-                  Status <SortIcon field="status" />
+                  {t('common.status')} <SortIcon field="status" />
                 </th>
                 <th className="px-3 py-2.5 text-right cursor-pointer select-none" onClick={() => toggleSort('paid')}>
-                  Revenue <SortIcon field="paid" />
+                  {t('clientList.revenueColumn')} <SortIcon field="paid" />
                 </th>
               </tr>
             </thead>
@@ -295,7 +303,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
               ) : pageItems.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center text-muted-foreground py-12">
-                    No contacts found
+                    {t('clientList.noContactsFound')}
                   </td>
                 </tr>
               ) : (
@@ -338,11 +346,19 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                             )}
                             {client.potential_deal && !client.total_paid && (
                               <span className="text-[9px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded-full font-medium">
-                                Lead
+                                {t('clientList.leadBadge')}
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-muted-foreground">{client.type || 'client'}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {
+                              {
+                                client: t('clientList.typeClient'),
+                                supplier: t('clientList.typeSupplier'),
+                                representative: t('clientList.typeRepresentative'),
+                              }[client.type || 'client']
+                            }
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -365,7 +381,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                           )}
                           {colleagueSet.has(client.id) && (
                             <span className="text-[9px] bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
-                              same company
+                              {t('clientList.sameCompanyBadge')}
                             </span>
                           )}
                         </div>
@@ -416,7 +432,11 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                       <Badge
                         className={`text-[10px] font-medium border ${STATUS_COLORS[client.status] || 'bg-muted text-muted-foreground'}`}
                       >
-                        {client.status === 'vip' ? 'VIP' : client.status || 'active'}
+                        {client.status === 'vip'
+                          ? 'VIP'
+                          : client.status
+                            ? t(`common.${client.status}`)
+                            : t('common.active')}
                       </Badge>
                     </td>
                     <td className="px-3 py-3 text-right">
@@ -427,7 +447,7 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
                           </div>
                           {(client.total_owed || 0) > 0 && (
                             <div className="text-[10px] text-red-500 dark:text-red-300">
-                              {client.total_owed?.toFixed(0)} owed
+                              {t('clientList.owedSuffix', { amount: client.total_owed?.toFixed(0) })}
                             </div>
                           )}
                         </div>
@@ -460,20 +480,24 @@ export default function ClientList({ clients, colleagueIds, isLoading, selectedI
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {selectedCount} client{selectedCount > 1 ? 's' : ''}?
+              {selectedCount > 1
+                ? t('clientList.deleteTitlePlural', { count: selectedCount })
+                : t('clientList.deleteTitleSingular', { count: selectedCount })}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will <strong>permanently delete</strong> the selected clients. This cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('clientList.deleteWarning')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting ? 'Deleting...' : `Delete ${selectedCount} client${selectedCount > 1 ? 's' : ''}`}
+              {isDeleting
+                ? t('reservations.deleting')
+                : selectedCount > 1
+                  ? t('clientList.yesDeletePlural', { count: selectedCount })
+                  : t('clientList.yesDeleteSingular', { count: selectedCount })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

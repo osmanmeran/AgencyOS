@@ -10,39 +10,28 @@ import { Zap, CheckCircle, Loader2 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const MILESTONES = [
-  {
-    key: 'deposit',
-    label: 'Deposit (30%)',
-    description: 'Initial deposit invoice',
-    percentage: 0.3,
-    dueDays: 7,
-  },
+const MILESTONE_CONFIG = [
+  { key: 'deposit', labelKey: 'milestoneDepositLabel', descKey: 'milestoneDepositDesc', percentage: 0.3, dueDays: 7 },
   {
     key: 'midpoint',
-    label: 'Mid-payment (40%)',
-    description: 'Mid-trip payment invoice',
+    labelKey: 'milestoneMidpointLabel',
+    descKey: 'milestoneMidpointDesc',
     percentage: 0.4,
     dueDays: 14,
   },
-  {
-    key: 'final',
-    label: 'Final Balance (30%)',
-    description: 'Final balance invoice',
-    percentage: 0.3,
-    dueDays: 3,
-  },
-  {
-    key: 'full',
-    label: 'Full Amount (100%)',
-    description: 'Single full-payment invoice',
-    percentage: 1.0,
-    dueDays: 14,
-  },
+  { key: 'final', labelKey: 'milestoneFinalLabel', descKey: 'milestoneFinalDesc', percentage: 0.3, dueDays: 3 },
+  { key: 'full', labelKey: 'milestoneFullLabel', descKey: 'milestoneFullDesc', percentage: 1.0, dueDays: 14 },
 ];
 
 export default function AutoInvoiceGenerator({ trip, client, existingInvoices = [], settings }) {
+  const { t } = useT();
+  const MILESTONES = MILESTONE_CONFIG.map((m) => ({
+    ...m,
+    label: t(`autoInvoiceGenerator.${m.labelKey}`),
+    description: t(`autoInvoiceGenerator.${m.descKey}`),
+  }));
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const navigate = useNavigate();
@@ -118,7 +107,7 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
         className="border-purple-400 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
       >
         <Zap className="w-4 h-4 mr-2" />
-        Auto-Generate Invoice
+        {t('autoInvoiceGenerator.autoGenerateInvoice')}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -126,18 +115,19 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-purple-600 dark:text-purple-300" />
-              Auto-Generate Invoice
+              {t('autoInvoiceGenerator.autoGenerateInvoice')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
             <div className="bg-muted rounded-lg p-3 text-sm text-foreground">
-              <span className="font-semibold">Trip total:</span> ${totalAmount.toFixed(2)}
-              {client && <span className="ml-4 font-semibold">Client:</span>}
+              <span className="font-semibold">{t('autoInvoiceGenerator.tripTotalLabel')}</span> $
+              {totalAmount.toFixed(2)}
+              {client && <span className="ml-4 font-semibold">{t('autoInvoiceGenerator.clientColonLabel')}</span>}
               {client && <span className="ml-1">{client.name}</span>}
             </div>
 
-            <p className="text-sm text-muted-foreground">Select a billing milestone to auto-generate an invoice:</p>
+            <p className="text-sm text-muted-foreground">{t('autoInvoiceGenerator.selectMilestoneHint')}</p>
 
             <div className="space-y-2">
               {MILESTONES.map((m) => {
@@ -160,7 +150,7 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
                       <div>
                         <div className="font-semibold text-foreground">{m.label}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          {m.description} · Due in {m.dueDays} days
+                          {m.description} · {t('autoInvoiceGenerator.dueInDays', { days: m.dueDays })}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -168,7 +158,7 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
                         {alreadyExists && (
                           <Badge className="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 text-xs">
                             <CheckCircle className="w-3 h-3 mr-1" />
-                            Done
+                            {t('autoInvoiceGenerator.doneBadge')}
                           </Badge>
                         )}
                       </div>
@@ -181,13 +171,13 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
             {client?.email && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/40 rounded p-2">
                 <CheckCircle className="w-3 h-3 text-blue-500 dark:text-blue-300" />
-                Invoice notification will be emailed to {client.email}
+                {t('autoInvoiceGenerator.notifyEmailHint', { email: client.email })}
               </div>
             )}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={() => generateMutation.mutate(selected)}
@@ -197,12 +187,12 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
                 {generateMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
+                    {t('autoInvoiceGenerator.generating')}
                   </>
                 ) : (
                   <>
                     <Zap className="w-4 h-4 mr-2" />
-                    Generate Invoice
+                    {t('autoInvoiceGenerator.generateInvoice')}
                   </>
                 )}
               </Button>

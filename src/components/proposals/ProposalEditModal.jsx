@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { applyMarkup } from '@/lib/pricing';
 import { createSupplierWithCategory } from '@/lib/supplierCategories';
 import { Plus, Trash2, TrendingUp, Building2, RefreshCw, ArrowRightLeft, Users, X, Save } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 
@@ -37,6 +38,7 @@ const emptyService = (supCur = 'USD', cliCur = 'USD') => ({
 });
 
 export default function ProposalEditModal({ proposal, open, onClose }) {
+  const { t } = useT();
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -185,7 +187,8 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
         if (field === 'quantity' && s.pax_tiers?.length) {
           const pax = parseInt(value) || 1;
           const best =
-            s.pax_tiers.find((t) => pax >= t.min && pax <= (t.max || 99999)) || s.pax_tiers[s.pax_tiers.length - 1];
+            s.pax_tiers.find((tier) => pax >= tier.min && pax <= (tier.max || 99999)) ||
+            s.pax_tiers[s.pax_tiers.length - 1];
           if (best) updated.acquiring_price = best.base_price;
         }
         return updated;
@@ -234,8 +237,8 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
 
     const changeEntry = {
       date: new Date().toISOString(),
-      changed_by: user?.email || 'Unknown',
-      changes_description: 'Proposal edited via edit modal',
+      changed_by: user?.email || t('proposalEditModal.unknownFallback'),
+      changes_description: t('proposalEditModal.changeLogDescription'),
     };
 
     updateProposalMutation.mutate({
@@ -258,25 +261,25 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
     >
       <DialogContent className="max-w-5xl max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="text-2xl font-bold text-foreground">Edit Proposal</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-foreground">{t('proposalEditModal.title')}</DialogTitle>
         </DialogHeader>
         <ScrollArea className="px-6 pb-6 max-h-[calc(90vh-80px)]">
           <form onSubmit={handleSubmit} className="space-y-6 pt-4">
             {/* Client Info */}
             <Card className="p-6 bg-card shadow-sm">
-              <h2 className="text-xl font-bold text-foreground mb-4">Client Information</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">{t('proposalEditModal.clientInfoTitle')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Proposal Title *</Label>
+                  <Label>{t('proposalEditModal.proposalTitleLabel')}</Label>
                   <Input
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Summer Vacation Package"
+                    placeholder={t('proposalEditModal.proposalTitlePlaceholder')}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Select Client (Optional)</Label>
+                  <Label>{t('proposalEditModal.selectClientLabel')}</Label>
                   <Select
                     value={formData.client_id}
                     onValueChange={(v) => {
@@ -286,10 +289,10 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose from database" />
+                      <SelectValue placeholder={t('proposalEditModal.chooseFromDatabase')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={null}>None (Manual Entry)</SelectItem>
+                      <SelectItem value={null}>{t('proposalEditModal.noneManualEntry')}</SelectItem>
                       {clients.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name} – {c.email}
@@ -299,7 +302,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Client Name *</Label>
+                  <Label>{t('proposalEditModal.clientNameLabel')}</Label>
                   <Input
                     value={formData.client_name}
                     onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
@@ -307,7 +310,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Client Email</Label>
+                  <Label>{t('proposalEditModal.clientEmailLabel')}</Label>
                   <Input
                     type="email"
                     value={formData.client_email}
@@ -316,7 +319,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" /> Number of Travelers
+                    <Users className="w-3.5 h-3.5" /> {t('proposalEditModal.numberOfTravelersLabel')}
                   </Label>
                   <Input
                     type="number"
@@ -330,17 +333,17 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
 
             {/* Trip Details */}
             <Card className="p-6 bg-card shadow-sm">
-              <h2 className="text-xl font-bold text-foreground mb-4">Trip Details</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">{t('proposalEditModal.tripDetailsTitle')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Destination</Label>
+                  <Label>{t('proposalEditModal.destinationLabel')}</Label>
                   <Input
                     value={formData.destination}
                     onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Start Date</Label>
+                  <Label>{t('proposalEditModal.startDateLabel')}</Label>
                   <Input
                     type="date"
                     value={formData.start_date}
@@ -348,7 +351,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>End Date</Label>
+                  <Label>{t('proposalEditModal.endDateLabel')}</Label>
                   <Input
                     type="date"
                     value={formData.end_date}
@@ -362,12 +365,15 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
             <Card className="p-5 bg-card shadow-sm border-l-4 border-blue-500">
               <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
                 <ArrowRightLeft className="w-4 h-4 text-blue-600 dark:text-blue-300" />
-                Currency Settings
+                {t('proposalEditModal.currencySettingsTitle')}
               </h2>
               <div className="flex flex-wrap items-end gap-4">
                 <div className="space-y-2">
                   <Label>
-                    Acquiring Currency <span className="text-red-500 dark:text-red-300 text-xs">(what you pay)</span>
+                    {t('proposalEditModal.acquiringCurrencyLabel')}{' '}
+                    <span className="text-red-500 dark:text-red-300 text-xs">
+                      {t('proposalEditModal.acquiringCurrencyHint')}
+                    </span>
                   </Label>
                   <Select
                     value={acquiringCurrency}
@@ -393,8 +399,10 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                 </div>
                 <div className="space-y-2">
                   <Label>
-                    Selling Currency{' '}
-                    <span className="text-green-600 dark:text-green-300 text-xs">(what client pays)</span>
+                    {t('proposalEditModal.sellingCurrencyLabel')}{' '}
+                    <span className="text-green-600 dark:text-green-300 text-xs">
+                      {t('proposalEditModal.sellingCurrencyHint')}
+                    </span>
                   </Label>
                   <Select
                     value={sellingCurrency}
@@ -419,9 +427,9 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                   <>
                     <div className="space-y-2">
                       <Label>
-                        Exchange Rate{' '}
+                        {t('proposalEditModal.exchangeRateLabel')}{' '}
                         <span className="text-xs text-muted-foreground">
-                          (1 {acquiringCurrency} = ? {sellingCurrency})
+                          {t('proposalEditModal.exchangeRateHint', { from: acquiringCurrency, to: sellingCurrency })}
                         </span>
                       </Label>
                       <Input
@@ -441,7 +449,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                       className="gap-2 mb-0.5"
                     >
                       <RefreshCw className={`w-4 h-4 ${loadingRate ? 'animate-spin' : ''}`} />
-                      {loadingRate ? 'Fetching...' : 'Get Live Rate'}
+                      {loadingRate ? t('proposalEditModal.fetchingRate') : t('proposalEditModal.getLiveRate')}
                     </Button>
                   </>
                 )}
@@ -452,23 +460,23 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
             <Card className="p-6 bg-card shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">Services & Pricing</h2>
+                  <h2 className="text-xl font-bold text-foreground">{t('proposalEditModal.servicesPricingTitle')}</h2>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    Per-service currencies — select supplier and client currency for each line
+                    {t('proposalEditModal.servicesPricingSubtitle')}
                   </p>
                 </div>
                 <Button type="button" onClick={addService} variant="outline">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Service
+                  {t('proposalEditModal.addServiceButton')}
                 </Button>
               </div>
 
               <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
-                <div className="col-span-3">Provider</div>
-                <div className="col-span-2">Service</div>
-                <div className="col-span-1 text-center">Pax</div>
-                <div className="col-span-3 text-right">Acq. / pax</div>
-                <div className="col-span-3 text-right">Sell / pax</div>
+                <div className="col-span-3">{t('proposalEditModal.providerColumn')}</div>
+                <div className="col-span-2">{t('proposalEditModal.serviceColumn')}</div>
+                <div className="col-span-1 text-center">{t('proposalEditModal.paxColumn')}</div>
+                <div className="col-span-3 text-right">{t('proposalEditModal.acqPerPaxColumn')}</div>
+                <div className="col-span-3 text-right">{t('proposalEditModal.sellPerPaxColumn')}</div>
               </div>
               <Separator className="mb-4" />
 
@@ -485,7 +493,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                   const sameCurrency = sCur === cCur;
                   const lineMargin =
                     sameCurrency && lineSelling > 0 ? ((lineSelling - lineAcquiring) / lineSelling) * 100 : null;
-                  const activeTier = service.pax_tiers?.find((t) => pax >= t.min && pax <= (t.max || 99999));
+                  const activeTier = service.pax_tiers?.find((tier) => pax >= tier.min && pax <= (tier.max || 99999));
 
                   return (
                     <div key={service._key} className="rounded-xl border border-border bg-muted/60 p-4 space-y-3">
@@ -497,10 +505,10 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                               onValueChange={(v) => updateService(index, 'supplier_id', v)}
                             >
                               <SelectTrigger className="h-9 text-sm">
-                                <SelectValue placeholder="Provider" />
+                                <SelectValue placeholder={t('proposalEditModal.providerPlaceholder')} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value={null}>— None —</SelectItem>
+                                <SelectItem value={null}>{t('proposalEditModal.noneProviderOption')}</SelectItem>
                                 {suppliers.map((s) => (
                                   <SelectItem key={s.id} value={s.id}>
                                     {s.name}
@@ -526,7 +534,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                           <Input
                             value={service.name}
                             onChange={(e) => updateService(index, 'name', e.target.value)}
-                            placeholder="Service name"
+                            placeholder={t('proposalEditModal.serviceNamePlaceholder')}
                             className="h-9 text-sm"
                           />
                         </div>
@@ -607,7 +615,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                         </div>
                         <div className="col-span-3 flex justify-end items-end gap-3">
                           <div className="text-right">
-                            <div className="text-xs text-muted-foreground">Acq. total</div>
+                            <div className="text-xs text-muted-foreground">{t('proposalEditModal.acqTotalLabel')}</div>
                             <div className="font-semibold text-red-600 dark:text-red-300 text-sm">
                               {currSymbol(sCur)}
                               {lineAcquiring.toFixed(2)}
@@ -615,7 +623,8 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                           </div>
                           <div className="text-right">
                             <div className="text-xs text-muted-foreground">
-                              Sell total{markupPct > 0 ? ` (incl. ${markupPct}% markup)` : ''}
+                              {t('proposalEditModal.sellTotalLabel')}
+                              {markupPct > 0 ? t('proposalEditModal.sellTotalMarkupSuffix', { pct: markupPct }) : ''}
                             </div>
                             <div className="font-semibold text-green-700 dark:text-green-300 text-sm">
                               {currSymbol(cCur)}
@@ -624,7 +633,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                           </div>
                           {lineMargin !== null ? (
                             <div className="text-right">
-                              <div className="text-xs text-muted-foreground">Margin</div>
+                              <div className="text-xs text-muted-foreground">{t('proposalEditModal.marginLabel')}</div>
                               <div
                                 className={`font-semibold text-sm ${lineMargin >= 0 ? 'text-blue-600 dark:text-blue-300' : 'text-red-600 dark:text-red-300'}`}
                               >
@@ -646,17 +655,19 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
 
                       {service.pax_tiers?.length > 0 && (
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-muted-foreground">Price tiers:</span>
-                          {service.pax_tiers.map((t) => (
+                          <span className="text-xs text-muted-foreground">
+                            {t('proposalEditModal.priceTiersLabel')}
+                          </span>
+                          {service.pax_tiers.map((tier) => (
                             <Badge
-                              key={t.id}
+                              key={tier.id}
                               variant="outline"
-                              className={`text-xs cursor-pointer ${activeTier?.id === t.id ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-400 text-blue-700 dark:text-blue-300' : 'text-muted-foreground'}`}
-                              onClick={() => updateService(index, 'acquiring_price', t.base_price)}
+                              className={`text-xs cursor-pointer ${activeTier?.id === tier.id ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-400 text-blue-700 dark:text-blue-300' : 'text-muted-foreground'}`}
+                              onClick={() => updateService(index, 'acquiring_price', tier.base_price)}
                             >
-                              {t.min}
-                              {t.max ? `–${t.max}` : '+'} pax · {currSymbol(sCur)}
-                              {t.base_price}
+                              {tier.min}
+                              {tier.max ? `–${tier.max}` : '+'} {t('proposalEditModal.paxColumn')} · {currSymbol(sCur)}
+                              {tier.base_price}
                             </Badge>
                           ))}
                         </div>
@@ -667,7 +678,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                           <Textarea
                             value={service.description}
                             onChange={(e) => updateService(index, 'description', e.target.value)}
-                            placeholder="Service description..."
+                            placeholder={t('proposalEditModal.serviceDescriptionPlaceholder')}
                             rows={2}
                             className="text-xs resize-none"
                           />
@@ -679,7 +690,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                           <LocationSearch
                             value={service.location}
                             onChange={(v) => updateService(index, 'location', v)}
-                            placeholder="Search or type service location..."
+                            placeholder={t('proposalEditModal.locationSearchPlaceholder')}
                           />
                         </div>
                       </div>
@@ -695,7 +706,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                       <div className="flex justify-between items-center text-sm">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-orange-500 dark:text-orange-300" />
-                          <span className="text-foreground font-medium">Markup</span>
+                          <span className="text-foreground font-medium">{t('proposalEditModal.markupLabel')}</span>
                           <Input
                             type="number"
                             min="0"
@@ -707,12 +718,16 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                           />
                           <span className="text-muted-foreground text-xs">%</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">Applied to each line</span>
+                        <span className="text-xs text-muted-foreground">
+                          {t('proposalEditModal.appliedToEachLine')}
+                        </span>
                       </div>
                       <Separator />
                       {Object.entries(acquiringByCurrency).map(([cur, total]) => (
                         <div key={`acq-${cur}`} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Cost ({cur})</span>
+                          <span className="text-muted-foreground">
+                            {t('proposalEditModal.costCurrencyLabel', { cur })}
+                          </span>
                           <span className="font-semibold text-red-600 dark:text-red-300">
                             {currSymbol(cur)}
                             {total.toFixed(2)}
@@ -721,7 +736,9 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                       ))}
                       {Object.entries(sellingByCurrency).map(([cur, total]) => (
                         <div key={`sell-${cur}`} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Selling ({cur})</span>
+                          <span className="text-muted-foreground">
+                            {t('proposalEditModal.sellingCurrencyAmountLabel', { cur })}
+                          </span>
                           <span className="font-semibold text-green-700 dark:text-green-300">
                             {currSymbol(cur)}
                             {total.toFixed(2)}
@@ -730,7 +747,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                       ))}
                       {!currenciesMixed && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Gross Margin</span>
+                          <span className="text-muted-foreground">{t('tripCostSummary.grossMargin')}</span>
                           <span
                             className={`font-semibold ${margin >= 0 ? 'text-blue-600 dark:text-blue-300' : 'text-red-600 dark:text-red-300'}`}
                           >
@@ -741,8 +758,10 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                       <Separator />
                       <div className="flex justify-between items-center">
                         <div>
-                          <div className="text-lg font-bold text-foreground">Proposal Total</div>
-                          <div className="text-xs text-muted-foreground">All currencies</div>
+                          <div className="text-lg font-bold text-foreground">
+                            {t('proposalEditModal.proposalTotalLabel')}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{t('proposalEditModal.allCurrencies')}</div>
                         </div>
                         <div className="text-3xl font-bold text-green-700 dark:text-green-300">
                           {currSymbol(Object.keys(sellingByCurrency)[0] || sellingCurrency)}
@@ -757,19 +776,19 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
 
             {/* Notes & Terms */}
             <Card className="p-6 bg-card shadow-sm">
-              <h2 className="text-xl font-bold text-foreground mb-4">Additional Information</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">{t('proposalEditModal.additionalInfoTitle')}</h2>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Proposal Notes</Label>
+                  <Label>{t('proposalEditModal.proposalNotesLabel')}</Label>
                   <Textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={3}
-                    placeholder="Special notes for the client..."
+                    placeholder={t('proposalEditModal.proposalNotesPlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Terms & Conditions</Label>
+                  <Label>{t('clientProposalDetails.termsAndConditions')}</Label>
                   <Textarea
                     value={formData.terms_and_conditions}
                     onChange={(e) => setFormData({ ...formData, terms_and_conditions: e.target.value })}
@@ -782,7 +801,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
             <div className="flex justify-end gap-3 pb-2">
               <Button type="button" variant="outline" onClick={onClose}>
                 <X className="w-4 h-4 mr-2" />
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -790,7 +809,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                 disabled={updateProposalMutation.isPending}
               >
                 <Save className="w-4 h-4 mr-2" />
-                {updateProposalMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {updateProposalMutation.isPending ? t('common.saving') : t('tripEditModal.saveChanges')}
               </Button>
             </div>
           </form>
@@ -800,7 +819,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
         <Dialog open={addProviderOpen} onOpenChange={setAddProviderOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add New Provider</DialogTitle>
+              <DialogTitle>{t('proposalEditModal.addNewProviderTitle')}</DialogTitle>
             </DialogHeader>
             <form
               onSubmit={(e) => {
@@ -810,17 +829,17 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
               className="space-y-4 mt-2"
             >
               <div className="space-y-2">
-                <Label>Provider Name *</Label>
+                <Label>{t('proposalEditModal.providerNameLabel')}</Label>
                 <Input
                   value={newProvider.name}
                   onChange={(e) => setNewProvider({ ...newProvider, name: e.target.value })}
-                  placeholder="e.g. Sunset Tours"
+                  placeholder={t('proposalEditModal.providerNamePlaceholder')}
                   required
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>City</Label>
+                  <Label>{t('common.city')}</Label>
                   <Input
                     value={newProvider.city}
                     onChange={(e) => setNewProvider({ ...newProvider, city: e.target.value })}
@@ -828,7 +847,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Phone</Label>
+                  <Label>{t('common.phone')}</Label>
                   <Input
                     value={newProvider.phone}
                     onChange={(e) => setNewProvider({ ...newProvider, phone: e.target.value })}
@@ -836,7 +855,7 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{t('common.email')}</Label>
                 <Input
                   type="email"
                   value={newProvider.email}
@@ -845,14 +864,16 @@ export default function ProposalEditModal({ proposal, open, onClose }) {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setAddProviderOpen(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700"
                   disabled={createSupplierMutation.isPending}
                 >
-                  {createSupplierMutation.isPending ? 'Adding...' : 'Add Provider'}
+                  {createSupplierMutation.isPending
+                    ? t('proposalEditModal.addingProvider')
+                    : t('proposalEditModal.addProviderButton')}
                 </Button>
               </div>
             </form>
