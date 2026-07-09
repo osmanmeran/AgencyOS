@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useExport } from '@/hooks/useExport';
 import { usePaginatedEntities } from '@/hooks/usePaginatedEntities';
 import { useSelection } from '@/hooks/useSelection';
+import { HOTEL_TYPE_OPTIONS, formatHotelType } from '@/lib/hotelTypes';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -610,13 +611,21 @@ export default function Suppliers() {
                           <td className="px-4 py-3">
                             {supplier.rating ? (
                               <div className="flex items-center gap-1">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-3.5 h-3.5 ${i < supplier.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground fill-slate-200'}`}
-                                  />
-                                ))}
-                                <span className="text-xs text-muted-foreground ml-1">{supplier.rating}</span>
+                                {typeof supplier.rating === 'number' ? (
+                                  <>
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-3.5 h-3.5 ${i < supplier.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground fill-slate-200'}`}
+                                      />
+                                    ))}
+                                    <span className="text-xs text-muted-foreground ml-1">{supplier.rating}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                    {formatHotelType(supplier.rating)}
+                                  </span>
+                                )}
                               </div>
                             ) : (
                               '—'
@@ -711,15 +720,15 @@ export default function Suppliers() {
                 <Label>Rating</Label>
                 <Select
                   value={formData.rating?.toString()}
-                  onValueChange={(v) => setFormData({ ...formData, rating: parseInt(v) })}
+                  onValueChange={(v) => setFormData({ ...formData, rating: isNaN(Number(v)) ? v : Number(v) })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[5, 4, 3].map((r) => (
-                      <SelectItem key={r} value={r.toString()}>
-                        {r} Stars
+                    {HOTEL_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={String(opt.value)} value={String(opt.value)}>
+                        {opt.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

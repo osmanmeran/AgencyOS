@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { SkeletonCard } from '@/components/ui/skeletons';
+import { HOTEL_TYPE_OPTIONS, formatHotelType } from '@/lib/hotelTypes';
 import {
   ArrowLeft,
   Mail,
@@ -54,6 +55,22 @@ export default function SupplierDetails() {
   const [webResults, setWebResults] = useState([]);
   const [webSearchLoading, setWebSearchLoading] = useState(false);
   const [webSearchError, setWebSearchError] = useState('');
+  const [newLocation, setNewLocation] = useState('');
+
+  const addLocation = () => {
+    const loc = newLocation.trim();
+    if (!loc) return;
+    if ((editForm.car_rental_locations || []).includes(loc)) return;
+    setEditForm({ ...editForm, car_rental_locations: [...(editForm.car_rental_locations || []), loc] });
+    setNewLocation('');
+  };
+
+  const removeLocation = (idx) => {
+    setEditForm({
+      ...editForm,
+      car_rental_locations: (editForm.car_rental_locations || []).filter((_, i) => i !== idx),
+    });
+  };
 
   const canModify = hasPermission('modify_suppliers');
   const canModifyBasic = hasPermission('modify_suppliers_basic');
@@ -111,6 +128,8 @@ export default function SupplierDetails() {
           rating: data.rating || supplier.rating,
           show_in_portal: !!data.show_in_portal,
           custom_fields: data.custom_fields || supplier.custom_fields || {},
+          car_rental_terms: data.car_rental_terms || '',
+          car_rental_locations: data.car_rental_locations || [],
         }),
       onSuccess: () => {
         showSuccess('Supplier updated');
@@ -135,6 +154,8 @@ export default function SupplierDetails() {
       notes: supplier.notes || '',
       rating: supplier.rating || 5,
       show_in_portal: !!supplier.show_in_portal,
+      car_rental_terms: supplier.car_rental_terms || '',
+      car_rental_locations: supplier.car_rental_locations || [],
     });
     setEditModalOpen(true);
   };
@@ -259,14 +280,22 @@ export default function SupplierDetails() {
 
             {supplier.rating && (
               <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-5 h-5 ${
-                      i < supplier.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
-                    }`}
-                  />
-                ))}
+                {typeof supplier.rating === 'number' ? (
+                  <>
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${
+                          i < supplier.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
+                        }`}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <span className="text-sm font-semibold text-muted-foreground">
+                    {formatHotelType(supplier.rating)}
+                  </span>
+                )}
               </div>
             )}
 
@@ -431,12 +460,17 @@ export default function SupplierDetails() {
                 <Label>Rating</Label>
                 <select
                   value={editForm.rating}
-                  onChange={(e) => setEditForm({ ...editForm, rating: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      rating: isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value),
+                    })
+                  }
                   className="w-full px-3 py-2 border border-border rounded-lg text-sm"
                 >
-                  {[5, 4, 3].map((r) => (
-                    <option key={r} value={r}>
-                      {r} Stars
+                  {HOTEL_TYPE_OPTIONS.map((opt) => (
+                    <option key={String(opt.value)} value={String(opt.value)}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
@@ -463,6 +497,66 @@ export default function SupplierDetails() {
                 onChange={(e) => setEditForm({ ...editForm, pricing_info: e.target.value })}
                 rows={3}
               />
+            </div>
+            <div className="border-t border-border pt-4">
+              <h4 className="text-sm font-semibold text-foreground mb-3">Car Rental Settings</h4>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Available Pickup / Drop-off Locations</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        value={newLocation}
+                        onChange={(e) => setNewLocation(e.target.value)}
+                        placeholder="Add a location (e.g. Antalya Airport, Istanbul)"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addLocation();
+                          }
+                        }}
+                      />
+                    </div>
+                    <Button type="button" variant="outline" onClick={addLocation} size="sm" className="mt-0">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {editForm.car_rental_locations?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {editForm.car_rental_locations.map((loc, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300"
+                        >
+                          {loc}
+                          <button
+                            type="button"
+                            onClick={() => removeLocation(idx)}
+                            className="hover:text-red-600 dark:hover:text-red-300"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Locations where the client can pick up and drop off the rental car.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2 mt-3">
+                <Label>Terms & Conditions</Label>
+                <Textarea
+                  value={editForm.car_rental_terms}
+                  onChange={(e) => setEditForm({ ...editForm, car_rental_terms: e.target.value })}
+                  rows={4}
+                  placeholder="e.g. Minimum driver age 21, valid driver's license required, fuel policy, mileage limits, cancellation policy..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  These terms will be shown to the client when booking a car rental.
+                </p>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>

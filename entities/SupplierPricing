@@ -86,6 +86,30 @@
       "enum": ["single", "double", "twin", "triple", "quad", "family", "extra_bed"],
       "description": "Hotel occupancy type (auto-sets min/max pax)"
     },
+    "car_category": {
+      "type": "string",
+      "enum": ["economy", "compact", "intermediate", "standard", "full_size", "premium", "luxury", "suv", "minivan", "convertible"],
+      "description": "Car rental vehicle category"
+    },
+    "daily_rate": {
+      "type": "number",
+      "description": "Car rental daily rate (separate from base_price)"
+    },
+    "drop_off_surcharge": {
+      "type": "number",
+      "default": 0,
+      "description": "Surcharge when drop-off location differs from pick-up"
+    },
+    "insurance_surcharge": {
+      "type": "number",
+      "default": 0,
+      "description": "Daily insurance supplement amount"
+    },
+    "available_locations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of pickup/dropoff locations available for this car rental tier"
+    },
     "markup_percentage": {
       "type": "number",
       "default": 0,

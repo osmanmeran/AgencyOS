@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Filter, X, Star } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { HOTEL_TYPE_OPTIONS, formatHotelType } from '@/lib/hotelTypes';
 
 // ── Text Filter ──────────────────────────────────────────────────────────
 
@@ -86,15 +87,18 @@ export function SupplierRatingFilter({ value, onChange }) {
     <div className="p-3 w-64">
       <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">
         {selected.length > 0
-          ? t('supplierFilters.ratingsSelected', { list: selected.map((r) => `${r}★`).join(', ') })
+          ? t('supplierFilters.ratingsSelected', {
+              list: selected.map((r) => formatHotelType(r) || `${r}★`).join(', '),
+            })
           : t('supplierFilters.filterByRating')}
       </p>
       <div className="flex flex-col gap-1.5">
-        {[5, 4, 3].map((r) => {
+        {HOTEL_TYPE_OPTIONS.map((opt) => {
+          const r = opt.value;
           const active = selected.includes(r);
           return (
             <button
-              key={r}
+              key={String(r)}
               onClick={() => toggleRating(r)}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
                 active
@@ -102,15 +106,21 @@ export function SupplierRatingFilter({ value, onChange }) {
                   : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    className={`w-4 h-4 ${s <= r ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200 dark:text-slate-600'}`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 ml-auto">{r}★</span>
+              {typeof r === 'number' ? (
+                <>
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-4 h-4 ${s <= r ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200 dark:text-slate-600'}`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 ml-auto">{r}★</span>
+                </>
+              ) : (
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{opt.label}</span>
+              )}
               {active && <span className="w-2 h-2 rounded-full bg-yellow-500 ml-1" />}
             </button>
           );

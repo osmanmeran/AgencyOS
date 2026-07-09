@@ -46,6 +46,15 @@
       "default": false,
       "description": "When true, the supplier is published to the client travel shop (only its approved SupplierPricing services are shown)"
     },
+    "car_rental_terms": {
+      "type": "string",
+      "description": "Terms and conditions for car rental suppliers"
+    },
+    "car_rental_locations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Available pickup/dropoff locations for this car rental supplier"
+    },
     "custom_fields": {
       "type": "object",
       "description": "Extra admin-defined fields as key-value pairs"

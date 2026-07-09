@@ -229,6 +229,13 @@ function getActiveCatalogItems(db, markupPct) {
       season_type: p.season_type || 'all_year',
       season_start: p.season_start || null,
       season_end: p.season_end || null,
+      car_category: p.car_category || null,
+      daily_rate: p.daily_rate || null,
+      drop_off_surcharge: p.drop_off_surcharge || null,
+      insurance_surcharge: p.insurance_surcharge || null,
+      available_locations: p.available_locations || null,
+      car_rental_locations: supplier?.car_rental_locations || null,
+      car_rental_terms: supplier?.car_rental_terms || null,
     };
   });
 }
@@ -301,6 +308,23 @@ router.post(
       }
       const quantity = Math.max(1, reqItem.quantity || 1);
       const nights = nightsBetween(reqItem.start_date, reqItem.end_date);
+      const isCarRental =
+        pricing.car_category ||
+        reqItem.car_category ||
+        (pricing.name || '').toLowerCase().includes('rent a car') ||
+        (pricing.name || '').toLowerCase().includes('car rental') ||
+        (pricing.name || '').toLowerCase().includes('rental');
+
+      // For car rentals, calculate the drop-off surcharge if pickup ≠ dropoff
+      let carDropOffSurchargeVal = 0;
+      if (
+        isCarRental &&
+        reqItem.pickup_location &&
+        reqItem.dropoff_location &&
+        reqItem.pickup_location !== reqItem.dropoff_location
+      ) {
+        carDropOffSurchargeVal = pricing.drop_off_surcharge || 0;
+      }
 
       return {
         pricing_id: pricing.id,
@@ -321,6 +345,11 @@ router.post(
         flight_number: reqItem.flight_number || '',
         service_time: reqItem.service_time || '',
         details: reqItem.details || '',
+        car_category: pricing.car_category || reqItem.car_category || '',
+        car_rental_days: isCarRental ? reqItem.car_rental_days || 1 : null,
+        car_insurance: isCarRental ? !!reqItem.car_insurance : false,
+        car_drop_off_surcharge: carDropOffSurchargeVal,
+        insurance_surcharge: pricing.insurance_surcharge || 0,
       };
     });
 
@@ -328,7 +357,21 @@ router.post(
     // then compute line totals — per_night/per_day lines scale by nights.
     let items = rawItems;
     if (displayCurrency) ({ items } = await convertItemsToCurrency(rawItems, displayCurrency));
-    items = items.map((i) => ({ ...i, line_total: computeLineTotal(i.unit_price, i) }));
+    items = items.map((i) => {
+      let lineTotal = computeLineTotal(i.unit_price, i);
+      if (i.car_rental_days) {
+        const days = i.car_rental_days;
+        lineTotal = i.unit_price * days * (i.quantity || 1);
+        const dailyInsurance = i.insurance_surcharge || 0;
+        if (i.car_insurance && dailyInsurance > 0) {
+          lineTotal += dailyInsurance * days;
+        }
+        if (i.car_drop_off_surcharge > 0) {
+          lineTotal += i.car_drop_off_surcharge;
+        }
+      }
+      return { ...i, line_total: lineTotal };
+    });
 
     const subtotal = items.reduce((sum, i) => sum + i.line_total, 0);
     const now = new Date().toISOString();

@@ -43,6 +43,19 @@ const OCCUPANCY_OPTIONS = [
   { value: 'extra_bed', label: 'Extra Bed' },
 ];
 
+const CAR_CATEGORY_OPTIONS = [
+  { value: 'economy', label: 'Economy' },
+  { value: 'compact', label: 'Compact' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'full_size', label: 'Full Size' },
+  { value: 'premium', label: 'Premium' },
+  { value: 'luxury', label: 'Luxury' },
+  { value: 'suv', label: 'SUV' },
+  { value: 'minivan', label: 'Minivan' },
+  { value: 'convertible', label: 'Convertible' },
+];
+
 const MEAL_TREATMENT_OPTIONS = [
   { value: '', label: 'None' },
   { value: 'RO', label: 'Room Only' },
@@ -73,6 +86,10 @@ const EMPTY_FORM = {
   max_quantity: '',
   occupancy: '',
   meal_treatment: '',
+  car_category: '',
+  daily_rate: '',
+  drop_off_surcharge: '',
+  insurance_surcharge: '',
   notes: '',
 };
 
@@ -197,6 +214,10 @@ export default function SupplierPricingManager({ supplierId }) {
       max_quantity: pricing.max_quantity?.toString() || '',
       occupancy: pricing.occupancy || '',
       meal_treatment: pricing.meal_treatment || '',
+      car_category: pricing.car_category || '',
+      daily_rate: pricing.daily_rate?.toString() || '',
+      drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
+      insurance_surcharge: pricing.insurance_surcharge?.toString() || '',
       notes: pricing.notes || '',
     });
     setDuplicateCheckError('');
@@ -219,6 +240,10 @@ export default function SupplierPricingManager({ supplierId }) {
       max_quantity: pricing.max_quantity?.toString() || '',
       occupancy: pricing.occupancy || '',
       meal_treatment: pricing.meal_treatment || '',
+      car_category: pricing.car_category || '',
+      daily_rate: pricing.daily_rate?.toString() || '',
+      drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
+      insurance_surcharge: pricing.insurance_surcharge?.toString() || '',
       notes: pricing.notes || '',
     });
     setDuplicateCheckError('');
@@ -531,6 +556,72 @@ export default function SupplierPricingManager({ supplierId }) {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">Different pricing by meal plan (BB, HB, FB, AI, etc.)</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <h4 className="text-sm font-semibold text-foreground mb-3">Car Rental Options</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Set car category, daily rate, drop-off surcharge, and insurance supplement.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Car Category</Label>
+                  <Select value={form.car_category || ''} onValueChange={(v) => setForm({ ...form, car_category: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select car category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CAR_CATEGORY_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Daily Rate</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.daily_rate || ''}
+                    onChange={(e) => setForm({ ...form, daily_rate: e.target.value })}
+                    placeholder="Override base_price as daily rate"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    If set, this is used as the daily rental price instead of base_price.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div className="space-y-2">
+                  <Label>Drop-off Surcharge</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.drop_off_surcharge || ''}
+                    onChange={(e) => setForm({ ...form, drop_off_surcharge: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Applied one-time when drop-off differs from pick-up location.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Insurance Surcharge (daily)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.insurance_surcharge || ''}
+                    onChange={(e) => setForm({ ...form, insurance_surcharge: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-muted-foreground">Additional daily insurance cost.</p>
                 </div>
               </div>
             </div>
