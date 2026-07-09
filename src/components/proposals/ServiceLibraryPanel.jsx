@@ -10,8 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, ChevronDown, ChevronRight, Users } from 'lucide-react';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, _sellingCurrency, onAddService }) {
+  const { t } = useT();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [expanded, setExpanded] = useState(/** @type {any} */ ({}));
@@ -69,14 +71,14 @@ export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, _
     <Card className="p-4 bg-card shadow-sm sticky top-20 max-h-[85vh] flex flex-col">
       <h2 className="font-bold text-foreground mb-3 flex items-center gap-2 flex-shrink-0">
         <Plus className="w-4 h-4 text-blue-600 dark:text-blue-300" />
-        Service Library
+        {t('serviceLibraryPanel.title')}
       </h2>
 
       <div className="space-y-2 mb-3 flex-shrink-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Search providers..."
+            placeholder={t('serviceLibraryPanel.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9 text-sm h-8"
@@ -84,10 +86,10 @@ export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, _
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="text-sm h-8">
-            <SelectValue placeholder="All categories" />
+            <SelectValue placeholder={t('serviceLibraryPanel.allCategoriesPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">{t('serviceLibraryPanel.allCategories')}</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 {c.name}
@@ -97,18 +99,16 @@ export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, _
         </Select>
         <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-1 rounded">
           <Users className="w-3 h-3" />
-          <span>
-            Showing prices for <strong>{numTravelers}</strong> pax
-          </span>
+          <span>{t('serviceLibraryPanel.showingPricesFor', { n: numTravelers })}</span>
         </div>
       </div>
 
       <div className="overflow-y-auto flex-1 space-y-2 pr-1">
         {Object.keys(groupedByCategory).length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-6">No services with pricing found</p>
+          <p className="text-xs text-muted-foreground text-center py-6">{t('serviceLibraryPanel.noServicesFound')}</p>
         )}
         {Object.entries(groupedByCategory).map(([catId, suppliersInCat]) => {
-          const catName = categories.find((c) => c.id === catId)?.name || 'Other';
+          const catName = categories.find((c) => c.id === catId)?.name || t('serviceLibraryPanel.otherCategory');
           const isOpen = expanded[catId] !== false;
           return (
             <div key={catId}>
@@ -150,13 +150,13 @@ export default function ServiceLibraryPanel({ numTravelers, acquiringCurrency, _
                               </span>
                               <span className="text-xs text-muted-foreground">/</span>
                               <span className="text-xs text-muted-foreground">
-                                pax · {bestPricing.unit || 'per_person'}
+                                {t('serviceLibraryPanel.paxUnitLabel', { unit: bestPricing.unit || 'per_person' })}
                               </span>
                             </div>
                             {supplierPricings.length > 1 && (
                               <div className="mt-1">
                                 <Badge variant="outline" className="text-xs px-1 py-0">
-                                  {supplierPricings.length} price tiers
+                                  {t('serviceLibraryPanel.priceTiersCount', { count: supplierPricings.length })}
                                 </Badge>
                               </div>
                             )}
