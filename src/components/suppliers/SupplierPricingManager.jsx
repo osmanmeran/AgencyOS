@@ -93,7 +93,16 @@ const EMPTY_FORM = {
   notes: '',
 };
 
-export default function SupplierPricingManager({ supplierId }) {
+export default function SupplierPricingManager({ supplierId, categoryName = '' }) {
+  const catName = (categoryName || '').toLowerCase();
+  const isHotel =
+    catName.includes('hotel') ||
+    catName.includes('lodging') ||
+    catName.includes('accommodation') ||
+    catName.includes('resort');
+  const isTransfer = catName.includes('transfer');
+  const isCarRental =
+    catName.includes('rent a car') || catName.includes('car rental') || catName.includes('rental car');
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPricing, setEditingPricing] = useState(null);
@@ -541,90 +550,99 @@ export default function SupplierPricingManager({ supplierId }) {
                     Define different pricing tiers per occupancy type (Single, Double, Triple, etc.)
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <Label>Meal Treatment</Label>
-                  <Select value={form.meal_treatment} onValueChange={(v) => setForm({ ...form, meal_treatment: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select meal plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MEAL_TREATMENT_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">Different pricing by meal plan (BB, HB, FB, AI, etc.)</p>
-                </div>
+                {isHotel && (
+                  <div className="space-y-2">
+                    <Label>Meal Treatment</Label>
+                    <Select value={form.meal_treatment} onValueChange={(v) => setForm({ ...form, meal_treatment: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select meal plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MEAL_TREATMENT_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Different pricing by meal plan (BB, HB, FB, AI, etc.)
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="border-t border-border pt-4">
-              <h4 className="text-sm font-semibold text-foreground mb-3">Car Rental Options</h4>
-              <p className="text-xs text-muted-foreground mb-3">
-                Set car category, daily rate, drop-off surcharge, and insurance supplement.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Car Category</Label>
-                  <Select value={form.car_category || ''} onValueChange={(v) => setForm({ ...form, car_category: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select car category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CAR_CATEGORY_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            {isCarRental && (
+              <div className="border-t border-border pt-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">Car Rental Options</h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Set car category, daily rate, drop-off surcharge, and insurance supplement.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Car Category</Label>
+                    <Select
+                      value={form.car_category || ''}
+                      onValueChange={(v) => setForm({ ...form, car_category: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select car category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CAR_CATEGORY_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Daily Rate</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.daily_rate || ''}
+                      onChange={(e) => setForm({ ...form, daily_rate: e.target.value })}
+                      placeholder="Override base_price as daily rate"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      If set, this is used as the daily rental price instead of base_price.
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Daily Rate</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.daily_rate || ''}
-                    onChange={(e) => setForm({ ...form, daily_rate: e.target.value })}
-                    placeholder="Override base_price as daily rate"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    If set, this is used as the daily rental price instead of base_price.
-                  </p>
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label>Drop-off Surcharge</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.drop_off_surcharge || ''}
+                      onChange={(e) => setForm({ ...form, drop_off_surcharge: e.target.value })}
+                      placeholder="0.00"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Applied one-time when drop-off differs from pick-up location.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Insurance Surcharge (daily)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.insurance_surcharge || ''}
+                      onChange={(e) => setForm({ ...form, insurance_surcharge: e.target.value })}
+                      placeholder="0.00"
+                    />
+                    <p className="text-xs text-muted-foreground">Additional daily insurance cost.</p>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-3">
-                <div className="space-y-2">
-                  <Label>Drop-off Surcharge</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.drop_off_surcharge || ''}
-                    onChange={(e) => setForm({ ...form, drop_off_surcharge: e.target.value })}
-                    placeholder="0.00"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Applied one-time when drop-off differs from pick-up location.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Insurance Surcharge (daily)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.insurance_surcharge || ''}
-                    onChange={(e) => setForm({ ...form, insurance_surcharge: e.target.value })}
-                    placeholder="0.00"
-                  />
-                  <p className="text-xs text-muted-foreground">Additional daily insurance cost.</p>
-                </div>
-              </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label>Description</Label>
