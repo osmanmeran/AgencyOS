@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, Calendar, Save, RefreshCw, AlertCircle, Copy, CalendarOff } from 'lucide-react';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const CURRENCIES = {
   USD: '$',
@@ -26,6 +27,8 @@ const CURRENCIES = {
   CAD: 'CA$',
   AUD: 'A$',
 };
+// These lists are stored verbatim as the service's field value (not a separate
+// enum code), so they're kept in English to avoid mismatches with existing data.
 const HOTEL_TREATMENTS = [
   'Room Only',
   'Bed & Breakfast',
@@ -68,6 +71,7 @@ export default function ServiceLineEditor({
   services,
   onChange,
 }) {
+  const { t } = useT();
   const [formData, setFormData] = useState(service);
   const [convertingCost, setConvertingCost] = useState(false);
   const [convertingSell, setConvertingSell] = useState(false);
@@ -213,7 +217,7 @@ export default function ServiceLineEditor({
           <button
             onClick={() => onDuplicate()}
             className="p-1.5 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded"
-            title="Duplicate service"
+            title={t('serviceLineEditor.duplicateServiceTitle')}
           >
             <Copy className="w-4 h-4" />
           </button>
@@ -231,11 +235,11 @@ export default function ServiceLineEditor({
         <Label
           className={`text-xs mb-1 block font-semibold ${err('category') ? 'text-red-600 dark:text-red-300' : 'text-foreground'}`}
         >
-          1. Select Category <span className="text-red-500 dark:text-red-300">*</span>
+          {t('serviceLineEditor.selectCategoryLabel')} <span className="text-red-500 dark:text-red-300">*</span>
         </Label>
         <Select value={formData.category || ''} onValueChange={(v) => handleChange('category', v)}>
           <SelectTrigger className={`text-sm ${err('category') ? 'border-red-400' : ''}`}>
-            <SelectValue placeholder="Choose a category to continue…" />
+            <SelectValue placeholder={t('serviceLineEditor.chooseCategoryPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {categories?.map((cat) => (
@@ -248,7 +252,7 @@ export default function ServiceLineEditor({
         {err('category') && (
           <p className="text-xs text-red-500 dark:text-red-300 mt-1 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
-            Category is required
+            {t('serviceLineEditor.categoryRequired')}
           </p>
         )}
       </div>
@@ -261,7 +265,7 @@ export default function ServiceLineEditor({
             <Label
               className={`text-xs mb-1 block font-semibold ${err('supplier_id') ? 'text-red-600 dark:text-red-300' : 'text-foreground'}`}
             >
-              2. Provider / Supplier <span className="text-red-500 dark:text-red-300">*</span>
+              {t('serviceLineEditor.providerLabel')} <span className="text-red-500 dark:text-red-300">*</span>
             </Label>
             <Select
               value={formData.supplier_id || ''}
@@ -272,12 +276,18 @@ export default function ServiceLineEditor({
               }}
             >
               <SelectTrigger className={`text-sm ${err('supplier_id') ? 'border-red-400' : ''}`}>
-                <SelectValue placeholder={selectedCategoryObj ? 'Select a provider…' : 'Choose category first'} />
+                <SelectValue
+                  placeholder={
+                    selectedCategoryObj
+                      ? t('serviceLineEditor.selectProviderPlaceholder')
+                      : t('serviceLineEditor.chooseCategoryFirstPlaceholder')
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {filteredSuppliers.length === 0 && (
                   <div className="px-2 py-3 text-xs text-muted-foreground text-center">
-                    No suppliers in this category
+                    {t('serviceLineEditor.noSuppliersInCategory')}
                   </div>
                 )}
                 {filteredSuppliers.map((s) => (
@@ -290,14 +300,17 @@ export default function ServiceLineEditor({
             {err('supplier_id') && (
               <p className="text-xs text-red-500 dark:text-red-300 mt-1 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
-                Provider is required
+                {t('serviceLineEditor.providerRequired')}
               </p>
             )}
             {stopSale && (
               <p className="text-xs text-red-600 dark:text-red-300 mt-1 flex items-center gap-1 font-medium">
                 <CalendarOff className="w-3.5 h-3.5 flex-shrink-0" />
-                This provider is in stop sales {stopSale.start_date} – {stopSale.end_date}
-                {stopSale.reason ? ` (${stopSale.reason})` : ''} — pick different dates or another provider.
+                {t('serviceLineEditor.stopSaleWarning', {
+                  start: stopSale.start_date,
+                  end: stopSale.end_date,
+                  reasonSuffix: stopSale.reason ? ` (${stopSale.reason})` : '',
+                })}
               </p>
             )}
 
@@ -347,11 +360,11 @@ export default function ServiceLineEditor({
                   return activePricings.length > 0 ? (
                     <div className="mb-4">
                       <Label className="text-xs text-muted-foreground mb-1 block font-semibold">
-                        Pricing Tier (optional)
+                        {t('serviceLineEditor.pricingTierOptional')}
                       </Label>
                       <Select value={formData.pricing_id || ''} onValueChange={handlePricingSelect}>
                         <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="Select a pricing tier to auto-fill..." />
+                          <SelectValue placeholder={t('serviceLineEditor.selectPricingTierPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           {activePricings.map((p) => (
@@ -365,7 +378,7 @@ export default function ServiceLineEditor({
                       </Select>
                       {formData.pricing_id && (
                         <p className="text-xs text-blue-600 dark:text-blue-300 mt-1 flex items-center gap-1">
-                          Fields auto-filled from selected tier. You can still edit them below.
+                          {t('serviceLineEditor.autoFilledHint')}
                         </p>
                       )}
                     </div>
@@ -376,7 +389,9 @@ export default function ServiceLineEditor({
 
             {/* Booking Source */}
             <div className="mt-4">
-              <Label className="text-xs text-muted-foreground mb-1 block font-semibold">Booking Source</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block font-semibold">
+                {t('serviceLineEditor.bookingSourceLabel')}
+              </Label>
               <Select
                 value={formData.booking_source || 'direct'}
                 onValueChange={(v) => handleChange('booking_source', v)}
@@ -385,8 +400,8 @@ export default function ServiceLineEditor({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="direct">Direct Booking</SelectItem>
-                  <SelectItem value="via_supplier">Via Another Supplier</SelectItem>
+                  <SelectItem value="direct">{t('serviceLineEditor.directBooking')}</SelectItem>
+                  <SelectItem value="via_supplier">{t('serviceLineEditor.viaAnotherSupplier')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -395,25 +410,29 @@ export default function ServiceLineEditor({
           {/* STEP 3: Service details */}
           <div className="border-t border-border pt-4 mb-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              3. Service Details
+              {t('serviceLineEditor.serviceDetailsStep')}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Service Name</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">
+                  {t('serviceLineEditor.serviceNameLabel')}
+                </Label>
                 <Input
                   value={formData.name || ''}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="e.g., 5-star Hotel"
+                  placeholder={t('serviceLineEditor.serviceNamePlaceholder')}
                   className="text-sm"
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Location</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">
+                  {t('serviceLineEditor.locationLabel')}
+                </Label>
                 <Input
                   value={formData.location || ''}
                   onChange={(e) => handleChange('location', e.target.value)}
-                  placeholder="e.g., Dubai downtown"
+                  placeholder={t('serviceLineEditor.locationPlaceholder')}
                   className="text-sm"
                 />
               </div>
@@ -424,34 +443,19 @@ export default function ServiceLineEditor({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div>
                   <Label className="text-xs text-blue-700 dark:text-blue-300 mb-1 block font-semibold">
-                    Treatment / Meal Plan
+                    {t('serviceLineEditor.treatmentMealPlanLabel')}
                   </Label>
                   <Select
                     value={formData.hotel_treatment || ''}
                     onValueChange={(v) => handleChange('hotel_treatment', v)}
                   >
                     <SelectTrigger className="text-sm bg-card">
-                      <SelectValue placeholder="Select treatment" />
+                      <SelectValue placeholder={t('serviceLineEditor.selectTreatmentPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {HOTEL_TREATMENTS.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs text-blue-700 dark:text-blue-300 mb-1 block font-semibold">Room Type</Label>
-                  <Select value={formData.room_type || ''} onValueChange={(v) => handleChange('room_type', v)}>
-                    <SelectTrigger className="text-sm bg-card">
-                      <SelectValue placeholder="Select room type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROOM_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
+                      {HOTEL_TREATMENTS.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -459,19 +463,36 @@ export default function ServiceLineEditor({
                 </div>
                 <div>
                   <Label className="text-xs text-blue-700 dark:text-blue-300 mb-1 block font-semibold">
-                    Room Occupancy
+                    {t('serviceLineEditor.roomTypeLabel')}
+                  </Label>
+                  <Select value={formData.room_type || ''} onValueChange={(v) => handleChange('room_type', v)}>
+                    <SelectTrigger className="text-sm bg-card">
+                      <SelectValue placeholder={t('serviceLineEditor.selectRoomTypePlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROOM_TYPES.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-blue-700 dark:text-blue-300 mb-1 block font-semibold">
+                    {t('serviceLineEditor.roomOccupancyLabel')}
                   </Label>
                   <Select
                     value={formData.room_occupancy || ''}
                     onValueChange={(v) => handleChange('room_occupancy', v)}
                   >
                     <SelectTrigger className="text-sm bg-card">
-                      <SelectValue placeholder="Select occupancy" />
+                      <SelectValue placeholder={t('serviceLineEditor.selectOccupancyPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {ROOM_OCCUPANCIES.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
+                      {ROOM_OCCUPANCIES.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -484,24 +505,24 @@ export default function ServiceLineEditor({
             {isTransfer && (
               <div className="space-y-4 mb-4 p-3 bg-orange-50 dark:bg-orange-950/40 rounded-lg border border-orange-200 dark:border-orange-800">
                 <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase tracking-wide">
-                  Outbound Leg
+                  {t('serviceLineEditor.outboundLegLabel')}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                      Transfer Type
+                      {t('serviceLineEditor.transferTypeLabel')}
                     </Label>
                     <Select
                       value={formData.transfer_type || ''}
                       onValueChange={(v) => handleChange('transfer_type', v)}
                     >
                       <SelectTrigger className="text-sm bg-card">
-                        <SelectValue placeholder="Select transfer type" />
+                        <SelectValue placeholder={t('serviceLineEditor.selectTransferTypePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {TRANSFER_TYPES.map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {t}
+                        {TRANSFER_TYPES.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -509,29 +530,29 @@ export default function ServiceLineEditor({
                   </div>
                   <div>
                     <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                      Pick Up Location
+                      {t('serviceLineEditor.pickupLocationLabel')}
                     </Label>
                     <Input
                       value={formData.pickup_location || ''}
                       onChange={(e) => handleChange('pickup_location', e.target.value)}
-                      placeholder="e.g., Dubai Airport T3"
+                      placeholder={t('serviceLineEditor.pickupLocationPlaceholder')}
                       className="text-sm bg-card"
                     />
                   </div>
                   <div>
                     <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                      Drop Off Location
+                      {t('serviceLineEditor.dropoffLocationLabel')}
                     </Label>
                     <Input
                       value={formData.dropoff_location || ''}
                       onChange={(e) => handleChange('dropoff_location', e.target.value)}
-                      placeholder="e.g., Burj Al Arab Hotel"
+                      placeholder={t('serviceLineEditor.dropoffLocationPlaceholder')}
                       className="text-sm bg-card"
                     />
                   </div>
                   <div>
                     <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                      Date
+                      {t('serviceLineEditor.dateLabel')}
                     </Label>
                     <Input
                       type="date"
@@ -542,7 +563,7 @@ export default function ServiceLineEditor({
                   </div>
                   <div>
                     <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                      Pick-Up Time
+                      {t('serviceLineEditor.pickupTimeLabel')}
                     </Label>
                     <Input
                       type="time"
@@ -553,12 +574,13 @@ export default function ServiceLineEditor({
                   </div>
                   <div>
                     <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                      Flight Number <span className="font-normal text-orange-400">(optional)</span>
+                      {t('serviceLineEditor.flightNumberOptionalLabel')}{' '}
+                      <span className="font-normal text-orange-400">{t('serviceLineEditor.optionalSuffix')}</span>
                     </Label>
                     <Input
                       value={formData.transfer_flight_number || ''}
                       onChange={(e) => handleChange('transfer_flight_number', e.target.value)}
-                      placeholder="e.g., EK001"
+                      placeholder={t('serviceLineEditor.flightNumberPlaceholder')}
                       className="text-sm bg-card"
                     />
                   </div>
@@ -596,14 +618,14 @@ export default function ServiceLineEditor({
                       }}
                     />
                     <span className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase tracking-wide">
-                      Return Leg
+                      {t('serviceLineEditor.returnLegLabel')}
                     </span>
                   </label>
                   {formData.return_leg?.enabled && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 p-2 bg-card rounded-lg border border-orange-100">
                       <div>
                         <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                          Return Date
+                          {t('serviceLineEditor.returnDateLabel')}
                         </Label>
                         <Input
                           type="date"
@@ -614,7 +636,7 @@ export default function ServiceLineEditor({
                       </div>
                       <div>
                         <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                          Return Pick-Up Time
+                          {t('serviceLineEditor.returnPickupTimeLabel')}
                         </Label>
                         <Input
                           type="time"
@@ -627,7 +649,7 @@ export default function ServiceLineEditor({
                       </div>
                       <div>
                         <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                          Return Pick Up Location
+                          {t('serviceLineEditor.returnPickupLocationLabel')}
                         </Label>
                         <Input
                           value={formData.return_leg.pickup_location || ''}
@@ -640,7 +662,7 @@ export default function ServiceLineEditor({
                       </div>
                       <div>
                         <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                          Return Drop Off Location
+                          {t('serviceLineEditor.returnDropoffLocationLabel')}
                         </Label>
                         <Input
                           value={formData.return_leg.dropoff_location || ''}
@@ -653,7 +675,7 @@ export default function ServiceLineEditor({
                       </div>
                       <div>
                         <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                          Return Transfer Type
+                          {t('serviceLineEditor.returnTransferTypeLabel')}
                         </Label>
                         <Select
                           value={formData.return_leg.transfer_type || ''}
@@ -662,12 +684,12 @@ export default function ServiceLineEditor({
                           }
                         >
                           <SelectTrigger className="text-sm bg-card">
-                            <SelectValue placeholder="Select transfer type" />
+                            <SelectValue placeholder={t('serviceLineEditor.selectTransferTypePlaceholder')} />
                           </SelectTrigger>
                           <SelectContent>
-                            {TRANSFER_TYPES.map((t) => (
-                              <SelectItem key={t} value={t}>
-                                {t}
+                            {TRANSFER_TYPES.map((opt) => (
+                              <SelectItem key={opt} value={opt}>
+                                {opt}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -675,14 +697,15 @@ export default function ServiceLineEditor({
                       </div>
                       <div>
                         <Label className="text-xs text-orange-700 dark:text-orange-300 mb-1 block font-semibold">
-                          Return Flight Number <span className="font-normal text-orange-400">(optional)</span>
+                          {t('serviceLineEditor.returnFlightNumberLabel')}{' '}
+                          <span className="font-normal text-orange-400">{t('serviceLineEditor.optionalSuffix')}</span>
                         </Label>
                         <Input
                           value={formData.return_leg.flight_number || ''}
                           onChange={(e) =>
                             handleChange('return_leg', { ...formData.return_leg, flight_number: e.target.value })
                           }
-                          placeholder="e.g., EK002"
+                          placeholder={t('serviceLineEditor.returnFlightNumberPlaceholder')}
                           className="text-sm bg-card"
                         />
                       </div>
@@ -697,25 +720,28 @@ export default function ServiceLineEditor({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-3 bg-green-50 dark:bg-green-950/40 rounded-lg border border-green-200 dark:border-green-800">
                 <div>
                   <Label className="text-xs text-green-700 dark:text-green-300 mb-1 block font-semibold">
-                    Guide Name <span className="font-normal text-green-500 dark:text-green-300">(optional)</span>
+                    {t('serviceLineEditor.guideNameLabel')}{' '}
+                    <span className="font-normal text-green-500 dark:text-green-300">
+                      {t('serviceLineEditor.optionalSuffix')}
+                    </span>
                   </Label>
                   <Input
                     value={formData.guide_name || ''}
                     onChange={(e) => handleChange('guide_name', e.target.value)}
-                    placeholder="e.g., Ahmed Hassan"
+                    placeholder={t('serviceLineEditor.guideNamePlaceholder')}
                     className="text-sm bg-card"
                   />
                 </div>
                 <div>
                   <Label className="text-xs text-green-700 dark:text-green-300 mb-1 block font-semibold">
-                    Guide Language
+                    {t('serviceLineEditor.guideLanguageLabel')}
                   </Label>
                   <Select
                     value={formData.guide_language || ''}
                     onValueChange={(v) => handleChange('guide_language', v)}
                   >
                     <SelectTrigger className="text-sm bg-card">
-                      <SelectValue placeholder="Select language" />
+                      <SelectValue placeholder={t('serviceLineEditor.selectLanguagePlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {GUIDE_LANGUAGES.map((l) => (
@@ -728,12 +754,12 @@ export default function ServiceLineEditor({
                 </div>
                 <div>
                   <Label className="text-xs text-green-700 dark:text-green-300 mb-1 block font-semibold">
-                    Service Duration
+                    {t('serviceLineEditor.serviceDurationLabel')}
                   </Label>
                   <Input
                     value={formData.service_duration || ''}
                     onChange={(e) => handleChange('service_duration', e.target.value)}
-                    placeholder="e.g., 4 hours, Full day"
+                    placeholder={t('serviceLineEditor.serviceDurationPlaceholder')}
                     className="text-sm bg-card"
                   />
                 </div>
@@ -745,34 +771,34 @@ export default function ServiceLineEditor({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-3 bg-purple-50 dark:bg-purple-950/40 rounded-lg border border-purple-200 dark:border-purple-800">
                 <div>
                   <Label className="text-xs text-purple-700 dark:text-purple-300 mb-1 block font-semibold">
-                    Departure Airport
+                    {t('serviceLineEditor.departureAirportLabel')}
                   </Label>
                   <Input
                     value={formData.departure_airport || ''}
                     onChange={(e) => handleChange('departure_airport', e.target.value)}
-                    placeholder="e.g., DXB – Dubai"
+                    placeholder={t('serviceLineEditor.departureAirportPlaceholder')}
                     className="text-sm bg-card"
                   />
                 </div>
                 <div>
                   <Label className="text-xs text-purple-700 dark:text-purple-300 mb-1 block font-semibold">
-                    Arrival Airport
+                    {t('serviceLineEditor.arrivalAirportLabel')}
                   </Label>
                   <Input
                     value={formData.arrival_airport || ''}
                     onChange={(e) => handleChange('arrival_airport', e.target.value)}
-                    placeholder="e.g., LHR – London"
+                    placeholder={t('serviceLineEditor.arrivalAirportPlaceholder')}
                     className="text-sm bg-card"
                   />
                 </div>
                 <div>
                   <Label className="text-xs text-purple-700 dark:text-purple-300 mb-1 block font-semibold">
-                    Flight Number
+                    {t('serviceLineEditor.flightNumberLabel')}
                   </Label>
                   <Input
                     value={formData.flight_number || ''}
                     onChange={(e) => handleChange('flight_number', e.target.value)}
-                    placeholder="e.g., EK001"
+                    placeholder={t('serviceLineEditor.flightNumberPlaceholder')}
                     className="text-sm bg-card"
                   />
                 </div>
@@ -785,7 +811,7 @@ export default function ServiceLineEditor({
                 <div>
                   <Label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    Start Date
+                    {t('serviceLineEditor.startDateLabel')}
                   </Label>
                   <Input
                     type="date"
@@ -797,7 +823,7 @@ export default function ServiceLineEditor({
                 <div>
                   <Label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    End Date
+                    {t('serviceLineEditor.endDateLabel')}
                   </Label>
                   <Input
                     type="date"
@@ -812,29 +838,29 @@ export default function ServiceLineEditor({
             {/* Unit & Quantity */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Unit</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">{t('serviceLineEditor.unitLabel')}</Label>
                 <Select value={formData.unit || 'per_person'} onValueChange={(v) => handleChange('unit', v)}>
                   <SelectTrigger className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="per_person">Per Person</SelectItem>
-                    <SelectItem value="per_night">Per Night</SelectItem>
-                    <SelectItem value="per_day">Per Day</SelectItem>
-                    <SelectItem value="per_hour">Per Hour</SelectItem>
-                    <SelectItem value="flat_rate">Flat Rate</SelectItem>
+                    <SelectItem value="per_person">{t('serviceLineEditor.perPerson')}</SelectItem>
+                    <SelectItem value="per_night">{t('serviceLineEditor.perNight')}</SelectItem>
+                    <SelectItem value="per_day">{t('serviceLineEditor.perDay')}</SelectItem>
+                    <SelectItem value="per_hour">{t('serviceLineEditor.perHour')}</SelectItem>
+                    <SelectItem value="flat_rate">{t('serviceLineEditor.flatRate')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground mb-1 block">
                   {formData.unit === 'per_hour'
-                    ? 'Hours'
+                    ? t('serviceLineEditor.hoursLabel')
                     : formData.unit === 'per_night'
-                      ? 'Rooms'
+                      ? t('serviceLineEditor.roomsLabel')
                       : formData.unit === 'per_day'
-                        ? 'Units'
-                        : 'Quantity'}
+                        ? t('serviceLineEditor.unitsLabel')
+                        : t('serviceLineEditor.quantityLabel')}
                 </Label>
                 <Input
                   type="number"
@@ -850,7 +876,7 @@ export default function ServiceLineEditor({
           {/* STEP 4: Pricing */}
           <div className="border-t border-border pt-4 mb-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              4. Pricing <span className="text-red-500 dark:text-red-300">*</span>
+              {t('serviceLineEditor.pricingStep')} <span className="text-red-500 dark:text-red-300">*</span>
             </p>
 
             {/* Costing price */}
@@ -859,7 +885,7 @@ export default function ServiceLineEditor({
                 <Label
                   className={`text-xs mb-1 block font-semibold ${err('acquiring_price') ? 'text-red-600 dark:text-red-300' : 'text-foreground'}`}
                 >
-                  Costing Price / Unit <span className="text-red-500 dark:text-red-300">*</span>
+                  {t('serviceLineEditor.costingPriceLabel')} <span className="text-red-500 dark:text-red-300">*</span>
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -889,12 +915,14 @@ export default function ServiceLineEditor({
                 {err('acquiring_price') && (
                   <p className="text-xs text-red-500 dark:text-red-300 mt-1 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
-                    Costing price is required
+                    {t('serviceLineEditor.costingPriceRequired')}
                   </p>
                 )}
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Convert to</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">
+                  {t('serviceLineEditor.convertToLabel')}
+                </Label>
                 <div className="flex gap-1">
                   <Select
                     value={formData.cost_display_currency || formData.supplier_currency || 'USD'}
@@ -923,7 +951,9 @@ export default function ServiceLineEditor({
                 </div>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Total Cost</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">
+                  {t('serviceLineEditor.totalCostLabel')}
+                </Label>
                 <div className="text-sm font-bold text-foreground p-2 bg-amber-50 dark:bg-amber-950/40 rounded border">
                   {CURRENCIES[formData.supplier_currency || 'USD']}
                   {totalCost.toFixed(2)}
@@ -937,7 +967,7 @@ export default function ServiceLineEditor({
                 <Label
                   className={`text-xs mb-1 block font-semibold ${err('selling_price') ? 'text-red-600 dark:text-red-300' : 'text-foreground'}`}
                 >
-                  Selling Price / Unit <span className="text-red-500 dark:text-red-300">*</span>
+                  {t('serviceLineEditor.sellingPriceLabel')} <span className="text-red-500 dark:text-red-300">*</span>
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -967,12 +997,14 @@ export default function ServiceLineEditor({
                 {err('selling_price') && (
                   <p className="text-xs text-red-500 dark:text-red-300 mt-1 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
-                    Selling price is required
+                    {t('serviceLineEditor.sellingPriceRequired')}
                   </p>
                 )}
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Convert to</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">
+                  {t('serviceLineEditor.convertToLabel')}
+                </Label>
                 <div className="flex gap-1">
                   <Select
                     value={formData.sell_display_currency || formData.client_currency || 'USD'}
@@ -1001,7 +1033,9 @@ export default function ServiceLineEditor({
                 </div>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Total Selling</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">
+                  {t('serviceLineEditor.totalSellingLabel')}
+                </Label>
                 <div className="text-sm font-bold text-green-700 dark:text-green-300 p-2 bg-green-50 dark:bg-green-950/40 rounded border">
                   {CURRENCIES[formData.client_currency || 'USD']}
                   {totalSell.toFixed(2)}
@@ -1012,17 +1046,37 @@ export default function ServiceLineEditor({
             {/* Margin summary */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Effective Qty</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">
+                  {t('serviceLineEditor.effectiveQtyLabel')}
+                </Label>
                 <div className="text-sm font-semibold text-foreground p-2 bg-muted rounded border">
                   {formData.unit === 'per_night' && formData.start_date && formData.end_date
-                    ? `${formData.quantity || 1} rooms × ${Math.max(1, Math.round((+new Date(formData.end_date) - +new Date(formData.start_date)) / 86400000))} nights`
+                    ? t('serviceLineEditor.roomsNightsFormat', {
+                        qty: formData.quantity || 1,
+                        nights: Math.max(
+                          1,
+                          Math.round((+new Date(formData.end_date) - +new Date(formData.start_date)) / 86400000),
+                        ),
+                      })
                     : formData.unit === 'per_day' && formData.start_date && formData.end_date
-                      ? `${formData.quantity || 1} units × ${Math.max(1, Math.round((+new Date(formData.end_date) - +new Date(formData.start_date)) / 86400000))} days`
-                      : `${calcQuantity()} ${formData.unit === 'per_hour' ? 'hrs' : formData.unit === 'per_person' ? 'pax' : 'units'}`}
+                      ? t('serviceLineEditor.unitsDaysFormat', {
+                          qty: formData.quantity || 1,
+                          days: Math.max(
+                            1,
+                            Math.round((+new Date(formData.end_date) - +new Date(formData.start_date)) / 86400000),
+                          ),
+                        })
+                      : `${calcQuantity()} ${
+                          formData.unit === 'per_hour'
+                            ? t('serviceLineEditor.hrsUnit')
+                            : formData.unit === 'per_person'
+                              ? t('serviceLineEditor.paxUnit')
+                              : t('serviceLineEditor.unitsUnit')
+                        }`}
                 </div>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Margin</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">{t('serviceLineEditor.marginLabel')}</Label>
                 <div className="text-sm font-semibold text-foreground p-2 bg-muted rounded border">
                   {totalCost > 0 ? (((totalSell - totalCost) / totalCost) * 100).toFixed(0) : 0}%
                 </div>
@@ -1032,11 +1086,13 @@ export default function ServiceLineEditor({
 
           {/* Description */}
           <div className="mb-4">
-            <Label className="text-xs text-muted-foreground mb-1 block">Description (optional)</Label>
+            <Label className="text-xs text-muted-foreground mb-1 block">
+              {t('serviceLineEditor.descriptionOptionalLabel')}
+            </Label>
             <Textarea
               value={formData.description || ''}
               onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Add service details, inclusions, or notes"
+              placeholder={t('serviceLineEditor.descriptionPlaceholder')}
               rows={2}
               className="text-sm"
             />
@@ -1051,10 +1107,12 @@ export default function ServiceLineEditor({
                 onChange={(e) => handleChange('show_in_itinerary', e.target.checked)}
                 className="rounded border-border text-blue-600 dark:text-blue-300 focus:ring-blue-500"
               />
-              <span className="text-xs font-semibold text-foreground">Show in Itinerary Recap</span>
+              <span className="text-xs font-semibold text-foreground">
+                {t('serviceLineEditor.showInItineraryLabel')}
+              </span>
             </label>
             <p className="text-[11px] text-muted-foreground mt-0.5 ml-5">
-              Uncheck to hide this service from the client-facing itinerary
+              {t('serviceLineEditor.showInItineraryHint')}
             </p>
           </div>
 
@@ -1062,25 +1120,25 @@ export default function ServiceLineEditor({
           {saveAttempted && (!formData.category || !formData.supplier_id) && (
             <p className="text-xs text-red-500 dark:text-red-300 mt-2 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
-              Fill in Category and Provider, then click Save again
+              {t('serviceLineEditor.fillCategoryProviderError')}
             </p>
           )}
           {saveAttempted && (formData.acquiring_price == null || formData.selling_price == null) && (
             <p className="text-xs text-red-500 dark:text-red-300 mt-2 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
-              Acquiring and selling prices are required
+              {t('serviceLineEditor.pricesRequiredError')}
             </p>
           )}
           {saveAttempted && stopSale && (
             <p className="text-xs text-red-500 dark:text-red-300 mt-2 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
-              This provider is in stop sales for the selected dates — pick different dates or another provider
+              {t('serviceLineEditor.stopSaleSaveError')}
             </p>
           )}
           <div className="flex justify-end">
             <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSave} disabled={!!stopSale}>
               <Save className="w-3.5 h-3.5 mr-1" />
-              Save Service
+              {t('serviceLineEditor.saveServiceButton')}
             </Button>
           </div>
         </>
