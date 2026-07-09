@@ -717,7 +717,7 @@ export default function Suppliers() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[5, 4, 3, 2, 1].map((r) => (
+                    {[5, 4, 3].map((r) => (
                       <SelectItem key={r} value={r.toString()}>
                         {r} Stars
                       </SelectItem>

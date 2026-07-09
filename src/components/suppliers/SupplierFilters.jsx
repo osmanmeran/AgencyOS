@@ -90,7 +90,7 @@ export function SupplierRatingFilter({ value, onChange }) {
           : t('supplierFilters.filterByRating')}
       </p>
       <div className="flex flex-col gap-1.5">
-        {[5, 4, 3, 2, 1].map((r) => {
+        {[5, 4, 3].map((r) => {
           const active = selected.includes(r);
           return (
             <button

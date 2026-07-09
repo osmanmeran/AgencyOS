@@ -434,7 +434,7 @@ export default function SupplierDetails() {
                   onChange={(e) => setEditForm({ ...editForm, rating: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-border rounded-lg text-sm"
                 >
-                  {[5, 4, 3, 2, 1].map((r) => (
+                  {[5, 4, 3].map((r) => (
                     <option key={r} value={r}>
                       {r} Stars
                     </option>

@@ -84,7 +84,7 @@ export default function SupplierReviews({ supplierId }) {
 
   const StarRating = ({ value, onChange = (_v) => {}, readonly = false }) => (
     <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
+      {[3, 4, 5].map((star) => (
         <button
           key={star}
           type="button"

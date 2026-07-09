@@ -89,7 +89,7 @@ export default function SupplierAnalytics({ supplierId }) {
   ].filter((s) => s.value > 0);
 
   // Rating breakdown
-  const ratingBreakdown = [5, 4, 3, 2, 1].map((rating) => ({
+  const ratingBreakdown = [5, 4, 3].map((rating) => ({
     rating: t('supplierAnalytics.starsLabel', { n: rating }),
     count: reviews.filter((r) => Math.floor(r.rating) === rating).length,
   }));
