@@ -1,39 +1,39 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
+import * as React from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
-const Dialog = DialogPrimitive.Root
+const Dialog = DialogPrimitive.Root;
 
-const DialogTrigger = DialogPrimitive.Trigger
+const DialogTrigger = DialogPrimitive.Trigger;
 
-const DialogPortal = DialogPrimitive.Portal
+const DialogPortal = DialogPrimitive.Portal;
 
-const DialogClose = DialogPrimitive.Close
+const DialogClose = DialogPrimitive.Close;
 
-const DialogOverlay = React.forwardRef((/** @type {any} */ { className = "", ...props }, ref) => (
+const DialogOverlay = React.forwardRef((/** @type {any} */ { className = '', ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-m3-fade-in data-[state=closed]:animate-m3-fade-out",
-      className
+      'fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-m3-fade-in data-[state=closed]:animate-m3-fade-out',
+      className,
     )}
     {...props}
   />
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-const DialogContent = React.forwardRef((/** @type {any} */ { className = "", children, ...props }, ref) => (
+const DialogContent = React.forwardRef((/** @type {any} */ { className = '', children, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-m3-outline-variant bg-m3-surface p-6 shadow-lg duration-200 data-[state=open]:animate-m3-fade-in data-[state=closed]:animate-m3-fade-out rounded-extra-large",
-        className
+        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] max-h-[90vh] overflow-y-auto gap-4 border border-m3-outline-variant bg-m3-surface p-6 shadow-lg duration-200 data-[state=open]:animate-m3-fade-in data-[state=closed]:animate-m3-fade-out rounded-extra-large',
+        className,
       )}
       {...props}
     >
@@ -44,42 +44,32 @@ const DialogContent = React.forwardRef((/** @type {any} */ { className = "", chi
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
-))
-DialogContent.displayName = DialogPrimitive.Content.displayName
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-const DialogHeader = ({ className = "", ...props }) => (
-  <div
-    className={cn("flex flex-col space-y-1 text-center sm:text-left", className)}
-    {...props}
-  />
-)
-DialogHeader.displayName = "DialogHeader"
+const DialogHeader = ({ className = '', ...props }) => (
+  <div className={cn('flex flex-col space-y-1 text-center sm:text-left', className)} {...props} />
+);
+DialogHeader.displayName = 'DialogHeader';
 
-const DialogFooter = ({ className = "", ...props }) => (
-  <div
-    className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2", className)}
-    {...props}
-  />
-)
-DialogFooter.displayName = "DialogFooter"
+const DialogFooter = ({ className = '', ...props }) => (
+  <div className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2', className)} {...props} />
+);
+DialogFooter.displayName = 'DialogFooter';
 
-const DialogTitle = React.forwardRef((/** @type {any} */ { className = "", ...props }, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn("m3-title-large font-semibold", className)}
-    {...props}
-  />
-))
-DialogTitle.displayName = DialogPrimitive.Title.displayName
+const DialogTitle = React.forwardRef((/** @type {any} */ { className = '', ...props }, ref) => (
+  <DialogPrimitive.Title ref={ref} className={cn('m3-title-large font-semibold', className)} {...props} />
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
-const DialogDescription = React.forwardRef((/** @type {any} */ { className = "", ...props }, ref) => (
+const DialogDescription = React.forwardRef((/** @type {any} */ { className = '', ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("m3-body-medium text-m3-on-surface-variant", className)}
+    className={cn('m3-body-medium text-m3-on-surface-variant', className)}
     {...props}
   />
-))
-DialogDescription.displayName = DialogPrimitive.Description.displayName
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {
   Dialog,
@@ -92,4 +82,4 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-}
+};

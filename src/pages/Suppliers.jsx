@@ -95,6 +95,7 @@ export default function Suppliers() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState(/** @type {string[]} */ ([]));
 
   const activeFilterCount = [
     filters.name,
@@ -270,6 +271,7 @@ export default function Suppliers() {
         rating: supplier.rating || 5,
         custom_fields: supplier.custom_fields || {},
       });
+      setSelectedCategoryIds(getSupplierCategoryIds(supplierCategoryMap, supplier.id));
     } else {
       setEditingSupplier(null);
       setFormData({
@@ -286,6 +288,7 @@ export default function Suppliers() {
         rating: 5,
         custom_fields: {},
       });
+      setSelectedCategoryIds([]);
     }
     setModalOpen(true);
   };
@@ -295,12 +298,48 @@ export default function Suppliers() {
     setEditingSupplier(null);
   };
 
-  const handleSubmit = (e) => {
+  // Syncs the supplier's SupplierSubcategory join rows to `selectedCategoryIds`:
+  // creates a default subcategory for each newly-selected category and removes
+  // the ones for categories that were deselected.
+  const syncSupplierCategories = async (/** @type {any} */ supplierId) => {
+    const existing = (subcategories || []).filter((s) => s.supplier_id === supplierId);
+    const existingCatIds = existing.map((s) => s.category_id);
+    const toAdd = selectedCategoryIds.filter((id) => !existingCatIds.includes(id));
+    const toRemove = existing.filter((s) => !selectedCategoryIds.includes(s.category_id));
+
+    for (const catId of toAdd) {
+      const cat = categories.find((c) => c.id === catId);
+      await db.entities.SupplierSubcategory.create({
+        supplier_id: supplierId,
+        category_id: catId,
+        name: cat?.name || 'General',
+      });
+    }
+    for (const sc of toRemove) {
+      await db.entities.SupplierSubcategory.delete(sc.id);
+    }
+    queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (editingSupplier) {
-      updateMutation.mutate({ id: editingSupplier.id, data: formData });
+      await updateMutation.mutateAsync({ id: editingSupplier.id, data: formData });
+      await syncSupplierCategories(editingSupplier.id);
+      closeModal();
     } else {
-      createMutation.mutate(formData);
+      const created = await createMutation.mutateAsync(formData);
+      if (created?.id && selectedCategoryIds.length) {
+        for (const catId of selectedCategoryIds) {
+          const cat = categories.find((c) => c.id === catId);
+          await db.entities.SupplierSubcategory.create({
+            supplier_id: created.id,
+            category_id: catId,
+            name: cat?.name || 'General',
+          });
+        }
+      }
+      closeModal();
     }
   };
 
@@ -680,11 +719,44 @@ export default function Suppliers() {
           <DialogHeader>
             <DialogTitle>{editingSupplier ? 'Edit Supplier' : 'Add Supplier'}</DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground -mt-2">
-            Categories aren't set here — they follow from the supplier's service lines. After saving, add subcategories
-            under each category in the supplier's Pricing Management tab.
-          </p>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Categories</Label>
+              <p className="text-xs text-muted-foreground">
+                Select the categories this supplier operates in. These drive filtering and where the supplier appears.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {categories.length === 0 && (
+                  <span className="text-sm text-muted-foreground">No categories configured yet.</span>
+                )}
+                {categories.map((cat) => {
+                  const active = selectedCategoryIds.includes(cat.id);
+                  return (
+                    <button
+                      type="button"
+                      key={cat.id}
+                      onClick={() =>
+                        setSelectedCategoryIds((prev) =>
+                          prev.includes(cat.id) ? prev.filter((id) => id !== cat.id) : [...prev, cat.id],
+                        )
+                      }
+                      className="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors"
+                      style={
+                        active
+                          ? {
+                              backgroundColor: `${cat.color || '#3b82f6'}20`,
+                              color: cat.color || '#3b82f6',
+                              borderColor: cat.color || '#3b82f6',
+                            }
+                          : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }
+                      }
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Supplier Name *</Label>
