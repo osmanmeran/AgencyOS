@@ -461,6 +461,14 @@ export default function SupplierPricingManager({
                           {t('supplierPricingManager.linkedServiceBadge', { name: serviceName(pricing.service_id) })}
                         </Badge>
                       )}
+                      {(pricing.min_quantity || pricing.max_quantity) && (
+                        <Badge variant="outline" className="text-xs">
+                          {t('supplierPricingManager.quantityBadge', {
+                            min: pricing.min_quantity || 1,
+                            max: pricing.max_quantity != null ? pricing.max_quantity : '+',
+                          })}
+                        </Badge>
+                      )}
                     </div>
                     {pricing.description && (
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{pricing.description}</p>
@@ -673,47 +681,53 @@ export default function SupplierPricingManager({
               </div>
             </div>
 
-            <div className="border-t border-border pt-4">
-              <h4 className="text-sm font-semibold text-foreground mb-3">
-                {t('supplierPricingManager.hotelPricingOptionsTitle')}
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('supplierPricingManager.occupancyLabel')}</Label>
-                  <Select value={form.occupancy} onValueChange={(v) => setForm({ ...form, occupancy: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('supplierPricingManager.selectOccupancyPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {OCCUPANCY_OPTION_KEYS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {t(opt.labelKey)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">{t('supplierPricingManager.occupancyHint')}</p>
-                </div>
-                {isHotel && (
+            {isGuidedTour && <p className="text-xs text-muted-foreground">{t('supplierPricingManager.paxBandHint')}</p>}
+            {isHotel && (
+              <div className="border-t border-border pt-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">
+                  {t('supplierPricingManager.hotelPricingOptionsTitle')}
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t('supplierPricingManager.mealTreatmentLabel')}</Label>
-                    <Select value={form.meal_treatment} onValueChange={(v) => setForm({ ...form, meal_treatment: v })}>
+                    <Label>{t('supplierPricingManager.occupancyLabel')}</Label>
+                    <Select value={form.occupancy} onValueChange={(v) => setForm({ ...form, occupancy: v })}>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('supplierPricingManager.selectMealPlanPlaceholder')} />
+                        <SelectValue placeholder={t('supplierPricingManager.selectOccupancyPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {MEAL_TREATMENT_OPTION_KEYS.map((opt) => (
+                        {OCCUPANCY_OPTION_KEYS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {t(opt.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.mealTreatmentHint')}</p>
+                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.occupancyHint')}</p>
                   </div>
-                )}
+                  {isHotel && (
+                    <div className="space-y-2">
+                      <Label>{t('supplierPricingManager.mealTreatmentLabel')}</Label>
+                      <Select
+                        value={form.meal_treatment}
+                        onValueChange={(v) => setForm({ ...form, meal_treatment: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('supplierPricingManager.selectMealPlanPlaceholder')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MEAL_TREATMENT_OPTION_KEYS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {t(opt.labelKey)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">{t('supplierPricingManager.mealTreatmentHint')}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {isCarRental && (
               <div className="border-t border-border pt-4">

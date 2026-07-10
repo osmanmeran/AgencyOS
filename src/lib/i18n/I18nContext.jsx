@@ -869,6 +869,9 @@ const translations = {
       selectServicePlaceholder: 'Link to a specific service (optional)…',
       serviceHint: 'Leave empty to apply this price to the whole category.',
       linkedServiceBadge: 'Service: {name}',
+      quantityBadge: '{min}–{max} pax',
+      paxBandHint:
+        'For per-person pricing by group size, create one tier per participant band — e.g. Min 2 / Max 2 = 210, Min 3 / Max 3 = 180. The base price is per person.',
     },
     supplierServices: {
       title: 'Services & Cost Tracking',
