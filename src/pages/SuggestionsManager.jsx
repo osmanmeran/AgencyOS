@@ -1,5 +1,3 @@
-import { db } from '@/lib/DbContext';
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
@@ -44,14 +42,9 @@ export default function SuggestionsManager() {
     useQuery({
       queryKey: ['suggestions'],
       queryFn: async () => {
-        try {
-          const all = await db.entities.Suggestion.list();
-          return all;
-        } catch {
-          const data = await api('/api/suggestions');
-          if (data.error) throw new Error(data.error);
-          return data;
-        }
+        const data = await api('/api/suggestions');
+        if (data.error) throw new Error(data.error);
+        return data;
       },
     })
   );
@@ -59,18 +52,11 @@ export default function SuggestionsManager() {
   const updateStatus = /** @type {any} */ (
     useMutation({
       mutationFn: async (/** @type {any} */ { id, /** @type {any} */ status }) => {
-        try {
-          const item = suggestions.find((s) => s.id === id);
-          if (item) await db.entities.Suggestion.update(id, { ...item, status });
-          else
-            await api(`/api/suggestions/${id}/status`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status }),
-            });
-        } catch (err) {
-          throw err;
-        }
+        const data = await api(`/api/suggestions/${id}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status }),
+        });
+        if (data.error) throw new Error(data.error);
       },
       onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suggestions'] }),
     })

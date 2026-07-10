@@ -182,7 +182,6 @@ export default function Reservations() {
   // page size keeps today's real trip volume on one fetch.
   const {
     items: trips,
-    total,
     search,
     setSearch,
     isLoading,

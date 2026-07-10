@@ -111,7 +111,6 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
     catName.includes('lodging') ||
     catName.includes('accommodation') ||
     catName.includes('resort');
-  const isTransfer = catName.includes('transfer');
   const isCarRental =
     catName.includes('rent a car') || catName.includes('car rental') || catName.includes('rental car');
   const queryClient = useQueryClient();

@@ -41,7 +41,7 @@ export default function PdfDownloadButton({
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (_) {
+    } catch {
       /* ignore */
     }
   };

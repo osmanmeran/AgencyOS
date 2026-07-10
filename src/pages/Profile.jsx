@@ -173,7 +173,7 @@ export default function Profile() {
       });
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       showSuccess('Profile photo updated');
-    } catch (err) {
+    } catch {
       showError('Failed to upload photo');
     } finally {
       setUploadingPhoto(false);

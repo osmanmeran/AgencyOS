@@ -117,7 +117,8 @@ export default function Suppliers() {
     area: '',
     pricing_info: '',
     notes: '',
-    rating: 5,
+    // Star count (3–5) or a named hotel type ('boutique'/'cave') — see HOTEL_TYPE_OPTIONS
+    rating: /** @type {number|string} */ (5),
     custom_fields: {},
   });
   const queryClient = useQueryClient();

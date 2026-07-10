@@ -48,6 +48,30 @@ describe('Auth Service', () => {
     it('should reject wrong password', () => {
       expect(() => authenticateLocal('admin@travelpro.com', 'wrongpassword')).toThrow('Invalid email or password');
     });
+
+    it('should reject local password login for SSO-linked accounts, even with a matching hash', () => {
+      const db = getDb();
+      const now = new Date().toISOString();
+      const oid = 'ms-oid-12345';
+      // Model a legacy SSO-provisioned row whose password is bcrypt(oid)
+      db.prepare(
+        'INSERT INTO users (id, email, password, name, user_tier, role, microsoft_id, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
+      ).run('sso-user-1', 'sso-test@test.com', bcrypt.hashSync(oid, 10), 'SSO User', 'agent', 'agent', oid, now, now);
+
+      expect(() => authenticateLocal('sso-test@test.com', oid)).toThrow('Microsoft sign-in');
+      db.prepare('DELETE FROM users WHERE id = ?').run('sso-user-1');
+    });
+
+    it('should reject accounts with an empty (unusable) password', () => {
+      const db = getDb();
+      const now = new Date().toISOString();
+      db.prepare(
+        'INSERT INTO users (id, email, password, name, user_tier, role, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)',
+      ).run('nopw-user-1', 'nopw-test@test.com', '', 'No Password', 'agent', 'agent', now, now);
+
+      expect(() => authenticateLocal('nopw-test@test.com', '')).toThrow('Invalid email or password');
+      db.prepare('DELETE FROM users WHERE id = ?').run('nopw-user-1');
+    });
   });
 
   describe('createUser', () => {

@@ -1,4 +1,5 @@
 import { getDb, hasFts } from '../db.js';
+import { userCanAccessEntity } from './entities.js';
 
 const SEARCH_CONFIG = [
   {
@@ -77,33 +78,40 @@ function searchWithLike(db, pattern, entityTypes) {
 /**
  * Global search across users and the configured entity types in {@link SEARCH_CONFIG},
  * using FTS5 when available and falling back to a LIKE scan otherwise.
+ * Every entity hit passes through {@link userCanAccessEntity}, so results are
+ * scoped exactly like the generic entity API.
+ * @param {object} user - The authenticated user (req.user).
  * @returns {object[]} Unified result list with label/subtitle/url/icon for the UI.
  */
-export function searchAll(query, userId) {
+export function searchAll(query, user) {
   if (!query || query.trim().length < 2) return [];
 
   const q = query.trim();
   const db = getDb();
   const results = [];
 
-  // Search users table (always uses LIKE for simplicity)
-  const userPattern = `%${q}%`;
-  const users = db
-    .prepare(
-      'SELECT id, name, email, user_tier FROM users WHERE is_active = 1 AND (name LIKE ? OR email LIKE ?) LIMIT 10',
-    )
-    .all(userPattern, userPattern);
+  // Search users table (always uses LIKE for simplicity). The staff directory
+  // is not exposed to client/supplier portal accounts.
+  const isPortalUser = user.user_tier === 'client' || user.client_id || user.linked_supplier_id;
+  if (!isPortalUser) {
+    const userPattern = `%${q}%`;
+    const users = db
+      .prepare(
+        'SELECT id, name, email, user_tier FROM users WHERE is_active = 1 AND (name LIKE ? OR email LIKE ?) LIMIT 10',
+      )
+      .all(userPattern, userPattern);
 
-  for (const user of users) {
-    results.push({
-      id: user.id,
-      type: 'User',
-      label: user.name || user.email,
-      subtitle: user.email,
-      badge: user.user_tier,
-      url: `/UserManagement?id=${user.id}`,
-      icon: 'Shield',
-    });
+    for (const u of users) {
+      results.push({
+        id: u.id,
+        type: 'User',
+        label: u.name || u.email,
+        subtitle: u.email,
+        badge: u.user_tier,
+        url: `/UserManagement?id=${u.id}`,
+        icon: 'Shield',
+      });
+    }
   }
 
   // Search entity types using FTS or LIKE fallback
@@ -118,6 +126,7 @@ export function searchAll(query, userId) {
 
     try {
       const data = JSON.parse(row.data);
+      if (!userCanAccessEntity(user, row.type, { ...data, id: row.id })) continue;
       const label = config.fields.reduce((acc, f) => acc || data[f], null) || row.type;
       const subtitle = config.fields.slice(1).reduce((acc, f) => acc || data[f], null) || '';
       results.push({

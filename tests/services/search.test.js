@@ -2,6 +2,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { getDb, uid } from '../../server/db.js';
 import { searchAll } from '../../server/services/search.js';
 
+// Staff user object as it appears on req.user after auth middleware.
+const staffUser = { id: 'user1', user_tier: 'admin', custom_permissions: [] };
+
 const db = getDb();
 
 function insertEntity(type, data) {
@@ -51,15 +54,15 @@ describe('Search Service', () => {
   });
 
   it('returns [] for empty query', () => {
-    expect(searchAll('', 'user1')).toEqual([]);
+    expect(searchAll('', staffUser)).toEqual([]);
   });
 
   it('returns [] for single-character query', () => {
-    expect(searchAll('z', 'user1')).toEqual([]);
+    expect(searchAll('z', staffUser)).toEqual([]);
   });
 
   it('finds matching clients and trips by prefix', () => {
-    const results = searchAll('Zanzibar', 'user1');
+    const results = searchAll('Zanzibar', staffUser);
     const types = results.map((r) => r.type);
     expect(types).toContain('Client');
     expect(types).toContain('Trip');
@@ -70,15 +73,28 @@ describe('Search Service', () => {
   });
 
   it('finds matching active users', () => {
-    const results = searchAll('Zanzibar', 'user1');
+    const results = searchAll('Zanzibar', staffUser);
     const user = results.find((r) => r.type === 'User');
     expect(user).toBeTruthy();
     expect(user.label).toBe('Zanzibar Agent');
   });
 
   it('does not match unrelated queries', () => {
-    const results = searchAll('nonexistent-xyz-query', 'user1');
+    const results = searchAll('nonexistent-xyz-query', staffUser);
     expect(results).toEqual([]);
+  });
+
+  it('scopes results for client-portal users to their own records and hides the staff directory', () => {
+    const clientUser = { id: 'portal1', user_tier: 'client', client_id: 'some-other-client', custom_permissions: [] };
+    const results = searchAll('Zanzibar', clientUser);
+    // Trip belongs to a different client; Client record is not theirs; no User hits
+    expect(results.find((r) => r.id === tripId)).toBeUndefined();
+    expect(results.find((r) => r.id === clientId)).toBeUndefined();
+    expect(results.find((r) => r.type === 'User')).toBeUndefined();
+
+    const ownerUser = { id: 'portal2', user_tier: 'client', client_id: clientId, custom_permissions: [] };
+    const ownResults = searchAll('Zanzibar', ownerUser);
+    expect(ownResults.find((r) => r.id === clientId)).toBeTruthy();
   });
 
   it('skips rows with unparseable JSON without throwing', () => {
@@ -103,8 +119,8 @@ describe('Search Service', () => {
       now,
     );
 
-    expect(() => searchAll('Zanzibar', 'user1')).not.toThrow();
-    const results = searchAll('Zanzibar', 'user1');
+    expect(() => searchAll('Zanzibar', staffUser)).not.toThrow();
+    const results = searchAll('Zanzibar', staffUser);
     expect(results.find((r) => r.id === badId)).toBeUndefined();
   });
 });

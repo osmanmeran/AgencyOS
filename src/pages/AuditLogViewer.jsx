@@ -72,7 +72,7 @@ export default function AuditLogViewer() {
       params.set('limit', '100');
       const { logs: data } = await api(`/api/audit/logs?${params}`);
       setLogs(data);
-    } catch (_) {
+    } catch {
       /* ignore */
     } finally {
       setLoading(false);

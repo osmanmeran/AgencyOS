@@ -1,5 +1,3 @@
-import { db } from '@/lib/DbContext';
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,26 +32,16 @@ export default function SuggestionDialog({ open, onOpenChange }) {
     if (!title.trim()) return;
     setSending(true);
     try {
-      await db.entities.Suggestion.create({
-        type,
-        title: title.trim(),
-        description: description.trim(),
-        status: 'open',
-        created_date: new Date().toISOString(),
+      const res = await fetch('/api/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ type, title: title.trim(), description: description.trim() }),
       });
+      if (!res.ok) throw new Error('Request failed');
       setSubmitted(true);
     } catch {
-      try {
-        await fetch('/api/suggestions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ type, title: title.trim(), description: description.trim() }),
-        });
-        setSubmitted(true);
-      } catch {
-        alert(t('suggestionDialog.submitError'));
-      }
+      alert(t('suggestionDialog.submitError'));
     }
     setSending(false);
   };

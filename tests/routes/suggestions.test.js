@@ -24,8 +24,20 @@ let baseUrl;
 let agentToken;
 let adminToken;
 
+function insertUser({ id, email, tier }) {
+  const now = new Date().toISOString();
+  db.prepare(
+    'INSERT OR REPLACE INTO users (id, email, password, name, user_tier, role, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)',
+  ).run(id, email, '', email.split('@')[0], tier, tier, now, now);
+}
+
 beforeAll(async () => {
   db.prepare(`DELETE FROM entities WHERE type = 'Suggestion'`).run();
+
+  // authMiddleware re-reads the user from the DB on every request, so the
+  // token subjects must exist as real rows — a signed JWT alone is not enough.
+  insertUser({ id: 'agent-1', email: 'agent@example.com', tier: 'agent' });
+  insertUser({ id: 'admin-1', email: 'admin@example.com', tier: 'admin' });
 
   agentToken = generateToken({ id: 'agent-1', email: 'agent@example.com', user_tier: 'agent', role: 'agent' });
   adminToken = generateToken({ id: 'admin-1', email: 'admin@example.com', user_tier: 'admin', role: 'admin' });
@@ -40,6 +52,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  db.prepare(`DELETE FROM users WHERE id IN ('agent-1', 'admin-1')`).run();
   await new Promise((resolve) => server.close(resolve));
 });
 
@@ -62,7 +75,7 @@ describe('POST/GET /api/suggestions', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
-    const mine = body.find(s => s.title === 'Add dark mode');
+    const mine = body.find((s) => s.title === 'Add dark mode');
     expect(mine).toBeTruthy();
     expect(mine._created_by).toBe('agent-1');
   });

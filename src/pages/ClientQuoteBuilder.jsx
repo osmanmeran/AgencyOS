@@ -121,11 +121,6 @@ function isLodgingCategory(name) {
   return c.includes('hotel') || c.includes('lodging') || c.includes('accommodation') || c.includes('resort');
 }
 
-function isCarRentalCategory(name) {
-  const c = (name || '').toLowerCase();
-  return c.includes('rent a car') || c.includes('car rental') || c.includes('rental car') || c.includes('auto rental');
-}
-
 // A rate is usable for a given check-in date if it's an all-year rate, or a
 // 'custom' season whose date range contains it. high_season/low_season/peak
 // carry no stored date range in the DB (season_start/season_end are only
@@ -490,7 +485,6 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
     isCarRental && line.pickup_location && line.dropoff_location && line.pickup_location !== line.dropoff_location
       ? svc?.drop_off_surcharge || 0
       : 0;
-  const carInsuranceSurcharge = isCarRental && line.car_insurance ? svc?.insurance_surcharge || 0 : 0;
 
   const stopSale = getBlockingStopSale(
     stopSales,

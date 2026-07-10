@@ -70,6 +70,13 @@ export function authenticateLocal(email, password) {
   const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalizeEmail(email));
   if (!user || !user.is_active) throw new UnauthorizedError('Invalid email or password');
 
+  // SSO-linked accounts have no usable local password (see authenticateMicrosoft);
+  // reject up front so a guessed/leaked hash input can never open a second door.
+  if (user.microsoft_id) {
+    throw new UnauthorizedError('This account uses Microsoft sign-in. Please use "Sign in with Microsoft".');
+  }
+  if (!user.password) throw new UnauthorizedError('Invalid email or password');
+
   const valid = bcrypt.compareSync(password, user.password);
   if (!valid) throw new UnauthorizedError('Invalid email or password');
 
@@ -136,25 +143,14 @@ export async function authenticateMicrosoft(idToken) {
           u.id,
         );
       } else {
-        // New user — create with agent tier
+        // New user — create with agent tier. The password column is left
+        // empty (unusable): SSO accounts must authenticate through Microsoft,
+        // and authenticateLocal rejects any account with a microsoft_id.
         const now = new Date().toISOString();
         const id = uid();
         db.prepare(
           'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, microsoft_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
-        ).run(
-          id,
-          email,
-          bcrypt.hashSync(microsoftId, 10),
-          name,
-          'agent',
-          'agent',
-          'en',
-          '[]',
-          microsoftId,
-          '[]',
-          now,
-          now,
-        );
+        ).run(id, email, '', name, 'agent', 'agent', 'en', '[]', microsoftId, '[]', now, now);
         u = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
       }
     }

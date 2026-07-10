@@ -48,10 +48,14 @@ const ENTITIES = [
   'SupplierStopSale',
   'SupplierSubcategory',
   'Trip',
-  'OutlookToken',
   'TourContract',
   'ReportSchedule',
 ];
+// Deliberately NOT in ENTITIES: 'OutlookToken' (per-user Microsoft Graph
+// OAuth tokens). It lives in the entities table but is managed exclusively by
+// server/services/integrations.js with direct SQL — exposing it through the
+// generic /api/entities routes would let any staff user read other users'
+// tokens.
 
 let db;
 

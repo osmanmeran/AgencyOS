@@ -167,7 +167,7 @@ export default function ServiceLineEditor({
         handleChange('client_currency', toCur);
         handleChange('selling_price_converted', '');
       }
-    } catch (_) {
+    } catch {
       /* ignore */
     }
     if (type === 'cost') setConvertingCost(false);

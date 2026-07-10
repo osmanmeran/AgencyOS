@@ -7,7 +7,6 @@ const CLIENT_SCOPED_TYPES = ['Trip', 'Proposal', 'Invoice', 'ClientPayment', 'Qu
 
 const ENTITY_PERMISSION_MAP = {
   Trip: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
-  Reservation: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
   SupplierBooking: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
   Invoice: { create: 'create_invoices', read: 'view_invoices', update: 'modify_invoices', delete: 'delete_invoices' },
   ClientPayment: {
@@ -42,18 +41,11 @@ const ENTITY_PERMISSION_MAP = {
   },
   Client: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
   Company: { create: 'create_clients', read: 'view_all_data', update: 'modify_clients', delete: 'delete_clients' },
-  Service: { create: 'create_services', read: 'view_all_data', update: 'modify_services', delete: 'delete_services' },
   BookingTemplate: {
     create: 'manage_booking_templates',
     read: 'view_all_data',
     update: 'manage_booking_templates',
     delete: 'manage_booking_templates',
-  },
-  Category: {
-    create: 'manage_categories',
-    read: 'view_all_data',
-    update: 'manage_categories',
-    delete: 'manage_categories',
   },
   TourContract: {
     create: 'manage_tour_contracts',
@@ -61,9 +53,12 @@ const ENTITY_PERMISSION_MAP = {
     update: 'manage_tour_contracts',
     delete: 'manage_tour_contracts',
   },
-  Suggestion: {
-    create: 'view_own_data',
-    read: 'view_all_data',
+  // Global config singleton. Readable by everyone (client-facing documents
+  // need the agency branding — see userCanAccessEntity), but only admins may
+  // write it: it holds tier_permissions, so an open update path would let any
+  // user rewrite the permission matrix.
+  AppSettings: {
+    create: 'manage_app_settings',
     update: 'manage_app_settings',
     delete: 'manage_app_settings',
   },
@@ -77,6 +72,41 @@ const ENTITY_PERMISSION_MAP = {
     delete: 'manage_quote_requests',
   },
 };
+
+// Additional permissions that grant agent/accounting staff read access to a
+// type beyond ENTITY_PERMISSION_MAP's read/update/delete keys. These encode
+// "reads implied by the workflows the permission enables": an agent allowed
+// to edit supplier pricing must see suppliers; an agent allowed to create
+// trips/proposals needs the client list, templates, and contracts to do it.
+const STAFF_READ_EXTRA = {
+  Supplier: ['modify_suppliers_basic', 'manage_pricing'],
+  SupplierStopSale: ['manage_pricing'],
+  Client: ['create_trips', 'create_proposals'],
+  Company: ['create_trips', 'create_proposals', 'create_invoices'],
+  BookingTemplate: ['create_trips'],
+  TourContract: ['create_trips'],
+};
+
+/**
+ * Whether a non-admin staff user (agent/accounting) may read records of this
+ * type wholesale. A type is readable if the user holds its mapped `read`
+ * permission, any permission that lets them modify the type (being allowed to
+ * update/delete any record implies seeing them), or a workflow permission
+ * from {@link STAFF_READ_EXTRA}. Types without a mapping stay staff-readable,
+ * matching the write-side behavior of {@link requireEntityPermission}.
+ * Users who fail this check still get their own records — see the
+ * created_by/user_id fallback in {@link userCanAccessEntity}.
+ */
+function staffCanReadType(user, entityType) {
+  const mapping = ENTITY_PERMISSION_MAP[entityType];
+  if (!mapping) return true;
+  const grantKeys = [mapping.read, mapping.update, mapping.delete, ...(STAFF_READ_EXTRA[entityType] || [])].filter(
+    Boolean,
+  );
+  if (grantKeys.length === 0) return true;
+  const perms = Array.isArray(user.custom_permissions) ? user.custom_permissions : [];
+  return grantKeys.some((key) => hasPermission(user.user_tier || 'agent', perms, key));
+}
 
 function requireEntityPermission(user, entityType, action) {
   const mapping = ENTITY_PERMISSION_MAP[entityType];
@@ -114,9 +144,10 @@ function deleteFts(db, id) {
 /**
  * Row-level access check applied to every generic-entity read/write: admins
  * and managers see everything, client/supplier portal users are scoped to
- * their own records, and other staff (agent/accounting) pass this check for
- * any record — the actual per-entity-type restriction for them comes from
- * the separate `ENTITY_PERMISSION_MAP` permission-key check, not this function.
+ * their own records, and other staff (agent/accounting) see a type wholesale
+ * only when a permission grants it ({@link staffCanReadType}) — otherwise
+ * just their own records. Writes are additionally gated by the separate
+ * `ENTITY_PERMISSION_MAP` permission-key check in `requireEntityPermission`.
  * @returns {boolean} Whether `user` may access this entity record.
  */
 export function userCanAccessEntity(user, entityType, entityData) {
@@ -164,8 +195,10 @@ export function userCanAccessEntity(user, entityType, entityData) {
     }
   }
 
-  // Staff agents/accounting: can see all records (view_all_trips is a client-side permission check)
-  if (tier === 'agent' || tier === 'accounting') return true;
+  // Staff agents/accounting: full read access to a type only when a
+  // permission grants it (see staffCanReadType); otherwise they fall through
+  // to the own-records check below.
+  if ((tier === 'agent' || tier === 'accounting') && staffCanReadType(user, entityType)) return true;
 
   return entityData.created_by === user.id || entityData.user_id === user.id;
 }

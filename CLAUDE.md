@@ -8,7 +8,7 @@ auth, WebSocket real-time sync. See `README.md` for features/setup and
 ## Commands
 
 - `npm run dev` — Vite dev server; `npm run server` — Express backend
-- `npm test` — Vitest (20 files, ~176 tests, backend-only)
+- `npm test` — Vitest (21 files, ~192 tests, backend-only)
 - `npm run lint` / `npm run typecheck` — both run in CI alongside test + build
 - `npm run db:migrate` / `db:migrate:status` — migrations (`server/migrations/*.cjs`, filename order)
 
@@ -29,54 +29,58 @@ auth, WebSocket real-time sync. See `README.md` for features/setup and
 
 # App Evaluation — Suggestions (2026-07-10)
 
-Overall: a feature-rich, well-documented codebase in good health — all 176
-tests pass, security fundamentals are solid (parameterized SQL, Helmet, rate
+Overall: a feature-rich, well-documented codebase in good health — the test
+suite passes, security fundamentals are solid (parameterized SQL, Helmet, rate
 limiting, httpOnly JWT cookies, prototype-pollution guards, audit logging,
 automatic pre-migration DB backups). The suggestions below are ordered by
 priority; each was verified against the current code, not carried over blindly
-from the README's earlier review.
+from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
 
 ## 🔴 Fix now
 
-1. **`npm run typecheck` fails on current `main`** — `src/pages/Suppliers.jsx:723`
-   (TS2322: `string | number` not assignable to `number`, from the Rating
-   `Select`'s `onValueChange` storing `isNaN(Number(v)) ? v : Number(v)`).
-   CI's typecheck job is red, which blocks the build job. Normalize
-   `formData.rating` to one type.
+1. ✅ **FIXED — `npm run typecheck` failed on `main`** — `src/pages/Suppliers.jsx`
+   `formData.rating` is legitimately `number | string` (star count or
+   'boutique'/'cave'); the state initializer now declares that union type.
 
-2. **Read permissions are not enforced server-side** — still open from the
-   README review. `userCanAccessEntity` (`server/services/entities.js:122`)
-   returns `true` for any `agent`/`accounting` user (line ~168), and
-   `requireEntityPermission` is only called for `create`/`update`/`delete`
-   (lines 345–515), never `read`. The per-type `read` keys in
-   `ENTITY_PERMISSION_MAP` are dead letter: an `accounting` user can read every
-   entity type (Suppliers, TourContracts, AppSettings, …) via the generic API.
-   Fix: call `requireEntityPermission(user, type, 'read')` in
-   `findEntities`/`findEntityById`, mirroring the write paths.
+2. ✅ **FIXED — Read permissions are now enforced server-side** —
+   `userCanAccessEntity` gates agent/accounting reads through
+   `staffCanReadType` (`server/services/entities.js`): a type is readable
+   wholesale only via its mapped `read` key, a modify permission on the type,
+   or a workflow grant in `STAFF_READ_EXTRA` (e.g. `create_trips` implies
+   reading Clients/TourContracts); otherwise users see only their own records.
+   Global search (`searchAll`) now filters every hit through the same check.
+   Fixed alongside, discovered during implementation:
+   - **AppSettings was writable by ANY authenticated user** (unmapped type +
+     open access) — now requires `manage_app_settings`.
+   - **`OutlookToken` rows (Microsoft Graph OAuth tokens) were readable by any
+     staff user** via the generic API — the type is no longer registered in
+     the generic-API allowlist; only `services/integrations.js` touches it.
+   - Client-portal users no longer see the staff directory in global search.
 
 ## 🟡 Security hardening (next)
 
-3. **SSO-provisioned users get a guessable local password** —
-   `server/services/auth.js:147` sets `bcrypt.hashSync(microsoftId, 10)` as the
-   password for auto-provisioned SSO accounts. A Microsoft `oid` is opaque but
-   not secret. Use a random unusable password and reject local password login
-   when `microsoft_id` is set.
+3. ✅ **FIXED — SSO-provisioned users no longer get a guessable password** —
+   auto-provisioned accounts get an empty unusable password, and
+   `authenticateLocal` rejects password login for any account with a
+   `microsoft_id` (which also covers legacy rows whose password was
+   `bcrypt(oid)`).
 
-4. **Inline admin endpoints bypass audit logging** —
-   `/api/admin/fix-user` (`server/app.js:181`) and `/api/admin/fix-trip-agents`
-   (`app.js:206`) are not mounted under `auditMiddleware` (only the routers at
-   lines 116–123 are), so admin tier changes leave no audit trail. Move them
-   into a dedicated admin router mounted with `auditMiddleware`.
+4. ✅ **FIXED — Inline admin endpoints now audited** — `/api/admin/*` moved to
+   `server/routes/admin.js`, mounted under `auditMiddleware`.
 
-5. **JWT bakes permissions in at login** — `generateToken` embeds
-   `user_tier`/`custom_permissions`; permission changes take up to 24h to
-   apply. Re-read effective permissions from the DB on sensitive routes, or
-   move to short-lived access tokens + refresh rotation.
+5. ✅ **FIXED — Permissions no longer baked into the JWT for authorization** —
+   `authMiddleware` re-reads tier/custom_permissions/is_active from the DB on
+   every request (single PK lookup), so permission changes and deactivations
+   apply immediately. The JWT now only proves identity. (Refresh-token
+   rotation is still a worthwhile future upgrade.)
 
 6. **CSP allows `unsafe-inline` and `unsafe-eval`** (`server/app.js:47`).
    Test whether MUI/Recharts actually need `unsafe-eval`; work toward nonces.
+   Left open: needs runtime verification across every page before tightening.
 
-7. **No CSRF protection for cookie auth** — relies on same-origin only.
+7. **No CSRF protection for cookie auth** — relies on `sameSite: 'strict'`
+   plus same-origin only. Left open: adding token-based CSRF touches every
+   frontend mutation; plan it as its own change.
 
 ## 🟠 Architecture & scalability
 
@@ -87,12 +91,20 @@ from the README's earlier review.
 
 9. **Triple entity registration is error-prone** — `server/db.js`,
    `public/api-client.js`, and `CLIENT_SCOPED_TYPES` must be kept in sync by
-   hand. Short term, add a test that diffs the two `ENTITIES` lists; longer
-   term, generate the client list at build time or serve it from the API.
+   hand. ✅ Short term done: `tests/lib/parity.test.js` diffs the two
+   `ENTITIES` lists (and found real drift: a dead client-side `Suggestion`
+   entry — the type was never registered server-side; the suggestion UI now
+   calls `/api/suggestions` directly). Longer term, generate the client list
+   at build time or serve it from the API.
 
 10. **Duplicated permission logic** — the two `hasPermission` implementations
-    (server + `src/lib`) are "parity-kept" by convention only. Extract a
-    `shared/` module (or at minimum a parity test importing both).
+    (server + `src/lib`) are "parity-kept" by convention only. ✅ Parity test
+    added in `tests/lib/parity.test.js` (and found real drift: the frontend
+    was missing `view_quote_requests`/`manage_quote_requests` and the `client`
+    tier — now synced). Extracting a true `shared/` module remains open.
+    Note: the server ignores the live `AppSettings.tier_permissions` overrides
+    that the frontend honors — server enforcement uses the hardcoded defaults
+    plus per-user custom_permissions. Unifying these is the next step here.
 
 11. **`I18nContext.jsx` is ~14,100 lines** — six locales inlined in one JSX
     file that every bundle chunk depends on. Split into per-locale JSON files
@@ -101,7 +113,7 @@ from the README's earlier review.
 
 ## 🟢 Code quality & testing
 
-12. **Frontend has zero test coverage** — all 20 test files target the
+12. **Frontend has zero test coverage** — all test files target the
     backend. Priorities: React Testing Library tests for permission-gated UI
     and the CRUD hooks (`usePaginatedEntities`, `useEntitySync`), then a
     small Playwright E2E for login → create trip → create proposal.
@@ -111,15 +123,20 @@ from the README's earlier review.
     `ClientQuoteBuilder.jsx` (1,363) mix data fetching, form state, and layout.
     Extract per-tab/per-section components before adding features to them.
 
-14. **Clean up the 9 ESLint warnings** (unused vars/imports) so warnings stay
-    a meaningful signal.
+14. ✅ **FIXED — ESLint is warning-free** (was 9 warnings of unused
+    vars/imports). Keep it at zero so warnings stay a meaningful signal.
 
 15. **Migrations are `.cjs` in an ESM project** — standardize to ESM
     (roadmap item; low risk, do opportunistically).
 
-16. **Wire or delete `schemas.entityData`** — defined in
-    `server/middleware/validate.js` but never applied to entity write routes;
-    body safety currently rests on `sanitizeEntityData` alone.
+16. ✅ **FIXED — `schemas.entityData` is wired** into the entity POST/PUT
+    routes, rejecting prohibited keys with a 400 before they reach
+    `sanitizeEntityData` (which remains as defense in depth).
+
+17. **Complete `ENTITY_PERMISSION_MAP` write coverage** — types without a
+    mapping (ServiceTemplate, SupplierCategory, ItineraryEvent, …) are
+    writable by any staff tier. Each addition needs care to not break agent
+    workflows; AppSettings (the dangerous one) is now mapped.
 
 ## Deployment/ops notes
 

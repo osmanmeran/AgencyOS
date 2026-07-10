@@ -14,7 +14,6 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { errorHandler, notFoundHandler, sendError } from './middleware/errors.js';
 import { authMiddleware } from './middleware/auth.js';
-import { requireAdmin } from './middleware/permissions.js';
 import { auditMiddleware } from './services/audit.js';
 import logger from './lib/logger.js';
 import authRoutes from './routes/auth.js';
@@ -30,6 +29,7 @@ import auditRoutes from './routes/audit.js';
 import testingRoutes from './routes/testing.js';
 import suggestionRoutes from './routes/suggestions.js';
 import reportRoutes from './routes/reports.js';
+import adminRoutes from './routes/admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -125,6 +125,9 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/testing', testingRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/reports', reportRoutes);
+// Admin fix endpoints mutate user tiers and entity data, so they must leave
+// an audit trail like every other mutating route.
+app.use('/api/admin', auditMiddleware, adminRoutes);
 
 app.get('/api/health', (req, res) => {
   const checks = { database: 'ok', migrations: 'ok', disk: 'ok' };
@@ -162,68 +165,6 @@ app.get('/api/health', (req, res) => {
     pendingMigrations,
     diskFreeBytes: freeBytes,
   });
-});
-
-app.get('/api/admin/list-users', authMiddleware, requireAdmin, (req, res) => {
-  const db = getDb();
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 100, 1), 500);
-  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
-  const users = db
-    .prepare(
-      'SELECT id, email, name, user_tier, role, is_active, microsoft_id FROM users ORDER BY created_date LIMIT ? OFFSET ?',
-    )
-    .all(limit, offset);
-  const total = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-  res.json({ users, total, limit, offset });
-});
-
-// Emergency user fix endpoint — admin only
-app.post('/api/admin/fix-user', authMiddleware, requireAdmin, (req, res) => {
-  try {
-    const { email, user_tier, role } = req.body;
-    if (!email) return sendError(res, 400, 'VALIDATION_ERROR', 'email required');
-    const db = getDb();
-    const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(email);
-    if (!user) return sendError(res, 404, 'USER_NOT_FOUND', `User not found: ${email}`);
-    const tier = user_tier || 'admin';
-    const r = role || tier;
-    db.prepare('UPDATE users SET user_tier = ?, role = ?, updated_date = ? WHERE id = ?').run(
-      tier,
-      r,
-      new Date().toISOString(),
-      user.id,
-    );
-    const updated = db
-      .prepare('SELECT id, email, name, user_tier, role, is_active FROM users WHERE id = ?')
-      .get(user.id);
-    res.json({ success: true, user: updated });
-  } catch (err) {
-    sendError(res, 500, 'INTERNAL_ERROR', err.message);
-  }
-});
-
-// Fix existing trips where created_by_name = 'Unknown' by looking up the user via created_by email
-app.post('/api/admin/fix-trip-agents', authMiddleware, requireAdmin, (req, res) => {
-  try {
-    const db = getDb();
-    const trips = db.prepare("SELECT id, data FROM entities WHERE type = 'Trip'").all();
-    let fixed = 0;
-    for (const row of trips) {
-      const data = JSON.parse(row.data);
-      if (data.created_by_name === 'Unknown' && data.created_by) {
-        const user = db.prepare('SELECT name, phone FROM users WHERE LOWER(email) = LOWER(?)').get(data.created_by);
-        if (user && user.name) {
-          data.created_by_name = user.name;
-          if (user.phone) data.created_by_phone = user.phone;
-          db.prepare('UPDATE entities SET data = ? WHERE id = ?').run(JSON.stringify(data), row.id);
-          fixed++;
-        }
-      }
-    }
-    res.json({ success: true, fixed });
-  } catch (err) {
-    sendError(res, 500, 'INTERNAL_ERROR', err.message);
-  }
 });
 
 app.post('/api/email/test-outlook', authMiddleware, async (req, res) => {

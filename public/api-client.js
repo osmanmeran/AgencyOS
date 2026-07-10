@@ -97,7 +97,6 @@
     'ReportSchedule',
     'ServiceCategory',
     'ServiceTemplate',
-    'Suggestion',
     'Supplier',
     'SupplierBooking',
     'SupplierCategory',
