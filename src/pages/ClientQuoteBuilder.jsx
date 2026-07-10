@@ -79,6 +79,7 @@ const newPassenger = () => ({
   is_contact: false,
 });
 const newRoom = () => ({ id: rid('room'), type: 'double', passengers: [newPassenger(), newPassenger()] });
+const newDestination = () => ({ id: rid('dest'), label: '', lat: null, lon: null });
 const newLine = () => ({
   _key: rid('line'),
   pricing_id: '',
@@ -1025,15 +1026,8 @@ export default function ClientQuoteBuilder() {
   const [client, setClient] = useState(/** @type {any} */ (null));
   const [clientLoaded, setClientLoaded] = useState(false);
   const [isStaffPreview, setIsStaffPreview] = useState(false);
-  const [trip, setTrip] = useState({
-    title: '',
-    destination: '',
-    destination_lat: null,
-    destination_lon: null,
-    start_date: '',
-    end_date: '',
-    notes: '',
-  });
+  const [trip, setTrip] = useState({ title: '', start_date: '', end_date: '', notes: '' });
+  const [destinations, setDestinations] = useState(() => [newDestination()]);
   const [rooms, setRooms] = useState(() => [newRoom()]);
   const [lines, setLines] = useState(() => [newLine()]);
   const actAsClientId = useActAsClientId();
@@ -1081,6 +1075,13 @@ export default function ClientQuoteBuilder() {
   const services = catalog?.items || [];
   const servicesById = useMemo(() => new Map(services.map((s) => [s.pricing_id, s])), [services]);
   const stopSales = catalog?.stop_sales || [];
+
+  // Destinations — one or more stops, each independently geocoded.
+  const addDestination = () => setDestinations((prev) => [...prev, newDestination()]);
+  const removeDestination = (id) =>
+    setDestinations((prev) => (prev.length <= 1 ? prev : prev.filter((d) => d.id !== id)));
+  const updateDestination = (id, updated) =>
+    setDestinations((prev) => prev.map((d) => (d.id === id ? { ...d, ...updated } : d)));
 
   // Rooms & passengers
   const setRoomOccupancy = (roomId, count) => {
@@ -1139,14 +1140,15 @@ export default function ClientQuoteBuilder() {
     [validLines, servicesById],
   );
 
+  const namedDestinations = destinations.filter((d) => d.label);
+
   const submitMutation = /** @type {any} */ (
     useMutation({
       mutationFn: () =>
         submitQuote({
           title: trip.title || 'Quote request',
-          destination: trip.destination,
-          destination_lat: trip.destination_lat,
-          destination_lon: trip.destination_lon,
+          destination: namedDestinations.map((d) => d.label).join(' & '),
+          destinations: namedDestinations.map((d) => ({ label: d.label, lat: d.lat, lon: d.lon })),
           start_date: trip.start_date,
           end_date: trip.end_date,
           notes: trip.notes,
@@ -1213,21 +1215,43 @@ export default function ClientQuoteBuilder() {
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>Destination</Label>
-            <LocationSearch
-              value={trip.destination}
-              onChange={(v) => setTrip({ ...trip, destination: v, destination_lat: null, destination_lon: null })}
-              onSelect={(item) =>
-                setTrip({
-                  ...trip,
-                  destination: item.label,
-                  destination_lat: item.lat != null ? Number(item.lat) : null,
-                  destination_lon: item.lon != null ? Number(item.lon) : null,
-                })
-              }
-              placeholder="e.g. Istanbul & Cappadocia"
-              showCurrentLocationButton={false}
-            />
+            <Label>Destination{destinations.length > 1 ? 's' : ''}</Label>
+            <div className="space-y-2">
+              {destinations.map((dest, i) => (
+                <div key={dest.id} className="flex gap-2">
+                  <div className="flex-1">
+                    <LocationSearch
+                      value={dest.label}
+                      onChange={(v) => updateDestination(dest.id, { label: v, lat: null, lon: null })}
+                      onSelect={(item) =>
+                        updateDestination(dest.id, {
+                          label: item.label,
+                          lat: item.lat != null ? Number(item.lat) : null,
+                          lon: item.lon != null ? Number(item.lon) : null,
+                        })
+                      }
+                      placeholder={i === 0 ? 'e.g. Istanbul' : 'e.g. Cappadocia'}
+                      showCurrentLocationButton={false}
+                    />
+                  </div>
+                  {destinations.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => removeDestination(dest.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button type="button" size="sm" variant="outline" onClick={addDestination}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add destination
+              </Button>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Start date</Label>

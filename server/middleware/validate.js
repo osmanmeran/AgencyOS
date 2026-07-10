@@ -206,9 +206,18 @@ export const schemas = {
   b2bSubmitQuote: z.object({
     title: z.string().min(1, 'Title is required'),
     // Optional reservation-style trip context from the client quote builder.
+    // `destination` is a display string derived client-side by joining the
+    // structured `destinations` stops (each independently geocoded).
     destination: z.string().optional(),
-    destination_lat: z.number().nullable().optional(),
-    destination_lon: z.number().nullable().optional(),
+    destinations: z
+      .array(
+        z.object({
+          label: z.string(),
+          lat: z.number().nullable().optional(),
+          lon: z.number().nullable().optional(),
+        }),
+      )
+      .optional(),
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     passengers: z.array(z.record(z.unknown())).optional(),

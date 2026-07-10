@@ -20,6 +20,17 @@ function fmt(d) {
   }
 }
 
+// Builds a Google Maps link for one or more quote destinations: a direct pin
+// for a single stop, or a multi-stop route for several. Falls back to a text
+// search when a stop has no stored coordinates.
+function destinationMapUrl(quote) {
+  const stops = Array.isArray(quote.destinations) ? quote.destinations.filter((d) => d.label) : [];
+  const stopQuery = (d) => (d.lat != null && d.lon != null ? `${d.lat},${d.lon}` : encodeURIComponent(d.label));
+  if (stops.length > 1) return `https://www.google.com/maps/dir/${stops.map(stopQuery).join('/')}`;
+  if (stops.length === 1) return `https://maps.google.com/?q=${stopQuery(stops[0])}`;
+  return `https://maps.google.com/?q=${encodeURIComponent(quote.destination)}`;
+}
+
 // Trip context captured by the reservation-style quote builder: destination,
 // dates and passengers grouped by room. Renders nothing if the quote predates
 // the builder (no destination / dates / passengers).
@@ -50,11 +61,7 @@ export function QuoteTripInfo({ quote }) {
               <MapPin className="w-4 h-4 text-muted-foreground" />
               {quote.destination}
               <a
-                href={
-                  quote.destination_lat != null && quote.destination_lon != null
-                    ? `https://maps.google.com/?q=${quote.destination_lat},${quote.destination_lon}`
-                    : `https://maps.google.com/?q=${encodeURIComponent(quote.destination)}`
-                }
+                href={destinationMapUrl(quote)}
                 target="_blank"
                 rel="noopener noreferrer"
                 title={t('quoteRichDetails.viewOnMap')}
