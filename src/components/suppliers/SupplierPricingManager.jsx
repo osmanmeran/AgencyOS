@@ -108,6 +108,7 @@ const EMPTY_FORM = {
   duration_value: '',
   duration_unit: 'hours',
   max_capacity: '',
+  service_id: '',
   notes: '',
 };
 
@@ -144,11 +145,31 @@ export default function SupplierPricingManager({
     enabled: !!supplierId,
   });
 
+  const { data: mySubs = [] } = useQuery({
+    queryKey: ['supplierSubcategories', supplierId],
+    queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
+    enabled: !!supplierId,
+  });
+  const { data: myServices = [] } = useQuery({
+    queryKey: ['supplierServices', supplierId],
+    queryFn: () => db.entities.SupplierService.filter({ supplier_id: supplierId }),
+    enabled: !!supplierId,
+  });
+
+  // The category currently shown in the tabs drives which category/subcategory a
+  // created tier is linked to (so prices are tied to the service's category).
+  const activeCategoryId =
+    activeCategory?.id || categories?.find((c) => c.name === categoryName)?.id || categories?.[0]?.id || '';
+  const activeSubId = (mySubs || []).find((s) => s.category_id === activeCategoryId)?.id || '';
+  const activeServices = (myServices || []).filter((s) => s.subcategory_id === activeSubId);
+  const serviceName = (id) => (myServices || []).find((s) => s.id === id)?.service_name || '';
+
   const createMutation = useMutation({
     mutationFn: (/** @type {any} */ data) =>
       db.entities.SupplierPricing.create({
         ...data,
         supplier_id: supplierId,
+        subcategory_id: activeSubId || null,
         base_price: parseFloat(data.base_price) || 0,
         client_price: data.client_price ? parseFloat(data.client_price) : null,
         min_quantity: parseInt(data.min_quantity) || 1,
@@ -170,6 +191,7 @@ export default function SupplierPricingManager({
     mutationFn: (/** @type {any} */ { id, data }) =>
       db.entities.SupplierPricing.update(id, {
         ...data,
+        subcategory_id: activeSubId || null,
         base_price: parseFloat(data.base_price) || 0,
         client_price: data.client_price ? parseFloat(data.client_price) : null,
         min_quantity: parseInt(data.min_quantity) || 1,
@@ -261,6 +283,7 @@ export default function SupplierPricingManager({
       duration_value: pricing.duration_value?.toString() || '',
       duration_unit: pricing.duration_unit || 'hours',
       max_capacity: pricing.max_capacity?.toString() || '',
+      service_id: pricing.service_id || '',
       notes: pricing.notes || '',
     });
     setDuplicateCheckError('');
@@ -290,6 +313,7 @@ export default function SupplierPricingManager({
       duration_value: pricing.duration_value?.toString() || '',
       duration_unit: pricing.duration_unit || 'hours',
       max_capacity: pricing.max_capacity?.toString() || '',
+      service_id: pricing.service_id || '',
       notes: pricing.notes || '',
     });
     setDuplicateCheckError('');
@@ -432,6 +456,11 @@ export default function SupplierPricingManager({
                           {t('supplierPricingManager.maxCapacityBadge', { count: pricing.max_capacity })}
                         </Badge>
                       )}
+                      {pricing.service_id && (
+                        <Badge variant="outline" className="text-xs">
+                          {t('supplierPricingManager.linkedServiceBadge', { name: serviceName(pricing.service_id) })}
+                        </Badge>
+                      )}
                     </div>
                     {pricing.description && (
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{pricing.description}</p>
@@ -523,6 +552,25 @@ export default function SupplierPricingManager({
                 </Select>
               </div>
             </div>
+
+            {activeServices.length > 0 && (
+              <div className="space-y-2">
+                <Label>{t('supplierPricingManager.serviceLabel')}</Label>
+                <Select value={form.service_id || ''} onValueChange={(v) => setForm({ ...form, service_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('supplierPricingManager.selectServicePlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeServices.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.service_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">{t('supplierPricingManager.serviceHint')}</p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
