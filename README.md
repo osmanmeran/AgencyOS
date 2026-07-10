@@ -176,6 +176,10 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 - **JSDoc pass** — added to exported functions across `server/services/` and `src/lib/` (documentation only — neither directory is covered by `jsconfig.json`'s typecheck)
 - **`ARCHITECTURE.md` added** — documents the entity system, permission model, auth, data flow, and real-time sync
 
+### UI polish (2026-07-10)
+
+- **Browser tab favicon added** — `public/favicon.svg` (segmented-ring logo mark) linked via `<link rel="icon">` in `index.html`
+
 ### Cleanup + hardening pass (2026-07-07)
 
 **Dead code removed**
