@@ -13,63 +13,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { showSuccess, showError } from '@/lib/toast';
 import { DollarSign, Plus, Edit, Trash2, Copy, Check, XCircle, Loader2 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
-const UNIT_LABELS = {
-  per_person: 'Per Person',
-  per_night: 'Per Night',
-  per_trip: 'Per Trip',
-  per_hour: 'Per Hour',
-  per_day: 'Per Day',
-  per_group: 'Per Group',
-  flat_rate: 'Flat Rate',
+const UNIT_LABEL_KEYS = {
+  per_person: 'supplierPricingManager.unitPerPerson',
+  per_night: 'supplierPricingManager.unitPerNight',
+  per_trip: 'supplierPricingManager.unitPerTrip',
+  per_hour: 'supplierPricingManager.unitPerHour',
+  per_day: 'supplierPricingManager.unitPerDay',
+  per_group: 'supplierPricingManager.unitPerGroup',
+  flat_rate: 'supplierPricingManager.unitFlatRate',
 };
 
-const SEASON_LABELS = {
-  all_year: 'All Year',
-  high_season: 'High Season',
-  low_season: 'Low Season',
-  peak: 'Peak',
-  custom: 'Custom Dates',
+const SEASON_LABEL_KEYS = {
+  all_year: 'supplierPricingManager.seasonAllYear',
+  high_season: 'supplierPricingManager.seasonHigh',
+  low_season: 'supplierPricingManager.seasonLow',
+  peak: 'supplierPricingManager.seasonPeak',
+  custom: 'supplierPricingManager.seasonCustom',
 };
 
-const OCCUPANCY_OPTIONS = [
-  { value: '', label: 'None' },
-  { value: 'single', label: 'Single' },
-  { value: 'double', label: 'Double' },
-  { value: 'twin', label: 'Twin' },
-  { value: 'triple', label: 'Triple' },
-  { value: 'quad', label: 'Quad' },
-  { value: 'family', label: 'Family' },
-  { value: 'extra_bed', label: 'Extra Bed' },
+const OCCUPANCY_OPTION_KEYS = [
+  { value: '', labelKey: 'supplierPricingManager.occNone' },
+  { value: 'single', labelKey: 'supplierPricingManager.occSingle' },
+  { value: 'double', labelKey: 'supplierPricingManager.occDouble' },
+  { value: 'twin', labelKey: 'supplierPricingManager.occTwin' },
+  { value: 'triple', labelKey: 'supplierPricingManager.occTriple' },
+  { value: 'quad', labelKey: 'supplierPricingManager.occQuad' },
+  { value: 'family', labelKey: 'supplierPricingManager.occFamily' },
+  { value: 'extra_bed', labelKey: 'supplierPricingManager.occExtraBed' },
 ];
 
-const CAR_CATEGORY_OPTIONS = [
-  { value: 'economy', label: 'Economy' },
-  { value: 'compact', label: 'Compact' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'standard', label: 'Standard' },
-  { value: 'full_size', label: 'Full Size' },
-  { value: 'premium', label: 'Premium' },
-  { value: 'luxury', label: 'Luxury' },
-  { value: 'suv', label: 'SUV' },
-  { value: 'minivan', label: 'Minivan' },
-  { value: 'convertible', label: 'Convertible' },
+const CAR_CATEGORY_OPTION_KEYS = [
+  { value: 'economy', labelKey: 'supplierPricingManager.carEconomy' },
+  { value: 'compact', labelKey: 'supplierPricingManager.carCompact' },
+  { value: 'intermediate', labelKey: 'supplierPricingManager.carIntermediate' },
+  { value: 'standard', labelKey: 'supplierPricingManager.carStandard' },
+  { value: 'full_size', labelKey: 'supplierPricingManager.carFullSize' },
+  { value: 'premium', labelKey: 'supplierPricingManager.carPremium' },
+  { value: 'luxury', labelKey: 'supplierPricingManager.carLuxury' },
+  { value: 'suv', labelKey: 'supplierPricingManager.carSuv' },
+  { value: 'minivan', labelKey: 'supplierPricingManager.carMinivan' },
+  { value: 'convertible', labelKey: 'supplierPricingManager.carConvertible' },
 ];
 
-const MEAL_TREATMENT_OPTIONS = [
-  { value: '', label: 'None' },
-  { value: 'RO', label: 'Room Only' },
-  { value: 'BB', label: 'Bed & Breakfast' },
-  { value: 'HB', label: 'Half Board' },
-  { value: 'FB', label: 'Full Board' },
-  { value: 'AI', label: 'All Inclusive' },
-  { value: 'UAI', label: 'Ultra All Inclusive' },
+const MEAL_TREATMENT_OPTION_KEYS = [
+  { value: '', labelKey: 'supplierPricingManager.mealNone' },
+  { value: 'RO', labelKey: 'supplierPricingManager.mealRO' },
+  { value: 'BB', labelKey: 'supplierPricingManager.mealBB' },
+  { value: 'HB', labelKey: 'supplierPricingManager.mealHB' },
+  { value: 'FB', labelKey: 'supplierPricingManager.mealFB' },
+  { value: 'AI', labelKey: 'supplierPricingManager.mealAI' },
+  { value: 'UAI', labelKey: 'supplierPricingManager.mealUAI' },
 ];
 
-const APPROVAL_BADGES = {
-  pending: { label: 'Pending', class: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300' },
-  approved: { label: 'Approved', class: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' },
-  rejected: { label: 'Rejected', class: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300' },
+const APPROVAL_BADGE_CONFIG = {
+  pending: {
+    labelKey: 'supplierPricingManager.approvalPending',
+    class: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300',
+  },
+  approved: {
+    labelKey: 'supplierPricingManager.approvalApproved',
+    class: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  },
+  rejected: {
+    labelKey: 'supplierPricingManager.approvalRejected',
+    class: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
+  },
 };
 
 const EMPTY_FORM = {
@@ -94,6 +104,7 @@ const EMPTY_FORM = {
 };
 
 export default function SupplierPricingManager({ supplierId, categoryName = '' }) {
+  const { t } = useT();
   const catName = (categoryName || '').toLowerCase();
   const isHotel =
     catName.includes('hotel') ||
@@ -130,9 +141,9 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
       closeModal();
-      showSuccess('Pricing tier created');
+      showSuccess(t('supplierPricingManager.successCreated'));
     },
-    onError: (error) => showError('Failed to create pricing', error.message),
+    onError: (error) => showError(t('supplierPricingManager.errorCreate'), error.message),
   });
 
   const updateMutation = useMutation({
@@ -148,36 +159,36 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
       closeModal();
-      showSuccess('Pricing tier updated');
+      showSuccess(t('supplierPricingManager.successUpdated'));
     },
-    onError: (error) => showError('Failed to update pricing', error.message),
+    onError: (error) => showError(t('supplierPricingManager.errorUpdate'), error.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (/** @type {any} */ id) => db.entities.SupplierPricing.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
-      showSuccess('Pricing tier deleted');
+      showSuccess(t('supplierPricingManager.successDeleted'));
     },
-    onError: (error) => showError('Failed to delete pricing', error.message),
+    onError: (error) => showError(t('supplierPricingManager.errorDelete'), error.message),
   });
 
   const approveMutation = useMutation({
     mutationFn: (/** @type {any} */ { id }) => db.entities.SupplierPricing.update(id, { approval_status: 'approved' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
-      showSuccess('Pricing tier approved');
+      showSuccess(t('supplierPricingManager.successApproved'));
     },
-    onError: (error) => showError('Failed to approve', error.message),
+    onError: (error) => showError(t('supplierPricingManager.errorApprove'), error.message),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (/** @type {any} */ { id }) => db.entities.SupplierPricing.update(id, { approval_status: 'rejected' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
-      showSuccess('Pricing tier rejected');
+      showSuccess(t('supplierPricingManager.successRejected'));
     },
-    onError: (error) => showError('Failed to reject', error.message),
+    onError: (error) => showError(t('supplierPricingManager.errorReject'), error.message),
   });
 
   function checkDuplicate(excludeId) {
@@ -191,9 +202,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
         (form.season_type !== 'custom' || (p.season_start === form.season_start && p.season_end === form.season_end)),
     );
     if (sameName) {
-      setDuplicateCheckError(
-        `A pricing tier "${sameName.name}" already exists with the same occupancy, meal treatment, and season. Please change the name, occupancy, meal treatment, or season dates before saving.`,
-      );
+      setDuplicateCheckError(t('supplierPricingManager.duplicateErrorTemplate', { name: sameName.name }));
       return true;
     }
     setDuplicateCheckError('');
@@ -277,24 +286,24 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
   const seasonType = form.season_type || 'all_year';
 
   const getApprovalBadge = (status) => {
-    const config = APPROVAL_BADGES[status] || APPROVAL_BADGES.pending;
-    return <Badge className={config.class}>{config.label}</Badge>;
+    const config = APPROVAL_BADGE_CONFIG[status] || APPROVAL_BADGE_CONFIG.pending;
+    return <Badge className={config.class}>{t(config.labelKey)}</Badge>;
   };
 
   return (
     <div>
       <Card className="p-6 bg-card">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-foreground">Pricing Management</h3>
+          <h3 className="text-lg font-bold text-foreground">{t('supplierPricingManager.pricingManagementTitle')}</h3>
           <Button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" /> Add Pricing Tier
+            <Plus className="w-4 h-4 mr-2" /> {t('supplierPricingManager.addPricingTier')}
           </Button>
         </div>
 
         {pricings.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No pricing tiers yet. Add your first one.</p>
+            <p>{t('supplierPricingManager.noPricingTiersYet')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -312,16 +321,22 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                     <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
                       <span className="font-semibold text-green-700 dark:text-green-300">
                         ${pricing.base_price?.toFixed(2)}{' '}
-                        <span className="font-normal text-muted-foreground">base</span>
+                        <span className="font-normal text-muted-foreground">
+                          {t('supplierPricingManager.baseSuffix')}
+                        </span>
                       </span>
                       {pricing.client_price != null && (
                         <span className="font-semibold text-blue-700 dark:text-blue-300">
                           ${pricing.client_price?.toFixed(2)}{' '}
-                          <span className="font-normal text-muted-foreground">sell</span>
+                          <span className="font-normal text-muted-foreground">
+                            {t('supplierPricingManager.sellSuffix')}
+                          </span>
                         </span>
                       )}
                       <Badge variant="outline" className="text-xs">
-                        {SEASON_LABELS[pricing.season_type] || pricing.season_type}
+                        {SEASON_LABEL_KEYS[pricing.season_type]
+                          ? t(SEASON_LABEL_KEYS[pricing.season_type])
+                          : pricing.season_type}
                       </Badge>
                       {pricing.season_start && pricing.season_end && (
                         <span className="text-xs text-muted-foreground">
@@ -329,17 +344,22 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                         </span>
                       )}
                       <Badge variant="outline" className="text-xs">
-                        {UNIT_LABELS[pricing.unit] || pricing.unit}
+                        {UNIT_LABEL_KEYS[pricing.unit] ? t(UNIT_LABEL_KEYS[pricing.unit]) : pricing.unit}
                       </Badge>
                       {pricing.occupancy && (
                         <Badge variant="secondary" className="text-xs">
-                          {OCCUPANCY_OPTIONS.find((o) => o.value === pricing.occupancy)?.label || pricing.occupancy}
+                          {(() => {
+                            const opt = OCCUPANCY_OPTION_KEYS.find((o) => o.value === pricing.occupancy);
+                            return opt ? t(opt.labelKey) : pricing.occupancy;
+                          })()}
                         </Badge>
                       )}
                       {pricing.meal_treatment && (
                         <Badge variant="secondary" className="text-xs">
-                          {MEAL_TREATMENT_OPTIONS.find((o) => o.value === pricing.meal_treatment)?.label ||
-                            pricing.meal_treatment}
+                          {(() => {
+                            const opt = MEAL_TREATMENT_OPTION_KEYS.find((o) => o.value === pricing.meal_treatment);
+                            return opt ? t(opt.labelKey) : pricing.meal_treatment;
+                          })()}
                         </Badge>
                       )}
                     </div>
@@ -348,10 +368,15 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                     )}
                   </div>
                   <div className="flex gap-1 ml-4 flex-shrink-0">
-                    <Button variant="ghost" size="icon" onClick={() => openDuplicateModal(pricing)} title="Duplicate">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openDuplicateModal(pricing)}
+                      title={t('tripCard.duplicate')}
+                    >
                       <Copy className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEditModal(pricing)} title="Edit">
+                    <Button variant="ghost" size="icon" onClick={() => openEditModal(pricing)} title={t('common.edit')}>
                       <Edit className="w-4 h-4" />
                     </Button>
                     {pricing.approval_status === 'pending' && (
@@ -360,7 +385,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                           variant="ghost"
                           size="icon"
                           onClick={() => approveMutation.mutate({ id: pricing.id })}
-                          title="Approve"
+                          title={t('supplierPricingManager.approveTitle')}
                         >
                           <Check className="w-4 h-4 text-green-600 dark:text-green-300" />
                         </Button>
@@ -368,7 +393,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                           variant="ghost"
                           size="icon"
                           onClick={() => rejectMutation.mutate({ id: pricing.id })}
-                          title="Reject"
+                          title={t('supplierPricingManager.rejectTitle')}
                         >
                           <XCircle className="w-4 h-4 text-red-600 dark:text-red-300" />
                         </Button>
@@ -378,7 +403,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                       variant="ghost"
                       size="icon"
                       onClick={() => deleteMutation.mutate(pricing.id)}
-                      title="Delete"
+                      title={t('common.delete')}
                     >
                       <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
                     </Button>
@@ -393,27 +418,28 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
       <Dialog open={modalOpen} onOpenChange={closeModal}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingPricing ? 'Edit Pricing Tier' : 'Add Pricing Tier'}</DialogTitle>
+            <DialogTitle>
+              {editingPricing
+                ? t('supplierPricingManager.editPricingTierTitle')
+                : t('supplierPricingManager.addPricingTier')}
+            </DialogTitle>
             {!editingPricing && (
-              <DialogDescription>
-                To avoid duplicates, you must change the name, occupancy, meal treatment, or season dates from any
-                existing tier before saving.
-              </DialogDescription>
+              <DialogDescription>{t('supplierPricingManager.duplicateWarningDesc')}</DialogDescription>
             )}
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Name *</Label>
+                <Label>{t('supplierPricingManager.nameLabel')}</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   required
-                  placeholder="e.g. Premium Room"
+                  placeholder={t('supplierPricingManager.namePlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Currency</Label>
+                <Label>{t('supplierPricingManager.currencyLabel')}</Label>
                 <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -430,7 +456,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Base Price (cost) *</Label>
+                <Label>{t('supplierPricingManager.basePriceLabel')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -441,44 +467,44 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                 />
               </div>
               <div className="space-y-2">
-                <Label>Client Sell Price (optional)</Label>
+                <Label>{t('supplierPricingManager.clientSellPriceLabel')}</Label>
                 <Input
                   type="number"
                   step="0.01"
                   min="0"
                   value={form.client_price}
                   onChange={(e) => setForm({ ...form, client_price: e.target.value })}
-                  placeholder="Overrides markup calculation"
+                  placeholder={t('supplierPricingManager.clientSellPricePlaceholder')}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Unit</Label>
+                <Label>{t('supplierPricingManager.unitLabel')}</Label>
                 <Select value={form.unit} onValueChange={(v) => setForm({ ...form, unit: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(UNIT_LABELS).map(([key, label]) => (
+                    {Object.entries(UNIT_LABEL_KEYS).map(([key, labelKey]) => (
                       <SelectItem key={key} value={key}>
-                        {label}
+                        {t(labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Season</Label>
+                <Label>{t('supplierPricingManager.seasonLabel')}</Label>
                 <Select value={seasonType} onValueChange={(v) => setForm({ ...form, season_type: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(SEASON_LABELS).map(([key, label]) => (
+                    {Object.entries(SEASON_LABEL_KEYS).map(([key, labelKey]) => (
                       <SelectItem key={key} value={key}>
-                        {label}
+                        {t(labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -489,7 +515,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
             {seasonType === 'custom' && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Season Start</Label>
+                  <Label>{t('supplierPricingManager.seasonStartLabel')}</Label>
                   <Input
                     type="date"
                     value={form.season_start}
@@ -497,7 +523,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Season End</Label>
+                  <Label>{t('supplierPricingManager.seasonEndLabel')}</Label>
                   <Input
                     type="date"
                     value={form.season_end}
@@ -509,7 +535,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Min Quantity</Label>
+                <Label>{t('supplierPricingManager.minQuantityLabel')}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -518,56 +544,54 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                 />
               </div>
               <div className="space-y-2">
-                <Label>Max Quantity</Label>
+                <Label>{t('supplierPricingManager.maxQuantityLabel')}</Label>
                 <Input
                   type="number"
                   min="1"
                   value={form.max_quantity}
                   onChange={(e) => setForm({ ...form, max_quantity: e.target.value })}
-                  placeholder="Unlimited"
+                  placeholder={t('supplierPricingManager.maxQuantityPlaceholder')}
                 />
               </div>
             </div>
 
             <div className="border-t border-border pt-4">
-              <h4 className="text-sm font-semibold text-foreground mb-3">Hotel Pricing Options</h4>
+              <h4 className="text-sm font-semibold text-foreground mb-3">
+                {t('supplierPricingManager.hotelPricingOptionsTitle')}
+              </h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Occupancy</Label>
+                  <Label>{t('supplierPricingManager.occupancyLabel')}</Label>
                   <Select value={form.occupancy} onValueChange={(v) => setForm({ ...form, occupancy: v })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select occupancy" />
+                      <SelectValue placeholder={t('supplierPricingManager.selectOccupancyPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {OCCUPANCY_OPTIONS.map((opt) => (
+                      {OCCUPANCY_OPTION_KEYS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
+                          {t(opt.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Define different pricing tiers per occupancy type (Single, Double, Triple, etc.)
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('supplierPricingManager.occupancyHint')}</p>
                 </div>
                 {isHotel && (
                   <div className="space-y-2">
-                    <Label>Meal Treatment</Label>
+                    <Label>{t('supplierPricingManager.mealTreatmentLabel')}</Label>
                     <Select value={form.meal_treatment} onValueChange={(v) => setForm({ ...form, meal_treatment: v })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select meal plan" />
+                        <SelectValue placeholder={t('supplierPricingManager.selectMealPlanPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {MEAL_TREATMENT_OPTIONS.map((opt) => (
+                        {MEAL_TREATMENT_OPTION_KEYS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
+                            {t(opt.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Different pricing by meal plan (BB, HB, FB, AI, etc.)
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.mealTreatmentHint')}</p>
                   </div>
                 )}
               </div>
@@ -575,47 +599,45 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
 
             {isCarRental && (
               <div className="border-t border-border pt-4">
-                <h4 className="text-sm font-semibold text-foreground mb-3">Car Rental Options</h4>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Set car category, daily rate, drop-off surcharge, and insurance supplement.
-                </p>
+                <h4 className="text-sm font-semibold text-foreground mb-3">
+                  {t('supplierPricingManager.carRentalOptionsTitle')}
+                </h4>
+                <p className="text-xs text-muted-foreground mb-3">{t('supplierPricingManager.carRentalOptionsHint')}</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Car Category</Label>
+                    <Label>{t('supplierPricingManager.carCategoryLabel')}</Label>
                     <Select
                       value={form.car_category || ''}
                       onValueChange={(v) => setForm({ ...form, car_category: v })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select car category" />
+                        <SelectValue placeholder={t('supplierPricingManager.selectCarCategoryPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {CAR_CATEGORY_OPTIONS.map((opt) => (
+                        {CAR_CATEGORY_OPTION_KEYS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
+                            {t(opt.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Daily Rate</Label>
+                    <Label>{t('supplierPricingManager.dailyRateLabel')}</Label>
                     <Input
                       type="number"
                       step="0.01"
                       min="0"
                       value={form.daily_rate || ''}
                       onChange={(e) => setForm({ ...form, daily_rate: e.target.value })}
-                      placeholder="Override base_price as daily rate"
+                      placeholder={t('supplierPricingManager.dailyRatePlaceholder')}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      If set, this is used as the daily rental price instead of base_price.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.dailyRateHint')}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-3">
                   <div className="space-y-2">
-                    <Label>Drop-off Surcharge</Label>
+                    <Label>{t('supplierPricingManager.dropOffSurchargeLabel')}</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -624,12 +646,10 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                       onChange={(e) => setForm({ ...form, drop_off_surcharge: e.target.value })}
                       placeholder="0.00"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Applied one-time when drop-off differs from pick-up location.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.dropOffSurchargeHint')}</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Insurance Surcharge (daily)</Label>
+                    <Label>{t('supplierPricingManager.insuranceSurchargeLabel')}</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -638,14 +658,16 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                       onChange={(e) => setForm({ ...form, insurance_surcharge: e.target.value })}
                       placeholder="0.00"
                     />
-                    <p className="text-xs text-muted-foreground">Additional daily insurance cost.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('supplierPricingManager.insuranceSurchargeHint')}
+                    </p>
                   </div>
                 </div>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t('supplierPricingManager.descriptionLabel')}</Label>
               <Textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -653,7 +675,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
               />
             </div>
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>{t('common.notes')}</Label>
               <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
             </div>
 
@@ -665,7 +687,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -675,7 +697,7 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                 {(createMutation.isPending || updateMutation.isPending) && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
-                {editingPricing ? 'Update' : 'Create'}
+                {editingPricing ? t('categories.update') : t('categories.create')}
               </Button>
             </div>
           </form>
