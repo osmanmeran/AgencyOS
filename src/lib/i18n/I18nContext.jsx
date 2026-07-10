@@ -1286,6 +1286,8 @@ const translations = {
       goToCategories: 'Go to Categories',
       summaryLine: '{categories} categories · {suppliers} suppliers · {bookings} booking requests',
       manageCategories: 'Manage Categories',
+      categoryInUse:
+        '{name} still has prices or services linked to it — move or delete them first. The category was kept.',
       pendingBadge: '{count} pending',
       bookingsLabel: 'Bookings',
       priceTiersLabel: 'Price Tiers',
@@ -3625,6 +3627,8 @@ const translations = {
       goToCategories: 'Ir a Categorías',
       summaryLine: '{categories} categorías · {suppliers} proveedores · {bookings} solicitudes de reserva',
       manageCategories: 'Administrar Categorías',
+      categoryInUse:
+        '{name} todavía tiene precios o servicios vinculados — muévelos o elimínalos primero. La categoría se mantuvo.',
       pendingBadge: '{count} pendientes',
       bookingsLabel: 'Reservas',
       priceTiersLabel: 'Niveles de Precio',
@@ -5976,6 +5980,8 @@ const translations = {
       goToCategories: 'Aller aux Catégories',
       summaryLine: '{categories} catégories · {suppliers} fournisseurs · {bookings} demandes de réservation',
       manageCategories: 'Gérer les Catégories',
+      categoryInUse:
+        "{name} a encore des prix ou services liés — déplacez-les ou supprimez-les d'abord. La catégorie a été conservée.",
       pendingBadge: '{count} en attente',
       bookingsLabel: 'Réservations',
       priceTiersLabel: 'Niveaux de Prix',
@@ -8322,6 +8328,8 @@ const translations = {
       goToCategories: 'Kategorilere Git',
       summaryLine: '{categories} kategori · {suppliers} tedarikçi · {bookings} rezervasyon talebi',
       manageCategories: 'Kategorileri Yönet',
+      categoryInUse:
+        '{name} kategorisine hâlâ bağlı fiyatlar veya hizmetler var — önce bunları taşıyın veya silin. Kategori korundu.',
       pendingBadge: '{count} bekliyor',
       bookingsLabel: 'Rezervasyonlar',
       priceTiersLabel: 'Fiyat Katmanları',
@@ -10680,6 +10688,8 @@ const translations = {
       goToCategories: 'Zu den Kategorien',
       summaryLine: '{categories} Kategorien · {suppliers} Lieferanten · {bookings} Buchungsanfragen',
       manageCategories: 'Kategorien Verwalten',
+      categoryInUse:
+        '{name} hat noch verknüpfte Preise oder Leistungen — verschieben oder löschen Sie diese zuerst. Die Kategorie wurde beibehalten.',
       pendingBadge: '{count} ausstehend',
       bookingsLabel: 'Buchungen',
       priceTiersLabel: 'Preisstufen',

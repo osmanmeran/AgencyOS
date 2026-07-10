@@ -191,7 +191,9 @@ export default function SupplierPricingManager({
     mutationFn: (/** @type {any} */ { id, data }) =>
       db.entities.SupplierPricing.update(id, {
         ...data,
-        subcategory_id: activeSubId || null,
+        // Keep the pricing's existing category link — the list shows all
+        // categories, so the currently active tab must not re-link it.
+        subcategory_id: /** @type {any} */ (editingPricing)?.subcategory_id || activeSubId || null,
         base_price: parseFloat(data.base_price) || 0,
         client_price: data.client_price ? parseFloat(data.client_price) : null,
         min_quantity: parseInt(data.min_quantity) || 1,
@@ -355,7 +357,7 @@ export default function SupplierPricingManager({
         {categories?.length > 1 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {categories.map((cat) => {
-              const active = (activeCategory?.id || categoryName || categories[0]?.name) === (cat.id || cat.name);
+              const active = cat.id === activeCategoryId;
               return (
                 <button
                   type="button"
@@ -461,7 +463,7 @@ export default function SupplierPricingManager({
                           {t('supplierPricingManager.linkedServiceBadge', { name: serviceName(pricing.service_id) })}
                         </Badge>
                       )}
-                      {(pricing.min_quantity || pricing.max_quantity) && (
+                      {(pricing.min_quantity > 1 || pricing.max_quantity != null) && (
                         <Badge variant="outline" className="text-xs">
                           {t('supplierPricingManager.quantityBadge', {
                             min: pricing.min_quantity || 1,

@@ -101,6 +101,16 @@ export default function SupplierDetails() {
       });
     }
     for (const sc of toRemove) {
+      // Don't orphan prices/services still filed under this category.
+      const [linkedPricings, linkedServices] = await Promise.all([
+        db.entities.SupplierPricing.filter({ subcategory_id: sc.id }),
+        db.entities.SupplierService.filter({ subcategory_id: sc.id }),
+      ]);
+      if (linkedPricings.length || linkedServices.length) {
+        const cat = categories.find((c) => c.id === sc.category_id);
+        showError(t('supplierDetails.categoryInUse', { name: cat?.name || sc.name }));
+        continue;
+      }
       await db.entities.SupplierSubcategory.delete(sc.id);
     }
     queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });

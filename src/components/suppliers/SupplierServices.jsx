@@ -161,12 +161,17 @@ export default function SupplierServices({ supplierId }) {
     e.preventDefault();
     let subcategory_id = formData.subcategory_id;
     // Assign the supplier to the chosen category (auto-create the link if needed)
-    // so the service is filed under the right category's pricing tool.
-    if (selectedCategoryId && !subcategory_id) {
+    // so the service is filed under the right category's pricing tool. Also
+    // covers edits where the user picked a different category than the one
+    // the service is currently filed under.
+    const currentCategoryId = subcategory_id ? mySubs.find((s) => s.id === subcategory_id)?.category_id || '' : '';
+    if (selectedCategoryId && selectedCategoryId !== currentCategoryId) {
       const cat = categoryOptions.find((c) => c.id === selectedCategoryId);
       if (cat) {
         const sub = await ensureSupplierSubcategory(db, supplierId, cat.id, cat.name);
         subcategory_id = sub.id;
+        queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
+        queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
       }
     }
     const data = {

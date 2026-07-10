@@ -41,6 +41,16 @@ const emptyTier = () => ({
   currency: 'EUR',
 });
 
+// Normalizes a stored tier for the form: legacy exact-`pax` tiers become a
+// min=max band, and every tier gets a `_key` (tiers created outside this
+// form don't have one, and updateTier matches rows by it).
+const loadTier = (t, i) => ({
+  ...t,
+  _key: t._key || `tier-loaded-${i}`,
+  min_pax: t.min_pax ?? (t.pax != null && t.pax !== '' ? t.pax : ''),
+  max_pax: t.max_pax ?? (t.pax != null && t.pax !== '' ? t.pax : ''),
+});
+
 const emptyContract = {
   name: '',
   client_id: '',
@@ -86,7 +96,7 @@ export default function TourContractForm() {
       group_price: editContract.group_price ?? '',
       group_currency: editContract.group_currency || 'EUR',
       itinerary: editContract.itinerary?.length ? editContract.itinerary : [emptyItem()],
-      pricing_tiers: editContract.pricing_tiers?.length ? editContract.pricing_tiers : [emptyTier()],
+      pricing_tiers: editContract.pricing_tiers?.length ? editContract.pricing_tiers.map(loadTier) : [emptyTier()],
       terms_and_conditions: editContract.terms_and_conditions || '',
       notes: editContract.notes || '',
       is_active: editContract.is_active !== false,

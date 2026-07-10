@@ -316,6 +316,18 @@ export default function Suppliers() {
       });
     }
     for (const sc of toRemove) {
+      // Don't orphan prices/services still filed under this category.
+      const [linkedPricings, linkedServices] = await Promise.all([
+        db.entities.SupplierPricing.filter({ subcategory_id: sc.id }),
+        db.entities.SupplierService.filter({ subcategory_id: sc.id }),
+      ]);
+      if (linkedPricings.length || linkedServices.length) {
+        const cat = categories.find((c) => c.id === sc.category_id);
+        showError(
+          `${cat?.name || sc.name} still has prices or services linked to it — move or delete them first. The category was kept.`,
+        );
+        continue;
+      }
       await db.entities.SupplierSubcategory.delete(sc.id);
     }
     queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
@@ -338,6 +350,7 @@ export default function Suppliers() {
             name: cat?.name || 'General',
           });
         }
+        queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
       }
       closeModal();
     }
@@ -793,7 +806,12 @@ export default function Suppliers() {
                 <Label>Rating</Label>
                 <Select
                   value={formData.rating?.toString()}
-                  onValueChange={(v) => setFormData({ ...formData, rating: isNaN(Number(v)) ? undefined : Number(v) })}
+                  onValueChange={(v) =>
+                    setFormData({
+                      ...formData,
+                      rating: /** @type {number|string} */ (isNaN(Number(v)) ? v : Number(v)),
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
