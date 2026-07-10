@@ -5,7 +5,13 @@ import { useT } from '@/lib/i18n/I18nContext';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 
-export default function LocationSearch({ value, onChange, onSelect = undefined, placeholder }) {
+export default function LocationSearch({
+  value,
+  onChange,
+  onSelect = undefined,
+  placeholder,
+  showCurrentLocationButton = true,
+}) {
   const { t } = useT();
   const [query, setQuery] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
@@ -111,14 +117,16 @@ export default function LocationSearch({ value, onChange, onSelect = undefined, 
             <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
           )}
         </div>
-        <button
-          type="button"
-          onClick={useCurrentLocation}
-          title={t('locationSearch.useCurrentLocationTitle')}
-          className="h-9 w-9 flex items-center justify-center rounded-md border border-border hover:bg-muted text-muted-foreground"
-        >
-          <Navigation className="w-4 h-4" />
-        </button>
+        {showCurrentLocationButton && (
+          <button
+            type="button"
+            onClick={useCurrentLocation}
+            title={t('locationSearch.useCurrentLocationTitle')}
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-border hover:bg-muted text-muted-foreground"
+          >
+            <Navigation className="w-4 h-4" />
+          </button>
+        )}
       </div>
       {open && suggestions.length > 0 && (
         <div className="absolute z-50 mt-1 w-full bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">

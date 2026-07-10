@@ -590,6 +590,7 @@ const translations = {
       unnamed: 'Unnamed',
       nightSingular: '{count} night',
       nightPlural: '{count} nights',
+      viewOnMap: 'View on map',
     },
     supplierFilters: {
       filterPlaceholder: 'Filter...',
@@ -2988,6 +2989,7 @@ const translations = {
       unnamed: 'Sin nombre',
       nightSingular: '{count} noche',
       nightPlural: '{count} noches',
+      viewOnMap: 'Ver en el mapa',
     },
     supplierFilters: {
       filterPlaceholder: 'Filtrar...',
@@ -5338,6 +5340,7 @@ const translations = {
       unnamed: 'Sans nom',
       nightSingular: '{count} nuit',
       nightPlural: '{count} nuits',
+      viewOnMap: 'Voir sur la carte',
     },
     supplierFilters: {
       filterPlaceholder: 'Filtrer...',
@@ -7690,6 +7693,7 @@ const translations = {
       unnamed: 'İsimsiz',
       nightSingular: '{count} gece',
       nightPlural: '{count} gece',
+      viewOnMap: 'Haritada görüntüle',
     },
     supplierFilters: {
       filterPlaceholder: 'Filtrele...',
@@ -10045,6 +10049,7 @@ const translations = {
       unnamed: 'Unbenannt',
       nightSingular: '{count} Nacht',
       nightPlural: '{count} Nächte',
+      viewOnMap: 'Auf der Karte anzeigen',
     },
     supplierFilters: {
       filterPlaceholder: 'Filtern...',
@@ -12405,6 +12410,7 @@ const translations = {
       unnamed: 'Senza nome',
       nightSingular: '{count} notte',
       nightPlural: '{count} notti',
+      viewOnMap: 'Visualizza sulla mappa',
     },
     supplierFilters: {
       filterPlaceholder: 'Filtra...',

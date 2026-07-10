@@ -1025,7 +1025,15 @@ export default function ClientQuoteBuilder() {
   const [client, setClient] = useState(/** @type {any} */ (null));
   const [clientLoaded, setClientLoaded] = useState(false);
   const [isStaffPreview, setIsStaffPreview] = useState(false);
-  const [trip, setTrip] = useState({ title: '', destination: '', start_date: '', end_date: '', notes: '' });
+  const [trip, setTrip] = useState({
+    title: '',
+    destination: '',
+    destination_lat: null,
+    destination_lon: null,
+    start_date: '',
+    end_date: '',
+    notes: '',
+  });
   const [rooms, setRooms] = useState(() => [newRoom()]);
   const [lines, setLines] = useState(() => [newLine()]);
   const actAsClientId = useActAsClientId();
@@ -1137,6 +1145,8 @@ export default function ClientQuoteBuilder() {
         submitQuote({
           title: trip.title || 'Quote request',
           destination: trip.destination,
+          destination_lat: trip.destination_lat,
+          destination_lon: trip.destination_lon,
           start_date: trip.start_date,
           end_date: trip.end_date,
           notes: trip.notes,
@@ -1206,8 +1216,17 @@ export default function ClientQuoteBuilder() {
             <Label>Destination</Label>
             <LocationSearch
               value={trip.destination}
-              onChange={(v) => setTrip({ ...trip, destination: v })}
+              onChange={(v) => setTrip({ ...trip, destination: v, destination_lat: null, destination_lon: null })}
+              onSelect={(item) =>
+                setTrip({
+                  ...trip,
+                  destination: item.label,
+                  destination_lat: item.lat != null ? Number(item.lat) : null,
+                  destination_lon: item.lon != null ? Number(item.lon) : null,
+                })
+              }
               placeholder="e.g. Istanbul & Cappadocia"
+              showCurrentLocationButton={false}
             />
           </div>
           <div className="space-y-2">

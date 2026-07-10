@@ -207,6 +207,8 @@ export const schemas = {
     title: z.string().min(1, 'Title is required'),
     // Optional reservation-style trip context from the client quote builder.
     destination: z.string().optional(),
+    destination_lat: z.number().nullable().optional(),
+    destination_lon: z.number().nullable().optional(),
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     passengers: z.array(z.record(z.unknown())).optional(),

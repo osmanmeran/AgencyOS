@@ -92,14 +92,10 @@ export default function TripMap({ events = [] }) {
           src={
             eventsWithLocations.length === 1
               ? `https://maps.google.com/maps?q=${firstLocation}&output=embed&z=12`
-              : `https://www.google.com/maps/embed/v1/directions?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&origin=${encodeURIComponent(eventsWithLocations[0].location)}&destination=${encodeURIComponent(eventsWithLocations[eventsWithLocations.length - 1].location)}${
-                  eventsWithLocations.length > 2
-                    ? `&waypoints=${eventsWithLocations
-                        .slice(1, -1)
-                        .map((e) => encodeURIComponent(e.location))
-                        .join('|')}`
-                    : ''
-                }&mode=driving`
+              : `https://maps.google.com/maps?saddr=${encodeURIComponent(eventsWithLocations[0].location)}&daddr=${eventsWithLocations
+                  .slice(1)
+                  .map((e) => encodeURIComponent(e.location))
+                  .join('+to:')}&output=embed`
           }
         />
       </div>

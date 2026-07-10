@@ -422,6 +422,8 @@ router.post(
       client_name: client.name,
       title: req.body.title,
       destination: req.body.destination || '',
+      destination_lat: req.body.destination_lat ?? null,
+      destination_lon: req.body.destination_lon ?? null,
       start_date: req.body.start_date || '',
       end_date: req.body.end_date || '',
       passengers: Array.isArray(req.body.passengers) ? req.body.passengers : [],

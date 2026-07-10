@@ -1,4 +1,4 @@
-import { MapPin, Calendar, Users, Star, Plane, ArrowRight, Clock, BedDouble } from 'lucide-react';
+import { MapPin, Calendar, Users, Star, Plane, ArrowRight, Clock, BedDouble, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useT } from '@/lib/i18n/I18nContext';
 
@@ -49,6 +49,19 @@ export function QuoteTripInfo({ quote }) {
             <span className="flex items-center gap-1.5 text-foreground">
               <MapPin className="w-4 h-4 text-muted-foreground" />
               {quote.destination}
+              <a
+                href={
+                  quote.destination_lat != null && quote.destination_lon != null
+                    ? `https://maps.google.com/?q=${quote.destination_lat},${quote.destination_lon}`
+                    : `https://maps.google.com/?q=${encodeURIComponent(quote.destination)}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                title={t('quoteRichDetails.viewOnMap')}
+                className="text-muted-foreground hover:text-blue-600 dark:hover:text-blue-300"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </span>
           )}
           {(quote.start_date || quote.end_date) && (
