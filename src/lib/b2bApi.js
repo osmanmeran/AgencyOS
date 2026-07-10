@@ -1,4 +1,5 @@
 import { getActAsClientId } from '@/lib/actAsClient';
+import { getCsrfToken } from '@/lib/csrf';
 
 async function apiFetch(path, opts = {}) {
   // When a staff user is viewing the portal "as" a client, forward the chosen
@@ -8,7 +9,12 @@ async function apiFetch(path, opts = {}) {
   if (asClientId) {
     path += (path.includes('?') ? '&' : '?') + 'clientId=' + encodeURIComponent(asClientId);
   }
-  const headers = { 'Content-Type': 'application/json', ...opts.headers };
+  const csrfToken = getCsrfToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+    ...opts.headers,
+  };
   const res = await fetch('/api/b2b' + path, { ...opts, headers, credentials: 'include' });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

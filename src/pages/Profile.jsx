@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { User, Mail, Phone, Globe, Lock, Save, Loader2, CreditCard, Camera, X } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
+import { getCsrfToken } from '@/lib/csrf';
 
 const LANGUAGES = [
   { code: 'en', name: 'English' },
@@ -110,7 +111,7 @@ export default function Profile() {
       mutationFn: async (/** @type {any} */ data) => {
         const res = await fetch('/api/auth/me', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() || '' },
           body: JSON.stringify(data),
         });
         const json = await res.json();
@@ -133,7 +134,7 @@ export default function Profile() {
       mutationFn: async (/** @type {any} */ data) => {
         const res = await fetch('/api/auth/me', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() || '' },
           body: JSON.stringify(data),
         });
         const json = await res.json();
@@ -168,7 +169,7 @@ export default function Profile() {
       // Save immediately
       await fetch('/api/auth/me', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() || '' },
         body: JSON.stringify({ avatar_url }),
       });
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
@@ -185,7 +186,7 @@ export default function Profile() {
     setForm((prev) => ({ ...prev, avatar_url: '' }));
     await fetch('/api/auth/me', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() || '' },
       body: JSON.stringify({ avatar_url: '' }),
     });
     queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });

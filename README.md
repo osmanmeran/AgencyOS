@@ -231,7 +231,6 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 - **Formal transactions** — Wrap multi-step entity operations in database transactions (unit-of-work pattern)
 - **Dedicated admin routes** — Move inline admin endpoints (`/api/admin/fix-user`, `/api/admin/fix-trip-agents`) into a proper admin route module
 - **Refresh token rotation** — Replace single 24h JWT with short-lived access tokens + rotating refresh tokens
-- **CSRF protection** — Add CSRF tokens for cookie-based auth (currently relies on same-origin only)
 - **Audit auth events** — Log all login/logout/failed-attempt events alongside entity mutations
 - **Response shape consistency** — Standardize entity list responses to always return `{ data, total }` instead of mixing plain arrays with paginated objects
 
@@ -280,16 +279,15 @@ Reviewed `server/` (auth, permissions, entities, b2b, integrations, app) and `sr
 - ✅ **Permissions re-read from DB per request** — `authMiddleware` re-reads tier/custom_permissions/is_active on every request instead of trusting the JWT, so changes and deactivations apply immediately.
 - ✅ **`schemas.entityData` wired in** — applied on the entity POST/PUT routes (`routes/entities.js`), rejecting prohibited keys with a 400 before `sanitizeEntityData`.
 - ✅ **CSP tightened** (`server/app.js`) — `scriptSrc` no longer has `unsafe-eval` or `unsafe-inline`; it's `'self'` only now. Verified there are zero inline `<script>` tags anywhere in the built output, and the only `Function(...)` call in the bundled vendor code is an unreachable lodash-style `root` fallback (`self.Object === Object` is always true in a browser, so it never executes). `styleSrc` keeps `unsafe-inline`, which MUI/emotion's runtime style injection genuinely needs — nonces would require converting the static SPA shell into a per-request template, which isn't worth it for a style-only residual risk.
+- ✅ **CSRF protection added** — double-submit cookie pattern. `setTokenCookie` (`server/services/auth.js`) now also sets a non-httpOnly `csrf_token` cookie alongside the JWT; `server/middleware/csrf.js` requires every mutating request to echo it back as `X-CSRF-Token`, exempting only the session-establishing endpoints (login/microsoft/accept-invite) and requests authenticated via an explicit `Authorization: Bearer` header. Every frontend fetch wrapper (`api-client.js`, `useApi`, `b2bApi`, and the handful of ad-hoc `fetch()` calls in Profile/AppSettings/NotificationBell/SuggestionsManager/TestingArea/OutlookCallback) now attaches the header. Covered by `tests/middleware/csrf.test.js` and verified against a live server with a real login → cookie → mutation round trip.
 
 ### Still open
 
-- 🟡 **No CSRF protection for cookie auth** — relies on `sameSite: 'strict'` plus same-origin only; adding token-based CSRF touches every frontend mutation, so plan it as its own change.
 - 🟢 **In-memory entity queries** — `findEntities` still loads the full entity table then filters/sorts/paginates in JS. Fine at current scale; push to SQL via `json_extract` as data grows (migration 013's indexes already exist for the hot paths).
 - 🟢 **Duplicated permission logic** — `server/permissions.js` and `src/lib/permissions.js` are parity-kept by a test (`tests/lib/parity.test.js`) but not a shared module; the server also still ignores live `AppSettings.tier_permissions` overrides that the frontend honors.
 - 🟢 **Mixed-language strings** — some Outlook/test-email strings are still Italian; finish the English-unification pass.
 
 ### Suggested execution order
 
-1. Add CSRF protection for cookie-based mutations.
-2. Push entity filtering/sorting into SQL.
-3. Extract a shared `permissions` module used by both frontend and backend.
+1. Push entity filtering/sorting into SQL.
+2. Extract a shared `permissions` module used by both frontend and backend.

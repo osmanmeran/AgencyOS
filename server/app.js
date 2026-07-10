@@ -14,6 +14,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { errorHandler, notFoundHandler, sendError } from './middleware/errors.js';
 import { authMiddleware } from './middleware/auth.js';
+import { csrfMiddleware } from './middleware/csrf.js';
 import { auditMiddleware } from './services/audit.js';
 import logger from './lib/logger.js';
 import authRoutes from './routes/auth.js';
@@ -74,6 +75,7 @@ app.use(
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
+app.use(csrfMiddleware);
 
 // Correlation ID: tags every request/log line/error response with a shared
 // id so a user-reported error can be traced back to a specific log line.

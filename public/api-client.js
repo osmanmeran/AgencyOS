@@ -30,9 +30,19 @@
     }
   }
 
+  // Double-submit CSRF cookie set by setTokenCookie() on login; not
+  // httpOnly, so it's readable here and echoed back as a header for the
+  // backend's csrfMiddleware to compare against.
+  function getCsrfToken() {
+    var match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
   async function api(path, options) {
     options = options || {};
     var headers = { 'Content-Type': 'application/json' };
+    var csrfToken = getCsrfToken();
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
     if (options.headers) {
       for (var k in options.headers) headers[k] = options.headers[k];
     }

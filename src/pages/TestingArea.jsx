@@ -17,10 +17,16 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCsrfToken } from '@/lib/csrf';
 
 async function api(path, opts = {}) {
+  const csrfToken = getCsrfToken();
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+      ...opts.headers,
+    },
     credentials: 'include',
     ...opts,
   });
@@ -177,6 +183,7 @@ export default function TestingArea() {
                 formData.append('entity_id', 'test');
                 const res = await fetch('/api/documents/upload', {
                   method: 'POST',
+                  headers: { 'X-CSRF-Token': getCsrfToken() || '' },
                   credentials: 'include',
                   body: formData,
                 });

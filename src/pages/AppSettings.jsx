@@ -34,6 +34,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
+import { getCsrfToken } from '@/lib/csrf';
 
 const LANGUAGES = [
   { code: 'en', name: 'English' },
@@ -155,7 +156,12 @@ export default function AppSettings() {
   }, [settings]);
 
   const apiFetch = async (path, opts = {}) => {
-    const headers = { 'Content-Type': 'application/json', ...opts.headers };
+    const csrfToken = getCsrfToken();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+      ...opts.headers,
+    };
     const res = await fetch('/api' + path, { ...opts, headers, credentials: 'include' });
     return res.json();
   };

@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { getDb, uid } from '../db.js';
@@ -49,15 +50,24 @@ export function safeUser(u) {
   };
 }
 
-/** Set the httpOnly JWT auth cookie on the response, valid for 24 hours. */
+/**
+ * Set the httpOnly JWT auth cookie plus a companion CSRF cookie, both valid
+ * for 24 hours. The CSRF cookie is deliberately not httpOnly — the frontend
+ * reads it and echoes it back as the `X-CSRF-Token` header on mutations, and
+ * {@link import('../middleware/csrf.js').csrfMiddleware} checks the two
+ * match (double-submit pattern). A cross-site attacker can trigger the
+ * cookie-bearing request but can't read the cookie value to build the
+ * matching header, since the browser enforces same-origin on cookie reads.
+ */
 export function setTokenCookie(res, token) {
-  res.cookie('token', token, {
-    httpOnly: true,
+  const cookieOptions = {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000,
     path: '/',
-  });
+  };
+  res.cookie('token', token, { ...cookieOptions, httpOnly: true });
+  res.cookie('csrf_token', crypto.randomBytes(32).toString('hex'), { ...cookieOptions, httpOnly: false });
 }
 
 /**

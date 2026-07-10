@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Lightbulb, Bug, Heart, Star, SendHorizontal, CheckCircle2 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCsrfToken } from '@/lib/csrf';
 
 const TYPE_ICONS = {
   feature: Star,
@@ -32,9 +33,10 @@ export default function SuggestionDialog({ open, onOpenChange }) {
     if (!title.trim()) return;
     setSending(true);
     try {
+      const csrfToken = getCsrfToken();
       const res = await fetch('/api/suggestions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({ type, title: title.trim(), description: description.trim() }),
       });

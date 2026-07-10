@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCsrfToken } from '@/lib/csrf';
 
 export default function OutlookCallback() {
   const { t } = useT();
@@ -79,7 +80,7 @@ export default function OutlookCallback() {
       .then(async (tokenData) => {
         const r = await fetch('/api/integrations/outlook/connect', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() || '' },
           credentials: 'include',
           body: JSON.stringify({ token_data: tokenData }),
         });

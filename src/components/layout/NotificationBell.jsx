@@ -13,6 +13,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { acquireRealtime, releaseRealtime, onRealtimeMessage } from '@/lib/realtime';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCsrfToken } from '@/lib/csrf';
 
 const TYPE_ICONS = {
   info: Info,
@@ -31,8 +32,13 @@ const TYPE_COLORS = {
 };
 
 async function api(path, opts = {}) {
+  const csrfToken = getCsrfToken();
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+      ...opts.headers,
+    },
     credentials: 'include',
     ...opts,
   });
