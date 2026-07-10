@@ -75,6 +75,40 @@ export default function SupplierDetails() {
     });
   };
 
+  const [categoryEditMode, setCategoryEditMode] = useState(false);
+  const [draftCategoryIds, setDraftCategoryIds] = useState(/** @type {string[]} */ ([]));
+
+  const startCategoryEdit = () => {
+    setDraftCategoryIds(getSupplierCategoryIds(supplierCategoryMap, supplierId));
+    setCategoryEditMode(true);
+  };
+
+  const toggleDraftCategory = (catId) =>
+    setDraftCategoryIds((prev) => (prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]));
+
+  const saveCategories = async () => {
+    const existing = (subcategories || []).filter((s) => s.supplier_id === supplierId);
+    const existingCatIds = existing.map((s) => s.category_id);
+    const toAdd = draftCategoryIds.filter((id) => !existingCatIds.includes(id));
+    const toRemove = existing.filter((s) => !draftCategoryIds.includes(s.category_id));
+
+    for (const catId of toAdd) {
+      const cat = categories.find((c) => c.id === catId);
+      await db.entities.SupplierSubcategory.create({
+        supplier_id: supplierId,
+        category_id: catId,
+        name: cat?.name || 'General',
+      });
+    }
+    for (const sc of toRemove) {
+      await db.entities.SupplierSubcategory.delete(sc.id);
+    }
+    queryClient.invalidateQueries({ queryKey: ['allSupplierSubcategories'] });
+    queryClient.invalidateQueries({ queryKey: ['supplierSubcategories', supplierId] });
+    setCategoryEditMode(false);
+    showSuccess(t('saved'));
+  };
+
   const canModify = hasPermission('modify_suppliers');
   const canModifyBasic = hasPermission('modify_suppliers_basic');
 
@@ -252,21 +286,69 @@ export default function SupplierDetails() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              {selectedCategories.length === 0 && (
-                <span className="text-sm text-muted-foreground">{t('supplierDetails.noCategoryYet')}</span>
+              {categoryEditMode ? (
+                <>
+                  <div className="flex flex-wrap gap-2 w-full">
+                    {categories.length === 0 && (
+                      <span className="text-sm text-muted-foreground">No categories configured yet.</span>
+                    )}
+                    {categories.map((cat) => {
+                      const active = draftCategoryIds.includes(cat.id);
+                      return (
+                        <button
+                          type="button"
+                          key={cat.id}
+                          onClick={() => toggleDraftCategory(cat.id)}
+                          className="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors"
+                          style={
+                            active
+                              ? {
+                                  backgroundColor: `${cat.color || '#3b82f6'}20`,
+                                  color: cat.color || '#3b82f6',
+                                  borderColor: cat.color || '#3b82f6',
+                                }
+                              : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }
+                          }
+                        >
+                          {cat.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Button type="button" size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={saveCategories}>
+                      {t('common.save')}
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setCategoryEditMode(false)}>
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {selectedCategories.length === 0 && (
+                    <span className="text-sm text-muted-foreground">{t('supplierDetails.noCategoryYet')}</span>
+                  )}
+                  {selectedCategories.map((category) => (
+                    <span
+                      key={category.id}
+                      className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold"
+                      style={{
+                        backgroundColor: `${category.color}20`,
+                        color: category.color,
+                      }}
+                    >
+                      {category.name}
+                    </span>
+                  ))}
+                  {(canModify || canModifyBasic) && (
+                    <Button type="button" size="sm" variant="outline" className="gap-1" onClick={startCategoryEdit}>
+                      <Edit className="w-3.5 h-3.5" />
+                      {t('supplierDetails.manageCategories')}
+                    </Button>
+                  )}
+                </>
               )}
-              {selectedCategories.map((category) => (
-                <span
-                  key={category.id}
-                  className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold"
-                  style={{
-                    backgroundColor: `${category.color}20`,
-                    color: category.color,
-                  }}
-                >
-                  {category.name}
-                </span>
-              ))}
               {supplier.show_in_portal && (
                 <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
                   <Store className="w-3.5 h-3.5" /> {t('supplierDetails.inClientPortalBadge')}
