@@ -120,6 +120,20 @@
       "enum": ["RO", "BB", "HB", "FB", "AI", "UAI"],
       "description": "Meal plan / treatment (Room Only, Bed & Breakfast, Half Board, Full Board, All Inclusive)"
     },
+    "duration_value": {
+      "type": "number",
+      "description": "Guided tour length value (combined with duration_unit)"
+    },
+    "duration_unit": {
+      "type": "string",
+      "enum": ["hours", "days"],
+      "default": "hours",
+      "description": "Unit for duration_value on guided-tour pricing"
+    },
+    "max_capacity": {
+      "type": "number",
+      "description": "Guided tour maximum number of participants"
+    },
     "notes": {
       "type": "string"
     },

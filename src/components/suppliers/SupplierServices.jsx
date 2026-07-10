@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Edit, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useT } from '@/lib/i18n/I18nContext';
+import { ensureCategoryByName, ensureSupplierSubcategory, GUIDED_TOURS_NAME } from '@/lib/supplierCategories';
 
 const STATUS_COLORS = {
   quoted: 'bg-muted text-foreground',
@@ -39,6 +40,7 @@ export default function SupplierServices({ supplierId }) {
     currency: 'USD',
     unit: 'per trip',
     status: 'quoted',
+    subcategory_id: '',
     notes: '',
   });
   const queryClient = useQueryClient();
@@ -49,6 +51,39 @@ export default function SupplierServices({ supplierId }) {
       queryFn: () => db.entities.SupplierService.filter({ supplier_id: supplierId }),
     })
   );
+
+  const { data: allCategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierCategories'],
+      queryFn: () => db.entities.SupplierCategory.list(),
+    })
+  );
+  const { data: mySubs = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierSubcategories', supplierId],
+      queryFn: () => db.entities.SupplierSubcategory.filter({ supplier_id: supplierId }),
+    })
+  );
+
+  // Categories the supplier is already assigned to...
+  const assignedCategories = useMemo(() => {
+    const ids = new Set((mySubs || []).map((s) => s.category_id));
+    return (allCategories || []).filter((c) => ids.has(c.id));
+  }, [allCategories, mySubs]);
+
+  // ...plus the Guided Tours category if it exists, so it can be picked even
+  // before the supplier is first assigned to it.
+  const guidedTourCat = useMemo(
+    () => (allCategories || []).find((c) => c.name?.toLowerCase() === GUIDED_TOURS_NAME.toLowerCase()),
+    [allCategories],
+  );
+  const categoryOptions = useMemo(() => {
+    const opts = [...assignedCategories];
+    if (guidedTourCat && !opts.some((c) => c.id === guidedTourCat.id)) opts.push(guidedTourCat);
+    return opts;
+  }, [assignedCategories, guidedTourCat]);
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
   const createMutation = /** @type {any} */ (
     useMutation({
@@ -77,7 +112,7 @@ export default function SupplierServices({ supplierId }) {
     })
   );
 
-  const openModal = (service = null) => {
+  const openModal = async (service = null) => {
     if (service) {
       setEditingService(service);
       setFormData({
@@ -88,8 +123,12 @@ export default function SupplierServices({ supplierId }) {
         currency: service.currency || 'USD',
         unit: service.unit || 'per trip',
         status: service.status || 'quoted',
+        subcategory_id: service.subcategory_id || '',
         notes: service.notes || '',
       });
+      setSelectedCategoryId(
+        service.subcategory_id ? mySubs.find((s) => s.id === service.subcategory_id)?.category_id || '' : '',
+      );
     } else {
       setEditingService(null);
       setFormData({
@@ -100,8 +139,15 @@ export default function SupplierServices({ supplierId }) {
         currency: 'USD',
         unit: 'per trip',
         status: 'quoted',
+        subcategory_id: '',
         notes: '',
       });
+      // Make sure the Guided Tours category exists so it can be picked even
+      // before this supplier is first assigned to it.
+      await ensureCategoryByName(db, GUIDED_TOURS_NAME);
+      queryClient.invalidateQueries({ queryKey: ['supplierCategories'] });
+      // Default: if the supplier has exactly one category, pre-select it.
+      setSelectedCategoryId(assignedCategories.length === 1 ? assignedCategories[0].id : '');
     }
     setModalOpen(true);
   };
@@ -111,10 +157,21 @@ export default function SupplierServices({ supplierId }) {
     setEditingService(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    let subcategory_id = formData.subcategory_id;
+    // Assign the supplier to the chosen category (auto-create the link if needed)
+    // so the service is filed under the right category's pricing tool.
+    if (selectedCategoryId && !subcategory_id) {
+      const cat = categoryOptions.find((c) => c.id === selectedCategoryId);
+      if (cat) {
+        const sub = await ensureSupplierSubcategory(db, supplierId, cat.id, cat.name);
+        subcategory_id = sub.id;
+      }
+    }
     const data = {
       ...formData,
+      subcategory_id,
       budgeted_cost: formData.budgeted_cost ? parseFloat(formData.budgeted_cost) : undefined,
       actual_cost: formData.actual_cost ? parseFloat(formData.actual_cost) : undefined,
     };
@@ -244,6 +301,25 @@ export default function SupplierServices({ supplierId }) {
                 required
               />
             </div>
+
+            {categoryOptions.length > 1 && (
+              <div className="space-y-2">
+                <Label>{t('supplierServices.categoryLabel')}</Label>
+                <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('supplierServices.selectCategoryPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">{t('supplierServices.categoryHint')}</p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="description">{t('supplierServices.descriptionLabel')}</Label>

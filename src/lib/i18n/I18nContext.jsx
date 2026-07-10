@@ -858,6 +858,13 @@ const translations = {
       mealFB: 'Full Board',
       mealAI: 'All Inclusive',
       mealUAI: 'Ultra All Inclusive',
+      durationHours: 'Hours',
+      durationDays: 'Days',
+      guidedTourOptionsTitle: 'Guided Tour Options',
+      durationLabel: 'Duration',
+      maxCapacityLabel: 'Max Participants',
+      maxCapacityHint: 'Maximum number of participants per tour.',
+      maxCapacityBadge: 'Max {count}',
     },
     supplierServices: {
       title: 'Services & Cost Tracking',
@@ -883,6 +890,9 @@ const translations = {
       statusPaid: 'Paid',
       statusCancelled: 'Cancelled',
       updateServiceButton: 'Update Service',
+      categoryLabel: 'Service Category',
+      selectCategoryPlaceholder: 'Select a category…',
+      categoryHint: 'Choose the category this service belongs to — it loads the matching pricing tool.',
     },
     serviceBookingManager: {
       title: 'Supplier Booking Management',

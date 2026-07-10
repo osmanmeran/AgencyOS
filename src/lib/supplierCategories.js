@@ -32,3 +32,25 @@ export async function createSupplierWithCategory(db, supplierData, categoryId, c
   }
   return supplier;
 }
+
+export const GUIDED_TOURS_NAME = 'Guided Tours';
+
+/** Finds a SupplierCategory by name (case-insensitive) or creates it. */
+export async function ensureCategoryByName(db, name, color = '#8b5cf6') {
+  const all = await db.entities.SupplierCategory.list();
+  const existing = all.find((c) => c.name?.toLowerCase() === name.toLowerCase());
+  if (existing) return existing;
+  return db.entities.SupplierCategory.create({ name, description: '', icon: '', color });
+}
+
+/** Finds the supplier's subcategory for a category, creating the link if missing. */
+export async function ensureSupplierSubcategory(db, supplierId, categoryId, name) {
+  const subs = await db.entities.SupplierSubcategory.filter({ supplier_id: supplierId });
+  const existing = subs.find((s) => s.category_id === categoryId);
+  if (existing) return existing;
+  return db.entities.SupplierSubcategory.create({
+    supplier_id: supplierId,
+    category_id: categoryId,
+    name: name || 'General',
+  });
+}

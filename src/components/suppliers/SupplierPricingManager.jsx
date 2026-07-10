@@ -82,6 +82,11 @@ const APPROVAL_BADGE_CONFIG = {
   },
 };
 
+const DURATION_UNIT_OPTIONS = [
+  { value: 'hours', labelKey: 'supplierPricingManager.durationHours' },
+  { value: 'days', labelKey: 'supplierPricingManager.durationDays' },
+];
+
 const EMPTY_FORM = {
   name: '',
   description: '',
@@ -100,12 +105,21 @@ const EMPTY_FORM = {
   daily_rate: '',
   drop_off_surcharge: '',
   insurance_surcharge: '',
+  duration_value: '',
+  duration_unit: 'hours',
+  max_capacity: '',
   notes: '',
 };
 
-export default function SupplierPricingManager({ supplierId, categoryName = '' }) {
+export default function SupplierPricingManager({
+  supplierId,
+  categoryName = '',
+  categories = /** @type {any} */ ([]),
+}) {
   const { t } = useT();
-  const catName = (categoryName || '').toLowerCase();
+  const [activeCategory, setActiveCategory] = useState(/** @type {any} */ (null));
+  const effectiveCategoryName = activeCategory?.name || categoryName || categories?.[0]?.name || '';
+  const catName = effectiveCategoryName.toLowerCase();
   const isHotel =
     catName.includes('hotel') ||
     catName.includes('lodging') ||
@@ -113,6 +127,11 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
     catName.includes('resort');
   const isCarRental =
     catName.includes('rent a car') || catName.includes('car rental') || catName.includes('rental car');
+  const isGuidedTour =
+    catName.includes('tour') ||
+    catName.includes('excursion') ||
+    catName.includes('guided') ||
+    catName.includes('activity');
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPricing, setEditingPricing] = useState(null);
@@ -134,6 +153,8 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
         client_price: data.client_price ? parseFloat(data.client_price) : null,
         min_quantity: parseInt(data.min_quantity) || 1,
         max_quantity: data.max_quantity ? parseInt(data.max_quantity) : null,
+        duration_value: data.duration_value ? parseFloat(data.duration_value) : null,
+        max_capacity: data.max_capacity ? parseInt(data.max_capacity) : null,
         is_active: true,
         approval_status: 'pending',
       }),
@@ -153,6 +174,8 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
         client_price: data.client_price ? parseFloat(data.client_price) : null,
         min_quantity: parseInt(data.min_quantity) || 1,
         max_quantity: data.max_quantity ? parseInt(data.max_quantity) : null,
+        duration_value: data.duration_value ? parseFloat(data.duration_value) : null,
+        max_capacity: data.max_capacity ? parseInt(data.max_capacity) : null,
         approval_status: 'pending',
       }),
     onSuccess: () => {
@@ -235,6 +258,9 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
       daily_rate: pricing.daily_rate?.toString() || '',
       drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
       insurance_surcharge: pricing.insurance_surcharge?.toString() || '',
+      duration_value: pricing.duration_value?.toString() || '',
+      duration_unit: pricing.duration_unit || 'hours',
+      max_capacity: pricing.max_capacity?.toString() || '',
       notes: pricing.notes || '',
     });
     setDuplicateCheckError('');
@@ -261,6 +287,9 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
       daily_rate: pricing.daily_rate?.toString() || '',
       drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
       insurance_surcharge: pricing.insurance_surcharge?.toString() || '',
+      duration_value: pricing.duration_value?.toString() || '',
+      duration_unit: pricing.duration_unit || 'hours',
+      max_capacity: pricing.max_capacity?.toString() || '',
       notes: pricing.notes || '',
     });
     setDuplicateCheckError('');
@@ -298,6 +327,33 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
             <Plus className="w-4 h-4 mr-2" /> {t('supplierPricingManager.addPricingTier')}
           </Button>
         </div>
+
+        {categories?.length > 1 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {categories.map((cat) => {
+              const active = (activeCategory?.id || categoryName || categories[0]?.name) === (cat.id || cat.name);
+              return (
+                <button
+                  type="button"
+                  key={cat.id || cat.name}
+                  onClick={() => setActiveCategory(cat)}
+                  className="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors"
+                  style={
+                    active
+                      ? {
+                          backgroundColor: `${cat.color || '#3b82f6'}20`,
+                          color: cat.color || '#3b82f6',
+                          borderColor: cat.color || '#3b82f6',
+                        }
+                      : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }
+                  }
+                >
+                  {cat.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {pricings.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
@@ -359,6 +415,21 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                             const opt = MEAL_TREATMENT_OPTION_KEYS.find((o) => o.value === pricing.meal_treatment);
                             return opt ? t(opt.labelKey) : pricing.meal_treatment;
                           })()}
+                        </Badge>
+                      )}
+                      {pricing.duration_value != null && (
+                        <Badge variant="secondary" className="text-xs">
+                          {pricing.duration_value}{' '}
+                          {t(
+                            pricing.duration_unit === 'days'
+                              ? 'supplierPricingManager.durationDays'
+                              : 'supplierPricingManager.durationHours',
+                          )}
+                        </Badge>
+                      )}
+                      {pricing.max_capacity != null && (
+                        <Badge variant="secondary" className="text-xs">
+                          {t('supplierPricingManager.maxCapacityBadge', { count: pricing.max_capacity })}
                         </Badge>
                       )}
                     </div>
@@ -660,6 +731,55 @@ export default function SupplierPricingManager({ supplierId, categoryName = '' }
                     <p className="text-xs text-muted-foreground">
                       {t('supplierPricingManager.insuranceSurchargeHint')}
                     </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isGuidedTour && (
+              <div className="border-t border-border pt-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">
+                  {t('supplierPricingManager.guidedTourOptionsTitle')}
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.durationLabel')}</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={form.duration_value || ''}
+                        onChange={(e) => setForm({ ...form, duration_value: e.target.value })}
+                        placeholder="0"
+                      />
+                      <Select
+                        value={form.duration_unit || 'hours'}
+                        onValueChange={(v) => setForm({ ...form, duration_unit: v })}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DURATION_UNIT_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {t(opt.labelKey)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.maxCapacityLabel')}</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.max_capacity || ''}
+                      onChange={(e) => setForm({ ...form, max_capacity: e.target.value })}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.maxCapacityHint')}</p>
                   </div>
                 </div>
               </div>
