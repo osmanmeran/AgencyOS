@@ -35,7 +35,8 @@ const emptyItem = () => ({
 
 const emptyTier = () => ({
   _key: `tier-${Date.now()}-${Math.random()}`,
-  pax: '',
+  min_pax: '',
+  max_pax: '',
   price_per_person: '',
   currency: 'EUR',
 });
@@ -45,6 +46,9 @@ const emptyContract = {
   client_id: '',
   client_name: '',
   destination: '',
+  tour_type: 'private',
+  group_price: '',
+  group_currency: 'EUR',
   itinerary: [emptyItem()],
   pricing_tiers: [emptyTier()],
   terms_and_conditions: '',
@@ -78,6 +82,9 @@ export default function TourContractForm() {
       client_id: editContract.client_id || '',
       client_name: editContract.client_name || '',
       destination: editContract.destination || '',
+      tour_type: editContract.tour_type || 'private',
+      group_price: editContract.group_price ?? '',
+      group_currency: editContract.group_currency || 'EUR',
       itinerary: editContract.itinerary?.length ? editContract.itinerary : [emptyItem()],
       pricing_tiers: editContract.pricing_tiers?.length ? editContract.pricing_tiers : [emptyTier()],
       terms_and_conditions: editContract.terms_and_conditions || '',
@@ -156,11 +163,38 @@ export default function TourContractForm() {
     const cleanItinerary = form.itinerary
       .filter((i) => i.category && i.supplier_id)
       .map((i) => ({ ...i, acquiring_price: parseFloat(i.acquiring_price) || 0 }));
-    const cleanTiers = form.pricing_tiers
-      .filter((t) => t.pax !== '' && t.price_per_person !== '')
-      .map((t) => ({ ...t, pax: parseInt(t.pax), price_per_person: parseFloat(t.price_per_person) }));
 
-    const payload = { ...form, itinerary: cleanItinerary, pricing_tiers: cleanTiers };
+    const tour_type = form.tour_type || 'private';
+    let pricing_tiers = [];
+    let group_price = undefined;
+    let group_currency = form.group_currency || 'EUR';
+
+    if (tour_type === 'group') {
+      group_price = parseFloat(form.group_price) || 0;
+    } else {
+      pricing_tiers = form.pricing_tiers
+        .filter((t) => (t.min_pax !== '' || t.pax !== '') && t.price_per_person !== '')
+        .map((t) => {
+          const tier = /** @type {any} */ (t);
+          const clean = {
+            ...tier,
+            min_pax: tier.min_pax !== '' ? parseInt(tier.min_pax) : tier.pax !== '' ? parseInt(tier.pax) : 1,
+            max_pax: tier.max_pax !== '' ? parseInt(tier.max_pax) : '',
+            price_per_person: parseFloat(tier.price_per_person),
+          };
+          delete clean.pax;
+          return clean;
+        });
+    }
+
+    const payload = {
+      ...form,
+      tour_type,
+      group_price,
+      group_currency,
+      itinerary: cleanItinerary,
+      pricing_tiers,
+    };
 
     if (isEditing) updateMutation.mutate(payload);
     else createMutation.mutate(payload);
@@ -258,6 +292,18 @@ export default function TourContractForm() {
               </Popover>
             </div>
             <div className="space-y-2">
+              <Label>Tour Type</Label>
+              <Select value={form.tour_type || 'private'} onValueChange={(v) => setForm({ ...form, tour_type: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">Private (price by number of passengers)</SelectItem>
+                  <SelectItem value="group">Group (fixed per-person price)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Status</Label>
               <Select
                 value={form.is_active ? 'active' : 'inactive'}
@@ -302,44 +348,33 @@ export default function TourContractForm() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-card shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-lg font-bold text-foreground">Pricing Tiers</h2>
-              <p className="text-sm text-muted-foreground">Fixed price per person for each exact participant count</p>
+        {form.tour_type === 'group' ? (
+          <Card className="p-6 bg-card shadow-md">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-foreground">Group Price</h2>
+              <p className="text-sm text-muted-foreground">
+                Fixed price per person, charged regardless of how many passengers book
+              </p>
             </div>
-            <Button type="button" onClick={addTier} variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Tier
-            </Button>
-          </div>
-          <div className="space-y-2">
-            <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 text-xs font-semibold text-muted-foreground uppercase px-1">
-              <span>Participants</span>
-              <span>Price / Person</span>
-              <span>Currency</span>
-              <span></span>
-            </div>
-            {form.pricing_tiers.map((tier) => (
-              <div key={tier._key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
-                <Input
-                  type="number"
-                  min="1"
-                  value={tier.pax}
-                  onChange={(e) => updateTier(tier._key, 'pax', e.target.value)}
-                  placeholder="e.g., 2"
-                  required
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md">
+              <div className="space-y-2">
+                <Label>Price / Person *</Label>
                 <Input
                   type="number"
                   step="0.01"
                   min="0"
-                  value={tier.price_per_person}
-                  onChange={(e) => updateTier(tier._key, 'price_per_person', e.target.value)}
+                  value={form.group_price}
+                  onChange={(e) => setForm({ ...form, group_price: e.target.value })}
                   placeholder="0.00"
                   required
                 />
-                <Select value={tier.currency} onValueChange={(v) => updateTier(tier._key, 'currency', v)}>
+              </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select
+                  value={form.group_currency || 'EUR'}
+                  onValueChange={(v) => setForm({ ...form, group_currency: v })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -351,13 +386,77 @@ export default function TourContractForm() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button type="button" variant="ghost" size="icon" onClick={() => removeTier(tier._key)}>
-                  <Trash2 className="w-4 h-4 text-red-400" />
-                </Button>
               </div>
-            ))}
-          </div>
-        </Card>
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-6 bg-card shadow-md">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Pricing Tiers</h2>
+                <p className="text-sm text-muted-foreground">
+                  Per-person price for a band of passengers. Leave Max blank for unlimited.
+                </p>
+              </div>
+              <Button type="button" onClick={addTier} variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Tier
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 text-xs font-semibold text-muted-foreground uppercase px-1">
+                <span>Min Pax</span>
+                <span>Max Pax</span>
+                <span>Price / Person</span>
+                <span>Currency</span>
+                <span></span>
+              </div>
+              {form.pricing_tiers.map((tier) => (
+                <div key={tier._key} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-center">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={tier.min_pax}
+                    onChange={(e) => updateTier(tier._key, 'min_pax', e.target.value)}
+                    placeholder="e.g., 1"
+                    required
+                  />
+                  <Input
+                    type="number"
+                    min="1"
+                    value={tier.max_pax}
+                    onChange={(e) => updateTier(tier._key, 'max_pax', e.target.value)}
+                    placeholder="∞"
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tier.price_per_person}
+                    onChange={(e) => updateTier(tier._key, 'price_per_person', e.target.value)}
+                    placeholder="0.00"
+                    required
+                  />
+                  <Select value={tier.currency} onValueChange={(v) => updateTier(tier._key, 'currency', v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['EUR', 'USD', 'GBP', 'TRY', 'AED'].map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeTier(tier._key)}>
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <Card className="p-6 bg-card shadow-md">
           <h2 className="text-lg font-bold text-foreground mb-4">Terms &amp; Notes</h2>

@@ -721,7 +721,7 @@ export default function Suppliers() {
                 <Label>Rating</Label>
                 <Select
                   value={formData.rating?.toString()}
-                  onValueChange={(v) => setFormData({ ...formData, rating: isNaN(Number(v)) ? v : Number(v) })}
+                  onValueChange={(v) => setFormData({ ...formData, rating: isNaN(Number(v)) ? undefined : Number(v) })}
                 >
                   <SelectTrigger>
                     <SelectValue />

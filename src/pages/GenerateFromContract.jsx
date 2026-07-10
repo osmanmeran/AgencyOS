@@ -238,14 +238,28 @@ export default function GenerateFromContract() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-300 mt-0.5" />
             <div>
-              <p className="font-semibold text-amber-800 dark:text-amber-300">
-                No pricing tier for {numParticipants} participants
-              </p>
-              <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                {preview.availablePax.length > 0
-                  ? `This contract has pricing for: ${preview.availablePax.join(', ')} participants. Add a tier for ${numParticipants} in the contract, or adjust the participant count.`
-                  : 'This contract has no pricing tiers configured yet. Add pricing tiers in the contract before generating a booking.'}
-              </p>
+              {preview.isGroupMissingPrice ? (
+                <>
+                  <p className="font-semibold text-amber-800 dark:text-amber-300">
+                    No group price set for this contract
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    This is a group tour but has no group price configured. Set a group price in the contract before
+                    generating a booking.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-amber-800 dark:text-amber-300">
+                    No pricing tier for {numParticipants} participants
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    {preview.availablePax.length > 0
+                      ? `This contract has pricing for: ${preview.availablePax.join(', ')} participants. Add a tier for ${numParticipants} in the contract, or adjust the participant count.`
+                      : 'This contract has no pricing tiers configured yet. Add pricing tiers in the contract before generating a booking.'}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </Card>

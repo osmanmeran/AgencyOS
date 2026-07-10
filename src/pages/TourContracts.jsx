@@ -146,11 +146,19 @@ export default function TourContracts() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-sm">
-                      {t(
-                        (contract.pricing_tiers || []).length === 1
-                          ? 'tourContracts.tierSingular'
-                          : 'tourContracts.tierPlural',
-                        { count: (contract.pricing_tiers || []).length },
+                      {contract.tour_type === 'group' ? (
+                        <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                          Group
+                          {contract.group_currency ? ` · ${contract.group_currency}` : ''}{' '}
+                          {contract.group_price != null ? contract.group_price : ''}
+                        </span>
+                      ) : (
+                        t(
+                          (contract.pricing_tiers || []).length === 1
+                            ? 'tourContracts.tierSingular'
+                            : 'tourContracts.tierPlural',
+                          { count: (contract.pricing_tiers || []).length },
+                        )
                       )}
                     </td>
                     <td className="px-4 py-3">

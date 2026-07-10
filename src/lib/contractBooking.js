@@ -21,11 +21,26 @@ const computeQty = (s) => {
   return qty;
 };
 
-/** Finds the contract's pricing tier whose `pax` exactly matches `numParticipants`, or null if none does. */
+/**
+ * Finds the contract's private-tour pricing tier for `numParticipants`.
+ * Supports both legacy exact `pax` matches and new `min_pax`/`max_pax`
+ * ranges (an empty/omitted `max_pax` means "unlimited"). Returns null if
+ * no tier covers the participant count.
+ */
 export function findPricingTier(contract, numParticipants) {
   const pax = Math.round(Number(numParticipants) || 0);
   const tiers = contract?.pricing_tiers || [];
-  return tiers.find((t) => Math.round(Number(t.pax)) === pax) || null;
+
+  const exact = tiers.find((t) => t.pax != null && t.pax !== '' && Math.round(Number(t.pax)) === pax);
+  if (exact) return exact;
+
+  const range = tiers.find((t) => {
+    const min = Number(t.min_pax);
+    if (!min && min !== 0) return false;
+    const max = t.max_pax != null && t.max_pax !== '' ? Number(t.max_pax) : Infinity;
+    return pax >= min && pax <= max;
+  });
+  return range || null;
 }
 
 /** Builds a blank passenger row for index `i` (the first passenger defaults to the trip contact). */
@@ -71,13 +86,37 @@ export function buildTripFromContract({
   passengers,
 }) {
   const pax = Math.max(1, Math.round(Number(numParticipants) || 0));
-  const tier = findPricingTier(contract, pax);
+  const tourType = contract?.tour_type || 'private';
 
-  if (!tier) {
-    const availablePax = [...new Set((contract?.pricing_tiers || []).map((t) => Math.round(Number(t.pax))))].sort(
-      (a, b) => a - b,
-    );
-    return { ok: false, missingTier: true, availablePax };
+  let tier = null;
+  let availablePax = [];
+
+  if (tourType === 'group') {
+    const groupPrice = Number(contract?.group_price);
+    if (groupPrice && !isNaN(groupPrice)) {
+      tier = { price_per_person: groupPrice, currency: contract?.group_currency || 'EUR' };
+    } else {
+      return { ok: false, missingTier: true, availablePax, isGroupMissingPrice: true };
+    }
+  } else {
+    tier = findPricingTier(contract, pax);
+    if (!tier) {
+      availablePax = [
+        ...new Set(
+          (contract?.pricing_tiers || []).map((t) => {
+            if (t.pax != null && t.pax !== '') return Math.round(Number(t.pax));
+            const min = t.min_pax != null && t.min_pax !== '' ? Number(t.min_pax) : '?';
+            const max = t.max_pax != null && t.max_pax !== '' ? Number(t.max_pax) : '∞';
+            return `${min}-${max}`;
+          }),
+        ),
+      ].sort((a, b) => {
+        const na = parseInt(String(a));
+        const nb = parseInt(String(b));
+        return (isNaN(na) ? -1 : na) - (isNaN(nb) ? -1 : nb);
+      });
+      return { ok: false, missingTier: true, availablePax };
+    }
   }
 
   const itinerary = contract.itinerary || [];

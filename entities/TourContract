@@ -23,6 +23,31 @@
       "default": true,
       "description": "Inactive contracts are hidden from booking generation"
     },
+    "tour_type": {
+      "type": "string",
+      "enum": [
+        "private",
+        "group"
+      ],
+      "default": "private",
+      "description": "private = price depends on the number of passengers (pax ranges); group = a single fixed per-person price independent of any tiers"
+    },
+    "group_price": {
+      "type": "number",
+      "description": "For group tours: the fixed per-person price, charged regardless of participant count"
+    },
+    "group_currency": {
+      "type": "string",
+      "enum": [
+        "EUR",
+        "USD",
+        "GBP",
+        "TRY",
+        "AED"
+      ],
+      "default": "EUR",
+      "description": "Currency for the group per-person price"
+    },
     "itinerary": {
       "type": "array",
       "description": "The fixed suppliers and services every booking generated from this contract includes",
@@ -131,7 +156,7 @@
     },
     "pricing_tiers": {
       "type": "array",
-      "description": "Fixed per-person package price for each exact participant count",
+      "description": "For private tours: per-person price for a band of participants (min_pax..max_pax, max_pax omitted/empty = unlimited). Legacy exact 'pax' matches are still supported.",
       "items": {
         "type": "object",
         "properties": {
@@ -140,7 +165,15 @@
           },
           "pax": {
             "type": "number",
-            "description": "Exact number of participants this tier applies to"
+            "description": "DEPRECATED exact participant count (kept for backward compatibility)"
+          },
+          "min_pax": {
+            "type": "number",
+            "description": "Minimum number of participants (inclusive) this tier applies to"
+          },
+          "max_pax": {
+            "type": "number",
+            "description": "Maximum number of participants (inclusive); omit or leave empty for unlimited"
           },
           "price_per_person": {
             "type": "number"
