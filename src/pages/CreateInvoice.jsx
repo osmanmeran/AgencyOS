@@ -17,10 +17,12 @@ import { parseISO, isBefore } from 'date-fns';
 import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { getCurrencySymbol } from '@/lib/formatters';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 
 export default function CreateInvoice() {
+  const { t } = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -113,12 +115,12 @@ export default function CreateInvoice() {
         return invoice;
       },
       onSuccess: (invoice) => {
-        showSuccess('Invoice created');
+        showSuccess(t('createInvoice.successCreated'));
         queryClient.invalidateQueries({ queryKey: ['invoices'] });
         queryClient.invalidateQueries({ queryKey: ['clients'] });
         navigate(createPageUrl(`InvoiceDetails?id=${invoice.id}`));
       },
-      onError: (error) => showError('Failed to create invoice', error.message),
+      onError: (error) => showError(t('createInvoice.errorCreate'), error.message),
     })
   );
 
@@ -180,7 +182,7 @@ export default function CreateInvoice() {
   };
 
   const handleReservationSelect = (tripId) => {
-    const trip = trips.find((t) => t.id === tripId);
+    const trip = trips.find((x) => x.id === tripId);
     const lineItems = (trip?.services || []).map((s) => ({
       description: `${s.name}${s.category ? ` (${s.category})` : ''}`,
       quantity: effQty(s),
@@ -219,13 +221,13 @@ export default function CreateInvoice() {
       <Link to={createPageUrl('Revenue')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Revenue
+          {t('createInvoice.backToRevenue')}
         </Button>
       </Link>
 
       <div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">Create Invoice</h1>
-        <p className="text-muted-foreground">Generate a new invoice for a client</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">{t('createInvoice.title')}</h1>
+        <p className="text-muted-foreground">{t('createInvoice.subtitle')}</p>
       </div>
 
       {eligibleReservations.length === 0 && (
@@ -233,11 +235,8 @@ export default function CreateInvoice() {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-300 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-amber-900 dark:text-amber-300">No eligible reservations</h3>
-              <p className="text-amber-700 dark:text-amber-300 text-sm mt-1">
-                Invoices can only be created for ongoing and approved reservations. Please confirm a reservation first
-                before creating an invoice.
-              </p>
+              <h3 className="font-semibold text-amber-900 dark:text-amber-300">{t('createInvoice.noEligibleTitle')}</h3>
+              <p className="text-amber-700 dark:text-amber-300 text-sm mt-1">{t('createInvoice.noEligibleBody')}</p>
             </div>
           </div>
         </Card>
@@ -245,10 +244,10 @@ export default function CreateInvoice() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-xl font-bold text-foreground mb-4">Invoice Details</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('createInvoice.invoiceDetailsTitle')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="invoice_number">Invoice Number *</Label>
+              <Label htmlFor="invoice_number">{t('createInvoice.invoiceNumberLabel')}</Label>
               <Input
                 id="invoice_number"
                 value={formData.invoice_number}
@@ -258,25 +257,25 @@ export default function CreateInvoice() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="trip">Reservation * (must be approved & ongoing)</Label>
+              <Label htmlFor="trip">{t('createInvoice.reservationLabel')}</Label>
               <Select value={formData.trip_id} onValueChange={handleReservationSelect} required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select reservation" />
+                  <SelectValue placeholder={t('createInvoice.selectReservationPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {eligibleReservations.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.reference_number ? `${t.reference_number} - ` : ''}
-                      {t.name} ({t.status})
+                  {eligibleReservations.map((trip) => (
+                    <SelectItem key={trip.id} value={trip.id}>
+                      {trip.reference_number ? `${trip.reference_number} - ` : ''}
+                      {trip.name} ({trip.status})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Only approved and ongoing reservations are shown</p>
+              <p className="text-xs text-muted-foreground">{t('createInvoice.onlyApprovedHint')}</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
+              <Label htmlFor="currency">{t('createInvoice.currencyLabel')}</Label>
               <Select
                 value={formData.currency || 'USD'}
                 onValueChange={(v) => setFormData({ ...formData, currency: v })}
@@ -295,14 +294,14 @@ export default function CreateInvoice() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="client">Client *</Label>
+              <Label htmlFor="client">{t('createInvoice.clientLabel')}</Label>
               <Select
                 value={formData.client_id}
                 onValueChange={(v) => setFormData({ ...formData, client_id: v })}
                 required
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select client" />
+                  <SelectValue placeholder={t('createInvoice.selectClientPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((c) => (
@@ -315,13 +314,13 @@ export default function CreateInvoice() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="proposal">Link to Proposal (Optional)</Label>
+              <Label htmlFor="proposal">{t('createInvoice.linkToProposalLabel')}</Label>
               <Select value={formData.proposal_id} onValueChange={loadFromProposal}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select proposal" />
+                  <SelectValue placeholder={t('createInvoice.selectProposalPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
+                  <SelectItem value={null}>{t('common.none')}</SelectItem>
                   {proposals
                     .filter((p) => p.status === 'approved')
                     .map((p) => (
@@ -334,7 +333,7 @@ export default function CreateInvoice() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="issue_date">Issue Date *</Label>
+              <Label htmlFor="issue_date">{t('createInvoice.issueDateLabel')}</Label>
               <Input
                 id="issue_date"
                 type="date"
@@ -344,7 +343,7 @@ export default function CreateInvoice() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="due_date">Due Date *</Label>
+              <Label htmlFor="due_date">{t('createInvoice.dueDateLabel')}</Label>
               <Input
                 id="due_date"
                 type="date"
@@ -358,10 +357,10 @@ export default function CreateInvoice() {
 
         <Card className="p-6 bg-card shadow-md">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-foreground">Line Items</h2>
+            <h2 className="text-xl font-bold text-foreground">{t('createInvoice.lineItemsTitle')}</h2>
             <Button type="button" onClick={addLineItem} variant="outline" size="sm">
               <Plus className="w-4 h-4 mr-2" />
-              Add Item
+              {t('createInvoice.addItem')}
             </Button>
           </div>
 
@@ -370,7 +369,7 @@ export default function CreateInvoice() {
               <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 bg-muted rounded-lg">
                 <div className="col-span-5">
                   <Input
-                    placeholder="Description"
+                    placeholder={t('createInvoice.descriptionPlaceholder')}
                     value={item.description}
                     onChange={(e) => updateLineItem(index, 'description', e.target.value)}
                   />
@@ -378,7 +377,7 @@ export default function CreateInvoice() {
                 <div className="col-span-2">
                   <Input
                     type="number"
-                    placeholder="Qty"
+                    placeholder={t('createInvoice.qtyPlaceholder')}
                     value={item.quantity}
                     onChange={(e) => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)}
                   />
@@ -387,7 +386,7 @@ export default function CreateInvoice() {
                   <Input
                     type="number"
                     step="0.01"
-                    placeholder="Price"
+                    placeholder={t('createInvoice.pricePlaceholder')}
                     value={item.unit_price}
                     onChange={(e) => updateLineItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
                   />
@@ -407,16 +406,14 @@ export default function CreateInvoice() {
             ))}
 
             {formData.line_items.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No line items. Click "Add Item" to add invoice items.
-              </div>
+              <div className="text-center py-8 text-muted-foreground">{t('createInvoice.noLineItems')}</div>
             )}
           </div>
 
           <div className="mt-6 pt-6 border-t border-border">
             <div className="max-w-sm ml-auto space-y-3">
               <div className="flex justify-between text-lg">
-                <span className="text-muted-foreground">Subtotal:</span>
+                <span className="text-muted-foreground">{t('createInvoice.subtotalLabel')}</span>
                 <span className="font-semibold">
                   {cs}
                   {subtotal.toFixed(2)}
@@ -424,7 +421,7 @@ export default function CreateInvoice() {
               </div>
 
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-muted-foreground">Tax Rate (%):</span>
+                <span className="text-muted-foreground">{t('createInvoice.taxRateLabel')}</span>
                 <Input
                   type="number"
                   step="0.01"
@@ -435,7 +432,7 @@ export default function CreateInvoice() {
               </div>
 
               <div className="flex justify-between text-lg">
-                <span className="text-muted-foreground">Tax Amount:</span>
+                <span className="text-muted-foreground">{t('createInvoice.taxAmountLabel')}</span>
                 <span className="font-semibold">
                   {cs}
                   {taxAmount.toFixed(2)}
@@ -443,7 +440,7 @@ export default function CreateInvoice() {
               </div>
 
               <div className="flex justify-between text-2xl font-bold border-t-2 pt-3">
-                <span>Total:</span>
+                <span>{t('createInvoice.totalLabel')}</span>
                 <span className="text-green-700 dark:text-green-300">
                   {cs}
                   {totalAmount.toFixed(2)}
@@ -454,10 +451,10 @@ export default function CreateInvoice() {
         </Card>
 
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-xl font-bold text-foreground mb-4">Additional Information</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t('createInvoice.additionalInfoTitle')}</h2>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="payment_terms">Payment Terms</Label>
+              <Label htmlFor="payment_terms">{t('createInvoice.paymentTermsLabel')}</Label>
               <Input
                 id="payment_terms"
                 value={formData.payment_terms}
@@ -465,13 +462,13 @@ export default function CreateInvoice() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">{t('createInvoice.notesLabel')}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
-                placeholder="Additional notes or terms..."
+                placeholder={t('createInvoice.notesPlaceholder')}
               />
             </div>
           </div>
@@ -480,7 +477,7 @@ export default function CreateInvoice() {
         <div className="flex justify-end gap-3">
           <Link to={createPageUrl('Revenue')}>
             <Button type="button" variant="outline">
-              Cancel
+              {t('common.cancel')}
             </Button>
           </Link>
           <Button
@@ -494,7 +491,7 @@ export default function CreateInvoice() {
               eligibleReservations.length === 0
             }
           >
-            {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
+            {createMutation.isPending ? t('createInvoice.creatingButton') : t('createInvoice.createInvoiceButton')}
           </Button>
         </div>
       </form>
