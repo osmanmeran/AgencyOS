@@ -219,7 +219,6 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 - **Shared types package** — Introduce a `shared/` package with Zod schemas consumed by both frontend and backend to eliminate duplication and enforce API contracts
 - **Replace JSON blob with typed columns** — The generic `data` JSON field pattern sacrifices type safety and queryability. Migrate to typed columns or adopt an ORM (Knex/Drizzle)
 - **API documentation** — Auto-generate OpenAPI/Swagger docs from Zod schemas to formalize the API contract
-- **SQL-level entity filtering** — Push `findEntities` filtering/sorting/pagination from JavaScript to SQL for large datasets
 
 ### Code Quality
 
@@ -280,14 +279,14 @@ Reviewed `server/` (auth, permissions, entities, b2b, integrations, app) and `sr
 - ✅ **`schemas.entityData` wired in** — applied on the entity POST/PUT routes (`routes/entities.js`), rejecting prohibited keys with a 400 before `sanitizeEntityData`.
 - ✅ **CSP tightened** (`server/app.js`) — `scriptSrc` no longer has `unsafe-eval` or `unsafe-inline`; it's `'self'` only now. Verified there are zero inline `<script>` tags anywhere in the built output, and the only `Function(...)` call in the bundled vendor code is an unreachable lodash-style `root` fallback (`self.Object === Object` is always true in a browser, so it never executes). `styleSrc` keeps `unsafe-inline`, which MUI/emotion's runtime style injection genuinely needs — nonces would require converting the static SPA shell into a per-request template, which isn't worth it for a style-only residual risk.
 - ✅ **CSRF protection added** — double-submit cookie pattern. `setTokenCookie` (`server/services/auth.js`) now also sets a non-httpOnly `csrf_token` cookie alongside the JWT; `server/middleware/csrf.js` requires every mutating request to echo it back as `X-CSRF-Token`, exempting only the session-establishing endpoints (login/microsoft/accept-invite) and requests authenticated via an explicit `Authorization: Bearer` header. Every frontend fetch wrapper (`api-client.js`, `useApi`, `b2bApi`, and the handful of ad-hoc `fetch()` calls in Profile/AppSettings/NotificationBell/SuggestionsManager/TestingArea/OutlookCallback) now attaches the header. Covered by `tests/middleware/csrf.test.js` and verified against a live server with a real login → cookie → mutation round trip.
+- ✅ **In-memory entity queries pushed into SQL where it's safe** — `findEntities` (`server/services/entities.js`) now runs filter/sort/pagination as SQL via `json_extract` (using migration 013's indexes) whenever the caller has unconditional read access to the type — admin, manager, or staff with that type's read permission via `hasUnconditionalReadAccess` — and isn't doing a text `search` (full-text search still needs `entities_fts`, not `json_extract`, so it stays on the JS path). Row-scoped reads (client/supplier portal, user-scoped types, staff without a read grant) are naturally bounded to one client's/supplier's/user's records already, so they're left on the existing JS path rather than translating the full `userCanAccessEntity` branching logic into SQL. Covered by `tests/services/entitiesFindSql.test.js`, including the type-coercion edge cases (JSON booleans come back from `json_extract` as integer 0/1, not text) and a verified-dormant pre-existing quirk (a filter combining `$gte`+`$lte` on one field only ever applies `$gte` — true of the old JS code too, and unused by any current caller).
 
 ### Still open
 
-- 🟢 **In-memory entity queries** — `findEntities` still loads the full entity table then filters/sorts/paginates in JS. Fine at current scale; push to SQL via `json_extract` as data grows (migration 013's indexes already exist for the hot paths).
 - 🟢 **Duplicated permission logic** — `server/permissions.js` and `src/lib/permissions.js` are parity-kept by a test (`tests/lib/parity.test.js`) but not a shared module; the server also still ignores live `AppSettings.tier_permissions` overrides that the frontend honors.
 - 🟢 **Mixed-language strings** — some Outlook/test-email strings are still Italian; finish the English-unification pass.
 
 ### Suggested execution order
 
-1. Push entity filtering/sorting into SQL.
-2. Extract a shared `permissions` module used by both frontend and backend.
+1. Extract a shared `permissions` module used by both frontend and backend.
+2. Clean up remaining mixed-language strings.

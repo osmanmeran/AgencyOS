@@ -259,6 +259,162 @@ export function isFilterSafe(filter) {
 }
 
 /**
+ * Whether `user` has unconditional read access to every row of `type` — i.e.
+ * {@link userCanAccessEntity} would return `true` for any row of this type
+ * without needing to inspect its data. Mirrors the row-independent branches
+ * of `userCanAccessEntity` (admin/manager, the `AppSettings` singleton, and
+ * staff with a read grant via {@link staffCanReadType}). Portal users
+ * (client/supplier) and the row-scoped fallback always return `false` here.
+ *
+ * This is what lets {@link findEntities} push filtering/sorting/pagination
+ * into SQL: when true, no per-row access check is needed, so the query can
+ * go straight to the database instead of loading the whole table into JS.
+ * Row-scoped cases stay on the existing JS path — those views are already
+ * naturally bounded (one client's/supplier's/user's records), so they don't
+ * have the large-table scaling problem this optimizes for.
+ */
+function hasUnconditionalReadAccess(user, type) {
+  const tier = user.user_tier || 'agent';
+  if (tier === 'admin' || tier === 'manager') return true;
+  if (type === 'AppSettings') return true;
+  if (user.client_id || user.linked_supplier_id) return false;
+  if (USER_SCOPED_TYPES.includes(type)) return false;
+  if ((tier === 'agent' || tier === 'accounting') && staffCanReadType(user, type)) return true;
+  return false;
+}
+
+/**
+ * SQL expression for reading a flattened-record field back out of an
+ * `entities` row. `id`/`created_date`/`updated_date` are real columns;
+ * every other field lives inside the JSON `data` blob. The field name is
+ * never concatenated into the SQL text — the JSON path is always passed as
+ * a bound parameter, so an arbitrary/attacker-controlled field name can only
+ * ever be interpreted as a JSON path string, never as SQL syntax.
+ * @returns {{expr: string, pathParam: string|null}}
+ */
+function fieldColumnSql(field) {
+  if (field === 'id' || field === 'created_date' || field === 'updated_date') {
+    return { expr: field, pathParam: null };
+  }
+  return { expr: 'json_extract(data, ?)', pathParam: `$.${field}` };
+}
+
+/** better-sqlite3 can't bind JS booleans directly; everything else passes through. */
+function toSqlParam(v) {
+  return typeof v === 'boolean' ? (v ? 1 : 0) : v;
+}
+
+/**
+ * Translates a parsed entity filter (equality, or `$in`/`$gte`/`$lte`) into a
+ * SQL WHERE fragment plus its bound parameters, matching {@link applyFilter}'s
+ * semantics: plain values compare case-insensitively as strings (mirroring
+ * `String(val).toLowerCase()`), except booleans, which compare against
+ * SQLite's integer 0/1 representation of JSON true/false directly (casting
+ * to text would compare against '1'/'0' instead of the JS `String(true)`
+ * form, so booleans need their own branch). `$in`/`$gte`/`$lte` compare the
+ * raw extracted value, same as the JS path.
+ * @returns {{sql: string|null, params: any[]}}
+ */
+function buildFilterSql(filter) {
+  const clauses = [];
+  const params = [];
+  for (const [field, v] of Object.entries(filter)) {
+    const { expr, pathParam } = fieldColumnSql(field);
+    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      if ('$in' in v) {
+        const arr = Array.isArray(v.$in) ? v.$in : [];
+        if (arr.length === 0) {
+          clauses.push('0');
+          continue;
+        }
+        if (pathParam) params.push(pathParam);
+        clauses.push(`${expr} IN (${arr.map(() => '?').join(', ')})`);
+        params.push(...arr.map(toSqlParam));
+      } else if ('$gte' in v) {
+        if (pathParam) params.push(pathParam);
+        clauses.push(`${expr} >= ?`);
+        params.push(toSqlParam(v.$gte));
+      } else if ('$lte' in v) {
+        if (pathParam) params.push(pathParam);
+        clauses.push(`${expr} <= ?`);
+        params.push(toSqlParam(v.$lte));
+      }
+    } else if (typeof v === 'boolean') {
+      if (pathParam) params.push(pathParam);
+      clauses.push(`${expr} = ?`);
+      params.push(v ? 1 : 0);
+    } else {
+      if (pathParam) params.push(pathParam);
+      clauses.push(`LOWER(COALESCE(CAST(${expr} AS TEXT), '')) = LOWER(?)`);
+      params.push(String(v));
+    }
+  }
+  return { sql: clauses.length ? clauses.join(' AND ') : null, params };
+}
+
+/**
+ * SQL `ORDER BY` fragment for {@link applySort}'s `sort` string (leading `-`
+ * means descending). Note: SQLite's default BINARY collation sorts text
+ * byte-by-byte, while `applySort` uses `localeCompare` — these agree for
+ * plain ASCII (dates, statuses, ids) but can differ on accented characters.
+ * @returns {{sql: string, params: any[]}}
+ */
+function buildSortSql(sort) {
+  if (!sort) return { sql: '', params: [] };
+  const dir = sort.startsWith('-') ? 'DESC' : 'ASC';
+  const field = sort.replace(/^-/, '');
+  const { expr, pathParam } = fieldColumnSql(field);
+  return { sql: ` ORDER BY ${expr} ${dir}`, params: pathParam ? [pathParam] : [] };
+}
+
+/**
+ * SQL-pushed-down counterpart of the plain JS path in {@link findEntities},
+ * used when {@link hasUnconditionalReadAccess} holds (so no per-row access
+ * check is needed) and there's no `search` term (full-text substring search
+ * across every field isn't practical to express via `json_extract` without
+ * knowing the field names up front — that's what `entities_fts` is for).
+ * @returns {object[]|{data: object[], total: number}}
+ */
+function findEntitiesSql(db, type, { sort, filter, limit, offset }) {
+  const where = ['type = ?'];
+  const params = [type];
+
+  if (filter) {
+    const parsed = parseFilter(filter);
+    if (!parsed || !isFilterSafe(parsed)) {
+      throw new BadRequestError('Invalid filter', 'INVALID_FILTER');
+    }
+    const built = buildFilterSql(parsed);
+    if (built.sql) {
+      where.push(`(${built.sql})`);
+      params.push(...built.params);
+    }
+  }
+
+  const whereSql = where.join(' AND ');
+  const total = db.prepare(`SELECT COUNT(*) AS c FROM entities WHERE ${whereSql}`).get(...params).c;
+
+  const order = buildSortSql(sort);
+  const queryParams = [...params, ...order.params];
+
+  if (limit !== undefined || offset !== undefined) {
+    const start = offset !== undefined ? Number(offset) : 0;
+    const size = limit !== undefined ? Number(limit) : undefined;
+    if (!Number.isInteger(start) || start < 0 || (size !== undefined && (!Number.isInteger(size) || size < 0))) {
+      throw new BadRequestError('Invalid limit/offset', 'INVALID_PAGINATION');
+    }
+    queryParams.push(size !== undefined ? size : -1, start);
+    const rows = db
+      .prepare(`SELECT * FROM entities WHERE ${whereSql}${order.sql} LIMIT ? OFFSET ?`)
+      .all(...queryParams);
+    return { data: rows.map(mapRecord), total };
+  }
+
+  const rows = db.prepare(`SELECT * FROM entities WHERE ${whereSql}${order.sql}`).all(...queryParams);
+  return rows.map(mapRecord);
+}
+
+/**
  * Filter raw entity rows by both access control ({@link userCanAccessEntity})
  * and field-match filter conditions (equality, or `$in`/`$gte`/`$lte`).
  * @returns {object[]} Rows (still raw, with `data` as a JSON string) that pass both checks.
@@ -316,6 +472,10 @@ function matchesSearch(record, search) {
 export function findEntities(type, { sort, filter, search, limit, offset, user } = {}) {
   assertValidEntityType(type);
   const db = getDb();
+
+  if (!(search && search.trim()) && hasUnconditionalReadAccess(user, type)) {
+    return findEntitiesSql(db, type, { sort, filter, limit, offset });
+  }
 
   let records;
   if (filter) {
