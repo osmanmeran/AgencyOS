@@ -144,6 +144,8 @@ export default function CreateReservation() {
   const isEditing = !!editId;
   const fromQuoteId = searchParams.get('fromQuote');
   const isFromQuote = !!fromQuoteId && !isEditing;
+  const fromProposalId = searchParams.get('fromProposal');
+  const isFromProposal = !!fromProposalId && !isEditing && !isFromQuote;
   const prefillAppliedRef = useRef(false);
 
   const [formData, setFormData] = useState({
@@ -254,11 +256,13 @@ export default function CreateReservation() {
   const { data: currentUser } = /** @type {any} */ (useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() }));
 
   useEffect(() => {
-    if (currentUser?.default_currency && !isEditing) {
+    // Skip prefill flows: their source record decides the currencies, and this
+    // effect could fire after the prefill and clobber them.
+    if (currentUser?.default_currency && !isEditing && !isFromQuote && !isFromProposal) {
       setAcquiringCurrency(currentUser.default_currency);
       setSellingCurrency(currentUser.default_currency);
     }
-  }, [currentUser, isEditing]);
+  }, [currentUser, isEditing, isFromQuote, isFromProposal]);
 
   const { data: editTrip, isLoading: editingLoading } = /** @type {any} */ (
     useQuery({
@@ -273,6 +277,14 @@ export default function CreateReservation() {
       queryKey: ['quoteRequest', fromQuoteId],
       queryFn: () => db.entities.QuoteRequest.get(fromQuoteId),
       enabled: isFromQuote,
+    })
+  );
+
+  const { data: sourceProposal, isLoading: proposalLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['proposal', fromProposalId],
+      queryFn: () => db.entities.Proposal.get(fromProposalId),
+      enabled: isFromProposal,
     })
   );
 
@@ -367,6 +379,58 @@ export default function CreateReservation() {
     setExchangeRate(1);
   }, [isFromQuote, isEditing, sourceQuote, quotePricingLookup, categories, clients]);
 
+  // Prefill the blank form from an approved Proposal. Proposal services store
+  // the marked-up unit price in `cost` and the pre-markup price in
+  // `base_selling_price`, so carrying base prices + markup_percentage over
+  // reproduces the proposal totals. Guarded to run once so later edits aren't
+  // clobbered by query refetches.
+  useEffect(() => {
+    if (!isFromProposal || isEditing || prefillAppliedRef.current) return;
+    if (!sourceProposal) return;
+    prefillAppliedRef.current = true;
+
+    const prefilledServices = (sourceProposal.services || []).map((s) => {
+      const basePrice = parseFloat(s.base_selling_price ?? s.cost) || 0;
+      return {
+        ...emptyService(),
+        _key: `svc-${Date.now()}-${Math.random()}`,
+        supplier_id: s.supplier_id || '',
+        name: s.name || '',
+        description: s.description || '',
+        location: s.location || '',
+        quantity: s.quantity || 1,
+        acquiring_price: s.acquiring_price || 0,
+        base_selling_price: basePrice,
+        selling_price: basePrice,
+        supplier_currency: s.supplier_currency || 'USD',
+        client_currency: s.client_currency || 'USD',
+        pricing_id: s.pricing_id || '',
+      };
+    });
+
+    const client = clients.find((c) => c.id === sourceProposal.client_id);
+    setFormData((prev) => ({
+      ...prev,
+      name: sourceProposal.title || prev.name,
+      destination: sourceProposal.destination || prev.destination,
+      start_date: sourceProposal.start_date || prev.start_date,
+      end_date: sourceProposal.end_date || prev.end_date,
+      client_id: sourceProposal.client_id || prev.client_id,
+      client_name: sourceProposal.client_name || client?.name || prev.client_name,
+      client_email: sourceProposal.client_email || client?.email || prev.client_email,
+      notes: sourceProposal.notes || prev.notes,
+      terms_and_conditions: sourceProposal.terms_and_conditions || prev.terms_and_conditions,
+    }));
+    const paxCount = sourceProposal.num_travelers || 2;
+    setPassengerCount(paxCount);
+    setRooms(autoGenerateRooms(paxCount));
+    setServices(prefilledServices.length > 0 ? prefilledServices : [emptyService()]);
+    setMarkupPct(sourceProposal.markup_percentage || 0);
+    setAcquiringCurrency(prefilledServices[0]?.supplier_currency || 'USD');
+    setSellingCurrency(prefilledServices[0]?.client_currency || 'USD');
+    setExchangeRate(1);
+  }, [isFromProposal, isEditing, sourceProposal, clients]);
+
   const isDirty = useDirtyState(
     {
       formData,
@@ -395,6 +459,14 @@ export default function CreateReservation() {
           db.entities.QuoteRequest.update(fromQuoteId, { converted_trip_id: created.id })
             .then(() => queryClient.invalidateQueries({ queryKey: ['allQuoteRequests'] }))
             .catch((err) => showError('Reservation created, but failed to link the quote request', err.message));
+        }
+        if (isFromProposal) {
+          db.entities.Proposal.update(fromProposalId, { trip_id: created.id })
+            .then(() => {
+              queryClient.invalidateQueries({ queryKey: ['proposals'] });
+              queryClient.invalidateQueries({ queryKey: ['proposal', fromProposalId] });
+            })
+            .catch((err) => showError('Reservation created, but failed to link the proposal', err.message));
         }
         navigate(createPageUrl(`ReservationDetails?id=${created.id}`));
       },
@@ -704,6 +776,7 @@ export default function CreateReservation() {
         proposal_status: 'pending',
         status: 'planning',
         quote_request_id: isFromQuote ? fromQuoteId : undefined,
+        proposal_id: isFromProposal ? fromProposalId : undefined,
         created_by: currentUser?.email || 'unknown',
         created_by_name: currentUser?.name || currentUser?.email || 'Unknown',
         created_by_phone: currentUser?.phone || '',
@@ -795,6 +868,22 @@ export default function CreateReservation() {
               <div className="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-lg flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Loading quote request data…
+              </div>
+            )}
+
+            {isFromProposal && sourceProposal && (
+              <div className="p-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-green-600 dark:text-green-300 flex-shrink-0" />
+                <span className="text-sm text-green-800 dark:text-green-300">
+                  Prefilled from Proposal <strong>&ldquo;{sourceProposal.title}&rdquo;</strong> — review services and
+                  passenger details before creating. The proposal will be linked to this reservation.
+                </span>
+              </div>
+            )}
+            {isFromProposal && proposalLoading && (
+              <div className="p-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading proposal data…
               </div>
             )}
 
@@ -1355,7 +1444,8 @@ export default function CreateReservation() {
                   createMutation.isPending ||
                   updateMutation.isPending ||
                   !formData.client_id ||
-                  (isFromQuote && (quoteLoading || !quotePricingLookup))
+                  (isFromQuote && (quoteLoading || !quotePricingLookup)) ||
+                  (isFromProposal && proposalLoading)
                 }
               >
                 {createMutation.isPending || updateMutation.isPending ? (

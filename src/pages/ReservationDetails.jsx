@@ -605,6 +605,15 @@ export default function ReservationDetails() {
               )}
             </div>
             <p className="text-muted-foreground">{trip.destination}</p>
+            {trip.proposal_id && (
+              <Link
+                to={createPageUrl(`ProposalDetails?id=${trip.proposal_id}`)}
+                className="inline-flex items-center gap-1 mt-1 text-xs text-purple-600 dark:text-purple-300 hover:underline print:hidden"
+              >
+                <FileText className="w-3 h-3" />
+                Created from proposal
+              </Link>
+            )}
             {trip.service_types?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {trip.service_types.map((key) => {

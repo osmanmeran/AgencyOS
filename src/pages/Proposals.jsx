@@ -121,6 +121,11 @@ export default function Proposals() {
                           ? t(`proposals.proposalStatus.${proposal.status}`)
                           : proposal.status}
                       </Badge>
+                      {proposal.trip_id && (
+                        <Badge className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">
+                          {t('proposals.converted')}
+                        </Badge>
+                      )}
                       {proposal.change_history?.length > 0 && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <History className="w-3 h-3" />

@@ -1816,6 +1816,7 @@ const translations = {
       changeSingular: '{count} change',
       changePlural: '{count} changes',
       proposalStatus: { delivered: 'Delivered', changed: 'Changed', approved: 'Approved', rejected: 'Rejected' },
+      converted: 'Converted to reservation',
     },
     settings: {
       title: 'App Settings',
@@ -4158,6 +4159,7 @@ const translations = {
       changeSingular: '{count} cambio',
       changePlural: '{count} cambios',
       proposalStatus: { delivered: 'Entregada', changed: 'Modificada', approved: 'Aprobada', rejected: 'Rechazada' },
+      converted: 'Convertida en reserva',
     },
     settings: {
       title: 'Configuración',
@@ -6509,6 +6511,7 @@ const translations = {
       changeSingular: '{count} modification',
       changePlural: '{count} modifications',
       proposalStatus: { delivered: 'Livrée', changed: 'Modifiée', approved: 'Approuvée', rejected: 'Rejetée' },
+      converted: 'Convertie en réservation',
     },
     settings: {
       title: 'Paramètres',
@@ -8862,6 +8865,7 @@ const translations = {
         approved: 'Onaylandı',
         rejected: 'Reddedildi',
       },
+      converted: 'Rezervasyona dönüştürüldü',
     },
     settings: {
       title: 'Uygulama Ayarları',
@@ -11216,6 +11220,7 @@ const translations = {
       changeSingular: '{count} Änderung',
       changePlural: '{count} Änderungen',
       proposalStatus: { delivered: 'Zugestellt', changed: 'Geändert', approved: 'Genehmigt', rejected: 'Abgelehnt' },
+      converted: 'In Reservierung umgewandelt',
     },
     settings: {
       title: 'App-Einstellungen',
@@ -13566,6 +13571,7 @@ const translations = {
       changeSingular: '{count} modifica',
       changePlural: '{count} modifiche',
       proposalStatus: { delivered: 'Consegnata', changed: 'Modificata', approved: 'Approvata', rejected: 'Rifiutata' },
+      converted: 'Convertita in prenotazione',
     },
     settings: {
       title: 'Impostazioni',

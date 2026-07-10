@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SkeletonCard } from '@/components/ui/skeletons';
 import {
   ArrowLeft,
+  ArrowRight,
   Download,
   Send,
   Calendar,
@@ -288,6 +289,26 @@ export default function ProposalDetails() {
               </Button>
             </>
           )}
+          {proposal.status === 'approved' &&
+            (proposal.trip_id ? (
+              <Link to={createPageUrl(`ReservationDetails?id=${proposal.trip_id}`)}>
+                <Button
+                  variant="outline"
+                  className="border-purple-300 dark:border-purple-800 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  View Reservation
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                onClick={() => navigate(createPageUrl(`CreateReservation?fromProposal=${proposalId}`))}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Move to Reservation
+              </Button>
+            ))}
           <Button
             onClick={() => setEditModalOpen(true)}
             variant="outline"
