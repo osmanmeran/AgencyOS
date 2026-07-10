@@ -865,6 +865,10 @@ const translations = {
       maxCapacityLabel: 'Max Participants',
       maxCapacityHint: 'Maximum number of participants per tour.',
       maxCapacityBadge: 'Max {count}',
+      serviceLabel: 'Service',
+      selectServicePlaceholder: 'Link to a specific service (optional)…',
+      serviceHint: 'Leave empty to apply this price to the whole category.',
+      linkedServiceBadge: 'Service: {name}',
     },
     supplierServices: {
       title: 'Services & Cost Tracking',
