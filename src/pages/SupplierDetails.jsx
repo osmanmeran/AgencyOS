@@ -480,11 +480,7 @@ export default function SupplierDetails() {
 
       <SupplierStopSales supplierId={supplierId} />
 
-      <SupplierPricingManager
-        supplierId={supplierId}
-        categoryName={selectedCategories[0]?.name || ''}
-        categories={selectedCategories}
-      />
+      <SupplierPricingManager supplierId={supplierId} categories={selectedCategories} />
 
       <SupplierServices supplierId={supplierId} />
 

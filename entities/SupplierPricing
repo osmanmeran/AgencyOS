@@ -134,6 +134,33 @@
       "type": "number",
       "description": "Guided tour maximum number of participants"
     },
+    "vehicle_type": {
+      "type": "string",
+      "enum": ["sedan", "minivan", "minibus", "midibus", "bus", "vip"],
+      "description": "Transfer vehicle type"
+    },
+    "route_from": {
+      "type": "string",
+      "description": "Transfer route origin (e.g., an airport)"
+    },
+    "route_to": {
+      "type": "string",
+      "description": "Transfer route destination"
+    },
+    "max_passengers": {
+      "type": "number",
+      "description": "Transfer vehicle passenger capacity"
+    },
+    "transfer_type": {
+      "type": "string",
+      "enum": ["one_way", "round_trip"],
+      "description": "Whether the transfer price is one-way or round trip"
+    },
+    "ticket_type": {
+      "type": "string",
+      "enum": ["adult", "child", "student", "senior", "group"],
+      "description": "Museum / entrance ticket type"
+    },
     "notes": {
       "type": "string"
     },

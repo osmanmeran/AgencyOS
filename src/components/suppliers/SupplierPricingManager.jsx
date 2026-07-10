@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { showSuccess, showError } from '@/lib/toast';
-import { DollarSign, Plus, Edit, Trash2, Copy, Check, XCircle, Loader2 } from 'lucide-react';
+import { DollarSign, Plus, Edit, Trash2, Copy, Check, XCircle, Loader2, MousePointerClick } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 
 const UNIT_LABEL_KEYS = {
@@ -87,6 +87,57 @@ const DURATION_UNIT_OPTIONS = [
   { value: 'days', labelKey: 'supplierPricingManager.durationDays' },
 ];
 
+const VEHICLE_TYPE_OPTION_KEYS = [
+  { value: 'sedan', labelKey: 'supplierPricingManager.vehSedan' },
+  { value: 'minivan', labelKey: 'supplierPricingManager.vehMinivan' },
+  { value: 'minibus', labelKey: 'supplierPricingManager.vehMinibus' },
+  { value: 'midibus', labelKey: 'supplierPricingManager.vehMidibus' },
+  { value: 'bus', labelKey: 'supplierPricingManager.vehBus' },
+  { value: 'vip', labelKey: 'supplierPricingManager.vehVip' },
+];
+
+const TRANSFER_TYPE_OPTION_KEYS = [
+  { value: 'one_way', labelKey: 'supplierPricingManager.transferOneWay' },
+  { value: 'round_trip', labelKey: 'supplierPricingManager.transferRoundTrip' },
+];
+
+const TICKET_TYPE_OPTION_KEYS = [
+  { value: 'adult', labelKey: 'supplierPricingManager.ticketAdult' },
+  { value: 'child', labelKey: 'supplierPricingManager.ticketChild' },
+  { value: 'student', labelKey: 'supplierPricingManager.ticketStudent' },
+  { value: 'senior', labelKey: 'supplierPricingManager.ticketSenior' },
+  { value: 'group', labelKey: 'supplierPricingManager.ticketGroup' },
+];
+
+// Maps a category name onto the pricing wizard shown in the add/edit modal.
+// Checked in order — the broad 'tour' match goes last so e.g. "Tourist
+// Transfers" still resolves to the transfer wizard.
+const WIZARD_KEYWORDS = [
+  { type: 'hotel', keywords: ['hotel', 'lodging', 'accommodation', 'resort'] },
+  { type: 'car_rental', keywords: ['rent a car', 'car rental', 'rental car'] },
+  { type: 'transfer', keywords: ['transfer', 'shuttle'] },
+  { type: 'museum', keywords: ['museum', 'entrance', 'ticket', 'sightseeing'] },
+  { type: 'tour', keywords: ['tour', 'excursion', 'guided', 'activity'] },
+];
+
+function wizardTypeFor(categoryName) {
+  const name = (categoryName || '').toLowerCase();
+  for (const w of WIZARD_KEYWORDS) {
+    if (w.keywords.some((k) => name.includes(k))) return w.type;
+  }
+  return 'generic';
+}
+
+// Sensible default pricing unit per wizard, applied when creating a new price.
+const WIZARD_DEFAULT_UNIT = {
+  hotel: 'per_night',
+  car_rental: 'per_day',
+  transfer: 'per_trip',
+  museum: 'per_person',
+  tour: 'per_person',
+  generic: 'per_person',
+};
+
 const EMPTY_FORM = {
   name: '',
   description: '',
@@ -108,31 +159,62 @@ const EMPTY_FORM = {
   duration_value: '',
   duration_unit: 'hours',
   max_capacity: '',
+  vehicle_type: '',
+  route_from: '',
+  route_to: '',
+  max_passengers: '',
+  transfer_type: '',
+  ticket_type: '',
   service_id: '',
   notes: '',
 };
 
-export default function SupplierPricingManager({
-  supplierId,
-  categoryName = '',
-  categories = /** @type {any} */ ([]),
-}) {
+/** Maps a stored pricing row into the modal's form state. */
+const pricingToForm = (pricing) => ({
+  name: pricing.name || '',
+  description: pricing.description || '',
+  base_price: pricing.base_price?.toString() || '',
+  client_price: pricing.client_price?.toString() || '',
+  currency: pricing.currency || 'USD',
+  unit: pricing.unit || 'per_person',
+  season_type: pricing.season_type || 'all_year',
+  season_start: pricing.season_start || '',
+  season_end: pricing.season_end || '',
+  min_quantity: pricing.min_quantity || 1,
+  max_quantity: pricing.max_quantity?.toString() || '',
+  occupancy: pricing.occupancy || '',
+  meal_treatment: pricing.meal_treatment || '',
+  car_category: pricing.car_category || '',
+  daily_rate: pricing.daily_rate?.toString() || '',
+  drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
+  insurance_surcharge: pricing.insurance_surcharge?.toString() || '',
+  duration_value: pricing.duration_value?.toString() || '',
+  duration_unit: pricing.duration_unit || 'hours',
+  max_capacity: pricing.max_capacity?.toString() || '',
+  vehicle_type: pricing.vehicle_type || '',
+  route_from: pricing.route_from || '',
+  route_to: pricing.route_to || '',
+  max_passengers: pricing.max_passengers?.toString() || '',
+  transfer_type: pricing.transfer_type || '',
+  ticket_type: pricing.ticket_type || '',
+  service_id: pricing.service_id || '',
+  notes: pricing.notes || '',
+});
+
+const optionLabel = (t, options, value) => {
+  const opt = options.find((o) => o.value === value);
+  return opt ? t(opt.labelKey) : value;
+};
+
+export default function SupplierPricingManager({ supplierId, categories = /** @type {any} */ ([]) }) {
   const { t } = useT();
   const [activeCategory, setActiveCategory] = useState(/** @type {any} */ (null));
-  const effectiveCategoryName = activeCategory?.name || categoryName || categories?.[0]?.name || '';
-  const catName = effectiveCategoryName.toLowerCase();
-  const isHotel =
-    catName.includes('hotel') ||
-    catName.includes('lodging') ||
-    catName.includes('accommodation') ||
-    catName.includes('resort');
-  const isCarRental =
-    catName.includes('rent a car') || catName.includes('car rental') || catName.includes('rental car');
-  const isGuidedTour =
-    catName.includes('tour') ||
-    catName.includes('excursion') ||
-    catName.includes('guided') ||
-    catName.includes('activity');
+  // Category comes first: with several categories the user must pick one
+  // before the list and the (category-specific) wizard appear; a single
+  // category is selected automatically.
+  const selectedCategory =
+    categories.length === 1 ? categories[0] : categories.find((c) => c.id === activeCategory?.id) || null;
+  const wizard = wizardTypeFor(selectedCategory?.name);
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPricing, setEditingPricing] = useState(null);
@@ -156,13 +238,19 @@ export default function SupplierPricingManager({
     enabled: !!supplierId,
   });
 
-  // The category currently shown in the tabs drives which category/subcategory a
-  // created tier is linked to (so prices are tied to the service's category).
-  const activeCategoryId =
-    activeCategory?.id || categories?.find((c) => c.name === categoryName)?.id || categories?.[0]?.id || '';
-  const activeSubId = (mySubs || []).find((s) => s.category_id === activeCategoryId)?.id || '';
-  const activeServices = (myServices || []).filter((s) => s.subcategory_id === activeSubId);
+  // The selected category scopes everything: which prices are listed, which
+  // subcategory a new price is linked to, and which services can be linked.
+  const selectedSubIds = (mySubs || []).filter((s) => s.category_id === selectedCategory?.id).map((s) => s.id);
+  const activeSubId = selectedSubIds[0] || '';
+  const activeServices = (myServices || []).filter((s) => selectedSubIds.includes(s.subcategory_id));
   const serviceName = (id) => (myServices || []).find((s) => s.id === id)?.service_name || '';
+
+  const categoryPricings = pricings.filter((p) => selectedSubIds.includes(p.subcategory_id));
+  // Prices with no (or a dangling) category link — kept visible so legacy
+  // rows never silently disappear; saving one files it under the selected
+  // category.
+  const knownSubIds = new Set((mySubs || []).map((s) => s.id));
+  const unassignedPricings = pricings.filter((p) => !p.subcategory_id || !knownSubIds.has(p.subcategory_id));
 
   const createMutation = useMutation({
     mutationFn: (/** @type {any} */ data) =>
@@ -176,6 +264,7 @@ export default function SupplierPricingManager({
         max_quantity: data.max_quantity ? parseInt(data.max_quantity) : null,
         duration_value: data.duration_value ? parseFloat(data.duration_value) : null,
         max_capacity: data.max_capacity ? parseInt(data.max_capacity) : null,
+        max_passengers: data.max_passengers ? parseInt(data.max_passengers) : null,
         is_active: true,
         approval_status: 'pending',
       }),
@@ -191,8 +280,8 @@ export default function SupplierPricingManager({
     mutationFn: (/** @type {any} */ { id, data }) =>
       db.entities.SupplierPricing.update(id, {
         ...data,
-        // Keep the pricing's existing category link — the list shows all
-        // categories, so the currently active tab must not re-link it.
+        // Keep the pricing's existing category link; an unassigned price
+        // adopts the currently selected category when saved.
         subcategory_id: /** @type {any} */ (editingPricing)?.subcategory_id || activeSubId || null,
         base_price: parseFloat(data.base_price) || 0,
         client_price: data.client_price ? parseFloat(data.client_price) : null,
@@ -200,6 +289,7 @@ export default function SupplierPricingManager({
         max_quantity: data.max_quantity ? parseInt(data.max_quantity) : null,
         duration_value: data.duration_value ? parseFloat(data.duration_value) : null,
         max_capacity: data.max_capacity ? parseInt(data.max_capacity) : null,
+        max_passengers: data.max_passengers ? parseInt(data.max_passengers) : null,
         approval_status: 'pending',
       }),
     onSuccess: () => {
@@ -238,7 +328,9 @@ export default function SupplierPricingManager({
   });
 
   function checkDuplicate(excludeId) {
-    const sameName = pricings.find(
+    // Scoped to the selected category (+ unassigned) — the same tier name may
+    // legitimately exist under a different category.
+    const sameName = [...categoryPricings, ...unassignedPricings].find(
       (p) =>
         p.name.toLowerCase() === form.name.toLowerCase() &&
         p.id !== excludeId &&
@@ -257,67 +349,21 @@ export default function SupplierPricingManager({
 
   const openCreateModal = () => {
     setEditingPricing(null);
-    setForm({ ...EMPTY_FORM });
+    setForm({ ...EMPTY_FORM, unit: WIZARD_DEFAULT_UNIT[wizard] || 'per_person' });
     setDuplicateCheckError('');
     setModalOpen(true);
   };
 
   const openEditModal = (pricing) => {
     setEditingPricing(pricing);
-    setForm({
-      name: pricing.name || '',
-      description: pricing.description || '',
-      base_price: pricing.base_price?.toString() || '',
-      client_price: pricing.client_price?.toString() || '',
-      currency: pricing.currency || 'USD',
-      unit: pricing.unit || 'per_person',
-      season_type: pricing.season_type || 'all_year',
-      season_start: pricing.season_start || '',
-      season_end: pricing.season_end || '',
-      min_quantity: pricing.min_quantity || 1,
-      max_quantity: pricing.max_quantity?.toString() || '',
-      occupancy: pricing.occupancy || '',
-      meal_treatment: pricing.meal_treatment || '',
-      car_category: pricing.car_category || '',
-      daily_rate: pricing.daily_rate?.toString() || '',
-      drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
-      insurance_surcharge: pricing.insurance_surcharge?.toString() || '',
-      duration_value: pricing.duration_value?.toString() || '',
-      duration_unit: pricing.duration_unit || 'hours',
-      max_capacity: pricing.max_capacity?.toString() || '',
-      service_id: pricing.service_id || '',
-      notes: pricing.notes || '',
-    });
+    setForm(pricingToForm(pricing));
     setDuplicateCheckError('');
     setModalOpen(true);
   };
 
   const openDuplicateModal = (pricing) => {
     setEditingPricing(null);
-    setForm({
-      name: pricing.name ? `${pricing.name} (copy)` : '',
-      description: pricing.description || '',
-      base_price: pricing.base_price?.toString() || '',
-      client_price: pricing.client_price?.toString() || '',
-      currency: pricing.currency || 'USD',
-      unit: pricing.unit || 'per_person',
-      season_type: pricing.season_type || 'all_year',
-      season_start: pricing.season_start || '',
-      season_end: pricing.season_end || '',
-      min_quantity: pricing.min_quantity || 1,
-      max_quantity: pricing.max_quantity?.toString() || '',
-      occupancy: pricing.occupancy || '',
-      meal_treatment: pricing.meal_treatment || '',
-      car_category: pricing.car_category || '',
-      daily_rate: pricing.daily_rate?.toString() || '',
-      drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
-      insurance_surcharge: pricing.insurance_surcharge?.toString() || '',
-      duration_value: pricing.duration_value?.toString() || '',
-      duration_unit: pricing.duration_unit || 'hours',
-      max_capacity: pricing.max_capacity?.toString() || '',
-      service_id: pricing.service_id || '',
-      notes: pricing.notes || '',
-    });
+    setForm({ ...pricingToForm(pricing), name: pricing.name ? `${pricing.name} (copy)` : '' });
     setDuplicateCheckError('');
     setModalOpen(true);
   };
@@ -344,183 +390,218 @@ export default function SupplierPricingManager({
     return <Badge className={config.class}>{t(config.labelKey)}</Badge>;
   };
 
+  const renderPricingRow = (pricing) => (
+    <div
+      key={pricing.id}
+      className="p-4 border border-border rounded-lg hover:border-blue-300 dark:hover:border-blue-800 transition-colors"
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="font-semibold text-foreground">{pricing.name}</h4>
+            {getApprovalBadge(pricing.approval_status)}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
+            <span className="font-semibold text-green-700 dark:text-green-300">
+              ${pricing.base_price?.toFixed(2)}{' '}
+              <span className="font-normal text-muted-foreground">{t('supplierPricingManager.baseSuffix')}</span>
+            </span>
+            {pricing.client_price != null && (
+              <span className="font-semibold text-blue-700 dark:text-blue-300">
+                ${pricing.client_price?.toFixed(2)}{' '}
+                <span className="font-normal text-muted-foreground">{t('supplierPricingManager.sellSuffix')}</span>
+              </span>
+            )}
+            <Badge variant="outline" className="text-xs">
+              {SEASON_LABEL_KEYS[pricing.season_type] ? t(SEASON_LABEL_KEYS[pricing.season_type]) : pricing.season_type}
+            </Badge>
+            {pricing.season_start && pricing.season_end && (
+              <span className="text-xs text-muted-foreground">
+                {pricing.season_start} → {pricing.season_end}
+              </span>
+            )}
+            <Badge variant="outline" className="text-xs">
+              {UNIT_LABEL_KEYS[pricing.unit] ? t(UNIT_LABEL_KEYS[pricing.unit]) : pricing.unit}
+            </Badge>
+            {pricing.occupancy && (
+              <Badge variant="secondary" className="text-xs">
+                {optionLabel(t, OCCUPANCY_OPTION_KEYS, pricing.occupancy)}
+              </Badge>
+            )}
+            {pricing.meal_treatment && (
+              <Badge variant="secondary" className="text-xs">
+                {optionLabel(t, MEAL_TREATMENT_OPTION_KEYS, pricing.meal_treatment)}
+              </Badge>
+            )}
+            {pricing.duration_value != null && (
+              <Badge variant="secondary" className="text-xs">
+                {pricing.duration_value}{' '}
+                {t(
+                  pricing.duration_unit === 'days'
+                    ? 'supplierPricingManager.durationDays'
+                    : 'supplierPricingManager.durationHours',
+                )}
+              </Badge>
+            )}
+            {pricing.max_capacity != null && (
+              <Badge variant="secondary" className="text-xs">
+                {t('supplierPricingManager.maxCapacityBadge', { count: pricing.max_capacity })}
+              </Badge>
+            )}
+            {pricing.vehicle_type && (
+              <Badge variant="secondary" className="text-xs">
+                {optionLabel(t, VEHICLE_TYPE_OPTION_KEYS, pricing.vehicle_type)}
+              </Badge>
+            )}
+            {(pricing.route_from || pricing.route_to) && (
+              <Badge variant="secondary" className="text-xs">
+                {pricing.route_from || '?'} → {pricing.route_to || '?'}
+              </Badge>
+            )}
+            {pricing.max_passengers != null && (
+              <Badge variant="secondary" className="text-xs">
+                {t('supplierPricingManager.maxCapacityBadge', { count: pricing.max_passengers })}
+              </Badge>
+            )}
+            {pricing.transfer_type && (
+              <Badge variant="outline" className="text-xs">
+                {optionLabel(t, TRANSFER_TYPE_OPTION_KEYS, pricing.transfer_type)}
+              </Badge>
+            )}
+            {pricing.ticket_type && (
+              <Badge variant="secondary" className="text-xs">
+                {optionLabel(t, TICKET_TYPE_OPTION_KEYS, pricing.ticket_type)}
+              </Badge>
+            )}
+            {pricing.service_id && (
+              <Badge variant="outline" className="text-xs">
+                {t('supplierPricingManager.linkedServiceBadge', { name: serviceName(pricing.service_id) })}
+              </Badge>
+            )}
+            {(pricing.min_quantity > 1 || pricing.max_quantity != null) && (
+              <Badge variant="outline" className="text-xs">
+                {t('supplierPricingManager.quantityBadge', {
+                  min: pricing.min_quantity || 1,
+                  max: pricing.max_quantity != null ? pricing.max_quantity : '+',
+                })}
+              </Badge>
+            )}
+          </div>
+          {pricing.description && (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{pricing.description}</p>
+          )}
+        </div>
+        <div className="flex gap-1 ml-4 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => openDuplicateModal(pricing)}
+            title={t('tripCard.duplicate')}
+          >
+            <Copy className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => openEditModal(pricing)} title={t('common.edit')}>
+            <Edit className="w-4 h-4" />
+          </Button>
+          {pricing.approval_status === 'pending' && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => approveMutation.mutate({ id: pricing.id })}
+                title={t('supplierPricingManager.approveTitle')}
+              >
+                <Check className="w-4 h-4 text-green-600 dark:text-green-300" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => rejectMutation.mutate({ id: pricing.id })}
+                title={t('supplierPricingManager.rejectTitle')}
+              >
+                <XCircle className="w-4 h-4 text-red-600 dark:text-red-300" />
+              </Button>
+            </>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => deleteMutation.mutate(pricing.id)}
+            title={t('common.delete')}
+          >
+            <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <Card className="p-6 bg-card">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">{t('supplierPricingManager.pricingManagementTitle')}</h3>
-          <Button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700" disabled={!selectedCategory}>
             <Plus className="w-4 h-4 mr-2" /> {t('supplierPricingManager.addPricingTier')}
           </Button>
         </div>
 
-        {categories?.length > 1 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {categories.map((cat) => {
-              const active = cat.id === activeCategoryId;
-              return (
-                <button
-                  type="button"
-                  key={cat.id || cat.name}
-                  onClick={() => setActiveCategory(cat)}
-                  className="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors"
-                  style={
-                    active
-                      ? {
-                          backgroundColor: `${cat.color || '#3b82f6'}20`,
-                          color: cat.color || '#3b82f6',
-                          borderColor: cat.color || '#3b82f6',
-                        }
-                      : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }
-                  }
-                >
-                  {cat.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {pricings.length === 0 ? (
+        {categories.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>{t('supplierPricingManager.noPricingTiersYet')}</p>
+            <p>{t('supplierPricingManager.noCategoriesAssigned')}</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {pricings.map((pricing) => (
-              <div
-                key={pricing.id}
-                className="p-4 border border-border rounded-lg hover:border-blue-300 dark:hover:border-blue-800 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-semibold text-foreground">{pricing.name}</h4>
-                      {getApprovalBadge(pricing.approval_status)}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
-                      <span className="font-semibold text-green-700 dark:text-green-300">
-                        ${pricing.base_price?.toFixed(2)}{' '}
-                        <span className="font-normal text-muted-foreground">
-                          {t('supplierPricingManager.baseSuffix')}
-                        </span>
-                      </span>
-                      {pricing.client_price != null && (
-                        <span className="font-semibold text-blue-700 dark:text-blue-300">
-                          ${pricing.client_price?.toFixed(2)}{' '}
-                          <span className="font-normal text-muted-foreground">
-                            {t('supplierPricingManager.sellSuffix')}
-                          </span>
-                        </span>
-                      )}
-                      <Badge variant="outline" className="text-xs">
-                        {SEASON_LABEL_KEYS[pricing.season_type]
-                          ? t(SEASON_LABEL_KEYS[pricing.season_type])
-                          : pricing.season_type}
-                      </Badge>
-                      {pricing.season_start && pricing.season_end && (
-                        <span className="text-xs text-muted-foreground">
-                          {pricing.season_start} → {pricing.season_end}
-                        </span>
-                      )}
-                      <Badge variant="outline" className="text-xs">
-                        {UNIT_LABEL_KEYS[pricing.unit] ? t(UNIT_LABEL_KEYS[pricing.unit]) : pricing.unit}
-                      </Badge>
-                      {pricing.occupancy && (
-                        <Badge variant="secondary" className="text-xs">
-                          {(() => {
-                            const opt = OCCUPANCY_OPTION_KEYS.find((o) => o.value === pricing.occupancy);
-                            return opt ? t(opt.labelKey) : pricing.occupancy;
-                          })()}
-                        </Badge>
-                      )}
-                      {pricing.meal_treatment && (
-                        <Badge variant="secondary" className="text-xs">
-                          {(() => {
-                            const opt = MEAL_TREATMENT_OPTION_KEYS.find((o) => o.value === pricing.meal_treatment);
-                            return opt ? t(opt.labelKey) : pricing.meal_treatment;
-                          })()}
-                        </Badge>
-                      )}
-                      {pricing.duration_value != null && (
-                        <Badge variant="secondary" className="text-xs">
-                          {pricing.duration_value}{' '}
-                          {t(
-                            pricing.duration_unit === 'days'
-                              ? 'supplierPricingManager.durationDays'
-                              : 'supplierPricingManager.durationHours',
-                          )}
-                        </Badge>
-                      )}
-                      {pricing.max_capacity != null && (
-                        <Badge variant="secondary" className="text-xs">
-                          {t('supplierPricingManager.maxCapacityBadge', { count: pricing.max_capacity })}
-                        </Badge>
-                      )}
-                      {pricing.service_id && (
-                        <Badge variant="outline" className="text-xs">
-                          {t('supplierPricingManager.linkedServiceBadge', { name: serviceName(pricing.service_id) })}
-                        </Badge>
-                      )}
-                      {(pricing.min_quantity > 1 || pricing.max_quantity != null) && (
-                        <Badge variant="outline" className="text-xs">
-                          {t('supplierPricingManager.quantityBadge', {
-                            min: pricing.min_quantity || 1,
-                            max: pricing.max_quantity != null ? pricing.max_quantity : '+',
-                          })}
-                        </Badge>
-                      )}
-                    </div>
-                    {pricing.description && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{pricing.description}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-1 ml-4 flex-shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openDuplicateModal(pricing)}
-                      title={t('tripCard.duplicate')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEditModal(pricing)} title={t('common.edit')}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    {pricing.approval_status === 'pending' && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => approveMutation.mutate({ id: pricing.id })}
-                          title={t('supplierPricingManager.approveTitle')}
-                        >
-                          <Check className="w-4 h-4 text-green-600 dark:text-green-300" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => rejectMutation.mutate({ id: pricing.id })}
-                          title={t('supplierPricingManager.rejectTitle')}
-                        >
-                          <XCircle className="w-4 h-4 text-red-600 dark:text-red-300" />
-                        </Button>
-                      </>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteMutation.mutate(pricing.id)}
-                      title={t('common.delete')}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500 dark:text-red-300" />
-                    </Button>
-                  </div>
-                </div>
+          <>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {categories.map((cat) => {
+                const active = cat.id === selectedCategory?.id;
+                return (
+                  <button
+                    type="button"
+                    key={cat.id || cat.name}
+                    onClick={() => setActiveCategory(cat)}
+                    className="px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors"
+                    style={
+                      active
+                        ? {
+                            backgroundColor: `${cat.color || '#3b82f6'}20`,
+                            color: cat.color || '#3b82f6',
+                            borderColor: cat.color || '#3b82f6',
+                          }
+                        : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }
+                    }
+                  >
+                    {cat.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {!selectedCategory ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <MousePointerClick className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>{t('supplierPricingManager.selectCategoryFirst')}</p>
               </div>
-            ))}
-          </div>
+            ) : categoryPricings.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>{t('supplierPricingManager.noPricesInCategory', { name: selectedCategory.name })}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">{categoryPricings.map(renderPricingRow)}</div>
+            )}
+
+            {unassignedPricings.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-border">
+                <h4 className="text-sm font-semibold text-foreground">
+                  {t('supplierPricingManager.unassignedTitle', { count: unassignedPricings.length })}
+                </h4>
+                <p className="text-xs text-muted-foreground mb-3">{t('supplierPricingManager.unassignedHint')}</p>
+                <div className="space-y-3">{unassignedPricings.map(renderPricingRow)}</div>
+              </div>
+            )}
+          </>
         )}
       </Card>
 
@@ -531,6 +612,7 @@ export default function SupplierPricingManager({
               {editingPricing
                 ? t('supplierPricingManager.editPricingTierTitle')
                 : t('supplierPricingManager.addPricingTier')}
+              {selectedCategory ? ` — ${selectedCategory.name}` : ''}
             </DialogTitle>
             {!editingPricing && (
               <DialogDescription>{t('supplierPricingManager.duplicateWarningDesc')}</DialogDescription>
@@ -683,8 +765,10 @@ export default function SupplierPricingManager({
               </div>
             </div>
 
-            {isGuidedTour && <p className="text-xs text-muted-foreground">{t('supplierPricingManager.paxBandHint')}</p>}
-            {isHotel && (
+            {wizard === 'tour' && (
+              <p className="text-xs text-muted-foreground">{t('supplierPricingManager.paxBandHint')}</p>
+            )}
+            {wizard === 'hotel' && (
               <div className="border-t border-border pt-4">
                 <h4 className="text-sm font-semibold text-foreground mb-3">
                   {t('supplierPricingManager.hotelPricingOptionsTitle')}
@@ -706,32 +790,27 @@ export default function SupplierPricingManager({
                     </Select>
                     <p className="text-xs text-muted-foreground">{t('supplierPricingManager.occupancyHint')}</p>
                   </div>
-                  {isHotel && (
-                    <div className="space-y-2">
-                      <Label>{t('supplierPricingManager.mealTreatmentLabel')}</Label>
-                      <Select
-                        value={form.meal_treatment}
-                        onValueChange={(v) => setForm({ ...form, meal_treatment: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('supplierPricingManager.selectMealPlanPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MEAL_TREATMENT_OPTION_KEYS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {t(opt.labelKey)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">{t('supplierPricingManager.mealTreatmentHint')}</p>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.mealTreatmentLabel')}</Label>
+                    <Select value={form.meal_treatment} onValueChange={(v) => setForm({ ...form, meal_treatment: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('supplierPricingManager.selectMealPlanPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MEAL_TREATMENT_OPTION_KEYS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {t(opt.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.mealTreatmentHint')}</p>
+                  </div>
                 </div>
               </div>
             )}
 
-            {isCarRental && (
+            {wizard === 'car_rental' && (
               <div className="border-t border-border pt-4">
                 <h4 className="text-sm font-semibold text-foreground mb-3">
                   {t('supplierPricingManager.carRentalOptionsTitle')}
@@ -800,7 +879,7 @@ export default function SupplierPricingManager({
               </div>
             )}
 
-            {isGuidedTour && (
+            {wizard === 'tour' && (
               <div className="border-t border-border pt-4">
                 <h4 className="text-sm font-semibold text-foreground mb-3">
                   {t('supplierPricingManager.guidedTourOptionsTitle')}
@@ -844,6 +923,107 @@ export default function SupplierPricingManager({
                       placeholder="0"
                     />
                     <p className="text-xs text-muted-foreground">{t('supplierPricingManager.maxCapacityHint')}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {wizard === 'transfer' && (
+              <div className="border-t border-border pt-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">
+                  {t('supplierPricingManager.transferOptionsTitle')}
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.routeFromLabel')}</Label>
+                    <Input
+                      value={form.route_from || ''}
+                      onChange={(e) => setForm({ ...form, route_from: e.target.value })}
+                      placeholder={t('supplierPricingManager.routeFromPlaceholder')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.routeToLabel')}</Label>
+                    <Input
+                      value={form.route_to || ''}
+                      onChange={(e) => setForm({ ...form, route_to: e.target.value })}
+                      placeholder={t('supplierPricingManager.routeToPlaceholder')}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.vehicleTypeLabel')}</Label>
+                    <Select
+                      value={form.vehicle_type || ''}
+                      onValueChange={(v) => setForm({ ...form, vehicle_type: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('supplierPricingManager.selectVehicleTypePlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VEHICLE_TYPE_OPTION_KEYS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {t(opt.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.maxPassengersLabel')}</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.max_passengers || ''}
+                      onChange={(e) => setForm({ ...form, max_passengers: e.target.value })}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.maxPassengersHint')}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.transferTypeLabel')}</Label>
+                    <Select
+                      value={form.transfer_type || ''}
+                      onValueChange={(v) => setForm({ ...form, transfer_type: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('supplierPricingManager.selectTransferTypePlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TRANSFER_TYPE_OPTION_KEYS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {t(opt.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {wizard === 'museum' && (
+              <div className="border-t border-border pt-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">
+                  {t('supplierPricingManager.museumOptionsTitle')}
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.ticketTypeLabel')}</Label>
+                    <Select value={form.ticket_type || ''} onValueChange={(v) => setForm({ ...form, ticket_type: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('supplierPricingManager.selectTicketTypePlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TICKET_TYPE_OPTION_KEYS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {t(opt.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.ticketTypeHint')}</p>
                   </div>
                 </div>
               </div>
