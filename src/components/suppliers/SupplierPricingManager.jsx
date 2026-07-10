@@ -159,6 +159,7 @@ const EMPTY_FORM = {
   duration_value: '',
   duration_unit: 'hours',
   max_capacity: '',
+  pax_tiers: /** @type {any[]} */ ([]),
   vehicle_type: '',
   route_from: '',
   route_to: '',
@@ -167,6 +168,36 @@ const EMPTY_FORM = {
   ticket_type: '',
   service_id: '',
   notes: '',
+};
+
+/** One editable per-pax price band row for the guided-tour wizard. */
+const emptyPaxTier = () => ({
+  _key: `paxtier-${Date.now()}-${Math.random()}`,
+  min_pax: '',
+  max_pax: '',
+  price_per_person: '',
+  client_price_per_person: '',
+});
+
+/** Parses the editable band rows back into stored pax_tiers (drops blanks). */
+const cleanPaxTiers = (tiers) =>
+  (tiers || [])
+    .filter((t) => t.min_pax !== '' && t.price_per_person !== '')
+    .map((t) => ({
+      min_pax: parseInt(t.min_pax),
+      max_pax: t.max_pax !== '' && t.max_pax != null ? parseInt(t.max_pax) : null,
+      price_per_person: parseFloat(t.price_per_person) || 0,
+      client_price_per_person:
+        t.client_price_per_person !== '' && t.client_price_per_person != null
+          ? parseFloat(t.client_price_per_person)
+          : null,
+    }));
+
+/** Compact label for a band: "2", "2–4" or "5+". */
+const paxTierRangeLabel = (t) => {
+  const min = t.min_pax ?? '?';
+  if (t.max_pax == null || t.max_pax === '') return `${min}+`;
+  return Number(t.max_pax) === Number(t.min_pax) ? `${min}` : `${min}–${t.max_pax}`;
 };
 
 /** Maps a stored pricing row into the modal's form state. */
@@ -191,6 +222,13 @@ const pricingToForm = (pricing) => ({
   duration_value: pricing.duration_value?.toString() || '',
   duration_unit: pricing.duration_unit || 'hours',
   max_capacity: pricing.max_capacity?.toString() || '',
+  pax_tiers: (pricing.pax_tiers || []).map((t, i) => ({
+    _key: `paxtier-loaded-${i}`,
+    min_pax: t.min_pax?.toString() ?? '',
+    max_pax: t.max_pax?.toString() ?? '',
+    price_per_person: t.price_per_person?.toString() ?? '',
+    client_price_per_person: t.client_price_per_person?.toString() ?? '',
+  })),
   vehicle_type: pricing.vehicle_type || '',
   route_from: pricing.route_from || '',
   route_to: pricing.route_to || '',
@@ -265,6 +303,7 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
         duration_value: data.duration_value ? parseFloat(data.duration_value) : null,
         max_capacity: data.max_capacity ? parseInt(data.max_capacity) : null,
         max_passengers: data.max_passengers ? parseInt(data.max_passengers) : null,
+        pax_tiers: cleanPaxTiers(data.pax_tiers),
         is_active: true,
         approval_status: 'pending',
       }),
@@ -290,6 +329,7 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
         duration_value: data.duration_value ? parseFloat(data.duration_value) : null,
         max_capacity: data.max_capacity ? parseInt(data.max_capacity) : null,
         max_passengers: data.max_passengers ? parseInt(data.max_passengers) : null,
+        pax_tiers: cleanPaxTiers(data.pax_tiers),
         approval_status: 'pending',
       }),
     onSuccess: () => {
@@ -383,6 +423,15 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
     }
   };
 
+  const addPaxTier = () => setForm((f) => ({ ...f, pax_tiers: [...(f.pax_tiers || []), emptyPaxTier()] }));
+  const updatePaxTier = (key, field, value) =>
+    setForm((f) => ({
+      ...f,
+      pax_tiers: (f.pax_tiers || []).map((t) => (t._key === key ? { ...t, [field]: value } : t)),
+    }));
+  const removePaxTier = (key) =>
+    setForm((f) => ({ ...f, pax_tiers: (f.pax_tiers || []).filter((t) => t._key !== key) }));
+
   const seasonType = form.season_type || 'all_year';
 
   const getApprovalBadge = (status) => {
@@ -448,6 +497,14 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
                 {t('supplierPricingManager.maxCapacityBadge', { count: pricing.max_capacity })}
               </Badge>
             )}
+            {(pricing.pax_tiers || []).map((tier, i) => (
+              <Badge key={i} variant="secondary" className="text-xs">
+                {t('supplierPricingManager.paxTierBadge', {
+                  range: paxTierRangeLabel(tier),
+                  price: tier.price_per_person,
+                })}
+              </Badge>
+            ))}
             {pricing.vehicle_type && (
               <Badge variant="secondary" className="text-xs">
                 {optionLabel(t, VEHICLE_TYPE_OPTION_KEYS, pricing.vehicle_type)}
@@ -765,9 +822,6 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
               </div>
             </div>
 
-            {wizard === 'tour' && (
-              <p className="text-xs text-muted-foreground">{t('supplierPricingManager.paxBandHint')}</p>
-            )}
             {wizard === 'hotel' && (
               <div className="border-t border-border pt-4">
                 <h4 className="text-sm font-semibold text-foreground mb-3">
@@ -924,6 +978,66 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
                     />
                     <p className="text-xs text-muted-foreground">{t('supplierPricingManager.maxCapacityHint')}</p>
                   </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="text-sm font-semibold text-foreground">
+                      {t('supplierPricingManager.paxTiersTitle')}
+                    </h4>
+                    <Button type="button" variant="outline" size="sm" onClick={addPaxTier}>
+                      <Plus className="w-3.5 h-3.5 mr-1" /> {t('supplierPricingManager.addPaxTier')}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">{t('supplierPricingManager.paxTiersHint')}</p>
+                  {(form.pax_tiers || []).length > 0 && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 text-xs font-semibold text-muted-foreground uppercase px-1">
+                        <span>{t('supplierPricingManager.paxTierMinLabel')}</span>
+                        <span>{t('supplierPricingManager.paxTierMaxLabel')}</span>
+                        <span>{t('supplierPricingManager.paxTierCostLabel')}</span>
+                        <span>{t('supplierPricingManager.paxTierSellLabel')}</span>
+                        <span></span>
+                      </div>
+                      {(form.pax_tiers || []).map((tier) => (
+                        <div key={tier._key} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-center">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={tier.min_pax}
+                            onChange={(e) => updatePaxTier(tier._key, 'min_pax', e.target.value)}
+                            placeholder="2"
+                          />
+                          <Input
+                            type="number"
+                            min="1"
+                            value={tier.max_pax}
+                            onChange={(e) => updatePaxTier(tier._key, 'max_pax', e.target.value)}
+                            placeholder="∞"
+                          />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={tier.price_per_person}
+                            onChange={(e) => updatePaxTier(tier._key, 'price_per_person', e.target.value)}
+                            placeholder="0.00"
+                          />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={tier.client_price_per_person}
+                            onChange={(e) => updatePaxTier(tier._key, 'client_price_per_person', e.target.value)}
+                            placeholder={t('supplierPricingManager.paxTierSellPlaceholder')}
+                          />
+                          <Button type="button" variant="ghost" size="icon" onClick={() => removePaxTier(tier._key)}>
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

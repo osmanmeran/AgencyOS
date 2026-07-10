@@ -23,15 +23,41 @@ function roundSellPrice(value) {
   return Math.ceil(Math.round(value * 10 * 1e6) / 1e6) / 10;
 }
 
-// Client sell price for a pricing tier: an explicit client_price always wins
-// (it's a manual staff override); otherwise apply the client's markup to base_price.
+// Sell price from a base/override pair: an explicit client override always
+// wins (it's a manual staff price); otherwise apply the client's markup.
 // Same rounding convention as ProposalBuilder's calcLineTotal.
-function computeUnitPrice(pricing, markupPct) {
-  if (pricing.client_price !== undefined && pricing.client_price !== null && pricing.client_price !== '') {
-    return Math.round(parseFloat(pricing.client_price) * 10) / 10;
+function sellPrice(base, clientOverride, markupPct) {
+  if (clientOverride !== undefined && clientOverride !== null && clientOverride !== '') {
+    return Math.round(parseFloat(clientOverride) * 10) / 10;
   }
-  const base = parseFloat(pricing.base_price) || 0;
-  return roundSellPrice(base * (1 + (markupPct || 0) / 100));
+  return roundSellPrice((parseFloat(base) || 0) * (1 + (markupPct || 0) / 100));
+}
+
+// Finds the per-pax price band (`pax_tiers`) covering `pax` participants, or
+// null to fall back to the row's flat base_price. An empty/omitted max_pax
+// means "no upper limit". Mirrors resolvePaxTier in src/lib/pricing.js — keep
+// the two in sync (tests/services/pricing.test.js checks parity).
+export function resolvePaxTier(pricing, pax) {
+  const tiers = Array.isArray(pricing?.pax_tiers) ? pricing.pax_tiers : [];
+  const q = Math.round(Number(pax) || 0);
+  return (
+    tiers.find((t) => {
+      if (t.min_pax == null || t.min_pax === '') return false;
+      const min = Number(t.min_pax);
+      if (!Number.isFinite(min)) return false;
+      const max = t.max_pax != null && t.max_pax !== '' ? Number(t.max_pax) : Infinity;
+      return q >= min && q <= max;
+    }) || null
+  );
+}
+
+// Client sell price for a pricing tier. When the row has per-pax bands and a
+// participant count is known, the matching band's per-person price is used;
+// otherwise the flat base_price/client_price.
+export function computeUnitPrice(pricing, markupPct, pax) {
+  const tier = pax != null ? resolvePaxTier(pricing, pax) : null;
+  if (tier) return sellPrice(tier.price_per_person, tier.client_price_per_person, markupPct);
+  return sellPrice(pricing.base_price, pricing.client_price, markupPct);
 }
 
 // Nights derived from a date range, used to scale per_night / per_day lines.
@@ -91,6 +117,9 @@ async function convertItemsToCurrency(items, displayCurrency) {
       currency: displayCurrency,
       exchange_rate: rate,
       unit_price: Math.round(item.unit_price * rate * 100) / 100,
+      pax_tiers: Array.isArray(item.pax_tiers)
+        ? item.pax_tiers.map((t) => ({ ...t, unit_price: Math.round(t.unit_price * rate * 100) / 100 }))
+        : (item.pax_tiers ?? null),
     };
   });
   return { items: converted, rates };
@@ -222,6 +251,16 @@ function getActiveCatalogItems(db, markupPct) {
       unit: p.unit,
       currency: p.currency || 'USD',
       unit_price: computeUnitPrice(p, markupPct),
+      // Sell-side per-pax bands so the client UI can price by participant
+      // count; raw cost prices are never exposed.
+      pax_tiers:
+        Array.isArray(p.pax_tiers) && p.pax_tiers.length
+          ? p.pax_tiers.map((tier) => ({
+              min_pax: tier.min_pax ?? null,
+              max_pax: tier.max_pax ?? null,
+              unit_price: sellPrice(tier.price_per_person, tier.client_price_per_person, markupPct),
+            }))
+          : null,
       min_quantity: p.min_quantity || 1,
       max_quantity: p.max_quantity ?? null,
       occupancy: p.occupancy || null,
@@ -334,7 +373,9 @@ router.post(
         image_url: pricing.image_url || '',
         unit: pricing.unit,
         currency: pricing.currency || 'USD',
-        unit_price: computeUnitPrice(pricing, markupPct),
+        // quantity is the participant count on per_person lines, which picks
+        // the per-pax band when the pricing has one.
+        unit_price: computeUnitPrice(pricing, markupPct, quantity),
         quantity,
         start_date: reqItem.start_date || '',
         end_date: reqItem.end_date || '',

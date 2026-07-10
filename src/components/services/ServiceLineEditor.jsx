@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { X, Calendar, Save, RefreshCw, AlertCircle, Copy, CalendarOff } from 'lucide-react';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
+import { resolvePaxTier } from '@/lib/pricing';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
 import { useT } from '@/lib/i18n/I18nContext';
 
@@ -327,18 +328,24 @@ export default function ServiceLineEditor({
                     const p = pricings.find((x) => x.id === pricingId);
                     if (!p) return;
                     const pUnit = p.unit || formData.unit || 'per_person';
+                    const quantity =
+                      pUnit === 'per_night' || pUnit === 'per_day' ? 1 : p.min_quantity || formData.quantity || 1;
+                    // Guided-tour prices can vary by group size — use the
+                    // per-pax band matching the line's quantity when there is one.
+                    const paxTier = resolvePaxTier(p, formData.quantity || quantity);
                     const updates = {
                       pricing_id: p.id,
                       name: p.name || formData.name,
                       description: p.description || formData.description || '',
-                      acquiring_price: p.base_price ?? formData.acquiring_price,
-                      selling_price: p.client_price ?? formData.acquiring_price ?? formData.selling_price,
+                      acquiring_price: paxTier ? paxTier.price_per_person : (p.base_price ?? formData.acquiring_price),
+                      selling_price: paxTier
+                        ? (paxTier.client_price_per_person ?? paxTier.price_per_person)
+                        : (p.client_price ?? formData.acquiring_price ?? formData.selling_price),
                       unit: pUnit,
                       subcategory_id: p.subcategory_id || '',
                       supplier_currency: p.currency || formData.supplier_currency || 'USD',
                       client_currency: p.currency || formData.client_currency || 'USD',
-                      quantity:
-                        pUnit === 'per_night' || pUnit === 'per_day' ? 1 : p.min_quantity || formData.quantity || 1,
+                      quantity,
                     };
                     if (isTransfer && p.car_capacity) updates.car_capacity = p.car_capacity;
                     if (isLodging && p.occupancy) updates.room_occupancy = p.occupancy;

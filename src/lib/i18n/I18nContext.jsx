@@ -870,8 +870,16 @@ const translations = {
       serviceHint: 'Leave empty to apply this price to the whole category.',
       linkedServiceBadge: 'Service: {name}',
       quantityBadge: '{min}–{max} pax',
-      paxBandHint:
-        'For per-person pricing by group size, create one tier per participant band — e.g. Min 2 / Max 2 = 210, Min 3 / Max 3 = 180. The base price is per person.',
+      paxTiersTitle: 'Per-Person Price by Group Size',
+      paxTiersHint:
+        'One row per group size — e.g. Min 2 / Max 2 → 210, Min 3 / Max 3 → 175. Leave Max blank for "or more". The Base Price above is used when no row matches.',
+      addPaxTier: 'Add Tier',
+      paxTierMinLabel: 'Min Pax',
+      paxTierMaxLabel: 'Max Pax',
+      paxTierCostLabel: 'Cost / Person',
+      paxTierSellLabel: 'Sell / Person',
+      paxTierSellPlaceholder: 'Optional',
+      paxTierBadge: '{range} pax · {price}',
       noCategoriesAssigned:
         'Assign this supplier to at least one category first (Manage Categories above) to add prices.',
       selectCategoryFirst: 'Select a category above to see and manage its prices.',

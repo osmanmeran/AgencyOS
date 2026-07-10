@@ -165,6 +165,25 @@ function lineQty(line) {
   return qty;
 }
 
+// Sell price per unit for a catalog service. Guided-tour services can carry
+// per-pax sell bands (pax_tiers, priced server-side with the client's markup);
+// the band covering the line's participant count wins over the flat unit_price.
+function unitPriceFor(svc, quantity) {
+  const tiers = svc?.pax_tiers;
+  if (Array.isArray(tiers) && tiers.length) {
+    const q = Math.max(1, Math.round(Number(quantity) || 1));
+    const band = tiers.find((t) => {
+      if (t.min_pax == null || t.min_pax === '') return false;
+      const min = Number(t.min_pax);
+      if (!Number.isFinite(min)) return false;
+      const max = t.max_pax != null && t.max_pax !== '' ? Number(t.max_pax) : Infinity;
+      return q >= min && q <= max;
+    });
+    if (band) return band.unit_price || 0;
+  }
+  return svc?.unit_price || 0;
+}
+
 function lineTotal(line, unitPrice, surcharges = {}) {
   if (!unitPrice) return 0;
   if (FIXED_UNITS.includes(line.unit)) return unitPrice;
@@ -477,7 +496,7 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
   const isNightly = NIGHT_UNITS.includes(line.unit);
   const isFixed = FIXED_UNITS.includes(line.unit);
   const nights = nightsBetween(line.start_date, line.end_date);
-  const unitPrice = svc?.unit_price || 0;
+  const unitPrice = unitPriceFor(svc, line.quantity);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // Car rental surcharges (computed client-side for display before submission)
@@ -1106,7 +1125,7 @@ export default function ClientQuoteBuilder() {
     () =>
       validLines.reduce((sum, l) => {
         const svc = servicesById.get(l.pricing_id);
-        const unitPrice = svc?.unit_price || 0;
+        const unitPrice = unitPriceFor(svc, l.quantity);
         return sum + lineTotal(l, unitPrice, { insuranceSurcharge: svc?.insurance_surcharge || 0 });
       }, 0),
     [validLines, servicesById],

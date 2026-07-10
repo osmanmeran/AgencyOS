@@ -134,6 +134,31 @@
       "type": "number",
       "description": "Guided tour maximum number of participants"
     },
+    "pax_tiers": {
+      "type": "array",
+      "description": "Guided tour per-person price bands by group size — the band covering the participant count overrides base_price/client_price (e.g. 2 pax → 210, 3 pax → 175). base_price is the fallback when no band matches.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "min_pax": {
+            "type": "number",
+            "description": "Minimum participants (inclusive)"
+          },
+          "max_pax": {
+            "type": "number",
+            "description": "Maximum participants (inclusive); null/omitted = unlimited"
+          },
+          "price_per_person": {
+            "type": "number",
+            "description": "Supplier cost per person for this band"
+          },
+          "client_price_per_person": {
+            "type": "number",
+            "description": "Optional manual sell price per person (overrides markup)"
+          }
+        }
+      }
+    },
     "vehicle_type": {
       "type": "string",
       "enum": ["sedan", "minivan", "minibus", "midibus", "bus", "vip"],
