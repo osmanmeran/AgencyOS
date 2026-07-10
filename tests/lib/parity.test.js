@@ -17,11 +17,14 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * These parity tests guard the two pairs of hand-synced registries the
- * architecture depends on (see ARCHITECTURE.md): the entity-type allowlists
- * in server/db.js and public/api-client.js, and the permission catalogs in
- * server/permissions.js and src/lib/permissions.js. If one of these fails,
- * update BOTH sides of the pair, not the test.
+ * The entity-type allowlists in server/db.js and public/api-client.js are
+ * still hand-synced (public/api-client.js is a plain browser <script>, not
+ * an importable module, so it can't share a file) — if that check fails,
+ * update BOTH sides, not the test. The permission catalogs, by contrast, are
+ * no longer hand-synced: server/permissions.js and src/lib/permissions.js
+ * both re-export shared/permissions.js, so these checks now mostly guard
+ * against someone reintroducing a local fork rather than catching drift
+ * between two copies. See ARCHITECTURE.md's "Permission model" section.
  */
 describe('Registry parity', () => {
   it('server ENTITIES matches the api-client ENTITIES list', () => {

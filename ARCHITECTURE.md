@@ -49,19 +49,25 @@ doesn't offer.
 
 Two layers, checked together:
 
-1. **Tier defaults** — `DEFAULT_TIER_PERMISSIONS` (`src/lib/permissions.js`)
+1. **Tier defaults** — `DEFAULT_TIER_PERMISSIONS` (`shared/permissions.js`)
    maps each `user_tier` (`admin`/`manager`/`agent`/`accounting`/`client`) to
    a list of permission keys. These are the fallback when nothing's been
    customized. Staff can edit the _live_ tier defaults via
    `AppSettings.jsx`'s "Permissions" tab, which persists to
-   `AppSettings.tier_permissions` in the entities table.
+   `AppSettings.tier_permissions` in the entities table; both the frontend
+   (`PermissionContext.jsx`) and the backend (`getEffectiveTierPermissions`
+   in `server/permissions.js`) read this override, falling back to
+   `DEFAULT_TIER_PERMISSIONS` per-tier when it's missing.
 2. **Per-user custom permissions** — each `users` row has a
    `custom_permissions` JSON array that can grant permissions beyond the
    user's tier default (edited in `UserManagement.jsx`).
 
-`hasPermission(userTier, customPermissions, key)` (`server/permissions.js` on
-the backend, `src/lib/permissions.js` on the frontend — two separate but
-parity-kept implementations) is the single check both layers funnel through.
+`hasPermission(userTier, customPermissions, key)` is the single check both
+layers funnel through — `server/permissions.js` on the backend and
+`src/lib/permissions.js` on the frontend both wrap the same
+`shared/permissions.js` catalog (guarded against drifting apart again by
+`tests/lib/parity.test.js`), so only the DB-aware override lookup and the
+frontend's label/description lookup (`PERMISSION_MAP`) live outside it.
 
 **Entity-level enforcement** happens in `server/services/entities.js`:
 
