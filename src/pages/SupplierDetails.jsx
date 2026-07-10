@@ -42,8 +42,10 @@ import SupplierBookingForm from '../components/suppliers/SupplierBookingForm';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 import { isSupplierInStopSaleToday } from '@/lib/supplierStopSales';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function SupplierDetails() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const supplierId = searchParams.get('id');
   const queryClient = useQueryClient();
@@ -133,11 +135,11 @@ export default function SupplierDetails() {
           car_rental_locations: data.car_rental_locations || [],
         }),
       onSuccess: () => {
-        showSuccess('Supplier updated');
+        showSuccess(t('supplierDetails.successUpdated'));
         queryClient.invalidateQueries({ queryKey: ['supplier', supplierId] });
         setEditModalOpen(false);
       },
-      onError: (error) => showError('Failed to update supplier', error.message),
+      onError: (error) => showError(t('supplierDetails.errorUpdate'), error.message),
     })
   );
 
@@ -172,10 +174,10 @@ export default function SupplierDetails() {
       });
       setWebResults(res.results || []);
       if (!res.results?.length) {
-        setWebSearchError('No results found on the web for this supplier.');
+        setWebSearchError(t('supplierDetails.noWebResultsFound'));
       }
     } catch (err) {
-      setWebSearchError('Search failed: ' + (err.message || 'Unknown error'));
+      setWebSearchError(t('supplierDetails.searchFailedPrefix') + (err.message || t('supplierDetails.unknownError')));
     }
     setWebSearchLoading(false);
   };
@@ -206,7 +208,7 @@ export default function SupplierDetails() {
   }
 
   if (!supplier) {
-    return <div className="text-center py-20">Supplier not found</div>;
+    return <div className="text-center py-20">{t('supplierDetails.supplierNotFound')}</div>;
   }
 
   return (
@@ -214,7 +216,7 @@ export default function SupplierDetails() {
       <Link to={createPageUrl('Suppliers')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Suppliers
+          {t('supplierDetails.backToSuppliers')}
         </Button>
       </Link>
 
@@ -225,16 +227,16 @@ export default function SupplierDetails() {
               <h1 className="text-3xl font-bold text-foreground">{supplier.name}</h1>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => setBookingFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <CalendarDays className="w-4 h-4 mr-2" /> New Booking
+                  <CalendarDays className="w-4 h-4 mr-2" /> {t('supplierDetails.newBooking')}
                 </Button>
                 {hasPermission('send_booking_requests') && (
                   <Button onClick={() => setBookingEmailOpen(true)} variant="outline">
-                    <Send className="w-4 h-4 mr-2" /> Send Booking Email
+                    <Send className="w-4 h-4 mr-2" /> {t('supplierDetails.sendBookingEmail')}
                   </Button>
                 )}
                 {(canModify || canModifyBasic) && (
                   <Button onClick={openEditModal} variant="outline">
-                    <Edit className="w-4 h-4 mr-2" /> Edit
+                    <Edit className="w-4 h-4 mr-2" /> {t('common.edit')}
                   </Button>
                 )}
                 <Button
@@ -245,15 +247,13 @@ export default function SupplierDetails() {
                   variant="outline"
                   className="border-purple-300 dark:border-purple-800 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
                 >
-                  <Search className="w-4 h-4 mr-2" /> Search Web
+                  <Search className="w-4 h-4 mr-2" /> {t('supplierDetails.searchWeb')}
                 </Button>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 mb-4">
               {selectedCategories.length === 0 && (
-                <span className="text-sm text-muted-foreground">
-                  No category yet — add a subcategory below to place this supplier in one
-                </span>
+                <span className="text-sm text-muted-foreground">{t('supplierDetails.noCategoryYet')}</span>
               )}
               {selectedCategories.map((category) => (
                 <span
@@ -269,12 +269,12 @@ export default function SupplierDetails() {
               ))}
               {supplier.show_in_portal && (
                 <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-                  <Store className="w-3.5 h-3.5" /> In client portal
+                  <Store className="w-3.5 h-3.5" /> {t('supplierDetails.inClientPortalBadge')}
                 </span>
               )}
               {inStopSaleToday && (
                 <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                  <CalendarOff className="w-3.5 h-3.5" /> In stop sales
+                  <CalendarOff className="w-3.5 h-3.5" /> {t('supplierDetails.inStopSalesBadge')}
                 </span>
               )}
             </div>
@@ -312,7 +312,8 @@ export default function SupplierDetails() {
               )}
               {supplier.contact_person && (
                 <div>
-                  <span className="font-medium">Contact Person:</span> {supplier.contact_person}
+                  <span className="font-medium">{t('supplierDetails.contactPersonLabel')}</span>{' '}
+                  {supplier.contact_person}
                 </div>
               )}
 
@@ -358,14 +359,16 @@ export default function SupplierDetails() {
 
             {supplier.pricing_info && (
               <Card className="mt-6 p-4 bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800">
-                <h3 className="font-semibold text-green-900 dark:text-green-300 mb-2">Pricing Information</h3>
+                <h3 className="font-semibold text-green-900 dark:text-green-300 mb-2">
+                  {t('supplierDetails.pricingInfoTitle')}
+                </h3>
                 <p className="text-foreground text-sm whitespace-pre-wrap">{supplier.pricing_info}</p>
               </Card>
             )}
 
             {supplier.notes && (
               <Card className="mt-4 p-4 bg-muted">
-                <h3 className="font-semibold text-foreground mb-2">Notes</h3>
+                <h3 className="font-semibold text-foreground mb-2">{t('common.notes')}</h3>
                 <p className="text-foreground text-sm whitespace-pre-wrap">{supplier.notes}</p>
               </Card>
             )}
@@ -377,11 +380,8 @@ export default function SupplierDetails() {
         <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 flex items-start gap-3">
           <CalendarOff className="w-5 h-5 text-red-600 dark:text-red-300 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-red-800 dark:text-red-300">
-            <p className="font-semibold">This supplier is currently in stop sales</p>
-            <p className="mt-0.5">
-              It's unavailable for the dates below — new reservations, bookings and client quotes for those dates are
-              blocked everywhere. See the Stop Sales section for details.
-            </p>
+            <p className="font-semibold">{t('supplierDetails.stopSaleWarningTitle')}</p>
+            <p className="mt-0.5">{t('supplierDetails.stopSaleWarningBody')}</p>
           </div>
         </div>
       )}
@@ -398,7 +398,7 @@ export default function SupplierDetails() {
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Supplier</DialogTitle>
+            <DialogTitle>{t('supplierDetails.editSupplierTitle')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -409,7 +409,7 @@ export default function SupplierDetails() {
           >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Name *</Label>
+                <Label>{t('common.name')} *</Label>
                 <Input
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -417,14 +417,14 @@ export default function SupplierDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Contact Person</Label>
+                <Label>{t('supplierDetails.contactPersonFieldLabel')}</Label>
                 <Input
                   value={editForm.contact_person}
                   onChange={(e) => setEditForm({ ...editForm, contact_person: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{t('common.email')}</Label>
                 <Input
                   type="email"
                   value={editForm.email}
@@ -432,33 +432,33 @@ export default function SupplierDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Phone</Label>
+                <Label>{t('common.phone')}</Label>
                 <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Website</Label>
+                <Label>{t('supplierDetails.websiteLabel')}</Label>
                 <Input
                   value={editForm.website}
                   onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Address</Label>
+                <Label>{t('common.address')}</Label>
                 <Input
                   value={editForm.address}
                   onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>City</Label>
+                <Label>{t('common.city')}</Label>
                 <Input value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Area / Region</Label>
+                <Label>{t('supplierDetails.areaRegionLabel')}</Label>
                 <Input value={editForm.area} onChange={(e) => setEditForm({ ...editForm, area: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Rating</Label>
+                <Label>{t('supplierDetails.ratingLabel')}</Label>
                 <select
                   value={editForm.rating}
                   onChange={(e) =>
@@ -480,11 +480,10 @@ export default function SupplierDetails() {
             <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
               <div>
                 <Label className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-blue-600 dark:text-blue-300" /> Show in client portal
+                  <Store className="w-4 h-4 text-blue-600 dark:text-blue-300" />{' '}
+                  {t('supplierDetails.showInPortalLabel')}
                 </Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  When on, this supplier appears in the client travel shop (only its approved services are shown).
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{t('supplierDetails.showInPortalHint')}</p>
               </div>
               <Switch
                 checked={!!editForm.show_in_portal}
@@ -492,7 +491,7 @@ export default function SupplierDetails() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Pricing Information</Label>
+              <Label>{t('supplierDetails.pricingInfoTitle')}</Label>
               <Textarea
                 value={editForm.pricing_info}
                 onChange={(e) => setEditForm({ ...editForm, pricing_info: e.target.value })}
@@ -500,16 +499,18 @@ export default function SupplierDetails() {
               />
             </div>
             <div className="border-t border-border pt-4">
-              <h4 className="text-sm font-semibold text-foreground mb-3">Car Rental Settings</h4>
+              <h4 className="text-sm font-semibold text-foreground mb-3">
+                {t('supplierDetails.carRentalSettingsTitle')}
+              </h4>
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label>Available Pickup / Drop-off Locations</Label>
+                  <Label>{t('supplierDetails.availableLocationsLabel')}</Label>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <Input
                         value={newLocation}
                         onChange={(e) => setNewLocation(e.target.value)}
-                        placeholder="Add a location (e.g. Antalya Airport, Istanbul)"
+                        placeholder={t('supplierDetails.addLocationPlaceholder')}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
@@ -541,26 +542,22 @@ export default function SupplierDetails() {
                       ))}
                     </div>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    Locations where the client can pick up and drop off the rental car.
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('supplierDetails.locationsHint')}</p>
                 </div>
               </div>
               <div className="space-y-2 mt-3">
-                <Label>Terms & Conditions</Label>
+                <Label>{t('supplierDetails.termsConditionsLabel')}</Label>
                 <Textarea
                   value={editForm.car_rental_terms}
                   onChange={(e) => setEditForm({ ...editForm, car_rental_terms: e.target.value })}
                   rows={4}
-                  placeholder="e.g. Minimum driver age 21, valid driver's license required, fuel policy, mileage limits, cancellation policy..."
+                  placeholder={t('supplierDetails.termsPlaceholder')}
                 />
-                <p className="text-xs text-muted-foreground">
-                  These terms will be shown to the client when booking a car rental.
-                </p>
+                <p className="text-xs text-muted-foreground">{t('supplierDetails.termsHint')}</p>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>{t('common.notes')}</Label>
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
@@ -569,16 +566,16 @@ export default function SupplierDetails() {
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
+                    {t('common.saving')}
                   </>
                 ) : (
-                  'Save Changes'
+                  t('tripEditModal.saveChanges')
                 )}
               </Button>
             </div>
@@ -616,14 +613,14 @@ export default function SupplierDetails() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Search className="w-5 h-5 text-purple-600 dark:text-purple-300" />
-              Web Results for "{supplier.name}"
+              {t('supplierDetails.webResultsForTitle', { name: supplier.name })}
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4 space-y-4">
             {webSearchLoading && (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-purple-600 dark:text-purple-300 mr-3" />
-                <span className="text-muted-foreground">Searching the web...</span>
+                <span className="text-muted-foreground">{t('supplierDetails.searchingWeb')}</span>
               </div>
             )}
             {webSearchError && !webSearchLoading && (
@@ -647,7 +644,7 @@ export default function SupplierDetails() {
                       className="bg-purple-600 hover:bg-purple-700 flex-shrink-0 ml-4"
                       onClick={() => applyWebResult(result)}
                     >
-                      <Check className="w-3.5 h-3.5 mr-1" /> Apply Data
+                      <Check className="w-3.5 h-3.5 mr-1" /> {t('supplierDetails.applyData')}
                     </Button>
                   </div>
                   {result.address && (
@@ -695,7 +692,7 @@ export default function SupplierDetails() {
             {!webSearchLoading && !webSearchError && webResults.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <Search className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                <p>No results found. Try searching with a different name or city.</p>
+                <p>{t('supplierDetails.noWebResults')}</p>
               </div>
             )}
           </div>
