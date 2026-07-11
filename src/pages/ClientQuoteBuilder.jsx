@@ -375,6 +375,17 @@ function ServicePickerDialog({
     return [...byLoc.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [categoryItems]);
 
+  // Once the category above finished seeding, also seed the location — the
+  // portal home only ever hands off a destination that exactly matches a
+  // real hotel location (see ClientPortal.jsx's suggestion list), so an
+  // exact case-insensitive match here is safe rather than a guess.
+  useEffect(() => {
+    if (!open || !initialValues?.destination || !category || location) return;
+    const target = initialValues.destination.trim().toLowerCase();
+    const matchedLocation = locationOptions.find(([loc]) => loc.toLowerCase() === target)?.[0];
+    if (matchedLocation) setLocation(matchedLocation);
+  }, [open, initialValues, category, location, locationOptions]);
+
   const supplierOptions = useMemo(() => {
     const bySupplier = new Map();
     for (const s of locationItems) {

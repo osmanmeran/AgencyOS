@@ -28,6 +28,8 @@ import { format, parseISO, isBefore, differenceInDays } from 'date-fns';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useT } from '@/lib/i18n/I18nContext';
 import { sym } from '@/lib/formatters';
+import { getCatalog } from '@/lib/b2bApi';
+import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
 
 // Hero category pills. Only "hotels" has a guided search flow (destination ->
 // dates -> rooms -> matched results, built in ClientQuoteBuilder.jsx's service
@@ -68,7 +70,8 @@ export default function ClientPortal() {
   const actAsClientId = useActAsClientId();
 
   const [activeCategory, setActiveCategory] = React.useState('hotels');
-  const [destination, setDestination] = React.useState('');
+  const [destinationQuery, setDestinationQuery] = React.useState('');
+  const [showSuggestions, setShowSuggestions] = React.useState(false);
   const [checkIn, setCheckIn] = React.useState('');
   const [checkOut, setCheckOut] = React.useState('');
   const [guests, setGuests] = React.useState(2);
@@ -129,6 +132,33 @@ export default function ClientPortal() {
     })
   );
 
+  // Same query key/fetcher ClientQuoteBuilder uses for its catalog, so
+  // react-query shares the cached result if the client lands there next.
+  const { data: catalog } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['b2bCatalog'],
+      queryFn: getCatalog,
+      enabled: !!client,
+    })
+  );
+
+  // Destination suggestions are restricted to locations that actually have
+  // hotel inventory (not free text) — matches how the guided hotel search in
+  // ClientQuoteBuilder's picker groups results by city/area.
+  const hotelLocations = React.useMemo(() => {
+    const items = catalog?.items || [];
+    const locations = new Set();
+    for (const item of items) {
+      if (isLodgingCategory(item.category_name)) locations.add(locationOf(item));
+    }
+    return [...locations].sort((a, b) => a.localeCompare(b));
+  }, [catalog]);
+  const filteredLocations = React.useMemo(() => {
+    const q = destinationQuery.trim().toLowerCase();
+    const matches = q ? hotelLocations.filter((loc) => loc.toLowerCase().includes(q)) : hotelLocations;
+    return matches.slice(0, 8);
+  }, [hotelLocations, destinationQuery]);
+
   const pendingInvoices = invoices.filter((i) => i.status !== 'paid' && i.status !== 'cancelled');
   const overdueInvoices = pendingInvoices.filter((i) => isBefore(parseISO(i.due_date), new Date()));
 
@@ -154,7 +184,13 @@ export default function ClientPortal() {
   const activeCat = CATEGORIES.find((c) => c.key === activeCategory);
   const handleHeroSearch = () => {
     if (activeCat?.guided) {
-      goToQuoteBuilder(activeCategory, { destination, checkIn, checkOut, guests });
+      // Only hand off a destination that matches real hotel inventory —
+      // free text the client typed but never picked from the suggestions
+      // wouldn't match anything in the picker's location list anyway.
+      const matchedDestination = hotelLocations.find(
+        (loc) => loc.toLowerCase() === destinationQuery.trim().toLowerCase(),
+      );
+      goToQuoteBuilder(activeCategory, { destination: matchedDestination || '', checkIn, checkOut, guests });
     } else {
       goToQuoteBuilder(activeCategory);
     }
@@ -213,15 +249,39 @@ export default function ClientPortal() {
 
         {activeCat?.guided ? (
           <div className="bg-card text-foreground rounded-xl p-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-            <div className="md:col-span-4 space-y-1">
+            <div className="md:col-span-4 space-y-1 relative">
               <Label className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" /> {t('clientPortal.searchDestinationPlaceholder')}
               </Label>
               <Input
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
+                value={destinationQuery}
+                onChange={(e) => {
+                  setDestinationQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setShowSuggestions(false)}
                 placeholder={t('clientPortal.searchDestinationPlaceholder')}
+                autoComplete="off"
               />
+              {showSuggestions && filteredLocations.length > 0 && (
+                <div className="absolute z-20 top-full mt-1 w-full bg-popover text-popover-foreground border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                  {filteredLocations.map((loc) => (
+                    <button
+                      key={loc}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setDestinationQuery(loc);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                    >
+                      {loc}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="md:col-span-2 space-y-1">
               <Label className="text-xs text-muted-foreground">{t('clientPortal.searchCheckIn')}</Label>
