@@ -3,6 +3,42 @@
 Handoff/continuation doc. If this chat session gets compacted or a new
 session picks this up, start here instead of re-deriving context.
 
+## Update (2026-07-11): standalone hotel results page is back, on purpose
+
+The "don't resurrect the standalone Browse Hotels page" note below was an
+explicit call earlier in this project — folding hotel search into
+`ClientQuoteBuilder`'s picker instead. The user has since **reversed that
+call**: after using the redesigned hero search, they explicitly asked for
+"the old hotel selection" (the picker/dialog flow) to go away in favor of a
+real, dedicated results page — Expedia-style, not routed through the quote
+builder's dropdown chain.
+
+What's built now: `src/pages/ClientHotelSearch.jsx` (route registered in
+`src/pages.config.js`, added to the client-portal prefix lists in
+`src/App.jsx` and `src/Layout.jsx` — both needed updating or a client-tier
+login gets redirected/mis-themed on this page). The hero's "Search" button
+on hotels now navigates here (`?destination=&checkin=&checkout=&guests=`)
+instead of to `ClientQuoteBuilder`; the other three category pills
+(Tours/Transfers/Car rental) are unaffected and still route into
+`ClientQuoteBuilder`'s picker as before — only hotels got its own page.
+
+The new page: a `HotelSearchBar` (extracted to
+`src/components/hotelSearch/HotelSearchBar.jsx`, shared with the portal
+home's hero so the destination-suggestion/combobox logic isn't duplicated)
+at the top, a rooms/adults/children refine row below it, live results via
+`HotelResultCard` (reusing the exact same matching logic — occupancy tier,
+`resolveRoomRatesForRange`, stop-sale check — as `ClientQuoteBuilder`'s
+picker, just inlined instead of behind a dialog), and picking a room opens
+a lightweight confirm dialog (title/notes only, no full passenger roster)
+that submits straight to the existing `POST /quote` pipeline. Confirmed
+against `schemas.b2bSubmitQuote` server-side: only `title` and one `items[]`
+entry (with `pricing_id`) are actually required, so this lighter flow is a
+legitimate subset of what `ClientQuoteBuilder` sends, not a schema hack.
+
+If a future session is tempted to fold this back into the picker again:
+don't, unless the user asks again — check with them first either way, given
+this has now flip-flopped twice.
+
 ## Status: implemented (2026-07-11), pending visual QA + push
 
 `ClientPortal.jsx` was rewritten per the approved layout below (all 6

@@ -39,6 +39,7 @@ const LayoutWrapper = ({ children, currentPageName }) =>
 // portal account is allowed to land on without being bounced to ClientPortal.
 const CLIENT_PORTAL_PREFIXES = [
   'ClientPortal',
+  'ClientHotelSearch',
   'ClientProposal',
   'ClientTrip',
   'ClientInvoice',

@@ -6,22 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { SkeletonStats } from '@/components/ui/skeletons';
-import {
-  FileText,
-  Plane,
-  DollarSign,
-  ArrowRight,
-  MapPin,
-  Users,
-  Search,
-  Building2,
-  Compass,
-  Car,
-  ArrowRightLeft,
-} from 'lucide-react';
+import { FileText, Plane, DollarSign, ArrowRight, Building2, Compass, Car, ArrowRightLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore, differenceInDays } from 'date-fns';
@@ -30,6 +16,7 @@ import { useT } from '@/lib/i18n/I18nContext';
 import { sym } from '@/lib/formatters';
 import { getCatalog } from '@/lib/b2bApi';
 import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
+import HotelSearchBar from '@/components/hotelSearch/HotelSearchBar';
 
 // Hero category pills. Only "hotels" has a guided search flow (destination ->
 // dates -> rooms -> matched results, built in ClientQuoteBuilder.jsx's service
@@ -71,7 +58,6 @@ export default function ClientPortal() {
 
   const [activeCategory, setActiveCategory] = React.useState('hotels');
   const [destinationQuery, setDestinationQuery] = React.useState('');
-  const [showSuggestions, setShowSuggestions] = React.useState(false);
   const [checkIn, setCheckIn] = React.useState('');
   const [checkOut, setCheckOut] = React.useState('');
   const [guests, setGuests] = React.useState(2);
@@ -153,11 +139,6 @@ export default function ClientPortal() {
     }
     return [...locations].sort((a, b) => a.localeCompare(b));
   }, [catalog]);
-  const filteredLocations = React.useMemo(() => {
-    const q = destinationQuery.trim().toLowerCase();
-    const matches = q ? hotelLocations.filter((loc) => loc.toLowerCase().includes(q)) : hotelLocations;
-    return matches.slice(0, 8);
-  }, [hotelLocations, destinationQuery]);
 
   const pendingInvoices = invoices.filter((i) => i.status !== 'paid' && i.status !== 'cancelled');
   const overdueInvoices = pendingInvoices.filter((i) => isBefore(parseISO(i.due_date), new Date()));
@@ -183,14 +164,20 @@ export default function ClientPortal() {
 
   const activeCat = CATEGORIES.find((c) => c.key === activeCategory);
   const handleHeroSearch = () => {
-    if (activeCat?.guided) {
-      // Only hand off a destination that matches real hotel inventory —
-      // free text the client typed but never picked from the suggestions
-      // wouldn't match anything in the picker's location list anyway.
+    if (activeCategory === 'hotels') {
+      // Hotels get a dedicated, Expedia-style results page instead of the
+      // quote builder's dropdown-driven picker. Only hand off a destination
+      // that matches real hotel inventory — free text the client typed but
+      // never picked from the suggestions wouldn't match anything there.
       const matchedDestination = hotelLocations.find(
         (loc) => loc.toLowerCase() === destinationQuery.trim().toLowerCase(),
       );
-      goToQuoteBuilder(activeCategory, { destination: matchedDestination || '', checkIn, checkOut, guests });
+      const params = new URLSearchParams();
+      if (matchedDestination) params.set('destination', matchedDestination);
+      if (checkIn) params.set('checkin', checkIn);
+      if (checkOut) params.set('checkout', checkOut);
+      if (guests) params.set('guests', String(guests));
+      navigate(createPageUrl(`ClientHotelSearch?${params.toString()}`));
     } else {
       goToQuoteBuilder(activeCategory);
     }
@@ -248,71 +235,18 @@ export default function ClientPortal() {
         </div>
 
         {activeCat?.guided ? (
-          <div className="bg-card text-foreground rounded-xl p-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-            <div className="md:col-span-4 space-y-1 relative">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5" /> {t('clientPortal.searchDestinationPlaceholder')}
-              </Label>
-              <Input
-                value={destinationQuery}
-                onChange={(e) => {
-                  setDestinationQuery(e.target.value);
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setShowSuggestions(false)}
-                placeholder={t('clientPortal.searchDestinationPlaceholder')}
-                autoComplete="off"
-              />
-              {showSuggestions && filteredLocations.length > 0 && (
-                <div className="absolute z-20 top-full mt-1 w-full bg-popover text-popover-foreground border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto">
-                  {filteredLocations.map((loc) => (
-                    <button
-                      key={loc}
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        setDestinationQuery(loc);
-                        setShowSuggestions(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
-                    >
-                      {loc}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="md:col-span-2 space-y-1">
-              <Label className="text-xs text-muted-foreground">{t('clientPortal.searchCheckIn')}</Label>
-              <Input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
-            </div>
-            <div className="md:col-span-2 space-y-1">
-              <Label className="text-xs text-muted-foreground">{t('clientPortal.searchCheckOut')}</Label>
-              <Input
-                type="date"
-                value={checkOut}
-                min={checkIn || undefined}
-                onChange={(e) => setCheckOut(e.target.value)}
-              />
-            </div>
-            <div className="md:col-span-2 space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" /> {t('clientPortal.searchGuests')}
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                value={guests}
-                onChange={(e) => setGuests(Math.max(1, parseInt(e.target.value) || 1))}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Button className="w-full" onClick={handleHeroSearch}>
-                <Search className="w-4 h-4 mr-1.5" /> {t('clientPortal.searchButton')}
-              </Button>
-            </div>
-          </div>
+          <HotelSearchBar
+            hotelLocations={hotelLocations}
+            destinationQuery={destinationQuery}
+            onDestinationChange={setDestinationQuery}
+            checkIn={checkIn}
+            onCheckInChange={setCheckIn}
+            checkOut={checkOut}
+            onCheckOutChange={setCheckOut}
+            guests={guests}
+            onGuestsChange={setGuests}
+            onSearch={handleHeroSearch}
+          />
         ) : (
           <div className="bg-card rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-sm text-foreground/80">
