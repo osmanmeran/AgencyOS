@@ -16,21 +16,24 @@ export default function HotelResultCard({ item, unitPrice, nights, onSelect }) {
   const locationLine = [item.area, item.city].filter(Boolean).join(', ');
 
   return (
-    <Card className="p-4 flex flex-col sm:flex-row gap-4">
-      {item.image_url ? (
-        <img
-          src={item.image_url}
-          alt={item.name}
-          className="w-full sm:w-36 h-36 sm:h-auto rounded-lg object-cover shrink-0 bg-muted"
-        />
-      ) : (
-        <div className="w-full sm:w-36 h-36 sm:h-auto rounded-lg bg-muted flex items-center justify-center shrink-0">
-          <ImageIcon className="w-8 h-8 text-muted-foreground" />
-        </div>
-      )}
+    <Card className="p-4">
+      {/* Grid (not flex) so the middle text column is the one that shrinks —
+          a flex row here would let the fixed-width image/price columns force
+          the whole card to overflow instead. */}
+      <div className="grid grid-cols-[5rem_minmax(0,1fr)] sm:grid-cols-[9rem_minmax(0,1fr)_auto] gap-4 items-start">
+        {item.image_url ? (
+          <img
+            src={item.image_url}
+            alt={item.name}
+            className="w-20 h-20 sm:w-full sm:h-32 rounded-lg object-cover bg-muted"
+          />
+        ) : (
+          <div className="w-20 h-20 sm:w-full sm:h-32 rounded-lg bg-muted flex items-center justify-center">
+            <ImageIcon className="w-6 h-6 text-muted-foreground" />
+          </div>
+        )}
 
-      <div className="flex-1 min-w-0 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Building className="w-4 h-4 shrink-0" />
             <span className="truncate">{item.supplier_name}</span>
@@ -84,7 +87,7 @@ export default function HotelResultCard({ item, unitPrice, nights, onSelect }) {
           )}
         </div>
 
-        <div className="flex sm:flex-col items-end justify-between sm:justify-start gap-2 shrink-0">
+        <div className="col-span-2 sm:col-span-1 flex sm:flex-col items-end justify-between sm:justify-start gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
           <div className="text-right">
             <div className="text-lg font-bold text-foreground whitespace-nowrap">
               {sym}
