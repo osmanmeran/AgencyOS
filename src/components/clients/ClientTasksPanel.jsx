@@ -269,7 +269,7 @@ export default function ClientTasksPanel({ clientId }) {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
+              <Button type="submit" disabled={createMutation.isPending}>
                 {t('clientTasksPanel.addButton')}
               </Button>
             </div>

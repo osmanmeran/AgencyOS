@@ -974,7 +974,7 @@ export default function AppSettings() {
                     Not connected. Click below to sign in with your Microsoft account.
                   </p>
                 </div>
-                <Button onClick={connectOutlook} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={connectOutlook}>
                   <Mail className="w-4 h-4 mr-2" /> Connect Outlook
                 </Button>
               </div>

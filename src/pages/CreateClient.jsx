@@ -278,7 +278,7 @@ export default function CreateClient() {
               {t('common.cancel')}
             </Button>
           </Link>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
+          <Button type="submit" disabled={createMutation.isPending}>
             {createMutation.isPending ? t('createClient.creating') : t('crm.createClient')}
           </Button>
         </div>

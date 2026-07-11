@@ -1141,7 +1141,7 @@ export default function ServiceLineEditor({
             </p>
           )}
           <div className="flex justify-end">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSave} disabled={!!stopSale}>
+            <Button size="sm" onClick={handleSave} disabled={!!stopSale}>
               <Save className="w-3.5 h-3.5 mr-1" />
               {t('serviceLineEditor.saveServiceButton')}
             </Button>

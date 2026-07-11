@@ -161,7 +161,7 @@ export default function ClientProfile({ client, clientId }) {
                 <X className="w-4 h-4 mr-1" />
                 {t('common.cancel')}
               </Button>
-              <Button size="sm" onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+              <Button size="sm" onClick={handleSave} disabled={saving}>
                 {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
                 {t('common.save')}
               </Button>
@@ -287,12 +287,7 @@ export default function ClientProfile({ client, clientId }) {
                 <X className="w-4 h-4 mr-1" />
                 {t('common.cancel')}
               </Button>
-              <Button
-                size="sm"
-                onClick={handleExtrasSave}
-                disabled={extrasSaving}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
+              <Button size="sm" onClick={handleExtrasSave} disabled={extrasSaving}>
                 {extrasSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
                 {t('common.save')}
               </Button>

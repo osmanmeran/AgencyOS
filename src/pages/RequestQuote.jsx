@@ -183,7 +183,7 @@ export default function RequestQuote() {
                 placeholder={t('requestQuote.descriptionPlaceholder')}
               />
             </div>
-            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base">
+            <Button type="submit" className="w-full h-11 text-base">
               <SendHorizontal className="w-5 h-5 mr-2" />
               {t('requestQuote.sendRequest')}
             </Button>

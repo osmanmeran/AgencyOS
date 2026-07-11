@@ -1105,7 +1105,7 @@ export default function ReservationDetails() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">Services Included</h2>
           {trip.proposal_status !== 'confirmed' && (
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => setAddingNewService(true)}>
+            <Button size="sm" onClick={() => setAddingNewService(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Add Service
             </Button>
@@ -1733,7 +1733,6 @@ export default function ReservationDetails() {
                 Cancel
               </Button>
               <Button
-                className="bg-purple-600 hover:bg-purple-700"
                 disabled={!templateName || createTemplateMutation.isPending}
                 onClick={() => {
                   const svcs = (trip.services || []).map((s) => {

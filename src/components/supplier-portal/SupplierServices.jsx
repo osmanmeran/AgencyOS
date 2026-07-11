@@ -478,7 +478,7 @@ export default function SupplierServices({ supplierId }) {
               <Button type="button" variant="outline" onClick={closeServiceModal}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 {editingService
                   ? t('supplierPortalServices.updateButton')
                   : t('supplierPortalServices.submitForApproval')}
@@ -608,7 +608,7 @@ export default function SupplierServices({ supplierId }) {
               <Button type="button" variant="outline" onClick={closePricingModal}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 {editingPricing
                   ? t('supplierPortalServices.updateButton')
                   : t('supplierPortalServices.submitForApproval')}

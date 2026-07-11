@@ -837,9 +837,7 @@ export default function ClientDetails() {
               <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Save Changes
-              </Button>
+              <Button type="submit">Save Changes</Button>
             </div>
           </form>
         </DialogContent>
@@ -927,9 +925,7 @@ export default function ClientDetails() {
               <Button type="button" variant="outline" onClick={() => setPaymentModalOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Add Payment
-              </Button>
+              <Button type="submit">Add Payment</Button>
             </div>
           </form>
         </DialogContent>

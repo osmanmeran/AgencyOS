@@ -206,7 +206,7 @@ export default function BookingEmailSender({ open, onClose, booking, supplier, t
             <Button variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={sendEmail} disabled={!recipientEmail || sending} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={sendEmail} disabled={!recipientEmail || sending}>
               {sending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('emailComposer.sending')}

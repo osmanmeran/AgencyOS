@@ -326,7 +326,7 @@ export default function SupplierDetails() {
                     })}
                   </div>
                   <div className="flex gap-2 mt-2">
-                    <Button type="button" size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={saveCategories}>
+                    <Button type="button" size="sm" onClick={saveCategories}>
                       {t('common.save')}
                     </Button>
                     <Button type="button" size="sm" variant="outline" onClick={() => setCategoryEditMode(false)}>
@@ -660,7 +660,7 @@ export default function SupplierDetails() {
               <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={updateMutation.isPending}>
+              <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -731,11 +731,7 @@ export default function SupplierDetails() {
                       <h3 className="font-semibold text-lg text-foreground">{result.name}</h3>
                       <span className="text-xs text-muted-foreground uppercase tracking-wide">{result.source}</span>
                     </div>
-                    <Button
-                      size="sm"
-                      className="bg-purple-600 hover:bg-purple-700 flex-shrink-0 ml-4"
-                      onClick={() => applyWebResult(result)}
-                    >
+                    <Button size="sm" className="flex-shrink-0 ml-4" onClick={() => applyWebResult(result)}>
                       <Check className="w-3.5 h-3.5 mr-1" /> {t('supplierDetails.applyData')}
                     </Button>
                   </div>

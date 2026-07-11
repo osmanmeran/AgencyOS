@@ -43,7 +43,7 @@ export default function ClientQuotes() {
           <p className="text-muted-foreground">{t('clientQuotes.subtitle')}</p>
         </div>
         <Link to={createPageUrl('ClientQuoteBuilder')}>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button>
             <Plus className="w-4 h-4 mr-2" />
             {t('clientQuotes.newQuoteRequest')}
           </Button>
@@ -58,7 +58,7 @@ export default function ClientQuotes() {
           <h3 className="text-xl font-bold text-foreground mb-2">{t('clientQuotes.noQuotesTitle')}</h3>
           <p className="text-muted-foreground mb-6">{t('clientQuotes.noQuotesBody')}</p>
           <Link to={createPageUrl('ClientQuoteBuilder')}>
-            <Button className="bg-blue-600 hover:bg-blue-700">{t('clientPortal.requestQuote')}</Button>
+            <Button>{t('clientPortal.requestQuote')}</Button>
           </Link>
         </Card>
       ) : (

@@ -455,7 +455,7 @@ export default function Itinerary({ tripId, trip, events }) {
               <Button type="button" variant="outline" onClick={closeModal}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 {editingEvent ? t('tripItinerary.updateEventButton') : t('tripItinerary.addEvent')}
               </Button>
             </div>

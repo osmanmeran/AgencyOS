@@ -239,7 +239,7 @@ export default function TripDetails() {
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2">{t('tripDetails.generateSmartPackingList')}</h3>
               <p className="text-muted-foreground mb-6">{t('tripDetails.aiPackingHint')}</p>
-              <Button onClick={generatePackingList} disabled={generatingList} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={generatePackingList} disabled={generatingList}>
                 {generatingList ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />

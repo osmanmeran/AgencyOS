@@ -92,7 +92,7 @@ export default function SupplierCategorySummary() {
         <FolderTree className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
         <p className="text-muted-foreground">{t('supplierCategorySummary.noCategoriesTitle')}</p>
         <Link to={createPageUrl('Categories')}>
-          <Button className="mt-4 bg-blue-600 hover:bg-blue-700">{t('supplierCategorySummary.goToCategories')}</Button>
+          <Button className="mt-4">{t('supplierCategorySummary.goToCategories')}</Button>
         </Link>
       </Card>
     );

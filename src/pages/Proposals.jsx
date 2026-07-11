@@ -72,7 +72,7 @@ export default function Proposals() {
           {t('common.exportCsv')}
         </Button>
         <Link to={createPageUrl('CreateProposal')}>
-          <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg">
+          <Button className="shadow-lg">
             <Plus className="w-5 h-5 mr-2" />
             {t('proposals.newProposal')}
           </Button>
@@ -87,7 +87,7 @@ export default function Proposals() {
           <h3 className="text-xl font-bold text-foreground mb-2">{t('proposals.noProposalsTitle')}</h3>
           <p className="text-muted-foreground mb-6">{t('proposals.noProposalsBody')}</p>
           <Link to={createPageUrl('CreateProposal')}>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button>
               <Plus className="w-4 h-4 mr-2" />
               {t('proposals.createFirst')}
             </Button>

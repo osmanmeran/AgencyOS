@@ -235,7 +235,7 @@ export default function BookingTemplates() {
               <Button type="button" variant="outline" onClick={closeModal}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 {editingTemplate
                   ? t('bookingTemplates.updateTemplateButton')
                   : t('bookingTemplates.createTemplateButton')}

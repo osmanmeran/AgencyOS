@@ -253,9 +253,7 @@ export default function SupplierReviews({ supplierId }) {
               <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {t('supplierReviews.submitReview')}
-              </Button>
+              <Button type="submit">{t('supplierReviews.submitReview')}</Button>
             </div>
           </form>
         </DialogContent>

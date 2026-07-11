@@ -756,9 +756,7 @@ export default function ServiceLibrary() {
               <Button type="button" variant="outline" onClick={closeModal}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingService ? 'Update' : 'Create'} Service
-              </Button>
+              <Button type="submit">{editingService ? 'Update' : 'Create'} Service</Button>
             </div>
           </form>
         </DialogContent>
@@ -805,9 +803,7 @@ export default function ServiceLibrary() {
               <Button type="button" variant="outline" onClick={() => setCategoryModalOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Create Category
-              </Button>
+              <Button type="submit">Create Category</Button>
             </div>
           </form>
         </DialogContent>

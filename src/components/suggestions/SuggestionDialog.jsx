@@ -126,7 +126,7 @@ export default function SuggestionDialog({ open, onOpenChange }) {
                 placeholder={t('suggestionDialog.descriptionPlaceholder')}
               />
             </div>
-            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={!title.trim() || sending}>
+            <Button type="submit" className="w-full" disabled={!title.trim() || sending}>
               {sending ? (
                 t('suggestionDialog.submitting')
               ) : (

@@ -130,7 +130,7 @@ export default function MessageThread({ clientId, referenceType = 'general', ref
             }
           }}
         />
-        <Button onClick={handleSend} className="bg-blue-600 hover:bg-blue-700" disabled={!newMessage.trim()}>
+        <Button onClick={handleSend} disabled={!newMessage.trim()}>
           <Send className="w-4 h-4" />
         </Button>
       </div>

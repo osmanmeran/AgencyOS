@@ -866,7 +866,7 @@ export default function ItineraryBuilder() {
               <Button type="button" variant="outline" onClick={closeModal}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={!!eventStopSale}>
+              <Button type="submit" disabled={!!eventStopSale}>
                 <Check className="w-4 h-4 mr-1" />
                 {editingEvent ? 'Update Event' : 'Add Event'}
               </Button>

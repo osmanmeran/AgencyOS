@@ -114,17 +114,17 @@ export default function ClientPortal() {
       </div>
 
       {/* Request a Quote CTA */}
-      <Card className="p-6 bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2 mb-1">
               <ShoppingCart className="w-5 h-5" />
               {t('clientPortal.ctaTitle')}
             </h2>
-            <p className="text-blue-100">{t('clientPortal.ctaBody')}</p>
+            <p className="text-primary-foreground/80">{t('clientPortal.ctaBody')}</p>
           </div>
           <Link to={createPageUrl('ClientQuoteBuilder')}>
-            <Button className="bg-card text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 whitespace-nowrap">
+            <Button className="bg-card text-primary hover:bg-card/90 whitespace-nowrap">
               {t('clientPortal.requestQuote')}
             </Button>
           </Link>

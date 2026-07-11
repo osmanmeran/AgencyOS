@@ -378,7 +378,7 @@ export default function CreateTripModal({ open, onClose, onSubmit }) {
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={!formData.client_id}>
+            <Button type="submit" disabled={!formData.client_id}>
               {t('createTripModal.createTrip')}
             </Button>
           </div>

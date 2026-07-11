@@ -258,7 +258,7 @@ export default function BookingRequestEmail({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
-          <Button className="bg-purple-600 hover:bg-purple-700" onClick={onConfirmSend}>
+          <Button onClick={onConfirmSend}>
             <Send className="w-4 h-4 mr-2" />
             {t('bookingRequestEmail.sendBookingRequest')}
           </Button>

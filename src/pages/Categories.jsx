@@ -231,9 +231,7 @@ export default function Categories() {
               <Button type="button" variant="outline" onClick={closeModal}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingCategory ? t('categories.update') : t('categories.create')}
-              </Button>
+              <Button type="submit">{editingCategory ? t('categories.update') : t('categories.create')}</Button>
             </div>
           </form>
         </DialogContent>

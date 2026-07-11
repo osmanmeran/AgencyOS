@@ -70,7 +70,7 @@ export default function PaymentLinkPanel({ invoice, client }) {
       </div>
 
       <div className="flex gap-2 pt-1">
-        <Button onClick={handleCopy} className="bg-blue-600 hover:bg-blue-700 flex-1">
+        <Button onClick={handleCopy} className="flex-1">
           <Link2 className="w-4 h-4 mr-2" />
           {copied ? t('paymentLink.linkCopied') : t('paymentLink.copyPaymentLink')}
         </Button>

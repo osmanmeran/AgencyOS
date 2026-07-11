@@ -187,7 +187,7 @@ export default function ProposalBuilder() {
             <Eye className="w-4 h-4 mr-2" />
             {isPreviewing ? 'Edit' : 'Preview'}
           </Button>
-          <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={handlePrint}>
             <FileDown className="w-4 h-4 mr-2" />
             Export PDF
           </Button>

@@ -492,7 +492,7 @@ export default function TourContractForm() {
               Cancel
             </Button>
           </Link>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={saving || !form.client_id}>
+          <Button type="submit" disabled={saving || !form.client_id}>
             {saving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

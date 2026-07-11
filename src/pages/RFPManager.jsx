@@ -268,7 +268,7 @@ function RFPWizard({ onClose, suppliers, categories, _services }) {
             <Button variant="outline" onClick={() => setStep(2)}>
               {t('rfpManager.wizard.back')}
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSend} disabled={sendRFP.isPending}>
+            <Button onClick={handleSend} disabled={sendRFP.isPending}>
               <SendHorizontal className="w-4 h-4 mr-2" />
               {t(
                 selectedSuppliers.length === 1

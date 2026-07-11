@@ -73,7 +73,7 @@ export default function TourContracts() {
         </div>
         {canManage && (
           <Link to={createPageUrl('TourContractForm')}>
-            <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg">
+            <Button className="shadow-lg">
               <Plus className="w-5 h-5 mr-2" />
               {t('tourContracts.newContract')}
             </Button>

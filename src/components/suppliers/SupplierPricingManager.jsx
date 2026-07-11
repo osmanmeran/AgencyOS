@@ -600,7 +600,7 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
       <Card className="p-6 bg-card">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">{t('supplierPricingManager.pricingManagementTitle')}</h3>
-          <Button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700" disabled={!selectedCategory}>
+          <Button onClick={openCreateModal} disabled={!selectedCategory}>
             <Plus className="w-4 h-4 mr-2" /> {t('supplierPricingManager.addPricingTier')}
           </Button>
         </div>
@@ -1168,11 +1168,7 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
               <Button type="button" variant="outline" onClick={closeModal}>
                 {t('common.cancel')}
               </Button>
-              <Button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {(createMutation.isPending || updateMutation.isPending) && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}

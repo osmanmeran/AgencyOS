@@ -449,7 +449,7 @@ export default function Reservations() {
                     </p>
                     {tab === 'all' && (
                       <Link to={createPageUrl('CreateReservation')}>
-                        <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                        <Button className="mt-4">
                           <Plus className="w-4 h-4 mr-2" />
                           {t('reservations.createFirst')}
                         </Button>

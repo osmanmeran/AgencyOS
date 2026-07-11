@@ -219,7 +219,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
             <div className="flex gap-3 mt-2">
               {createdBookingId && (
                 <Link to={createPageUrl(`SupplierBookingDetails?id=${createdBookingId}`)}>
-                  <Button className="bg-blue-600 hover:bg-blue-700">{t('common.viewDetails')}</Button>
+                  <Button>{t('common.viewDetails')}</Button>
                 </Link>
               )}
               <Button variant="outline" onClick={onClose}>
@@ -620,11 +620,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button
-              type="submit"
-              disabled={createMutation.isPending || !!stopSale}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
+            <Button type="submit" disabled={createMutation.isPending || !!stopSale}>
               {createMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

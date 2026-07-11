@@ -119,7 +119,7 @@ export default function TaskBoard() {
         </div>
         <Dialog open={newTaskOpen} onOpenChange={setNewTaskOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-indigo-600 hover:bg-indigo-700">
+            <Button>
               <Plus className="w-4 h-4 mr-2" /> {t('taskBoard.newTask')}
             </Button>
           </DialogTrigger>
@@ -162,7 +162,7 @@ export default function TaskBoard() {
                 placeholder={t('taskBoard.dueDatePlaceholder')}
               />
               <Button
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                className="w-full"
                 onClick={() => createTask.mutate({ ...newTask, status: 'pending' })}
                 disabled={!newTask.title}
               >

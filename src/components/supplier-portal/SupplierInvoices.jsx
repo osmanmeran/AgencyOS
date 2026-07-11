@@ -348,7 +348,7 @@ export default function SupplierInvoices({ supplierId }) {
               <Button type="button" variant="outline" onClick={closeModal}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 {selectedInvoice
                   ? t('supplierPortalInvoices.updateInvoiceButton')
                   : t('supplierPortalInvoices.submitInvoice')}

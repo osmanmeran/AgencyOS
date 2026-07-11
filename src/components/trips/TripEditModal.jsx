@@ -233,7 +233,7 @@ export default function TripEditModal({ open, onClose, trip }) {
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+            <Button type="submit">
               <Save className="w-4 h-4 mr-2" /> {t('tripEditModal.saveChanges')}
             </Button>
           </div>

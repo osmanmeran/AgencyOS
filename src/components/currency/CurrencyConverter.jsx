@@ -172,7 +172,7 @@ export default function CurrencyConverter({ compact = false }) {
           <Button onClick={swapCurrencies} variant="outline" className="flex-1">
             <ArrowRightLeft className="w-4 h-4 mr-2" /> {t('currencyConverter.swap')}
           </Button>
-          <Button onClick={convertCurrency} className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={loading}>
+          <Button onClick={convertCurrency} className="flex-1" disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('currencyConverter.converting')}

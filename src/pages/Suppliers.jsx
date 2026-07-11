@@ -904,9 +904,7 @@ export default function Suppliers() {
               <Button type="button" variant="outline" onClick={closeModal}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingSupplier ? 'Update' : 'Add'} Supplier
-              </Button>
+              <Button type="submit">{editingSupplier ? 'Update' : 'Add'} Supplier</Button>
             </div>
           </form>
         </DialogContent>
@@ -949,7 +947,7 @@ export default function Suppliers() {
                 onChange={(e) => setNewColumnName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addExtraColumn())}
               />
-              <Button onClick={addExtraColumn} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={addExtraColumn}>
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
