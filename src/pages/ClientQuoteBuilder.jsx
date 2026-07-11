@@ -337,7 +337,7 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Choose a service</DialogTitle>
         </DialogHeader>
@@ -380,12 +380,12 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
             ))}
 
           {location && isLodgingCat && (
-            <div className="flex gap-3">
-              <div className="flex-1 space-y-1.5">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0 space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Check-in</Label>
                 <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </div>
-              <div className="flex-1 space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Check-out</Label>
                 <Input
                   type="date"
@@ -425,7 +425,7 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
             occupancy &&
             nights > 0 &&
             (lodgingResults.length ? (
-              <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
                 {lodgingResults.map((item) => (
                   <HotelResultCard
                     key={item.pricing_id}
