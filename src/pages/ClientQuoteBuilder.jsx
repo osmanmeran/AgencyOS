@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
@@ -54,6 +54,39 @@ const AGE_CATEGORIES = [
 
 const NIGHT_UNITS = ['per_night', 'per_day'];
 const FIXED_UNITS = ['per_group', 'flat_rate'];
+
+// The client portal home's hero search hands off here via ?category=...
+// (plus destination/checkin/checkout/guests for the hotels flow). Category
+// names are whatever suppliers were entered under, so matching a hero pill to
+// one is fuzzy keyword matching — same approach ServiceLineCard already uses
+// below to detect lodging/transfer/car-rental categories for its own per-line
+// fields, reused here to auto-select a category in the picker.
+const CATEGORY_HINT_MATCHERS = {
+  hotels: isLodgingCategory,
+  tours: (name) => {
+    const c = (name || '').toLowerCase();
+    return c.includes('tour') || c.includes('guide') || c.includes('excursion') || c.includes('activity');
+  },
+  transfers: (name) => (name || '').toLowerCase().includes('transfer'),
+  car_rental: (name) => {
+    const c = (name || '').toLowerCase();
+    return c.includes('rent a car') || c.includes('rental') || c.includes('car rental');
+  },
+};
+
+function readHeroSearchParams() {
+  if (typeof window === 'undefined') return null;
+  const sp = new URLSearchParams(window.location.search);
+  const category = sp.get('category');
+  if (!category) return null;
+  return {
+    categoryHint: category,
+    destination: sp.get('destination') || '',
+    checkin: sp.get('checkin') || '',
+    checkout: sp.get('checkout') || '',
+    guests: parseInt(sp.get('guests') || '', 10) || undefined,
+  };
+}
 const HOTEL_TREATMENTS = [
   'Room Only',
   'Bed & Breakfast',
@@ -243,7 +276,16 @@ function PaxRow({ pax, onChange, onSetContact }) {
 // picked directly, so the client sees matching rooms (with meal treatment,
 // child supplement, and per-night/total pricing) instead of having to
 // self-classify a room type or pick a supplier blind.
-function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency, onSelect, onSelectResolvedRoom }) {
+function ServicePickerDialog({
+  open,
+  onOpenChange,
+  services,
+  stopSales,
+  currency,
+  onSelect,
+  onSelectResolvedRoom,
+  initialValues,
+}) {
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
   const [supplierId, setSupplierId] = useState('');
@@ -252,6 +294,10 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
   const [roomCount, setRoomCount] = useState(1);
   const [adultsPerRoom, setAdultsPerRoom] = useState(2);
   const [childAges, setChildAges] = useState(/** @type {string[]} */ ([]));
+  // Guards the category-change reset effect below from wiping out the dates
+  // it just seeded for the same category change (see the seed effect further
+  // down, once categoryOptions is available).
+  const seedingRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
@@ -263,9 +309,14 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
       setRoomCount(1);
       setAdultsPerRoom(2);
       setChildAges([]);
+      seedingRef.current = false;
     }
   }, [open]);
   useEffect(() => {
+    if (seedingRef.current) {
+      seedingRef.current = false;
+      return;
+    }
     setLocation('');
     setSupplierId('');
     setStartDate('');
@@ -299,6 +350,21 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
     }
     return [...byCat.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [services]);
+
+  // Seeds category/dates/guests from the hero search hand-off (initialValues)
+  // the first time the dialog opens with nothing picked yet. Runs again if
+  // it's closed and reopened (category resets to '' on close above).
+  useEffect(() => {
+    if (!open || !initialValues || category) return;
+    const matcher = CATEGORY_HINT_MATCHERS[initialValues.categoryHint];
+    const matchedCategory = matcher ? categoryOptions.find(([name]) => matcher(name))?.[0] : undefined;
+    if (!matchedCategory) return;
+    seedingRef.current = true;
+    setCategory(matchedCategory);
+    if (initialValues.checkin) setStartDate(initialValues.checkin);
+    if (initialValues.checkout) setEndDate(initialValues.checkout);
+    if (initialValues.guests) setAdultsPerRoom(initialValues.guests);
+  }, [open, initialValues, categoryOptions, category]);
 
   const locationOptions = useMemo(() => {
     const byLoc = new Map();
@@ -570,7 +636,17 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
 // shown here are the client's own sell price: pulled from the catalog
 // (server already applied the client's markup and converted to their
 // preferred currency).
-function ServiceLineCard({ line, services, servicesById, currency, stopSales, onChange, onRemove }) {
+function ServiceLineCard({
+  line,
+  services,
+  servicesById,
+  currency,
+  stopSales,
+  onChange,
+  onRemove,
+  autoOpenPicker,
+  initialPickerValues,
+}) {
   const svc = servicesById.get(line.pricing_id);
   const catName = (svc?.category_name || '').toLowerCase();
   const isLodging = isLodgingCategory(catName);
@@ -586,6 +662,13 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
   const nights = nightsBetween(line.start_date, line.end_date);
   const unitPrice = unitPriceFor(svc, line.quantity);
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Arriving from the portal home's hero search: open this (empty, first)
+  // line's picker automatically instead of making the client click "Choose a
+  // service" again after already filling in a destination/dates there.
+  useEffect(() => {
+    if (autoOpenPicker && !svc) setPickerOpen(true);
+  }, []);
 
   // Car rental surcharges (computed client-side for display before submission)
   const carDropOffSurcharge =
@@ -678,6 +761,7 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
         currency={currency}
         onSelect={pickService}
         onSelectResolvedRoom={pickResolvedRoom}
+        initialValues={initialPickerValues}
       />
 
       {line.pricing_id && (
@@ -1033,8 +1117,18 @@ export default function ClientQuoteBuilder() {
   const [client, setClient] = useState(/** @type {any} */ (null));
   const [clientLoaded, setClientLoaded] = useState(false);
   const [isStaffPreview, setIsStaffPreview] = useState(false);
-  const [trip, setTrip] = useState({ title: '', start_date: '', end_date: '', notes: '' });
-  const [destinations, setDestinations] = useState(() => [newDestination()]);
+  // Read once at mount: the portal home's hero search hands off here via
+  // ?category=&destination=&checkin=&checkout=&guests= (see ClientPortal.jsx).
+  const [heroSearch] = useState(() => readHeroSearchParams());
+  const [trip, setTrip] = useState(() => ({
+    title: '',
+    start_date: heroSearch?.checkin || '',
+    end_date: heroSearch?.checkout || '',
+    notes: '',
+  }));
+  const [destinations, setDestinations] = useState(() =>
+    heroSearch?.destination ? [{ ...newDestination(), label: heroSearch.destination }] : [newDestination()],
+  );
   const [rooms, setRooms] = useState(() => [newRoom()]);
   const [lines, setLines] = useState(() => [newLine()]);
   const actAsClientId = useActAsClientId();
@@ -1359,7 +1453,7 @@ export default function ClientQuoteBuilder() {
           </p>
         ) : (
           <div className="space-y-4">
-            {lines.map((line) => (
+            {lines.map((line, idx) => (
               <ServiceLineCard
                 key={line._key}
                 line={line}
@@ -1369,6 +1463,8 @@ export default function ClientQuoteBuilder() {
                 stopSales={stopSales}
                 onChange={(u) => updateLine(line._key, u)}
                 onRemove={() => removeLine(line._key)}
+                autoOpenPicker={idx === 0 && !!heroSearch}
+                initialPickerValues={idx === 0 ? heroSearch : undefined}
               />
             ))}
           </div>
