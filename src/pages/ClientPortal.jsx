@@ -212,7 +212,7 @@ export default function ClientPortal() {
         </div>
 
         {activeCat?.guided ? (
-          <div className="bg-card rounded-xl p-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+          <div className="bg-card text-foreground rounded-xl p-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
             <div className="md:col-span-4 space-y-1">
               <Label className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" /> {t('clientPortal.searchDestinationPlaceholder')}
