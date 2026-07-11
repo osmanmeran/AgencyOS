@@ -4,6 +4,12 @@
 
 @layer base {
   :root {
+    /* Without this, native form controls (date-picker icon/popup,
+       scrollbars, etc.) follow the OS's dark/light preference instead of
+       this app's own theme class — e.g. a light-mode page on a dark-mode
+       OS renders a white calendar-picker icon on a white input, invisible. */
+    color-scheme: light;
+
     /* ── Pastel Minimal Color Scheme ───────────────────── */
     --m3-primary: 210 22% 42%;
     --m3-on-primary: 0 0% 100%;
@@ -117,6 +123,8 @@
   }
 
   .dark {
+    color-scheme: dark;
+
     /* ── Dark Mode ─────────────────────────────────────── */
     --m3-primary: 210 38% 72%;
     --m3-on-primary: 210 22% 16%;
