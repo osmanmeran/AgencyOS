@@ -34,6 +34,15 @@ import { getCurrencySymbol } from '@/lib/formatters';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import LocationSearch from '@/components/services/LocationSearch';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
+import {
+  OCCUPANCY_LABELS,
+  locationOf,
+  isLodgingCategory,
+  isRateValidOn,
+  resolveRoomRate,
+  nightsBetween,
+  unitPriceFor,
+} from '@/lib/hotelPricing';
 
 const { sym } = { sym: (cur) => getCurrencySymbol(cur) };
 const AGE_CATEGORIES = [
@@ -107,56 +116,6 @@ const newLine = () => ({
   details: '',
 });
 
-const OCCUPANCY_LABELS = {
-  single: 'Single',
-  double: 'Double',
-  twin: 'Twin',
-  triple: 'Triple',
-  quad: 'Quad',
-  family: 'Family',
-  extra_bed: 'Extra bed',
-};
-
-function isLodgingCategory(name) {
-  const c = (name || '').toLowerCase();
-  return c.includes('hotel') || c.includes('lodging') || c.includes('accommodation') || c.includes('resort');
-}
-
-// A rate is usable for a given check-in date if it's an all-year rate, or a
-// 'custom' season whose date range contains it. high_season/low_season/peak
-// carry no stored date range in the DB (season_start/season_end are only
-// entered for 'custom' — see SupplierPricingManager.jsx) so they can never be
-// auto-matched; they fall through to the ambiguous case in resolveRoomRate.
-function isRateValidOn(rate, date) {
-  if (rate.season_type === 'all_year') return true;
-  if (!date) return false;
-  if (rate.season_type === 'custom')
-    return !!rate.season_start && !!rate.season_end && date >= rate.season_start && date <= rate.season_end;
-  return false;
-}
-
-// Given every rate tier for a supplier + room type, pick the one that
-// actually applies to the requested check-in date. If exactly one candidate
-// exists it's used regardless of date (nothing to disambiguate). Otherwise a
-// rate is only auto-selected when the date narrows it down to exactly one
-// match; anything else (no date yet, an undated season label alongside an
-// all-year rate, overlapping custom ranges) is left for the client to
-// resolve manually from the returned candidate list.
-function resolveRoomRate(candidates, date) {
-  if (candidates.length === 0) return { rate: null, candidates: [] };
-  if (candidates.length === 1) return { rate: candidates[0], candidates };
-  const valid = date ? candidates.filter((r) => isRateValidOn(r, date)) : [];
-  if (valid.length === 1) return { rate: valid[0], candidates };
-  return { rate: null, candidates: valid.length > 0 ? valid : candidates };
-}
-
-function nightsBetween(start, end) {
-  if (!start || !end) return 0;
-  const ms = new Date(end).getTime() - new Date(start).getTime();
-  if (!Number.isFinite(ms) || ms <= 0) return 0;
-  return Math.round(ms / 86400000);
-}
-
 function lineQty(line) {
   let qty = Math.max(1, line.quantity || 1);
   if (NIGHT_UNITS.includes(line.unit)) {
@@ -164,25 +123,6 @@ function lineQty(line) {
     if (n > 0) qty *= n;
   }
   return qty;
-}
-
-// Sell price per unit for a catalog service. Guided-tour services can carry
-// per-pax sell bands (pax_tiers, priced server-side with the client's markup);
-// the band covering the line's participant count wins over the flat unit_price.
-function unitPriceFor(svc, quantity) {
-  const tiers = svc?.pax_tiers;
-  if (Array.isArray(tiers) && tiers.length) {
-    const q = Math.max(1, Math.round(Number(quantity) || 1));
-    const band = tiers.find((t) => {
-      if (t.min_pax == null || t.min_pax === '') return false;
-      const min = Number(t.min_pax);
-      if (!Number.isFinite(min)) return false;
-      const max = t.max_pax != null && t.max_pax !== '' ? Number(t.max_pax) : Infinity;
-      return q >= min && q <= max;
-    });
-    if (band) return band.unit_price || 0;
-  }
-  return svc?.unit_price || 0;
 }
 
 function lineTotal(line, unitPrice, surcharges = {}) {
@@ -267,8 +207,6 @@ function PaxRow({ pax, onChange, onSetContact }) {
     </div>
   );
 }
-
-const locationOf = (s) => s.city || s.area || 'Other';
 
 // Sequential dropdown service picker, mirroring the staff reservation
 // builder's category -> service selection (ServiceLineEditor.jsx) instead of

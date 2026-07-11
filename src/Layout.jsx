@@ -47,6 +47,7 @@ import LocalShippingRounded from '@mui/icons-material/LocalShippingRounded';
 import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
 import VisibilityRounded from '@mui/icons-material/VisibilityRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
+import HotelRounded from '@mui/icons-material/HotelRounded';
 
 import MarvelopsLogo from './components/layout/MarvelopsLogo';
 import { PermissionProvider } from './components/permissions/PermissionContext';
@@ -127,6 +128,7 @@ const NAV_SECTIONS = {
 const CLIENT_NAV = (_t) => [
   { label: 'Home', icon: <DashboardRounded />, page: 'ClientPortal' },
   { label: 'Request a Quote', icon: <ShoppingCartRounded />, page: 'ClientQuoteBuilder' },
+  { label: 'Browse Hotels', icon: <HotelRounded />, page: 'ClientHotelSearch' },
   { label: 'My Quote Requests', icon: <RequestQuoteRounded />, page: 'ClientQuotes' },
   { label: 'My Proposals', icon: <RateReviewRounded />, page: 'ClientProposals' },
   { label: 'My Trips', icon: <FlightTakeoffRounded />, page: 'ClientTrips' },
@@ -340,7 +342,8 @@ export default function Layout({ children, currentPageName }) {
     currentPageName?.startsWith('ClientProposal') ||
     currentPageName?.startsWith('ClientTrip') ||
     currentPageName?.startsWith('ClientInvoice') ||
-    currentPageName?.startsWith('ClientQuote');
+    currentPageName?.startsWith('ClientQuote') ||
+    currentPageName?.startsWith('ClientHotelSearch');
 
   const isSupplierPortal = currentPageName === 'SupplierPortal';
 
