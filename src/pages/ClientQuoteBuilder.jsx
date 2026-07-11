@@ -39,6 +39,7 @@ import {
   locationOf,
   isLodgingCategory,
   resolveRoomRatesForRange,
+  occupancyForAdults,
   nightsBetween,
   unitPriceFor,
 } from '@/lib/hotelPricing';
@@ -114,6 +115,7 @@ const newLine = () => ({
   unit: '',
   min_quantity: 1,
   quantity: 1,
+  children_count: 0,
   supplier_id: '',
   start_date: '',
   end_date: '',
@@ -144,10 +146,12 @@ function lineQty(line) {
 
 function lineTotal(line, unitPrice, surcharges = {}) {
   if (!unitPrice) return 0;
-  if (FIXED_UNITS.includes(line.unit)) return unitPrice;
-  // Car rental: daily_rate * days + drop-off surcharge + insurance surcharge
-  if (line.car_rental_days) {
-    let total = unitPrice * line.car_rental_days * (line.quantity || 1);
+  let total;
+  if (FIXED_UNITS.includes(line.unit)) {
+    total = unitPrice;
+  } else if (line.car_rental_days) {
+    // Car rental: daily_rate * days + drop-off surcharge + insurance surcharge
+    total = unitPrice * line.car_rental_days * (line.quantity || 1);
     if (line.car_insurance) {
       total += line.car_rental_days * (surcharges.insuranceSurcharge || 0);
     }
@@ -155,8 +159,13 @@ function lineTotal(line, unitPrice, surcharges = {}) {
       total += line.car_drop_off_surcharge;
     }
     return total;
+  } else {
+    total = unitPrice * lineQty(line);
   }
-  return unitPrice * lineQty(line);
+  if (line.children_count > 0 && surcharges.childUnitPrice) {
+    total += line.children_count * surcharges.childUnitPrice * nightsBetween(line.start_date, line.end_date);
+  }
+  return total;
 }
 
 // One passenger data-entry row — deliberately NOT the staff PassengerFieldsRow,
@@ -229,16 +238,20 @@ function PaxRow({ pax, onChange, onSetContact }) {
 // category -> service selection (ServiceLineEditor.jsx). Category -> Location
 // (each narrowing the next), then branches: non-lodging continues the
 // dropdown chain (Supplier -> Service); lodging switches to a guided
-// Dates -> Occupancy -> Results flow spanning every supplier at that
-// location, so the client sees matching rooms (with meal treatment and
-// per-night/total pricing) instead of having to pick a supplier blind.
+// Dates -> Rooms/Adults/Children -> Results flow spanning every supplier at
+// that location. Occupancy is derived from adults-per-room rather than
+// picked directly, so the client sees matching rooms (with meal treatment,
+// child supplement, and per-night/total pricing) instead of having to
+// self-classify a room type or pick a supplier blind.
 function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency, onSelect, onSelectResolvedRoom }) {
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
   const [supplierId, setSupplierId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [occupancy, setOccupancy] = useState('');
+  const [roomCount, setRoomCount] = useState(1);
+  const [adultsPerRoom, setAdultsPerRoom] = useState(2);
+  const [childAges, setChildAges] = useState(/** @type {string[]} */ ([]));
 
   useEffect(() => {
     if (!open) {
@@ -247,7 +260,9 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
       setSupplierId('');
       setStartDate('');
       setEndDate('');
-      setOccupancy('');
+      setRoomCount(1);
+      setAdultsPerRoom(2);
+      setChildAges([]);
     }
   }, [open]);
   useEffect(() => {
@@ -255,11 +270,12 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
     setSupplierId('');
     setStartDate('');
     setEndDate('');
-    setOccupancy('');
+    setRoomCount(1);
+    setAdultsPerRoom(2);
+    setChildAges([]);
   }, [category]);
   useEffect(() => {
     setSupplierId('');
-    setOccupancy('');
   }, [location]);
 
   const categoryItems = useMemo(
@@ -305,33 +321,39 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
 
   const isLodgingCat = isLodgingCategory(category);
 
-  // Occupancy options span every supplier at this location (not just one),
-  // so the client sees the full set of room types available here.
-  const occupancyOptions = useMemo(() => {
-    if (!isLodgingCat) return [];
-    const byOcc = new Map();
-    for (const s of locationItems) {
-      if (!s.occupancy) continue;
-      byOcc.set(s.occupancy, (byOcc.get(s.occupancy) || 0) + 1);
-    }
-    return [...byOcc.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [locationItems, isLodgingCat]);
+  // Occupancy is derived from adults-per-room (not picked directly) — the
+  // system checks the supplier database for a matching room type rather than
+  // asking the client to self-classify as "Double"/"Triple"/etc.
+  const derivedOccupancy = occupancyForAdults(adultsPerRoom);
+  // Age <= 2 rides free (infant); age >= 3 pays the flat child supplement —
+  // matching the Infant(0-2)/Child(3-11) boundary AGE_CATEGORIES already uses
+  // in this file's own passenger rows.
+  const payingChildrenCount = childAges.filter((age) => Number(age) >= 3).length;
 
   const nights = nightsBetween(startDate, endDate);
 
   const lodgingResults = useMemo(() => {
-    if (!isLodgingCat || !occupancy || nights <= 0) return [];
-    const candidates = locationItems.filter((s) => s.occupancy === occupancy);
+    if (!isLodgingCat || nights <= 0) return [];
+    const candidates = locationItems.filter((s) => s.occupancy === derivedOccupancy);
     const matched = resolveRoomRatesForRange(candidates, startDate, endDate);
     return matched.filter((item) => !getBlockingStopSale(stopSales, item.supplier_id, startDate, endDate));
-  }, [isLodgingCat, occupancy, nights, startDate, endDate, locationItems, stopSales]);
+  }, [isLodgingCat, derivedOccupancy, nights, startDate, endDate, locationItems, stopSales]);
+
+  const setChildCount = (n) => {
+    const count = Math.max(0, n);
+    setChildAges((prev) => {
+      const next = prev.slice(0, count);
+      while (next.length < count) next.push('');
+      return next;
+    });
+  };
 
   const pick = (pricingId) => {
     onSelect(pricingId);
     onOpenChange(false);
   };
   const pickRoomResult = (item) => {
-    onSelectResolvedRoom(item, startDate, endDate);
+    onSelectResolvedRoom(item, startDate, endDate, roomCount, payingChildrenCount, item.child_unit_price || 0);
     onOpenChange(false);
   };
 
@@ -360,21 +382,50 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
 
           {category &&
             (locationOptions.length ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Location</Label>
-                <Select value={location} onValueChange={setLocation}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locationOptions.map(([loc, count]) => (
-                      <SelectItem key={loc} value={loc}>
-                        {loc} ({count})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              isLodgingCat ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="min-w-0 space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Location</Label>
+                    <Select value={location} onValueChange={setLocation}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locationOptions.map(([loc, count]) => (
+                          <SelectItem key={loc} value={loc}>
+                            {loc} ({count})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="min-w-0 space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Rooms</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={roomCount}
+                      onChange={(e) => setRoomCount(Math.max(1, parseInt(e.target.value) || 1))}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Location</Label>
+                  <Select value={location} onValueChange={setLocation}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locationOptions.map(([loc, count]) => (
+                        <SelectItem key={loc} value={loc}>
+                          {loc} ({count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">No services in this category</p>
             ))}
@@ -397,32 +448,49 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
             </div>
           )}
 
-          {location &&
-            isLodgingCat &&
-            nights > 0 &&
-            (occupancyOptions.length ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Occupancy</Label>
-                <Select value={occupancy} onValueChange={setOccupancy}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select occupancy" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {occupancyOptions.map(([occ, count]) => (
-                      <SelectItem key={occ} value={occ}>
-                        {OCCUPANCY_LABELS[occ] || occ} ({count} rate{count === 1 ? '' : 's'})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {location && isLodgingCat && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0 space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Adults per room</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={adultsPerRoom}
+                  onChange={(e) => setAdultsPerRoom(Math.max(1, parseInt(e.target.value) || 1))}
+                />
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No room types at this location</p>
-            ))}
+              <div className="min-w-0 space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Children</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={childAges.length}
+                  onChange={(e) => setChildCount(parseInt(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          )}
+
+          {location && isLodgingCat && childAges.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {childAges.map((age, i) => (
+                <div key={i} className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Child {i + 1} age</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={17}
+                    className="w-20"
+                    value={age}
+                    onChange={(e) => setChildAges((prev) => prev.map((a, idx) => (idx === i ? e.target.value : a)))}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {location &&
             isLodgingCat &&
-            occupancy &&
             nights > 0 &&
             (lodgingResults.length ? (
               <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
@@ -432,12 +500,17 @@ function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency
                     item={item}
                     unitPrice={unitPriceFor(item, 1)}
                     nights={nights}
+                    rooms={roomCount}
+                    childrenCount={payingChildrenCount}
+                    childUnitPrice={item.child_unit_price || 0}
                     onSelect={pickRoomResult}
                   />
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No rooms match these dates and occupancy</p>
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No {OCCUPANCY_LABELS[derivedOccupancy] || derivedOccupancy} rooms match these dates at this location
+              </p>
             ))}
 
           {location &&
@@ -541,7 +614,7 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
     });
     setPickerOpen(false);
   };
-  const pickResolvedRoom = (item, resolvedStartDate, resolvedEndDate) => {
+  const pickResolvedRoom = (item, resolvedStartDate, resolvedEndDate, rooms, childrenCount) => {
     onChange({
       ...newLine(),
       _key: line._key,
@@ -549,7 +622,8 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
       service_name: item.name,
       unit: item.unit,
       min_quantity: item.min_quantity || 1,
-      quantity: item.min_quantity || 1,
+      quantity: Math.max(item.min_quantity || 1, rooms || 1),
+      children_count: childrenCount || 0,
       supplier_id: item.supplier_id,
       start_date: resolvedStartDate,
       end_date: resolvedEndDate,
@@ -695,6 +769,11 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
                   </SelectContent>
                 </Select>
               </div>
+              {line.children_count > 0 && (
+                <div className="text-xs text-muted-foreground self-end pb-2">
+                  + {line.children_count} child{line.children_count === 1 ? '' : 'ren'}
+                </div>
+              )}
             </div>
           )}
 
@@ -881,7 +960,10 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
                 <span className="text-orange-800 dark:text-orange-300 font-medium">Total</span>
                 <span className="font-semibold text-green-700 dark:text-green-300">
                   {sym(currency)}
-                  {lineTotal(line, unitPrice, { insuranceSurcharge: svc?.insurance_surcharge || 0 }).toFixed(2)}
+                  {lineTotal(line, unitPrice, {
+                    insuranceSurcharge: svc?.insurance_surcharge || 0,
+                    childUnitPrice: svc?.child_unit_price || 0,
+                  }).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -931,7 +1013,10 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
               </span>
               <span className="font-semibold text-green-700 dark:text-green-300">
                 {sym(currency)}
-                {lineTotal(line, unitPrice, { insuranceSurcharge: svc?.insurance_surcharge || 0 }).toFixed(2)}
+                {lineTotal(line, unitPrice, {
+                  insuranceSurcharge: svc?.insurance_surcharge || 0,
+                  childUnitPrice: svc?.child_unit_price || 0,
+                }).toFixed(2)}
               </span>
             </div>
           )}
@@ -1057,7 +1142,13 @@ export default function ClientQuoteBuilder() {
       validLines.reduce((sum, l) => {
         const svc = servicesById.get(l.pricing_id);
         const unitPrice = unitPriceFor(svc, l.quantity);
-        return sum + lineTotal(l, unitPrice, { insuranceSurcharge: svc?.insurance_surcharge || 0 });
+        return (
+          sum +
+          lineTotal(l, unitPrice, {
+            insuranceSurcharge: svc?.insurance_surcharge || 0,
+            childUnitPrice: svc?.child_unit_price || 0,
+          })
+        );
       }, 0),
     [validLines, servicesById],
   );
@@ -1078,6 +1169,7 @@ export default function ClientQuoteBuilder() {
           items: validLines.map((l) => ({
             pricing_id: l.pricing_id,
             quantity: l.quantity || 1,
+            children_count: l.children_count || 0,
             start_date: l.start_date || l.service_date || undefined,
             end_date: l.end_date || l.service_date || undefined,
             room_type: l.room_type || undefined,

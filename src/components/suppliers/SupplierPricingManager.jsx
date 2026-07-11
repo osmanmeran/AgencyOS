@@ -152,6 +152,8 @@ const EMPTY_FORM = {
   max_quantity: '',
   occupancy: '',
   meal_treatment: '',
+  child_price: '',
+  child_client_price: '',
   car_category: '',
   daily_rate: '',
   drop_off_surcharge: '',
@@ -215,6 +217,8 @@ const pricingToForm = (pricing) => ({
   max_quantity: pricing.max_quantity?.toString() || '',
   occupancy: pricing.occupancy || '',
   meal_treatment: pricing.meal_treatment || '',
+  child_price: pricing.child_price?.toString() || '',
+  child_client_price: pricing.child_client_price?.toString() || '',
   car_category: pricing.car_category || '',
   daily_rate: pricing.daily_rate?.toString() || '',
   drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
@@ -298,6 +302,8 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
         subcategory_id: activeSubId || null,
         base_price: parseFloat(data.base_price) || 0,
         client_price: data.client_price ? parseFloat(data.client_price) : null,
+        child_price: data.child_price ? parseFloat(data.child_price) : null,
+        child_client_price: data.child_client_price ? parseFloat(data.child_client_price) : null,
         min_quantity: parseInt(data.min_quantity) || 1,
         max_quantity: data.max_quantity ? parseInt(data.max_quantity) : null,
         duration_value: data.duration_value ? parseFloat(data.duration_value) : null,
@@ -324,6 +330,8 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
         subcategory_id: /** @type {any} */ (editingPricing)?.subcategory_id || activeSubId || null,
         base_price: parseFloat(data.base_price) || 0,
         client_price: data.client_price ? parseFloat(data.client_price) : null,
+        child_price: data.child_price ? parseFloat(data.child_price) : null,
+        child_client_price: data.child_client_price ? parseFloat(data.child_client_price) : null,
         min_quantity: parseInt(data.min_quantity) || 1,
         max_quantity: data.max_quantity ? parseInt(data.max_quantity) : null,
         duration_value: data.duration_value ? parseFloat(data.duration_value) : null,
@@ -482,6 +490,13 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
             {pricing.meal_treatment && (
               <Badge variant="secondary" className="text-xs">
                 {optionLabel(t, MEAL_TREATMENT_OPTION_KEYS, pricing.meal_treatment)}
+              </Badge>
+            )}
+            {pricing.child_price != null && (
+              <Badge variant="secondary" className="text-xs">
+                {t('supplierPricingManager.childSupplementBadge', {
+                  price: (pricing.child_client_price ?? pricing.child_price).toFixed(2),
+                })}
               </Badge>
             )}
             {pricing.duration_value != null && (
@@ -863,6 +878,30 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
                     <p className="text-xs text-muted-foreground">{t('supplierPricingManager.mealTreatmentHint')}</p>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.childPriceLabel')}</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.child_price}
+                      onChange={(e) => setForm({ ...form, child_price: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('supplierPricingManager.childClientPriceLabel')}</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.child_client_price}
+                      onChange={(e) => setForm({ ...form, child_client_price: e.target.value })}
+                      placeholder={t('supplierPricingManager.childClientPricePlaceholder')}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">{t('supplierPricingManager.childPriceHint')}</p>
               </div>
             )}
 

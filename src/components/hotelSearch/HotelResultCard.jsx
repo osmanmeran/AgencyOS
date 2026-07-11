@@ -7,10 +7,18 @@ import { OCCUPANCY_I18N_KEYS, MEAL_TREATMENT_I18N_KEYS } from '@/lib/hotelPricin
 import { isNumericStar, formatHotelType } from '@/lib/hotelTypes';
 import { useT } from '@/lib/i18n/I18nContext';
 
-export default function HotelResultCard({ item, unitPrice, nights, onSelect }) {
+export default function HotelResultCard({
+  item,
+  unitPrice,
+  nights,
+  rooms = 1,
+  childrenCount = 0,
+  childUnitPrice = 0,
+  onSelect,
+}) {
   const { t } = useT();
   const sym = getCurrencySymbol(item.currency);
-  const total = unitPrice * nights;
+  const total = (unitPrice * rooms + childUnitPrice * childrenCount) * nights;
   const ratingLabel = item.rating != null && item.rating !== '' ? formatHotelType(item.rating) : '';
   const starCount = item.rating != null && isNumericStar(item.rating) ? Math.round(Number(item.rating)) : 0;
   const locationLine = [item.area, item.city].filter(Boolean).join(', ');
@@ -92,8 +100,19 @@ export default function HotelResultCard({ item, unitPrice, nights, onSelect }) {
             <div className="text-lg font-bold text-foreground whitespace-nowrap">
               {sym}
               {unitPrice.toFixed(2)}{' '}
-              <span className="text-sm font-normal text-muted-foreground">{t('hotelSearch.perNight')}</span>
+              <span className="text-sm font-normal text-muted-foreground">
+                {t('hotelSearch.perNight')}
+                {rooms > 1 ? ` ${t('hotelSearch.perRoom', { rooms })}` : ''}
+              </span>
             </div>
+            {childrenCount > 0 && (
+              <div className="text-xs text-muted-foreground whitespace-nowrap">
+                {t('hotelSearch.childSupplement', {
+                  price: `${sym}${childUnitPrice.toFixed(2)}`,
+                  count: childrenCount,
+                })}
+              </div>
+            )}
             <div className="text-sm text-muted-foreground whitespace-nowrap">
               {t('hotelSearch.totalForStay', { nights })}: {sym}
               {total.toFixed(2)}

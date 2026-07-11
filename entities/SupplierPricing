@@ -86,6 +86,14 @@
       "enum": ["single", "double", "twin", "triple", "quad", "family", "extra_bed"],
       "description": "Hotel occupancy type (auto-sets min/max pax)"
     },
+    "child_price": {
+      "type": "number",
+      "description": "Flat per-child supplement, per night (cost). Infants 0-2 are always free; only applies to hotel/lodging rows."
+    },
+    "child_client_price": {
+      "type": "number",
+      "description": "Manual client sell price for the child supplement (overrides markup calculation)"
+    },
     "car_category": {
       "type": "string",
       "enum": ["economy", "compact", "intermediate", "standard", "full_size", "premium", "luxury", "suv", "minivan", "convertible"],

@@ -37,6 +37,15 @@ export const MEAL_TREATMENT_I18N_KEYS = {
 
 export const locationOf = (item) => item.city || item.area || 'Other';
 
+// Derives which occupancy tier to search for from the number of adults in a
+// room — authoritative (drives which SupplierPricing rows match), not just a
+// pre-fill suggestion. Children ride along as a separate per-child supplement
+// rather than affecting this tier.
+export function occupancyForAdults(adults) {
+  const map = { 1: 'single', 2: 'double', 3: 'triple', 4: 'quad' };
+  return map[adults] || 'family';
+}
+
 export function isLodgingCategory(name) {
   const c = (name || '').toLowerCase();
   return c.includes('hotel') || c.includes('lodging') || c.includes('accommodation') || c.includes('resort');

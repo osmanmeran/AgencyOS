@@ -226,6 +226,9 @@ export const schemas = {
         z.object({
           pricing_id: z.string().min(1, 'pricing_id is required'),
           quantity: z.number().positive().optional().default(1),
+          // Total children (across all rooms) on a lodging line — priced via
+          // the pricing row's child supplement, infants excluded client-side.
+          children_count: z.number().nonnegative().optional().default(0),
           // Optional per-line trip details (lodging nights, transfer logistics).
           start_date: z.string().optional(),
           end_date: z.string().optional(),

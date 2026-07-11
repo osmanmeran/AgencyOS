@@ -117,6 +117,7 @@ async function convertItemsToCurrency(items, displayCurrency) {
       currency: displayCurrency,
       exchange_rate: rate,
       unit_price: Math.round(item.unit_price * rate * 100) / 100,
+      child_unit_price: item.child_unit_price != null ? Math.round(item.child_unit_price * rate * 100) / 100 : null,
       pax_tiers: Array.isArray(item.pax_tiers)
         ? item.pax_tiers.map((t) => ({ ...t, unit_price: Math.round(t.unit_price * rate * 100) / 100 }))
         : (item.pax_tiers ?? null),
@@ -254,6 +255,12 @@ function getActiveCatalogItems(db, markupPct) {
       unit: p.unit,
       currency: p.currency || 'USD',
       unit_price: computeUnitPrice(p, markupPct),
+      // Flat per-child, per-night supplement (hotel rows only) — null when
+      // the supplier hasn't priced one.
+      child_unit_price:
+        p.child_price != null && p.child_price !== ''
+          ? sellPrice(p.child_price, p.child_client_price, markupPct)
+          : null,
       // Sell-side per-pax bands so the client UI can price by participant
       // count; raw cost prices are never exposed.
       pax_tiers:
@@ -380,6 +387,10 @@ router.post(
         // the per-pax band when the pricing has one.
         unit_price: computeUnitPrice(pricing, markupPct, quantity),
         quantity,
+        // Total children (across all rooms) on this line, priced via the
+        // pricing row's flat per-child, per-night supplement.
+        children_count: Math.max(0, Math.round(Number(reqItem.children_count) || 0)),
+        child_unit_price: sellPrice(pricing.child_price, pricing.child_client_price, markupPct),
         start_date: reqItem.start_date || '',
         end_date: reqItem.end_date || '',
         nights: nights || null,
@@ -413,6 +424,9 @@ router.post(
         if (i.car_drop_off_surcharge > 0) {
           lineTotal += i.car_drop_off_surcharge;
         }
+      }
+      if (i.children_count > 0 && i.child_unit_price && i.nights) {
+        lineTotal += i.child_unit_price * i.children_count * i.nights;
       }
       return { ...i, line_total: lineTotal };
     });
