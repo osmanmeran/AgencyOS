@@ -330,7 +330,9 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
         max_capacity: data.max_capacity ? parseInt(data.max_capacity) : null,
         max_passengers: data.max_passengers ? parseInt(data.max_passengers) : null,
         pax_tiers: cleanPaxTiers(data.pax_tiers),
-        approval_status: 'pending',
+        // Staff are the approvers here (unlike the supplier self-service
+        // portal), so their own edits shouldn't unpublish an already-approved
+        // price. Keep whatever approval_status it already had.
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplierPricings', supplierId] });
