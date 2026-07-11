@@ -325,26 +325,6 @@ export default function ClientPortal() {
         )}
       </Card>
 
-      {/* Quick category tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {CATEGORIES.map((cat) => {
-          const Icon = cat.icon;
-          return (
-            <button
-              key={cat.key}
-              type="button"
-              onClick={() => goToQuoteBuilder(cat.key)}
-              className="flex flex-col items-center gap-2 p-5 bg-card border border-border rounded-xl hover:shadow-md hover:border-primary/40 transition-all"
-            >
-              <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                <Icon className="w-5 h-5" />
-              </div>
-              <span className="text-sm font-medium text-foreground">{t(cat.labelKey)}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* Continue planning */}
       {upcomingTrip && (
         <Card className="p-5 bg-card shadow-md">
