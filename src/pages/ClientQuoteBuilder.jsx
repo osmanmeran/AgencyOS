@@ -38,11 +38,11 @@ import {
   OCCUPANCY_LABELS,
   locationOf,
   isLodgingCategory,
-  isRateValidOn,
-  resolveRoomRate,
+  resolveRoomRatesForRange,
   nightsBetween,
   unitPriceFor,
 } from '@/lib/hotelPricing';
+import HotelResultCard from '@/components/hotelSearch/HotelResultCard';
 
 const { sym } = { sym: (cur) => getCurrencySymbol(cur) };
 const AGE_CATEGORIES = [
@@ -53,7 +53,25 @@ const AGE_CATEGORIES = [
 
 const NIGHT_UNITS = ['per_night', 'per_day'];
 const FIXED_UNITS = ['per_group', 'flat_rate'];
-const HOTEL_TREATMENTS = ['Room Only', 'Bed & Breakfast', 'Half Board', 'Full Board', 'All Inclusive'];
+const HOTEL_TREATMENTS = [
+  'Room Only',
+  'Bed & Breakfast',
+  'Half Board',
+  'Full Board',
+  'All Inclusive',
+  'Ultra All Inclusive',
+];
+// Maps a catalog item's meal_treatment code (RO/BB/HB/FB/AI/UAI) to the label
+// used in the Meal Plan select above, so picking a room from the guided
+// hotel picker pre-fills it correctly.
+const MEAL_CODE_TO_LABEL = {
+  RO: 'Room Only',
+  BB: 'Bed & Breakfast',
+  HB: 'Half Board',
+  FB: 'Full Board',
+  AI: 'All Inclusive',
+  UAI: 'Ultra All Inclusive',
+};
 const TRANSFER_TYPES = [
   'Airport Pickup',
   'Airport Drop-off',
@@ -97,7 +115,6 @@ const newLine = () => ({
   min_quantity: 1,
   quantity: 1,
   supplier_id: '',
-  room_occupancy: '',
   start_date: '',
   end_date: '',
   room_type: '',
@@ -208,28 +225,41 @@ function PaxRow({ pax, onChange, onSetContact }) {
   );
 }
 
-// Sequential dropdown service picker, mirroring the staff reservation
-// builder's category -> service selection (ServiceLineEditor.jsx) instead of
-// a photo card grid. Category -> Location -> Supplier (each narrowing the
-// next) -> Service.
-function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect, onSelectRoom }) {
+// Sequential service picker, mirroring the staff reservation builder's
+// category -> service selection (ServiceLineEditor.jsx). Category -> Location
+// (each narrowing the next), then branches: non-lodging continues the
+// dropdown chain (Supplier -> Service); lodging switches to a guided
+// Dates -> Occupancy -> Results flow spanning every supplier at that
+// location, so the client sees matching rooms (with meal treatment and
+// per-night/total pricing) instead of having to pick a supplier blind.
+function ServicePickerDialog({ open, onOpenChange, services, stopSales, currency, onSelect, onSelectResolvedRoom }) {
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
   const [supplierId, setSupplierId] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [occupancy, setOccupancy] = useState('');
 
   useEffect(() => {
     if (!open) {
       setCategory('');
       setLocation('');
       setSupplierId('');
+      setStartDate('');
+      setEndDate('');
+      setOccupancy('');
     }
   }, [open]);
   useEffect(() => {
     setLocation('');
     setSupplierId('');
+    setStartDate('');
+    setEndDate('');
+    setOccupancy('');
   }, [category]);
   useEffect(() => {
     setSupplierId('');
+    setOccupancy('');
   }, [location]);
 
   const categoryItems = useMemo(
@@ -274,22 +304,34 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect,
   }, [locationItems]);
 
   const isLodgingCat = isLodgingCategory(category);
-  const roomOptions = useMemo(() => {
+
+  // Occupancy options span every supplier at this location (not just one),
+  // so the client sees the full set of room types available here.
+  const occupancyOptions = useMemo(() => {
     if (!isLodgingCat) return [];
     const byOcc = new Map();
-    for (const s of supplierItems) {
+    for (const s of locationItems) {
       if (!s.occupancy) continue;
       byOcc.set(s.occupancy, (byOcc.get(s.occupancy) || 0) + 1);
     }
     return [...byOcc.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [supplierItems, isLodgingCat]);
+  }, [locationItems, isLodgingCat]);
+
+  const nights = nightsBetween(startDate, endDate);
+
+  const lodgingResults = useMemo(() => {
+    if (!isLodgingCat || !occupancy || nights <= 0) return [];
+    const candidates = locationItems.filter((s) => s.occupancy === occupancy);
+    const matched = resolveRoomRatesForRange(candidates, startDate, endDate);
+    return matched.filter((item) => !getBlockingStopSale(stopSales, item.supplier_id, startDate, endDate));
+  }, [isLodgingCat, occupancy, nights, startDate, endDate, locationItems, stopSales]);
 
   const pick = (pricingId) => {
     onSelect(pricingId);
     onOpenChange(false);
   };
-  const pickRoom = (occupancy) => {
-    onSelectRoom(supplierId, occupancy);
+  const pickRoomResult = (item) => {
+    onSelectResolvedRoom(item, startDate, endDate);
     onOpenChange(false);
   };
 
@@ -337,7 +379,69 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect,
               <p className="text-sm text-muted-foreground text-center py-4">No services in this category</p>
             ))}
 
+          {location && isLodgingCat && (
+            <div className="flex gap-3">
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Check-in</Label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Check-out</Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  min={startDate || undefined}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
           {location &&
+            isLodgingCat &&
+            nights > 0 &&
+            (occupancyOptions.length ? (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Occupancy</Label>
+                <Select value={occupancy} onValueChange={setOccupancy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select occupancy" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {occupancyOptions.map(([occ, count]) => (
+                      <SelectItem key={occ} value={occ}>
+                        {OCCUPANCY_LABELS[occ] || occ} ({count} rate{count === 1 ? '' : 's'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No room types at this location</p>
+            ))}
+
+          {location &&
+            isLodgingCat &&
+            occupancy &&
+            nights > 0 &&
+            (lodgingResults.length ? (
+              <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                {lodgingResults.map((item) => (
+                  <HotelResultCard
+                    key={item.pricing_id}
+                    item={item}
+                    unitPrice={unitPriceFor(item, 1)}
+                    nights={nights}
+                    onSelect={pickRoomResult}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No rooms match these dates and occupancy</p>
+            ))}
+
+          {location &&
+            !isLodgingCat &&
             (supplierOptions.length ? (
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Supplier</Label>
@@ -356,31 +460,6 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect,
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">No suppliers in this location</p>
-            ))}
-
-          {supplierId &&
-            isLodgingCat &&
-            (roomOptions.length ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Room type</Label>
-                <Select onValueChange={pickRoom}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a room type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roomOptions.map(([occ, count]) => (
-                      <SelectItem key={occ} value={occ}>
-                        {OCCUPANCY_LABELS[occ] || occ} ({count} rate{count === 1 ? '' : 's'})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  The exact rate is picked from check-in date once you enter it.
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No room types for this supplier</p>
             ))}
 
           {supplierId &&
@@ -421,10 +500,7 @@ function ServicePickerDialog({ open, onOpenChange, services, currency, onSelect,
 function ServiceLineCard({ line, services, servicesById, currency, stopSales, onChange, onRemove }) {
   const svc = servicesById.get(line.pricing_id);
   const catName = (svc?.category_name || '').toLowerCase();
-  // A room type has been picked but the exact rate might still be unresolved
-  // (ambiguous by date) — still treat the line as lodging so the check-in
-  // date fields (needed to resolve it) render.
-  const isLodging = !!line.room_occupancy || isLodgingCategory(catName);
+  const isLodging = isLodgingCategory(catName);
   const isTransfer = catName.includes('transfer');
   const isCarRental = catName.includes('rent a car') || catName.includes('rental') || catName.includes('car rental');
   const isGuided =
@@ -451,58 +527,6 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
     line.end_date || line.service_date,
   );
 
-  // Every rate tier for the chosen supplier + room type, and which one (if
-  // any) unambiguously applies to the current check-in date.
-  const mealTreatmentCode = line.hotel_treatment
-    ? {
-        'Room Only': 'RO',
-        'Bed & Breakfast': 'BB',
-        'Half Board': 'HB',
-        'Full Board': 'FB',
-        'All Inclusive': 'AI',
-        'Ultra All Inclusive': 'UAI',
-      }[line.hotel_treatment] || ''
-    : '';
-  const roomCandidates = useMemo(
-    () =>
-      line.room_occupancy && line.supplier_id
-        ? services.filter(
-            (s) =>
-              s.supplier_id === line.supplier_id &&
-              s.occupancy === line.room_occupancy &&
-              (!mealTreatmentCode || !s.meal_treatment || s.meal_treatment === mealTreatmentCode),
-          )
-        : [],
-    [services, line.supplier_id, line.room_occupancy, mealTreatmentCode],
-  );
-  const { rate: resolvedRate, candidates: rateOptions } = useMemo(
-    () => resolveRoomRate(roomCandidates, line.start_date),
-    [roomCandidates, line.start_date],
-  );
-
-  // Keep pricing_id in sync with whichever rate the check-in date resolves
-  // to. Only clears an existing pick (forcing the manual "Rate" picker below)
-  // if it's no longer valid for the current date — a manual choice made
-  // before dates were entered, or one that's still in-season, is left alone.
-  useEffect(() => {
-    if (!line.room_occupancy) return;
-    if (resolvedRate && line.pricing_id !== resolvedRate.pricing_id) {
-      onChange({
-        ...line,
-        pricing_id: resolvedRate.pricing_id,
-        service_name: resolvedRate.name,
-        unit: resolvedRate.unit,
-      });
-      return;
-    }
-    if (!resolvedRate && line.pricing_id) {
-      const stillValid = line.start_date
-        ? roomCandidates.some((c) => c.pricing_id === line.pricing_id && isRateValidOn(c, line.start_date))
-        : roomCandidates.some((c) => c.pricing_id === line.pricing_id);
-      if (!stillValid) onChange({ ...line, pricing_id: '' });
-    }
-  }, [resolvedRate?.pricing_id, roomCandidates, line.room_occupancy, line.pricing_id, line.start_date]);
-
   const pickService = (pricing_id) => {
     const picked = servicesById.get(pricing_id);
     if (!picked) return;
@@ -517,16 +541,20 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
     });
     setPickerOpen(false);
   };
-  const pickRoom = (supplierId, occupancy) => {
+  const pickResolvedRoom = (item, resolvedStartDate, resolvedEndDate) => {
     onChange({
       ...newLine(),
       _key: line._key,
-      supplier_id: supplierId,
-      room_occupancy: occupancy,
-      room_type: OCCUPANCY_LABELS[occupancy] || occupancy,
-      unit: 'per_night',
-      min_quantity: 1,
-      quantity: 1,
+      pricing_id: item.pricing_id,
+      service_name: item.name,
+      unit: item.unit,
+      min_quantity: item.min_quantity || 1,
+      quantity: item.min_quantity || 1,
+      supplier_id: item.supplier_id,
+      start_date: resolvedStartDate,
+      end_date: resolvedEndDate,
+      room_type: OCCUPANCY_LABELS[item.occupancy] || item.occupancy,
+      hotel_treatment: MEAL_CODE_TO_LABEL[item.meal_treatment] || '',
     });
     setPickerOpen(false);
   };
@@ -544,24 +572,6 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
             <div className="flex-1 min-w-0">
               <div className="text-xs text-blue-600 dark:text-blue-300 font-medium">{svc.category_name || 'Other'}</div>
               <div className="text-sm font-semibold text-foreground truncate">{svc.name}</div>
-            </div>
-            <Pencil className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          </button>
-        ) : line.room_occupancy ? (
-          <button
-            type="button"
-            onClick={() => setPickerOpen(true)}
-            className="flex-1 min-w-[220px] flex items-center gap-3 px-3 py-2.5 bg-card border border-border rounded-lg hover:border-blue-300 dark:hover:border-blue-800 transition-colors text-left"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="text-xs text-blue-600 dark:text-blue-300 font-medium">
-                {OCCUPANCY_LABELS[line.room_occupancy] || line.room_occupancy}
-              </div>
-              <div className="text-sm font-medium text-muted-foreground">
-                {line.start_date
-                  ? 'Multiple rates match these dates — pick one below'
-                  : 'Enter check-in date to find the rate'}
-              </div>
             </div>
             <Pencil className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           </button>
@@ -590,12 +600,13 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         services={services}
+        stopSales={stopSales}
         currency={currency}
         onSelect={pickService}
-        onSelectRoom={pickRoom}
+        onSelectResolvedRoom={pickResolvedRoom}
       />
 
-      {(line.pricing_id || line.room_occupancy) && (
+      {line.pricing_id && (
         <>
           <div className="flex flex-wrap gap-3">
             {isNightly ? (
@@ -656,33 +667,6 @@ function ServiceLineCard({ line, services, servicesById, currency, stopSales, on
                 This service isn't available {stopSale.start_date} to {stopSale.end_date}. Please choose different
                 dates.
               </span>
-            </div>
-          )}
-
-          {line.room_occupancy && !line.pricing_id && (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Rate</Label>
-              {rateOptions.length ? (
-                <Select onValueChange={(pricing_id) => set('pricing_id', pricing_id)}>
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        line.start_date ? 'Multiple rates match — choose one' : 'Select dates, or choose a rate'
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rateOptions.map((r) => (
-                      <SelectItem key={r.pricing_id} value={r.pricing_id}>
-                        {r.name} — {sym(currency)}
-                        {r.unit_price.toFixed(2)} {(r.unit || '').replace('per_', '/ ')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="text-xs text-red-500 dark:text-red-300">No rate is available for this room type.</p>
-              )}
             </div>
           )}
 

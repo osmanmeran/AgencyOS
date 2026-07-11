@@ -17,7 +17,6 @@ import {
   Calendar,
   AlertCircle,
   ShoppingCart,
-  BedDouble,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -127,24 +126,6 @@ export default function ClientPortal() {
           <Link to={createPageUrl('ClientQuoteBuilder')}>
             <Button className="bg-card text-primary hover:bg-card/90 whitespace-nowrap">
               {t('clientPortal.requestQuote')}
-            </Button>
-          </Link>
-        </div>
-      </Card>
-
-      {/* Browse Hotels CTA */}
-      <Card className="p-6 border border-border shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2 mb-1 text-foreground">
-              <BedDouble className="w-5 h-5 text-primary" />
-              {t('clientPortal.browseHotelsTitle')}
-            </h2>
-            <p className="text-muted-foreground">{t('clientPortal.browseHotelsBody')}</p>
-          </div>
-          <Link to={createPageUrl('ClientHotelSearch')}>
-            <Button variant="outline" className="whitespace-nowrap">
-              {t('clientPortal.browseHotels')}
             </Button>
           </Link>
         </div>

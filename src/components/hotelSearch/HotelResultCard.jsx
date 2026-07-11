@@ -1,12 +1,12 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Building, Plus } from 'lucide-react';
+import { Building, Check } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { OCCUPANCY_I18N_KEYS, MEAL_TREATMENT_I18N_KEYS } from '@/lib/hotelPricing';
 import { useT } from '@/lib/i18n/I18nContext';
 
-export default function HotelResultCard({ item, unitPrice, nights, onAdd }) {
+export default function HotelResultCard({ item, unitPrice, nights, onSelect }) {
   const { t } = useT();
   const sym = getCurrencySymbol(item.currency);
   const total = unitPrice * nights;
@@ -44,9 +44,9 @@ export default function HotelResultCard({ item, unitPrice, nights, onAdd }) {
             {total.toFixed(2)}
           </div>
         </div>
-        <Button size="sm" onClick={() => onAdd(item)} className="whitespace-nowrap">
-          <Plus className="w-4 h-4 mr-1" />
-          {t('hotelSearch.addToCart')}
+        <Button size="sm" onClick={() => onSelect(item)} className="whitespace-nowrap">
+          <Check className="w-4 h-4 mr-1" />
+          {t('hotelSearch.selectRoom')}
         </Button>
       </div>
     </Card>

@@ -44,7 +44,6 @@ const CLIENT_PORTAL_PREFIXES = [
   'ClientInvoice',
   'ClientQuoteBuilder',
   'ClientQuote',
-  'ClientHotelSearch',
 ];
 // Standalone routes (magic-link / pre-auth pages) that aren't part of the
 // Pages registry and should never trigger the client-portal redirect.
