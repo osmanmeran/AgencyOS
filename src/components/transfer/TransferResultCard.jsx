@@ -1,6 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, Check, ArrowRightLeft } from 'lucide-react';
+import { Users, Check, ArrowRightLeft } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { unitPriceFor } from '@/lib/hotelPricing';
 import { useT } from '@/lib/i18n/I18nContext';
@@ -32,11 +32,14 @@ export default function TransferResultCard({ item, passengers, onSelect }) {
         )}
 
         <div className="min-w-0 space-y-1.5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Building className="w-4 h-4 shrink-0" />
-            <span className="truncate">{item.supplier_name}</span>
-          </div>
           <div className="font-semibold text-foreground truncate">{item.name}</div>
+          {item.description && <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>}
+          {item.max_passengers != null && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              {t('transferSearch.maxPassengers', { count: item.max_passengers })}
+            </div>
+          )}
         </div>
 
         <div className="col-span-2 sm:col-span-1 flex sm:flex-col items-end justify-between sm:justify-start gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">

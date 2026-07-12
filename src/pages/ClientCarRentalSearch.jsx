@@ -36,6 +36,19 @@ const isCarRentalCategory = (name) => {
 // Select single-purpose instead of a separate toggle + conditional field.
 const SAME_AS_PICKUP = '__same__';
 
+// Hands off from the portal home's hero search (see ClientPortal.jsx): a
+// pickup/dropoff/pickupdate/dropoffdate query string, read once at mount.
+function readInitialSearch() {
+  if (typeof window === 'undefined') return { pickup: '', dropoff: '', pickupdate: '', dropoffdate: '' };
+  const sp = new URLSearchParams(window.location.search);
+  return {
+    pickup: sp.get('pickup') || '',
+    dropoff: sp.get('dropoff') || '',
+    pickupdate: sp.get('pickupdate') || '',
+    dropoffdate: sp.get('dropoffdate') || '',
+  };
+}
+
 export default function ClientCarRentalSearch() {
   const { t } = useT();
   const navigate = useNavigate();
@@ -45,10 +58,11 @@ export default function ClientCarRentalSearch() {
   const actAsClientId = useActAsClientId();
   const [isStaffPreview, setIsStaffPreview] = useState(false);
 
-  const [pickupLocation, setPickupLocation] = useState('');
-  const [dropoffLocation, setDropoffLocation] = useState(SAME_AS_PICKUP);
-  const [pickupDate, setPickupDate] = useState('');
-  const [dropoffDate, setDropoffDate] = useState('');
+  const [initialSearch] = useState(readInitialSearch);
+  const [pickupLocation, setPickupLocation] = useState(initialSearch.pickup);
+  const [dropoffLocation, setDropoffLocation] = useState(initialSearch.dropoff || SAME_AS_PICKUP);
+  const [pickupDate, setPickupDate] = useState(initialSearch.pickupdate);
+  const [dropoffDate, setDropoffDate] = useState(initialSearch.dropoffdate);
 
   const [selected, setSelected] = useState(/** @type {any} */ (null));
   const [requestTitle, setRequestTitle] = useState('');

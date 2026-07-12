@@ -18,19 +18,21 @@ import { getCatalog } from '@/lib/b2bApi';
 import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
 import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import HotelSearchBar from '@/components/hotelSearch/HotelSearchBar';
+import CarRentalSearchBar, { SAME_AS_PICKUP } from '@/components/carRental/CarRentalSearchBar';
+import TransferSearchBar from '@/components/transfer/TransferSearchBar';
 
-// Hero category pills. Hotels, transfers, and car rental each have their own
+// Hero category pills. Hotels, car rental, and transfers each have their own
 // dedicated destination -> results -> confirm page (ClientHotelSearch.jsx,
-// ClientTransferSearch.jsx, ClientCarRentalSearch.jsx — see handleHeroSearch
-// below); only "hotels" shows the full destination/dates/guests bar here
-// (`guided: true`) since that's the one flow the hero's own search fields
-// map onto directly. Tours has no dedicated page yet, so it still routes
-// into ClientQuoteBuilder's generic picker with the category pre-selected.
+// ClientCarRentalSearch.jsx, ClientTransferSearch.jsx — see handleHeroSearch
+// and the hero render branch below) and a matching guided search bar whose
+// fields map onto that page's own query params. Tours has no dedicated page
+// yet, so it still routes into ClientQuoteBuilder's generic picker with the
+// category pre-selected (the fallback "coming soon" CTA branch).
 const CATEGORIES = [
-  { key: 'hotels', icon: Building2, labelKey: 'clientPortal.categoryHotels', guided: true },
-  { key: 'tours', icon: Compass, labelKey: 'clientPortal.categoryTours', guided: false },
-  { key: 'transfers', icon: ArrowRightLeft, labelKey: 'clientPortal.categoryTransfers', guided: false },
-  { key: 'car_rental', icon: Car, labelKey: 'clientPortal.categoryCarRental', guided: false },
+  { key: 'hotels', icon: Building2, labelKey: 'clientPortal.categoryHotels' },
+  { key: 'tours', icon: Compass, labelKey: 'clientPortal.categoryTours' },
+  { key: 'transfers', icon: ArrowRightLeft, labelKey: 'clientPortal.categoryTransfers' },
+  { key: 'car_rental', icon: Car, labelKey: 'clientPortal.categoryCarRental' },
 ];
 
 const PROPOSAL_STATUS_BADGE = {
@@ -64,6 +66,15 @@ export default function ClientPortal() {
   const [checkIn, setCheckIn] = React.useState('');
   const [checkOut, setCheckOut] = React.useState('');
   const [guests, setGuests] = React.useState(2);
+
+  const [pickupLocation, setPickupLocation] = React.useState('');
+  const [dropoffLocation, setDropoffLocation] = React.useState(SAME_AS_PICKUP);
+  const [pickupDate, setPickupDate] = React.useState('');
+  const [dropoffDate, setDropoffDate] = React.useState('');
+
+  const [fromLocation, setFromLocation] = React.useState('');
+  const [toLocation, setToLocation] = React.useState('');
+  const [transferPassengers, setTransferPassengers] = React.useState(2);
 
   React.useEffect(() => {
     db.auth.me().then(async (currentUser) => {
@@ -176,9 +187,18 @@ export default function ClientPortal() {
       if (guests) params.set('guests', String(guests));
       navigate(createPageUrl(`ClientHotelSearch?${params.toString()}`));
     } else if (activeCategory === 'car_rental') {
-      navigate(createPageUrl('ClientCarRentalSearch'));
+      const params = new URLSearchParams();
+      if (pickupLocation) params.set('pickup', pickupLocation);
+      if (dropoffLocation && dropoffLocation !== SAME_AS_PICKUP) params.set('dropoff', dropoffLocation);
+      if (pickupDate) params.set('pickupdate', pickupDate);
+      if (dropoffDate) params.set('dropoffdate', dropoffDate);
+      navigate(createPageUrl(`ClientCarRentalSearch?${params.toString()}`));
     } else if (activeCategory === 'transfers') {
-      navigate(createPageUrl('ClientTransferSearch'));
+      const params = new URLSearchParams();
+      if (fromLocation) params.set('from', fromLocation);
+      if (toLocation) params.set('to', toLocation);
+      if (transferPassengers) params.set('passengers', String(transferPassengers));
+      navigate(createPageUrl(`ClientTransferSearch?${params.toString()}`));
     } else {
       goToQuoteBuilder(activeCategory);
     }
@@ -235,7 +255,7 @@ export default function ClientPortal() {
           })}
         </div>
 
-        {activeCat?.guided ? (
+        {activeCategory === 'hotels' ? (
           <HotelSearchBar
             hotelLocations={hotelLocations}
             destinationQuery={destinationQuery}
@@ -246,6 +266,28 @@ export default function ClientPortal() {
             onCheckOutChange={setCheckOut}
             guests={guests}
             onGuestsChange={setGuests}
+            onSearch={handleHeroSearch}
+          />
+        ) : activeCategory === 'car_rental' ? (
+          <CarRentalSearchBar
+            pickupLocation={pickupLocation}
+            onPickupLocationChange={setPickupLocation}
+            dropoffLocation={dropoffLocation}
+            onDropoffLocationChange={setDropoffLocation}
+            pickupDate={pickupDate}
+            onPickupDateChange={setPickupDate}
+            dropoffDate={dropoffDate}
+            onDropoffDateChange={setDropoffDate}
+            onSearch={handleHeroSearch}
+          />
+        ) : activeCategory === 'transfers' ? (
+          <TransferSearchBar
+            fromLocation={fromLocation}
+            onFromLocationChange={setFromLocation}
+            toLocation={toLocation}
+            onToLocationChange={setToLocation}
+            passengers={transferPassengers}
+            onPassengersChange={setTransferPassengers}
             onSearch={handleHeroSearch}
           />
         ) : (

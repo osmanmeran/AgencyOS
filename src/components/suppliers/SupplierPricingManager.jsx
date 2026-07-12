@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { showSuccess, showError } from '@/lib/toast';
 import { DollarSign, Plus, Edit, Trash2, Copy, Check, XCircle, Loader2, MousePointerClick } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { AIRPORT_LOCATIONS } from '@/lib/airportLocations';
 
 const UNIT_LABEL_KEYS = {
   per_person: 'supplierPricingManager.unitPerPerson',
@@ -87,20 +88,6 @@ const DURATION_UNIT_OPTIONS = [
   { value: 'days', labelKey: 'supplierPricingManager.durationDays' },
 ];
 
-const VEHICLE_TYPE_OPTION_KEYS = [
-  { value: 'sedan', labelKey: 'supplierPricingManager.vehSedan' },
-  { value: 'minivan', labelKey: 'supplierPricingManager.vehMinivan' },
-  { value: 'minibus', labelKey: 'supplierPricingManager.vehMinibus' },
-  { value: 'midibus', labelKey: 'supplierPricingManager.vehMidibus' },
-  { value: 'bus', labelKey: 'supplierPricingManager.vehBus' },
-  { value: 'vip', labelKey: 'supplierPricingManager.vehVip' },
-];
-
-const TRANSFER_TYPE_OPTION_KEYS = [
-  { value: 'one_way', labelKey: 'supplierPricingManager.transferOneWay' },
-  { value: 'round_trip', labelKey: 'supplierPricingManager.transferRoundTrip' },
-];
-
 const TICKET_TYPE_OPTION_KEYS = [
   { value: 'adult', labelKey: 'supplierPricingManager.ticketAdult' },
   { value: 'child', labelKey: 'supplierPricingManager.ticketChild' },
@@ -161,11 +148,9 @@ const EMPTY_FORM = {
   duration_unit: 'hours',
   max_capacity: '',
   pax_tiers: /** @type {any[]} */ ([]),
-  vehicle_type: '',
   route_from: '',
   route_to: '',
   max_passengers: '',
-  transfer_type: '',
   ticket_type: '',
   service_id: '',
   notes: '',
@@ -231,11 +216,9 @@ const pricingToForm = (pricing) => ({
     price_per_person: t.price_per_person?.toString() ?? '',
     client_price_per_person: t.client_price_per_person?.toString() ?? '',
   })),
-  vehicle_type: pricing.vehicle_type || '',
   route_from: pricing.route_from || '',
   route_to: pricing.route_to || '',
   max_passengers: pricing.max_passengers?.toString() || '',
-  transfer_type: pricing.transfer_type || '',
   ticket_type: pricing.ticket_type || '',
   service_id: pricing.service_id || '',
   notes: pricing.notes || '',
@@ -520,11 +503,6 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
                 })}
               </Badge>
             ))}
-            {pricing.vehicle_type && (
-              <Badge variant="secondary" className="text-xs">
-                {optionLabel(t, VEHICLE_TYPE_OPTION_KEYS, pricing.vehicle_type)}
-              </Badge>
-            )}
             {(pricing.route_from || pricing.route_to) && (
               <Badge variant="secondary" className="text-xs">
                 {pricing.route_from || '?'} → {pricing.route_to || '?'}
@@ -533,11 +511,6 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
             {pricing.max_passengers != null && (
               <Badge variant="secondary" className="text-xs">
                 {t('supplierPricingManager.maxCapacityBadge', { count: pricing.max_passengers })}
-              </Badge>
-            )}
-            {pricing.transfer_type && (
-              <Badge variant="outline" className="text-xs">
-                {optionLabel(t, TRANSFER_TYPE_OPTION_KEYS, pricing.transfer_type)}
               </Badge>
             )}
             {pricing.ticket_type && (
@@ -1070,72 +1043,49 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
                 <h4 className="text-sm font-semibold text-foreground mb-3">
                   {t('supplierPricingManager.transferOptionsTitle')}
                 </h4>
+                <p className="text-xs text-muted-foreground mb-3">{t('supplierPricingManager.transferOptionsHint')}</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t('supplierPricingManager.routeFromLabel')}</Label>
-                    <Input
-                      value={form.route_from || ''}
-                      onChange={(e) => setForm({ ...form, route_from: e.target.value })}
-                      placeholder={t('supplierPricingManager.routeFromPlaceholder')}
-                    />
+                    <Select value={form.route_from || ''} onValueChange={(v) => setForm({ ...form, route_from: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('supplierPricingManager.selectRouteFromPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AIRPORT_LOCATIONS.map((loc) => (
+                          <SelectItem key={loc} value={loc}>
+                            {loc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>{t('supplierPricingManager.routeToLabel')}</Label>
-                    <Input
-                      value={form.route_to || ''}
-                      onChange={(e) => setForm({ ...form, route_to: e.target.value })}
-                      placeholder={t('supplierPricingManager.routeToPlaceholder')}
-                    />
+                    <Select value={form.route_to || ''} onValueChange={(v) => setForm({ ...form, route_to: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('supplierPricingManager.selectRouteToPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AIRPORT_LOCATIONS.map((loc) => (
+                          <SelectItem key={loc} value={loc}>
+                            {loc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4 mt-3">
-                  <div className="space-y-2">
-                    <Label>{t('supplierPricingManager.vehicleTypeLabel')}</Label>
-                    <Select
-                      value={form.vehicle_type || ''}
-                      onValueChange={(v) => setForm({ ...form, vehicle_type: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('supplierPricingManager.selectVehicleTypePlaceholder')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {VEHICLE_TYPE_OPTION_KEYS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {t(opt.labelKey)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t('supplierPricingManager.maxPassengersLabel')}</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={form.max_passengers || ''}
-                      onChange={(e) => setForm({ ...form, max_passengers: e.target.value })}
-                      placeholder="0"
-                    />
-                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.maxPassengersHint')}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t('supplierPricingManager.transferTypeLabel')}</Label>
-                    <Select
-                      value={form.transfer_type || ''}
-                      onValueChange={(v) => setForm({ ...form, transfer_type: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('supplierPricingManager.selectTransferTypePlaceholder')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TRANSFER_TYPE_OPTION_KEYS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {t(opt.labelKey)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2 mt-3">
+                  <Label>{t('supplierPricingManager.maxPassengersLabel')}</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={form.max_passengers || ''}
+                    onChange={(e) => setForm({ ...form, max_passengers: e.target.value })}
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-muted-foreground">{t('supplierPricingManager.maxPassengersHint')}</p>
                 </div>
               </div>
             )}

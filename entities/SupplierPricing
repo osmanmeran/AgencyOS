@@ -158,27 +158,17 @@
         }
       }
     },
-    "vehicle_type": {
-      "type": "string",
-      "enum": ["sedan", "minivan", "minibus", "midibus", "bus", "vip"],
-      "description": "Transfer vehicle type"
-    },
     "route_from": {
       "type": "string",
-      "description": "Transfer route origin (e.g., an airport)"
+      "description": "Transfer route origin airport (one of the fixed airport locations shared with car rental)"
     },
     "route_to": {
       "type": "string",
-      "description": "Transfer route destination"
+      "description": "Transfer route destination airport (one of the fixed airport locations shared with car rental)"
     },
     "max_passengers": {
       "type": "number",
-      "description": "Transfer vehicle passenger capacity"
-    },
-    "transfer_type": {
-      "type": "string",
-      "enum": ["one_way", "round_trip"],
-      "description": "Whether the transfer price is one-way or round trip"
+      "description": "Transfer occupancy capacity — search matches this route to a request when max_passengers >= requested passenger count"
     },
     "ticket_type": {
       "type": "string",

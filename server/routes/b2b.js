@@ -283,6 +283,9 @@ function getActiveCatalogItems(db, markupPct) {
       insurance_surcharge: p.insurance_surcharge || null,
       car_rental_locations: supplier?.car_rental_locations || null,
       car_rental_terms: supplier?.car_rental_terms || null,
+      route_from: p.route_from || null,
+      route_to: p.route_to || null,
+      max_passengers: p.max_passengers ?? null,
     };
   });
 }

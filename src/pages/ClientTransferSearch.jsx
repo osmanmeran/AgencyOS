@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DateField } from '@/components/ui/date-field';
-import { LocationCombobox } from '@/components/ui/location-combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
@@ -23,8 +22,9 @@ import { useMyClient } from '@/hooks/useMyClient';
 import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
-import { locationOf, unitPriceFor } from '@/lib/hotelPricing';
+import { unitPriceFor } from '@/lib/hotelPricing';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
+import { AIRPORT_LOCATIONS } from '@/lib/airportLocations';
 import TransferResultCard from '@/components/transfer/TransferResultCard';
 import TripAttachChoice from '@/components/b2b/TripAttachChoice';
 
@@ -39,6 +39,18 @@ const TRANSFER_TYPES = [
   'City Transfer',
 ];
 
+// Hands off from the portal home's hero search (see ClientPortal.jsx): a
+// from/to/passengers query string, read once at mount.
+function readInitialSearch() {
+  if (typeof window === 'undefined') return { from: '', to: '', passengers: 2 };
+  const sp = new URLSearchParams(window.location.search);
+  return {
+    from: sp.get('from') || '',
+    to: sp.get('to') || '',
+    passengers: parseInt(sp.get('passengers') || '', 10) || 2,
+  };
+}
+
 export default function ClientTransferSearch() {
   const { t } = useT();
   const navigate = useNavigate();
@@ -48,10 +60,12 @@ export default function ClientTransferSearch() {
   const actAsClientId = useActAsClientId();
   const [isStaffPreview, setIsStaffPreview] = useState(false);
 
-  const [destinationQuery, setDestinationQuery] = useState('');
+  const [initialSearch] = useState(readInitialSearch);
+  const [fromLocation, setFromLocation] = useState(initialSearch.from);
+  const [toLocation, setToLocation] = useState(initialSearch.to);
   const [serviceDate, setServiceDate] = useState('');
   const [serviceTime, setServiceTime] = useState('');
-  const [passengers, setPassengers] = useState(2);
+  const [passengers, setPassengers] = useState(initialSearch.passengers);
 
   const [selected, setSelected] = useState(/** @type {any} */ (null));
   const [requestTitle, setRequestTitle] = useState('');
@@ -78,45 +92,32 @@ export default function ClientTransferSearch() {
   const catalogItems = catalog?.items || [];
   const stopSales = catalog?.stop_sales || [];
 
-  const transferLocations = useMemo(() => {
-    const locations = new Set();
-    for (const item of catalogItems) {
-      if (isTransferCategory(item.category_name)) locations.add(locationOf(item));
-    }
-    return [...locations].sort((a, b) => a.localeCompare(b));
-  }, [catalogItems]);
-
-  const matchedLocation = transferLocations.find((loc) => loc.toLowerCase() === destinationQuery.trim().toLowerCase());
-
-  // One card per transfer company (supplier) at the chosen destination —
-  // same reasoning as hotels/car rental results: a supplier can have several
-  // matching pricing rows, and this is a search results list, not a flat
-  // price list. Cheapest per supplier wins.
+  // Matching is purely by route (start/end airport) and occupancy — not by
+  // supplier, so every matching price row is shown regardless of which
+  // supplier owns it (no best-per-supplier grouping/dedup).
   const results = useMemo(() => {
-    if (!matchedLocation) return [];
+    if (!fromLocation || !toLocation) return [];
     const candidates = catalogItems.filter(
-      (item) => isTransferCategory(item.category_name) && locationOf(item) === matchedLocation,
+      (item) =>
+        isTransferCategory(item.category_name) &&
+        item.route_from === fromLocation &&
+        item.route_to === toLocation &&
+        (item.max_passengers == null || item.max_passengers >= passengers),
     );
     // Stop-sale check only makes sense once a date is picked; browsing
     // available services beforehand doesn't need one.
     const available = serviceDate
       ? candidates.filter((item) => !getBlockingStopSale(stopSales, item.supplier_id, serviceDate, serviceDate))
       : candidates;
-    const bestBySupplier = new Map();
-    for (const item of available) {
-      const key = item.supplier_id || item.supplier_name;
-      const current = bestBySupplier.get(key);
-      if (!current || item.unit_price < current.unit_price) bestBySupplier.set(key, item);
-    }
-    return [...bestBySupplier.values()].sort((a, b) => a.unit_price - b.unit_price);
-  }, [catalogItems, matchedLocation, serviceDate, stopSales]);
+    return [...available].sort((a, b) => a.unit_price - b.unit_price);
+  }, [catalogItems, fromLocation, toLocation, passengers, serviceDate, stopSales]);
 
   const openConfirm = (item) => {
     setSelected(item);
-    setRequestTitle(`${item.name} — ${matchedLocation}`);
+    setRequestTitle(`${item.name} — ${fromLocation} → ${toLocation}`);
     setNotes('');
-    setPickupLocation('');
-    setDropoffLocation('');
+    setPickupLocation(fromLocation);
+    setDropoffLocation(toLocation);
     setTransferType('');
     setFlightNumber('');
     setAttachToTrip(false);
@@ -129,9 +130,9 @@ export default function ClientTransferSearch() {
     useMutation({
       mutationFn: () =>
         submitQuote({
-          title: requestTitle || `${selected.name} — ${matchedLocation}`,
-          destination: matchedLocation,
-          destinations: [{ label: matchedLocation }],
+          title: requestTitle || `${selected.name} — ${fromLocation} → ${toLocation}`,
+          destination: toLocation,
+          destinations: [{ label: `${fromLocation} → ${toLocation}` }],
           start_date: serviceDate,
           end_date: serviceDate,
           notes,
@@ -169,17 +170,40 @@ export default function ClientTransferSearch() {
       </div>
 
       <Card className="p-4 bg-card">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="space-y-1 md:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5" /> {t('transferSearch.destinationLabel')}
+              <MapPin className="w-3.5 h-3.5" /> {t('transferSearch.fromLabel')}
             </Label>
-            <LocationCombobox
-              value={destinationQuery}
-              onChange={setDestinationQuery}
-              locations={transferLocations}
-              placeholder={t('transferSearch.destinationPlaceholder')}
-            />
+            <Select value={fromLocation} onValueChange={setFromLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('transferSearch.fromPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {AIRPORT_LOCATIONS.map((loc) => (
+                  <SelectItem key={loc} value={loc}>
+                    {loc}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5" /> {t('transferSearch.toLabel')}
+            </Label>
+            <Select value={toLocation} onValueChange={setToLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('transferSearch.toPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {AIRPORT_LOCATIONS.map((loc) => (
+                  <SelectItem key={loc} value={loc}>
+                    {loc}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <DateField
             label={t('transferSearch.serviceDate')}
@@ -201,11 +225,11 @@ export default function ClientTransferSearch() {
         </div>
       </Card>
 
-      {!matchedLocation ? (
-        <p className="text-muted-foreground text-center py-12">{t('transferSearch.pickDestination')}</p>
+      {!fromLocation || !toLocation ? (
+        <p className="text-muted-foreground text-center py-12">{t('transferSearch.pickRoute')}</p>
       ) : results.length === 0 ? (
         <p className="text-muted-foreground text-center py-12">
-          {t('transferSearch.noResults', { location: matchedLocation })}
+          {t('transferSearch.noResults', { from: fromLocation, to: toLocation })}
         </p>
       ) : (
         <div className="space-y-4">
@@ -225,7 +249,7 @@ export default function ClientTransferSearch() {
               <div className="p-3 bg-muted rounded-lg text-sm space-y-1">
                 <div className="font-semibold text-foreground">{selected.name}</div>
                 <div className="text-muted-foreground">
-                  {matchedLocation} · {serviceDate} {serviceTime}
+                  {fromLocation} → {toLocation} · {serviceDate} {serviceTime}
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-muted-foreground">{t('transferSearch.total')}</span>
