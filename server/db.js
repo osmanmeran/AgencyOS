@@ -50,6 +50,7 @@ const ENTITIES = [
   'Trip',
   'TourContract',
   'GuidedTour',
+  'TourBooking',
   'ReportSchedule',
 ];
 // Deliberately NOT in ENTITIES: 'OutlookToken' (per-user Microsoft Graph

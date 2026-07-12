@@ -43,6 +43,8 @@ A full-stack travel agency operations management platform for tour operators and
 - **Private or Regular** — Daily tours can be private or regular (other passengers grouped into the same departure)
 - **Pricing Tiers** — Per-participant pricing bands (min/max participants → price)
 - **Supplier Link** — Each tour is associated with a supplier (tour operator)
+- **Multi-Day Scheduling** — Compulsory departure date + general availability per departure; optional weekly repeat with a start/end repetition window (generates weekly departures)
+- **Bookings & Remaining Availability** — Staff can record bookings per departure; the staff tour list shows remaining availability (availability − booked) for every departure
 - Accessible from two pills on the Dashboard home page and the **Tours** nav group
 
 ### Integrations

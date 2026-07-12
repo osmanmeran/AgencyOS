@@ -118,6 +118,7 @@
     'SupplierSubcategory',
     'TourContract',
     'GuidedTour',
+    'TourBooking',
     'Trip',
   ];
 

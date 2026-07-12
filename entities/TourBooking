@@ -1,0 +1,18 @@
+{
+  "name": "TourBooking",
+  "type": "object",
+  "description": "A booking against a GuidedTour departure, used to track sold spots and surface remaining availability to staff. Reuses the guided-tours permissions (manage_guided_tours / view_guided_tours).",
+  "rls": {
+    "read": "staff with 'view_guided_tours' (or 'manage_guided_tours')",
+    "write": "staff with 'manage_guided_tours'"
+  },
+  "properties": {
+    "tourId": { "type": "string", "description": "GuidedTour id this booking belongs to" },
+    "tourName": { "type": "string", "description": "Denormalized tour name for display" },
+    "mode": { "type": "string", "enum": ["daily", "multiday"], "description": "Tour mode (mostly multiday)" },
+    "departureDate": { "type": "string", "description": "ISO date of the departure this booking is for" },
+    "participants": { "type": "number", "description": "Number of participants booked" },
+    "customerName": { "type": "string", "description": "Optional customer/lead name" },
+    "status": { "type": "string", "enum": ["confirmed", "pending", "cancelled"], "default": "confirmed" }
+  }
+}

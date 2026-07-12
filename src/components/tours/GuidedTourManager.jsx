@@ -14,7 +14,21 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Map as TourIcon, Bus, Users, MapPin, Clock, Utensils, Hotel, X } from 'lucide-react';
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Map as TourIcon,
+  Bus,
+  Users,
+  MapPin,
+  Clock,
+  Utensils,
+  Hotel,
+  X,
+  Repeat,
+  CalendarCheck,
+} from 'lucide-react';
 import { usePermissions } from '@/components/permissions/PermissionContext';
 import { useT } from '@/lib/i18n/I18nContext';
 
@@ -55,7 +69,36 @@ function emptyForm(mode) {
     startLocation: '',
     endLocation: '',
     nights: [],
+    departureDate: '',
+    availability: 1,
+    repeatWeekly: false,
+    repeatStart: '',
+    repeatEnd: '',
   };
+}
+
+/** Local YYYY-MM-DD (avoids UTC off-by-one from toISOString). */
+function ymd(date) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Weekly departure dates for a multi-day tour, or a single date if not repeating. */
+function getDepartureDates(tour) {
+  if (tour.repeatWeekly && tour.repeatStart && tour.repeatEnd) {
+    const dates = [];
+    let cur = new Date(tour.repeatStart);
+    const end = new Date(tour.repeatEnd);
+    if (!Number.isNaN(cur.getTime()) && !Number.isNaN(end.getTime())) {
+      while (cur <= end) {
+        dates.push(ymd(cur));
+        cur.setDate(cur.getDate() + 7);
+      }
+      if (dates.length) return dates;
+    }
+  }
+  return tour.departureDate ? [tour.departureDate] : [];
 }
 
 export default function GuidedTourManager({ mode }) {
@@ -91,6 +134,23 @@ export default function GuidedTourManager({ mode }) {
       queryFn: () => db.entities.GuidedTour.list(),
     })
   );
+  const { data: allBookings = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['tourBookings'],
+      queryFn: () => db.entities.TourBooking.list(),
+    })
+  );
+
+  // Booked participants per `${tourId}|${departureDate}`.
+  const bookedByDeparture = useMemo(() => {
+    const map = {};
+    for (const b of allBookings) {
+      if (b.status === 'cancelled') continue;
+      const key = `${b.tourId}|${b.departureDate}`;
+      map[key] = (map[key] || 0) + (Number(b.participants) || 0);
+    }
+    return map;
+  }, [allBookings]);
 
   const tours = useMemo(
     () =>
@@ -141,6 +201,59 @@ export default function GuidedTourManager({ mode }) {
     })
   );
 
+  // --- Booking dialog state ---
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingTour, setBookingTour] = useState(null);
+  const [bookingForm, setBookingForm] = useState({
+    departureDate: '',
+    participants: 1,
+    customerName: '',
+    status: 'confirmed',
+  });
+
+  const openBooking = (tour) => {
+    const dates = getDepartureDates(tour);
+    setBookingTour(tour);
+    setBookingForm({
+      departureDate: dates[0] || tour.departureDate || '',
+      participants: 1,
+      customerName: '',
+      status: 'confirmed',
+    });
+    setBookingOpen(true);
+  };
+
+  const closeBooking = () => {
+    setBookingOpen(false);
+    setBookingTour(null);
+  };
+
+  const bookMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.TourBooking.create(data),
+      onSuccess: () => {
+        showSuccess(t('tours.bookingCreated') || 'Booking recorded');
+        queryClient.invalidateQueries({ queryKey: ['tourBookings'] });
+        closeBooking();
+      },
+      onError: (error) => showError(t('tours.bookingError') || 'Failed to record booking', error.message),
+    })
+  );
+
+  const handleBookingSubmit = (e) => {
+    e.preventDefault();
+    if (!bookingTour) return;
+    bookMutation.mutate({
+      tourId: bookingTour.id,
+      tourName: bookingTour.name,
+      mode: bookingTour.mode,
+      departureDate: bookingForm.departureDate,
+      participants: Number(bookingForm.participants) || 1,
+      customerName: bookingForm.customerName || '',
+      status: bookingForm.status || 'confirmed',
+    });
+  };
+
   const openModal = (tour = null) => {
     if (tour) {
       setEditing(tour);
@@ -149,6 +262,8 @@ export default function GuidedTourManager({ mode }) {
         ...tour,
         supplierId: tour.supplierId || '',
         supplierName: tour.supplierName || '',
+        availability: tour.availability != null ? tour.availability : 1,
+        repeatWeekly: !!tour.repeatWeekly,
         sights: Array.isArray(tour.sights) ? [...tour.sights] : [],
         pricingTiers: Array.isArray(tour.pricingTiers) ? [...tour.pricingTiers] : [],
         nights: Array.isArray(tour.nights) ? [...tour.nights] : [],
@@ -184,6 +299,11 @@ export default function GuidedTourManager({ mode }) {
             hotelMealTreatment: n.hotelMealTreatment || '',
           }))
         : [],
+      departureDate: isMultiDay ? formData.departureDate || '' : '',
+      availability: isMultiDay ? Number(formData.availability) || 0 : 0,
+      repeatWeekly: isMultiDay ? !!formData.repeatWeekly : false,
+      repeatStart: isMultiDay && formData.repeatWeekly ? formData.repeatStart || '' : '',
+      repeatEnd: isMultiDay && formData.repeatWeekly ? formData.repeatEnd || '' : '',
     };
     if (editing) {
       updateMutation.mutate({ id: editing.id, data: payload });
@@ -351,6 +471,45 @@ export default function GuidedTourManager({ mode }) {
                   <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
                     <Hotel className="w-3.5 h-3.5" /> {tour.nights.length}{' '}
                     {tour.nights.length === 1 ? 'night' : 'nights'}
+                  </div>
+                )}
+
+                {isMultiDay && (
+                  <div className="mt-3 pt-3 border-t text-sm space-y-1.5">
+                    {(() => {
+                      const departures = getDepartureDates(tour);
+                      const availability = Number(tour.availability) || 0;
+                      if (departures.length === 0) {
+                        return <p className="text-muted-foreground">{t('tours.noDepartures')}</p>;
+                      }
+                      return (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 font-medium">
+                              <CalendarCheck className="w-3.5 h-3.5" /> {t('tours.departure')}
+                            </span>
+                            <Button variant="outline" size="sm" onClick={() => openBooking(tour)} className="h-7">
+                              <CalendarCheck className="w-3.5 h-3.5 mr-1" /> {t('tours.bookTour')}
+                            </Button>
+                          </div>
+                          {departures.map((date) => {
+                            const booked = bookedByDeparture[`${tour.id}|${date}`] || 0;
+                            const remaining = Math.max(0, availability - booked);
+                            return (
+                              <div key={date} className="flex items-center justify-between text-muted-foreground">
+                                <span>{date}</span>
+                                <span>
+                                  {t('tours.remaining')}:{' '}
+                                  <span className="font-semibold text-foreground">{remaining}</span>
+                                  {availability ? ` / ${availability}` : ''}
+                                  {booked ? ` (${t('tours.booked')}: ${booked})` : ''}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -667,11 +826,147 @@ export default function GuidedTourManager({ mode }) {
               </>
             )}
 
+            {isMultiDay && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t('tours.departureDate')} *</Label>
+                      <Input
+                        type="date"
+                        required
+                        value={formData.departureDate}
+                        onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('tours.availability')} *</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        required
+                        value={formData.availability}
+                        onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <Repeat className="w-4 h-4" />
+                      <Label>{t('tours.repeatWeekly')}</Label>
+                    </div>
+                    <Switch
+                      checked={!!formData.repeatWeekly}
+                      onCheckedChange={(v) => setFormData({ ...formData, repeatWeekly: v })}
+                    />
+                  </div>
+
+                  {formData.repeatWeekly && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>{t('tours.repeatStart')}</Label>
+                        <Input
+                          type="date"
+                          value={formData.repeatStart}
+                          onChange={(e) => setFormData({ ...formData, repeatStart: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t('tours.repeatEnd')}</Label>
+                        <Input
+                          type="date"
+                          value={formData.repeatEnd}
+                          onChange={(e) => setFormData({ ...formData, repeatEnd: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" onClick={closeModal}>
                 {t('common.cancel')}
               </Button>
               <Button type="submit">{editing ? t('common.save') : t('tours.newTour')}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bookingOpen} onOpenChange={closeBooking}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {t('tours.bookTour')} — {bookingTour?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleBookingSubmit} className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label>{t('tours.selectDeparture')}</Label>
+              <Select
+                value={bookingForm.departureDate}
+                onValueChange={(v) => setBookingForm({ ...bookingForm, departureDate: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('tours.selectDeparture')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(bookingTour ? getDepartureDates(bookingTour) : []).map((date) => {
+                    const availability = Number(bookingTour?.availability) || 0;
+                    const booked = bookedByDeparture[`${bookingTour?.id}|${date}`] || 0;
+                    const remaining = Math.max(0, availability - booked);
+                    return (
+                      <SelectItem key={date} value={date}>
+                        {date} ({t('tours.remaining')}: {remaining})
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t('tours.participants')}</Label>
+              <Input
+                type="number"
+                min={1}
+                value={bookingForm.participants}
+                onChange={(e) => setBookingForm({ ...bookingForm, participants: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t('tours.customerName')}</Label>
+              <Input
+                value={bookingForm.customerName}
+                onChange={(e) => setBookingForm({ ...bookingForm, customerName: e.target.value })}
+                placeholder="—"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t('common.status')}</Label>
+              <Select value={bookingForm.status} onValueChange={(v) => setBookingForm({ ...bookingForm, status: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="confirmed">{t('common.confirmed')}</SelectItem>
+                  <SelectItem value="pending">{t('common.pending')}</SelectItem>
+                  <SelectItem value="cancelled">{t('common.cancelled')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={closeBooking}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit">{t('tours.bookTour')}</Button>
             </div>
           </form>
         </DialogContent>
