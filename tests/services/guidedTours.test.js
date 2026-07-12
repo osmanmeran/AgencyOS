@@ -108,6 +108,13 @@ describe('GuidedTour entity', () => {
         transportation: true,
         minOccupancy: 1,
         maxOccupancy: 8,
+        description: 'A 2-day journey through Cappadocia.',
+        coverImage: '/uploads/cappadocia.jpg',
+        durationDays: 2,
+        dayDescriptions: [
+          { day: 1, description: 'Arrival and valley walk', image: '/uploads/day1.jpg' },
+          { day: 2, description: 'Hot air balloon', image: '/uploads/day2.jpg' },
+        ],
         pricingTiers: [{ minParticipants: 1, maxParticipants: 8, price: 350 }],
         nights: [
           { day: 1, lodging: 'Sultan Cave Suites', hotelMealTreatment: 'Breakfast included' },
@@ -121,6 +128,12 @@ describe('GuidedTour entity', () => {
     expect(tour.mode).toBe('multiday');
     expect(tour.startLocation).toBe('Istanbul');
     expect(tour.endLocation).toBe('Cappadocia');
+    expect(tour.description).toBe('A 2-day journey through Cappadocia.');
+    expect(tour.coverImage).toBe('/uploads/cappadocia.jpg');
+    expect(tour.durationDays).toBe(2);
+    expect(tour.dayDescriptions).toHaveLength(2);
+    expect(tour.dayDescriptions[1].description).toBe('Hot air balloon');
+    expect(tour.dayDescriptions[1].image).toBe('/uploads/day2.jpg');
     expect(tour.nights).toHaveLength(2);
     expect(tour.nights[0].lodging).toBe('Sultan Cave Suites');
     expect(tour.nights[1].hotelMealTreatment).toBe('Half board');
@@ -205,6 +218,28 @@ describe('GuidedTour entity', () => {
       createdIds.push(ownId);
       const own = findEntities('GuidedTour', { user: admin }).find((t) => t.id === ownId);
       expect(userCanAccessEntity(agentNoPerm, 'GuidedTour', own)).toBe(true);
+    });
+
+    it('lets client-portal accounts read tours (public catalog)', () => {
+      const [tour] = findEntities('GuidedTour', { user: admin });
+      const clientUser = { user_tier: 'client', id: 'client1', client_id: 'some-client', custom_permissions: [] };
+      expect(userCanAccessEntity(clientUser, 'GuidedTour', tour)).toBe(true);
+    });
+
+    it('stores a daily tour description and cover image', () => {
+      const tour = createEntity(
+        'GuidedTour',
+        {
+          name: 'Old City Walk',
+          mode: 'daily',
+          description: 'A guided walk through the historic peninsula.',
+          coverImage: '/uploads/walk.jpg',
+        },
+        admin,
+      );
+      createdIds.push(tour.id);
+      expect(tour.description).toBe('A guided walk through the historic peninsula.');
+      expect(tour.coverImage).toBe('/uploads/walk.jpg');
     });
   });
 });

@@ -10,6 +10,8 @@
     "name": { "type": "string", "description": "Tour name" },
     "supplierId": { "type": "string", "description": "Linked supplier (tour operator) id" },
     "supplierName": { "type": "string", "description": "Denormalized supplier name for display" },
+    "description": { "type": "string", "description": "Tour description (public, shown in the client portal)" },
+    "coverImage": { "type": "string", "description": "Cover photo URL for the tour" },
     "mode": { "type": "string", "enum": ["daily", "multiday"], "description": "Selects which field set applies" },
     "language": { "type": "string", "description": "Tour language code (en/es/fr/de/it/tr)" },
     "location": { "type": "string", "description": "Daily tour meeting/operating location" },
@@ -36,6 +38,19 @@
           "minParticipants": { "type": "number" },
           "maxParticipants": { "type": "number" },
           "price": { "type": "number" }
+        }
+      }
+    },
+    "durationDays": { "type": "number", "description": "Multiday: general tour duration in days" },
+    "dayDescriptions": {
+      "type": "array",
+      "description": "Multiday: one description + cover photo per day, auto-generated from durationDays",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": { "type": "number" },
+          "description": { "type": "string" },
+          "image": { "type": "string", "description": "Per-day cover photo URL" }
         }
       }
     },

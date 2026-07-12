@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { usePermissions } from '@/components/permissions/PermissionContext';
 import { useT } from '@/lib/i18n/I18nContext';
+import ImageUpload from './ImageUpload';
 
 const LANGUAGES = [
   { value: 'en', label: 'English' },
@@ -74,7 +75,22 @@ function emptyForm(mode) {
     repeatWeekly: false,
     repeatStart: '',
     repeatEnd: '',
+    description: '',
+    coverImage: '',
+    durationDays: 1,
+    dayDescriptions: [],
   };
+}
+
+/** Keep dayDescriptions in sync with durationDays, preserving existing content. */
+function syncDayDescriptions(dayDescriptions, durationDays) {
+  const n = Math.max(1, Number(durationDays) || 1);
+  const existing = Array.isArray(dayDescriptions) ? dayDescriptions : [];
+  const next = [];
+  for (let i = 0; i < n; i++) {
+    next.push(existing[i] || { day: i + 1, description: '', image: '' });
+  }
+  return next;
 }
 
 /** Local YYYY-MM-DD (avoids UTC off-by-one from toISOString). */
@@ -264,6 +280,10 @@ export default function GuidedTourManager({ mode }) {
         supplierName: tour.supplierName || '',
         availability: tour.availability != null ? tour.availability : 1,
         repeatWeekly: !!tour.repeatWeekly,
+        description: tour.description || '',
+        coverImage: tour.coverImage || '',
+        durationDays: tour.durationDays ? Number(tour.durationDays) : 1,
+        dayDescriptions: syncDayDescriptions(tour.dayDescriptions, tour.durationDays),
         sights: Array.isArray(tour.sights) ? [...tour.sights] : [],
         pricingTiers: Array.isArray(tour.pricingTiers) ? [...tour.pricingTiers] : [],
         nights: Array.isArray(tour.nights) ? [...tour.nights] : [],
@@ -304,6 +324,16 @@ export default function GuidedTourManager({ mode }) {
       repeatWeekly: isMultiDay ? !!formData.repeatWeekly : false,
       repeatStart: isMultiDay && formData.repeatWeekly ? formData.repeatStart || '' : '',
       repeatEnd: isMultiDay && formData.repeatWeekly ? formData.repeatEnd || '' : '',
+      description: formData.description || '',
+      coverImage: formData.coverImage || '',
+      durationDays: isMultiDay ? Number(formData.durationDays) || 1 : 0,
+      dayDescriptions: isMultiDay
+        ? syncDayDescriptions(formData.dayDescriptions, formData.durationDays).map((d, i) => ({
+            day: i + 1,
+            description: d.description || '',
+            image: d.image || '',
+          }))
+        : [],
     };
     if (editing) {
       updateMutation.mutate({ id: editing.id, data: payload });
@@ -412,6 +442,13 @@ export default function GuidedTourManager({ mode }) {
             const loc = isMultiDay ? `${tour.startLocation || '—'} → ${tour.endLocation || '—'}` : tour.location;
             return (
               <Card key={tour.id} className="p-6 bg-card">
+                {tour.coverImage && (
+                  <img
+                    src={tour.coverImage}
+                    alt={tour.name}
+                    className="w-full h-40 object-cover rounded-md mb-3 border"
+                  />
+                )}
                 <div className="flex justify-between items-start mb-3">
                   <div className="min-w-0">
                     <h3 className="font-bold text-lg text-foreground truncate">{tour.name}</h3>
@@ -451,6 +488,10 @@ export default function GuidedTourManager({ mode }) {
                     {tour.transportation ? t('common.yes') : t('common.no')}
                   </Badge>
                 </div>
+
+                {tour.description && (
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{tour.description}</p>
+                )}
 
                 {tour.startingTime && (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
@@ -579,6 +620,24 @@ export default function GuidedTourManager({ mode }) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label>{t('tours.description')}</Label>
+                <textarea
+                  className="w-full min-h-[80px] rounded-md border bg-background px-3 py-2 text-sm"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder={t('tours.descriptionPlaceholder')}
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <ImageUpload
+                  label={t('tours.coverImage')}
+                  value={formData.coverImage}
+                  onChange={(url) => setFormData({ ...formData, coverImage: url })}
+                />
               </div>
 
               <div className="space-y-2">
@@ -822,6 +881,65 @@ export default function GuidedTourManager({ mode }) {
                       </Button>
                     </div>
                   ))}
+                </div>
+              </>
+            )}
+
+            {isMultiDay && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>{t('tours.durationDays')}</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={formData.durationDays}
+                      onChange={(e) =>
+                        setFormData((f) => ({
+                          ...f,
+                          durationDays: Number(e.target.value) || 1,
+                          dayDescriptions: syncDayDescriptions(f.dayDescriptions, e.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label>{t('tours.dayByDay')}</Label>
+                    {formData.dayDescriptions.map((day, i) => (
+                      <div key={i} className="rounded-lg border p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-sm">
+                            {t('tours.day')} {i + 1}
+                          </span>
+                        </div>
+                        <textarea
+                          className="w-full min-h-[60px] rounded-md border bg-background px-3 py-2 text-sm"
+                          value={day.description}
+                          onChange={(e) =>
+                            setFormData((f) => ({
+                              ...f,
+                              dayDescriptions: f.dayDescriptions.map((d, di) =>
+                                di === i ? { ...d, description: e.target.value } : d,
+                              ),
+                            }))
+                          }
+                          placeholder={t('tours.dayDescriptionPlaceholder')}
+                        />
+                        <ImageUpload
+                          label={t('tours.dayImage')}
+                          value={day.image}
+                          onChange={(url) =>
+                            setFormData((f) => ({
+                              ...f,
+                              dayDescriptions: f.dayDescriptions.map((d, di) => (di === i ? { ...d, image: url } : d)),
+                            }))
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </>
             )}

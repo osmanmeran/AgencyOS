@@ -116,6 +116,15 @@ export default function ClientPortal() {
     })
   );
 
+  // Public tour catalog (descriptions + cover photos) — readable by all
+  // authenticated users, including client-portal accounts.
+  const { data: tours = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['portalTours'],
+      queryFn: () => db.entities.GuidedTour.list(),
+    })
+  );
+
   const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['myPayments', client?.id],
@@ -421,6 +430,68 @@ export default function ClientPortal() {
                 </Link>
               );
             })}
+          </div>
+        )}
+      </Card>
+
+      {/* Featured tours — descriptions and cover photos from the catalog */}
+      <Card className="p-6 bg-card shadow-md">
+        <h2 className="text-xl font-bold text-foreground mb-5">{t('clientPortal.featuredTours')}</h2>
+        {tours.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">{t('clientPortal.noToursYet')}</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {tours.map((tour) => (
+              <div key={tour.id} className="border border-border rounded-xl overflow-hidden flex flex-col">
+                {tour.coverImage ? (
+                  <img src={tour.coverImage} alt={tour.name} className="w-full h-48 object-cover" />
+                ) : (
+                  <div className="h-48 bg-primary/10 flex items-center justify-center">
+                    <Compass className="w-10 h-10 text-primary" />
+                  </div>
+                )}
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold text-lg text-foreground">{tour.name}</h3>
+                    <Badge variant="secondary">
+                      {tour.mode === 'multiday' ? t('nav.multiDayTours') : t('nav.dailyTours')}
+                    </Badge>
+                  </div>
+                  {tour.description && (
+                    <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line">{tour.description}</p>
+                  )}
+                  {tour.mode === 'multiday' &&
+                    Array.isArray(tour.dayDescriptions) &&
+                    tour.dayDescriptions.length > 0 && (
+                      <div className="space-y-3 mt-auto">
+                        {tour.dayDescriptions.map((day, i) => (
+                          <div key={i} className="flex gap-3">
+                            {day.image ? (
+                              <img
+                                src={day.image}
+                                alt=""
+                                className="w-16 h-16 object-cover rounded-md border shrink-0"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center text-muted-foreground text-[10px] shrink-0">
+                                Day {i + 1}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground">
+                                {t('tours.day')} {i + 1}
+                              </p>
+                              {day.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-3">{day.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Card>

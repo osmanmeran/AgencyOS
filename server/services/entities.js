@@ -172,6 +172,14 @@ export function userCanAccessEntity(user, entityType, entityData) {
   // invoices, itineraries) show consistent agency branding.
   if (entityType === 'AppSettings') return true;
 
+  // Guided tours are a public catalog (descriptions + cover photos shown in
+  // the client portal). Client-portal accounts may read them so the portal can
+  // render the catalog. Writes remain gated by ENTITY_PERMISSION_MAP, which
+  // grants the 'client' tier no manage_guided_tours permission. Staff without
+  // the read permission still only see their own records via the fallback
+  // below.
+  if (entityType === 'GuidedTour' && (user.user_tier === 'client' || user.client_id)) return true;
+
   if (USER_SCOPED_TYPES.includes(entityType)) {
     return entityData.user_id === user.id || entityData.created_by === user.id;
   }
