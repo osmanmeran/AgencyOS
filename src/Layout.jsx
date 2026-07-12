@@ -338,6 +338,7 @@ export default function Layout({ children, currentPageName }) {
   const isClientPortal =
     currentPageName?.startsWith('ClientPortal') ||
     currentPageName?.startsWith('ClientHotelSearch') ||
+    currentPageName?.startsWith('ClientCarRentalSearch') ||
     currentPageName?.startsWith('ClientProposal') ||
     currentPageName?.startsWith('ClientTrip') ||
     currentPageName?.startsWith('ClientInvoice') ||

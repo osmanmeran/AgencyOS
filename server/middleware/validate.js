@@ -238,6 +238,14 @@ export const schemas = {
           flight_number: z.string().optional(),
           service_time: z.string().optional(),
           details: z.string().optional(),
+          // Car rental specifics — were missing here even though b2b.js reads
+          // them off the request body (server/routes/b2b.js), so Zod silently
+          // stripped them before the route ever saw them: every car rental
+          // quote was priced as a 1-day rental with no insurance regardless
+          // of what the client actually selected.
+          car_category: z.string().optional(),
+          car_rental_days: z.number().positive().optional(),
+          car_insurance: z.boolean().optional(),
         }),
       )
       .min(1, 'At least one item is required'),

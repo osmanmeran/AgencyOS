@@ -40,6 +40,7 @@ const LayoutWrapper = ({ children, currentPageName }) =>
 const CLIENT_PORTAL_PREFIXES = [
   'ClientPortal',
   'ClientHotelSearch',
+  'ClientCarRentalSearch',
   'ClientProposal',
   'ClientTrip',
   'ClientInvoice',

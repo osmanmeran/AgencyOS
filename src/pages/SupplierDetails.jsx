@@ -10,8 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SkeletonCard } from '@/components/ui/skeletons';
 import { HOTEL_TYPE_OPTIONS, formatHotelType } from '@/lib/hotelTypes';
+import { CAR_RENTAL_LOCATIONS } from '@/lib/carRentalLocations';
 import {
   ArrowLeft,
   Mail,
@@ -28,7 +30,6 @@ import {
   Loader2,
   Store,
   CalendarOff,
-  Plus,
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -58,14 +59,9 @@ export default function SupplierDetails() {
   const [webResults, setWebResults] = useState([]);
   const [webSearchLoading, setWebSearchLoading] = useState(false);
   const [webSearchError, setWebSearchError] = useState('');
-  const [newLocation, setNewLocation] = useState('');
-
-  const addLocation = () => {
-    const loc = newLocation.trim();
-    if (!loc) return;
-    if ((editForm.car_rental_locations || []).includes(loc)) return;
+  const addLocation = (loc) => {
+    if (!loc || (editForm.car_rental_locations || []).includes(loc)) return;
     setEditForm({ ...editForm, car_rental_locations: [...(editForm.car_rental_locations || []), loc] });
-    setNewLocation('');
   };
 
   const removeLocation = (idx) => {
@@ -597,24 +593,20 @@ export default function SupplierDetails() {
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>{t('supplierDetails.availableLocationsLabel')}</Label>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <Input
-                        value={newLocation}
-                        onChange={(e) => setNewLocation(e.target.value)}
-                        placeholder={t('supplierDetails.addLocationPlaceholder')}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            addLocation();
-                          }
-                        }}
-                      />
-                    </div>
-                    <Button type="button" variant="outline" onClick={addLocation} size="sm" className="mt-0">
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <Select value="" onValueChange={addLocation}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('supplierDetails.addLocationPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CAR_RENTAL_LOCATIONS.filter((loc) => !(editForm.car_rental_locations || []).includes(loc)).map(
+                        (loc) => (
+                          <SelectItem key={loc} value={loc}>
+                            {loc}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
                   {editForm.car_rental_locations?.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {editForm.car_rental_locations.map((loc, idx) => (

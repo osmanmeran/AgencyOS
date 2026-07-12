@@ -178,6 +178,8 @@ export default function ClientPortal() {
       if (checkOut) params.set('checkout', checkOut);
       if (guests) params.set('guests', String(guests));
       navigate(createPageUrl(`ClientHotelSearch?${params.toString()}`));
+    } else if (activeCategory === 'car_rental') {
+      navigate(createPageUrl('ClientCarRentalSearch'));
     } else {
       goToQuoteBuilder(activeCategory);
     }
