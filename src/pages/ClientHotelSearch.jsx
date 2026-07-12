@@ -107,6 +107,11 @@ export default function ClientHotelSearch() {
 
   // Same matching rules as ClientQuoteBuilder's guided hotel picker: exact
   // occupancy tier, rate valid for the whole stay, supplier not stop-saled.
+  // Collapsed to one card per hotel (supplier) — a hotel can have several
+  // matching pricing rows (different meal plans, season-specific rates,
+  // etc.), and showing every one of those as its own result read like a flat
+  // price list instead of a hotel list. Each hotel's cheapest matching rate
+  // wins; sorted lowest-first like a normal results page.
   const results = useMemo(() => {
     if (!matchedLocation || nights <= 0) return [];
     const candidates = catalogItems.filter(
@@ -116,7 +121,15 @@ export default function ClientHotelSearch() {
         item.occupancy === derivedOccupancy,
     );
     const matched = resolveRoomRatesForRange(candidates, checkIn, checkOut);
-    return matched.filter((item) => !getBlockingStopSale(stopSales, item.supplier_id, checkIn, checkOut));
+    const available = matched.filter((item) => !getBlockingStopSale(stopSales, item.supplier_id, checkIn, checkOut));
+
+    const bestBySupplier = new Map();
+    for (const item of available) {
+      const key = item.supplier_id || item.supplier_name;
+      const current = bestBySupplier.get(key);
+      if (!current || item.unit_price < current.unit_price) bestBySupplier.set(key, item);
+    }
+    return [...bestBySupplier.values()].sort((a, b) => a.unit_price - b.unit_price);
   }, [matchedLocation, nights, catalogItems, derivedOccupancy, checkIn, checkOut, stopSales]);
 
   const openConfirm = (item) => {
