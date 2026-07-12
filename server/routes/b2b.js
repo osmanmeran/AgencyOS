@@ -281,7 +281,6 @@ function getActiveCatalogItems(db, markupPct) {
       car_category: p.car_category || null,
       drop_off_surcharge: p.drop_off_surcharge || null,
       insurance_surcharge: p.insurance_surcharge || null,
-      available_locations: p.available_locations || null,
       car_rental_locations: supplier?.car_rental_locations || null,
       car_rental_terms: supplier?.car_rental_terms || null,
     };

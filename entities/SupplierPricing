@@ -109,11 +109,6 @@
       "default": 0,
       "description": "Daily insurance supplement amount"
     },
-    "available_locations": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "List of pickup/dropoff locations available for this car rental tier"
-    },
     "markup_percentage": {
       "type": "number",
       "default": 0,
