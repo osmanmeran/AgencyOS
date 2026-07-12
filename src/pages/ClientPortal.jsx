@@ -6,8 +6,20 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { SkeletonStats } from '@/components/ui/skeletons';
-import { FileText, Plane, DollarSign, ArrowRight, Building2, Compass, Car, ArrowRightLeft } from 'lucide-react';
+import {
+  FileText,
+  Plane,
+  DollarSign,
+  ArrowRight,
+  Building2,
+  Compass,
+  Car,
+  ArrowRightLeft,
+  CalendarDays,
+  MapPin,
+} from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore, differenceInDays } from 'date-fns';
@@ -30,10 +42,44 @@ import TransferSearchBar from '@/components/transfer/TransferSearchBar';
 // category pre-selected (the fallback "coming soon" CTA branch).
 const CATEGORIES = [
   { key: 'hotels', icon: Building2, labelKey: 'clientPortal.categoryHotels' },
-  { key: 'tours', icon: Compass, labelKey: 'clientPortal.categoryTours' },
+  { key: 'daily_tours', icon: Compass, labelKey: 'clientPortal.categoryDailyTours' },
+  { key: 'multi_day_tours', icon: CalendarDays, labelKey: 'clientPortal.categoryMultiDayTours' },
   { key: 'transfers', icon: ArrowRightLeft, labelKey: 'clientPortal.categoryTransfers' },
   { key: 'car_rental', icon: Car, labelKey: 'clientPortal.categoryCarRental' },
 ];
+
+/** Location label for a tour (daily: single location; multi-day: route). */
+function tourLocationLabel(tour) {
+  return tour.mode === 'multiday'
+    ? [tour.startLocation, tour.endLocation].filter(Boolean).join(' → ')
+    : tour.location || '';
+}
+
+/** Weekly departure dates for a multi-day tour, or a single date if not repeating. */
+function getTourDepartureDates(tour) {
+  if (tour.repeatWeekly && tour.repeatStart && tour.repeatEnd) {
+    const dates = [];
+    const cur = new Date(tour.repeatStart);
+    const end = new Date(tour.repeatEnd);
+    if (!Number.isNaN(cur.getTime()) && !Number.isNaN(end.getTime())) {
+      while (cur <= end) {
+        dates.push(
+          `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`,
+        );
+        cur.setDate(cur.getDate() + 7);
+      }
+      if (dates.length) return dates;
+    }
+  }
+  return tour.departureDate ? [tour.departureDate] : [];
+}
+
+/** Whether a tour can depart / operate on the given ISO date (empty date = always). */
+function isTourAvailableOn(tour, dateStr) {
+  if (!dateStr) return true;
+  if (tour.mode !== 'multiday') return true; // daily tours run every day
+  return getTourDepartureDates(tour).includes(dateStr);
+}
 
 const PROPOSAL_STATUS_BADGE = {
   sent: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
@@ -75,6 +121,9 @@ export default function ClientPortal() {
   const [fromLocation, setFromLocation] = React.useState('');
   const [toLocation, setToLocation] = React.useState('');
   const [transferPassengers, setTransferPassengers] = React.useState(2);
+
+  const [tourDate, setTourDate] = React.useState('');
+  const [tourDestination, setTourDestination] = React.useState('');
 
   React.useEffect(() => {
     db.auth.me().then(async (currentUser) => {
@@ -170,6 +219,22 @@ export default function ClientPortal() {
   const upcomingTrip = useUpcomingTrip(client?.id);
   const daysUntilTrip = upcomingTrip ? differenceInDays(parseISO(upcomingTrip.start_date), new Date()) : null;
 
+  // Tours catalog search: only relevant when a tour pill is active. Filters by
+  // mode (daily vs multi-day), the selected date's availability, and an optional
+  // destination/location query.
+  const isTourSearchActive = activeCategory === 'daily_tours' || activeCategory === 'multi_day_tours';
+  const visibleTours = React.useMemo(() => {
+    if (!isTourSearchActive) return [];
+    const wantedMode = activeCategory === 'daily_tours' ? 'daily' : 'multiday';
+    const q = tourDestination.trim().toLowerCase();
+    return tours.filter(
+      (tour) =>
+        tour.mode === wantedMode &&
+        isTourAvailableOn(tour, tourDate) &&
+        (!q || (tour.name || '').toLowerCase().includes(q) || tourLocationLabel(tour).toLowerCase().includes(q)),
+    );
+  }, [isTourSearchActive, activeCategory, tours, tourDate, tourDestination]);
+
   const goToQuoteBuilder = (categoryKey, opts = {}) => {
     const params = new URLSearchParams({ category: categoryKey });
     if (opts.destination) params.set('destination', opts.destination);
@@ -208,6 +273,10 @@ export default function ClientPortal() {
       if (toLocation) params.set('to', toLocation);
       if (transferPassengers) params.set('passengers', String(transferPassengers));
       navigate(createPageUrl(`ClientTransferSearch?${params.toString()}`));
+    } else if (activeCategory === 'daily_tours' || activeCategory === 'multi_day_tours') {
+      // Tours are searched in-place on the portal (date + destination filter
+      // the catalog rendered below); no separate results page is needed.
+      return;
     } else {
       goToQuoteBuilder(activeCategory);
     }
@@ -299,6 +368,27 @@ export default function ClientPortal() {
             onPassengersChange={setTransferPassengers}
             onSearch={handleHeroSearch}
           />
+        ) : activeCategory === 'daily_tours' || activeCategory === 'multi_day_tours' ? (
+          <div className="bg-card rounded-xl p-4 flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1 min-w-0">
+              <label className="block text-xs font-medium text-foreground/80 mb-1">{t('clientPortal.tourDate')}</label>
+              <Input type="date" value={tourDate} onChange={(e) => setTourDate(e.target.value)} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <label className="block text-xs font-medium text-foreground/80 mb-1">
+                {t('clientPortal.tourDestination')}
+              </label>
+              <Input
+                type="text"
+                placeholder={t('clientPortal.tourDestinationPlaceholder')}
+                value={tourDestination}
+                onChange={(e) => setTourDestination(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleHeroSearch} className="shrink-0">
+              {t('clientPortal.searchTours')}
+            </Button>
+          </div>
         ) : (
           <div className="bg-card rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-sm text-foreground/80">
@@ -434,67 +524,80 @@ export default function ClientPortal() {
         )}
       </Card>
 
-      {/* Featured tours — descriptions and cover photos from the catalog */}
-      <Card className="p-6 bg-card shadow-md">
-        <h2 className="text-xl font-bold text-foreground mb-5">{t('clientPortal.featuredTours')}</h2>
-        {tours.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">{t('clientPortal.noToursYet')}</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {tours.map((tour) => (
-              <div key={tour.id} className="border border-border rounded-xl overflow-hidden flex flex-col">
-                {tour.coverImage ? (
-                  <img src={tour.coverImage} alt={tour.name} className="w-full h-48 object-cover" />
-                ) : (
-                  <div className="h-48 bg-primary/10 flex items-center justify-center">
-                    <Compass className="w-10 h-10 text-primary" />
-                  </div>
-                )}
-                <div className="p-5 flex-1 flex flex-col">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-lg text-foreground">{tour.name}</h3>
-                    <Badge variant="secondary">
-                      {tour.mode === 'multiday' ? t('nav.multiDayTours') : t('nav.dailyTours')}
-                    </Badge>
-                  </div>
-                  {tour.description && (
-                    <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line">{tour.description}</p>
-                  )}
-                  {tour.mode === 'multiday' &&
-                    Array.isArray(tour.dayDescriptions) &&
-                    tour.dayDescriptions.length > 0 && (
-                      <div className="space-y-3 mt-auto">
-                        {tour.dayDescriptions.map((day, i) => (
-                          <div key={i} className="flex gap-3">
-                            {day.image ? (
-                              <img
-                                src={day.image}
-                                alt=""
-                                className="w-16 h-16 object-cover rounded-md border shrink-0"
-                              />
-                            ) : (
-                              <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center text-muted-foreground text-[10px] shrink-0">
-                                Day {i + 1}
-                              </div>
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-foreground">
-                                {t('tours.day')} {i + 1}
-                              </p>
-                              {day.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-3">{day.description}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                </div>
-              </div>
-            ))}
+      {/* Tour catalog search results — driven by the daily / multi-day tour
+          pills and the date + destination filter in the hero. */}
+      {isTourSearchActive && (
+        <Card className="p-6 bg-card shadow-md">
+          <div className="flex justify-between items-center mb-5 gap-3 flex-wrap">
+            <h2 className="text-xl font-bold text-foreground">
+              {activeCategory === 'daily_tours' ? t('nav.dailyTours') : t('nav.multiDayTours')}
+            </h2>
+            {tourDate && <Badge variant="secondary">{t('clientPortal.availableOn', { date: tourDate })}</Badge>}
           </div>
-        )}
-      </Card>
+          {visibleTours.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">{t('clientPortal.noToursForDate')}</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {visibleTours.map((tour) => (
+                <div key={tour.id} className="border border-border rounded-xl overflow-hidden flex flex-col">
+                  {tour.coverImage ? (
+                    <img src={tour.coverImage} alt={tour.name} className="w-full h-48 object-cover" />
+                  ) : (
+                    <div className="h-48 bg-primary/10 flex items-center justify-center">
+                      <Compass className="w-10 h-10 text-primary" />
+                    </div>
+                  )}
+                  <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-lg text-foreground">{tour.name}</h3>
+                      <Badge variant="secondary">
+                        {tour.mode === 'multiday' ? t('nav.multiDayTours') : t('nav.dailyTours')}
+                      </Badge>
+                    </div>
+                    {tourLocationLabel(tour) && (
+                      <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5" /> {tourLocationLabel(tour)}
+                      </p>
+                    )}
+                    {tour.description && (
+                      <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line">{tour.description}</p>
+                    )}
+                    {tour.mode === 'multiday' &&
+                      Array.isArray(tour.dayDescriptions) &&
+                      tour.dayDescriptions.length > 0 && (
+                        <div className="space-y-3 mt-auto">
+                          {tour.dayDescriptions.map((day, i) => (
+                            <div key={i} className="flex gap-3">
+                              {day.image ? (
+                                <img
+                                  src={day.image}
+                                  alt=""
+                                  className="w-16 h-16 object-cover rounded-md border shrink-0"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center text-muted-foreground text-[10px] shrink-0">
+                                  Day {i + 1}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground">
+                                  {t('tours.day')} {i + 1}
+                                </p>
+                                {day.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-3">{day.description}</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
