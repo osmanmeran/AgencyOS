@@ -221,6 +221,10 @@ export const schemas = {
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     passengers: z.array(z.record(z.unknown())).optional(),
+    // Attaches this request to one of the client's own existing trips
+    // instead of it being a standalone request — ownership is re-checked
+    // server-side (server/routes/b2b.js), this id is never trusted as-is.
+    trip_id: z.string().optional(),
     items: z
       .array(
         z.object({

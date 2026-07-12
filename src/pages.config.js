@@ -18,6 +18,7 @@ const ClientDetails = lazy(() => import('./pages/ClientDetails'));
 const ClientPortal = lazy(() => import('./pages/ClientPortal'));
 const ClientHotelSearch = lazy(() => import('./pages/ClientHotelSearch'));
 const ClientCarRentalSearch = lazy(() => import('./pages/ClientCarRentalSearch'));
+const ClientTransferSearch = lazy(() => import('./pages/ClientTransferSearch'));
 const ClientProposals = lazy(() => import('./pages/ClientProposals'));
 const ClientProposalDetails = lazy(() => import('./pages/ClientProposalDetails'));
 const ClientTrips = lazy(() => import('./pages/ClientTrips'));
@@ -65,6 +66,7 @@ export const PAGES = {
   ClientPortal: ClientPortal,
   ClientHotelSearch: ClientHotelSearch,
   ClientCarRentalSearch: ClientCarRentalSearch,
+  ClientTransferSearch: ClientTransferSearch,
   ClientProposals: ClientProposals,
   ClientProposalDetails: ClientProposalDetails,
   ClientTrips: ClientTrips,

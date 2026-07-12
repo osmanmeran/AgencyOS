@@ -339,6 +339,7 @@ export default function Layout({ children, currentPageName }) {
     currentPageName?.startsWith('ClientPortal') ||
     currentPageName?.startsWith('ClientHotelSearch') ||
     currentPageName?.startsWith('ClientCarRentalSearch') ||
+    currentPageName?.startsWith('ClientTransferSearch') ||
     currentPageName?.startsWith('ClientProposal') ||
     currentPageName?.startsWith('ClientTrip') ||
     currentPageName?.startsWith('ClientInvoice') ||

@@ -19,11 +19,13 @@ import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useMyClient } from '@/hooks/useMyClient';
+import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { nightsBetween } from '@/lib/hotelPricing';
 import { CAR_RENTAL_LOCATIONS } from '@/lib/carRentalLocations';
 import CarRentalResultCard from '@/components/carRental/CarRentalResultCard';
+import TripAttachChoice from '@/components/b2b/TripAttachChoice';
 
 const isCarRentalCategory = (name) => {
   const c = (name || '').toLowerCase();
@@ -39,6 +41,7 @@ export default function ClientCarRentalSearch() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const client = useMyClient();
+  const upcomingTrip = useUpcomingTrip(client?.id);
   const actAsClientId = useActAsClientId();
   const [isStaffPreview, setIsStaffPreview] = useState(false);
 
@@ -51,6 +54,7 @@ export default function ClientCarRentalSearch() {
   const [requestTitle, setRequestTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [insurance, setInsurance] = useState(false);
+  const [attachToTrip, setAttachToTrip] = useState(false);
 
   useEffect(() => {
     db.auth.me().then((me) => {
@@ -95,6 +99,7 @@ export default function ClientCarRentalSearch() {
     setRequestTitle(`${item.name} — ${pickupLocation}`);
     setNotes('');
     setInsurance(false);
+    setAttachToTrip(false);
   };
 
   const rentalTotal = selected ? selected.unit_price * days : 0;
@@ -112,6 +117,7 @@ export default function ClientCarRentalSearch() {
           start_date: pickupDate,
           end_date: dropoffDate,
           notes,
+          trip_id: attachToTrip && upcomingTrip ? upcomingTrip.id : undefined,
           passengers: client ? [{ name: client.name, age_category: 'adult', is_contact: true }] : [],
           items: [
             {
@@ -279,6 +285,8 @@ export default function ClientCarRentalSearch() {
                   {grandTotal.toFixed(2)}
                 </span>
               </div>
+
+              <TripAttachChoice trip={upcomingTrip} attach={attachToTrip} onChange={setAttachToTrip} />
 
               {isStaffPreview ? (
                 <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">

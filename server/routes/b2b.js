@@ -430,6 +430,17 @@ router.post(
     });
 
     const subtotal = items.reduce((sum, i) => sum + i.line_total, 0);
+    // A client can optionally attach this request to one of their own
+    // upcoming trips instead of submitting it as a standalone request —
+    // never trust the id without checking it actually belongs to them.
+    let tripId = null;
+    if (req.body.trip_id) {
+      const trip = getEntityById(db, 'Trip', req.body.trip_id);
+      if (trip && trip.client_id === client.id) {
+        tripId = req.body.trip_id;
+      }
+    }
+
     const now = new Date().toISOString();
     const id = uid();
     const data = {
@@ -448,6 +459,7 @@ router.post(
       currency: displayCurrency || items[0]?.currency || 'USD',
       status: 'submitted',
       notes: req.body.notes || '',
+      trip_id: tripId,
       requested_by: req.user.id,
       created_by: req.user.id,
     };

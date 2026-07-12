@@ -132,6 +132,10 @@
     "converted_trip_id": {
       "type": "string",
       "description": "Set once this quote has been converted into a Trip; prevents duplicate conversion"
+    },
+    "trip_id": {
+      "type": "string",
+      "description": "Set by the client at submission time if they attached this request to one of their own existing upcoming trips, instead of it being a standalone request. Ownership is re-checked server-side."
     }
   },
   "required": [

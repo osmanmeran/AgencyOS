@@ -41,6 +41,7 @@ const CLIENT_PORTAL_PREFIXES = [
   'ClientPortal',
   'ClientHotelSearch',
   'ClientCarRentalSearch',
+  'ClientTransferSearch',
   'ClientProposal',
   'ClientTrip',
   'ClientInvoice',

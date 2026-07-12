@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonTable } from '@/components/ui/skeletons';
-import { ClipboardList, ArrowRightCircle } from 'lucide-react';
+import { ClipboardList, ArrowRightCircle, Link2 } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { format, parseISO } from 'date-fns';
 import { respondToQuote } from '@/lib/b2bApi';
@@ -122,6 +122,12 @@ export default function QuoteRequests() {
                     <Badge className={STATUS_COLORS[quote.status] || 'bg-muted text-foreground'}>
                       {t(`quotes.status.${quote.status}`)}
                     </Badge>
+                    {quote.trip_id && (
+                      <Badge variant="outline" className="gap-1">
+                        <Link2 className="w-3 h-3" />
+                        {t('quoteRequests.linkedToTrip')}
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     {quote.client_name} ·{' '}
@@ -203,6 +209,17 @@ export default function QuoteRequests() {
                     <span className="font-medium text-foreground">{t('quoteRequests.clientNotesLabel')} </span>
                     <span className="text-muted-foreground">{selected.notes}</span>
                   </div>
+                )}
+
+                {selected.trip_id && (
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => navigate(createPageUrl(`ReservationDetails?id=${selected.trip_id}`))}
+                  >
+                    <Link2 className="w-4 h-4" />
+                    {t('quoteRequests.viewLinkedTrip')}
+                  </Button>
                 )}
 
                 {selected.status === 'accepted' && (

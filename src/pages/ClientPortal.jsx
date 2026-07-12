@@ -16,13 +16,16 @@ import { useT } from '@/lib/i18n/I18nContext';
 import { sym } from '@/lib/formatters';
 import { getCatalog } from '@/lib/b2bApi';
 import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
+import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import HotelSearchBar from '@/components/hotelSearch/HotelSearchBar';
 
-// Hero category pills. Only "hotels" has a guided search flow (destination ->
-// dates -> rooms -> matched results, built in ClientQuoteBuilder.jsx's service
-// picker); the others route into that same picker with the category
-// pre-selected via a URL param, which is the "reasonably easy" middle ground
-// called for in the redesign doc rather than a full guided flow per category.
+// Hero category pills. Hotels, transfers, and car rental each have their own
+// dedicated destination -> results -> confirm page (ClientHotelSearch.jsx,
+// ClientTransferSearch.jsx, ClientCarRentalSearch.jsx — see handleHeroSearch
+// below); only "hotels" shows the full destination/dates/guests bar here
+// (`guided: true`) since that's the one flow the hero's own search fields
+// map onto directly. Tours has no dedicated page yet, so it still routes
+// into ClientQuoteBuilder's generic picker with the category pre-selected.
 const CATEGORIES = [
   { key: 'hotels', icon: Building2, labelKey: 'clientPortal.categoryHotels', guided: true },
   { key: 'tours', icon: Compass, labelKey: 'clientPortal.categoryTours', guided: false },
@@ -144,13 +147,7 @@ export default function ClientPortal() {
   const overdueInvoices = pendingInvoices.filter((i) => isBefore(parseISO(i.due_date), new Date()));
 
   // Soonest upcoming trip (today or later), for the "Continue planning" card.
-  const upcomingTrip = React.useMemo(() => {
-    const candidates = trips
-      .filter((trip) => trip.status !== 'cancelled' && trip.start_date)
-      .filter((trip) => differenceInDays(parseISO(trip.start_date), new Date()) >= 0)
-      .sort((a, b) => parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime());
-    return candidates[0] || null;
-  }, [trips]);
+  const upcomingTrip = useUpcomingTrip(client?.id);
   const daysUntilTrip = upcomingTrip ? differenceInDays(parseISO(upcomingTrip.start_date), new Date()) : null;
 
   const goToQuoteBuilder = (categoryKey, opts = {}) => {
@@ -180,6 +177,8 @@ export default function ClientPortal() {
       navigate(createPageUrl(`ClientHotelSearch?${params.toString()}`));
     } else if (activeCategory === 'car_rental') {
       navigate(createPageUrl('ClientCarRentalSearch'));
+    } else if (activeCategory === 'transfers') {
+      navigate(createPageUrl('ClientTransferSearch'));
     } else {
       goToQuoteBuilder(activeCategory);
     }

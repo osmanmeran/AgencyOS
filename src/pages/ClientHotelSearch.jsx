@@ -19,9 +19,11 @@ import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useMyClient } from '@/hooks/useMyClient';
+import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
+import TripAttachChoice from '@/components/b2b/TripAttachChoice';
 import {
   isLodgingCategory,
   locationOf,
@@ -67,6 +69,7 @@ export default function ClientHotelSearch() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const client = useMyClient();
+  const upcomingTrip = useUpcomingTrip(client?.id);
   const actAsClientId = useActAsClientId();
   const [isStaffPreview, setIsStaffPreview] = useState(false);
 
@@ -89,6 +92,7 @@ export default function ClientHotelSearch() {
   const [pickupLocation, setPickupLocation] = useState('');
   const [dropoffLocation, setDropoffLocation] = useState('');
   const [pickupTime, setPickupTime] = useState('');
+  const [attachToTrip, setAttachToTrip] = useState(false);
 
   useEffect(() => {
     db.auth.me().then((me) => {
@@ -183,6 +187,7 @@ export default function ClientHotelSearch() {
     setPickupLocation('');
     setDropoffLocation(item.name);
     setPickupTime('');
+    setAttachToTrip(false);
   };
 
   const submitMutation = /** @type {any} */ (
@@ -198,6 +203,7 @@ export default function ClientHotelSearch() {
           start_date: checkIn,
           end_date: checkOut,
           notes,
+          trip_id: attachToTrip && upcomingTrip ? upcomingTrip.id : undefined,
           passengers: client ? [{ name: client.name, age_category: 'adult', is_contact: true }] : [],
           items: [
             {
@@ -462,6 +468,8 @@ export default function ClientHotelSearch() {
                   {(hotelTotal + (addTransfer ? transferTotal : 0)).toFixed(2)}
                 </span>
               </div>
+
+              <TripAttachChoice trip={upcomingTrip} attach={attachToTrip} onChange={setAttachToTrip} />
 
               {isStaffPreview ? (
                 <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">
