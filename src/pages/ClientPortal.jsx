@@ -55,6 +55,12 @@ function tourLocationLabel(tour) {
     : tour.location || '';
 }
 
+/** Individual location tokens for a tour (daily: one; multi-day: start + end). */
+function tourLocations(tour) {
+  if (tour.mode === 'multiday') return [tour.startLocation, tour.endLocation].filter(Boolean);
+  return tour.location ? [tour.location] : [];
+}
+
 /** Weekly departure dates for a multi-day tour, or a single date if not repeating. */
 function getTourDepartureDates(tour) {
   if (tour.repeatWeekly && tour.repeatStart && tour.repeatEnd) {
@@ -231,9 +237,20 @@ export default function ClientPortal() {
       (tour) =>
         tour.mode === wantedMode &&
         isTourAvailableOn(tour, tourDate) &&
-        (!q || (tour.name || '').toLowerCase().includes(q) || tourLocationLabel(tour).toLowerCase().includes(q)),
+        (!q ||
+          (tour.name || '').toLowerCase().includes(q) ||
+          tourLocations(tour).some((l) => l.toLowerCase().includes(q))),
     );
   }, [isTourSearchActive, activeCategory, tours, tourDate, tourDestination]);
+
+  // Distinct destinations across the whole catalog, for the destination filter.
+  const tourDestinations = React.useMemo(() => {
+    const set = new Set();
+    for (const tour of tours) {
+      for (const loc of tourLocations(tour)) set.add(loc);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [tours]);
 
   const goToQuoteBuilder = (categoryKey, opts = {}) => {
     const params = new URLSearchParams({ category: categoryKey });
@@ -369,21 +386,32 @@ export default function ClientPortal() {
             onSearch={handleHeroSearch}
           />
         ) : activeCategory === 'daily_tours' || activeCategory === 'multi_day_tours' ? (
-          <div className="bg-card rounded-xl p-4 flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="bg-card text-foreground rounded-xl p-4 flex flex-col sm:flex-row sm:items-end gap-3">
             <div className="flex-1 min-w-0">
               <label className="block text-xs font-medium text-foreground/80 mb-1">{t('clientPortal.tourDate')}</label>
-              <Input type="date" value={tourDate} onChange={(e) => setTourDate(e.target.value)} />
+              <Input
+                type="date"
+                value={tourDate}
+                onChange={(e) => setTourDate(e.target.value)}
+                className="bg-background"
+              />
             </div>
             <div className="flex-1 min-w-0">
               <label className="block text-xs font-medium text-foreground/80 mb-1">
                 {t('clientPortal.tourDestination')}
               </label>
-              <Input
-                type="text"
-                placeholder={t('clientPortal.tourDestinationPlaceholder')}
+              <select
                 value={tourDestination}
                 onChange={(e) => setTourDestination(e.target.value)}
-              />
+                className="flex h-10 w-full rounded-small border border-m3-outline bg-background px-3 py-2 text-sm text-foreground shadow-none transition-all duration-150 hover:border-m3-on-surface-variant focus-visible:border-m3-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-m3-primary/30"
+              >
+                <option value="">{t('clientPortal.allDestinations')}</option>
+                {tourDestinations.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
             </div>
             <Button onClick={handleHeroSearch} className="shrink-0">
               {t('clientPortal.searchTours')}

@@ -1937,6 +1937,7 @@ const translations = {
       tourDate: 'Travel Date',
       tourDestination: 'Destination',
       tourDestinationPlaceholder: 'City, region or tour name…',
+      allDestinations: 'All destinations',
       searchTours: 'Search Tours',
       availableOn: 'Available on {date}',
       noToursForDate: 'No tours match your search. Try a different date or destination.',
