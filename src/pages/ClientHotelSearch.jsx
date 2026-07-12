@@ -9,15 +9,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, ArrowRightLeft } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useMyClient } from '@/hooks/useMyClient';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
 import {
   isLodgingCategory,
@@ -25,12 +28,26 @@ import {
   occupancyForAdults,
   resolveRoomRatesForRange,
   nightsBetween,
+  unitPriceFor,
   OCCUPANCY_LABELS,
   OCCUPANCY_I18N_KEYS,
   MEAL_TREATMENT_I18N_KEYS,
 } from '@/lib/hotelPricing';
 import HotelSearchBar from '@/components/hotelSearch/HotelSearchBar';
 import HotelResultCard from '@/components/hotelSearch/HotelResultCard';
+
+// Same flat/per-group unit convention ClientQuoteBuilder.jsx uses — a
+// transfer priced this way doesn't scale with passenger count.
+const FIXED_UNITS = ['per_group', 'flat_rate'];
+const isTransferCategory = (name) => (name || '').toLowerCase().includes('transfer');
+const TRANSFER_TYPES = [
+  'Airport Pickup',
+  'Airport Drop-off',
+  'Point to Point',
+  'Hotel to Hotel',
+  'Port Transfer',
+  'City Transfer',
+];
 
 // Hands off from the portal home's hero search (see ClientPortal.jsx): a
 // destination/checkin/checkout/guests query string, read once at mount.
@@ -64,6 +81,14 @@ export default function ClientHotelSearch() {
   const [selected, setSelected] = useState(/** @type {any} */ (null));
   const [requestTitle, setRequestTitle] = useState('');
   const [notes, setNotes] = useState('');
+
+  const [addTransfer, setAddTransfer] = useState(false);
+  const [transferPricingId, setTransferPricingId] = useState('');
+  const [transferType, setTransferType] = useState('');
+  const [flightNumber, setFlightNumber] = useState('');
+  const [pickupLocation, setPickupLocation] = useState('');
+  const [dropoffLocation, setDropoffLocation] = useState('');
+  const [pickupTime, setPickupTime] = useState('');
 
   useEffect(() => {
     db.auth.me().then((me) => {
@@ -132,10 +157,32 @@ export default function ClientHotelSearch() {
     return [...bestBySupplier.values()].sort((a, b) => a.unit_price - b.unit_price);
   }, [matchedLocation, nights, catalogItems, derivedOccupancy, checkIn, checkOut, stopSales]);
 
+  // Transfer add-on offered alongside the hotel — same destination, so it
+  // only ever offers transfer services actually available there.
+  const transferOptions = useMemo(
+    () => catalogItems.filter((item) => isTransferCategory(item.category_name) && locationOf(item) === matchedLocation),
+    [catalogItems, matchedLocation],
+  );
+  const transferItem = transferOptions.find((item) => item.pricing_id === transferPricingId);
+  const totalPax = roomCount * adultsPerRoom + payingChildrenCount;
+  const transferQuantity = transferItem && FIXED_UNITS.includes(transferItem.unit) ? 1 : Math.max(1, totalPax);
+  const transferUnitPrice = transferItem ? unitPriceFor(transferItem, transferQuantity) : 0;
+  const transferTotal = transferItem ? transferUnitPrice * transferQuantity : 0;
+  const hotelTotal = selected
+    ? (selected.unit_price * roomCount + (selected.child_unit_price || 0) * payingChildrenCount) * nights
+    : 0;
+
   const openConfirm = (item) => {
     setSelected(item);
     setRequestTitle(`${item.name} — ${locationOf(item)}`);
     setNotes('');
+    setAddTransfer(false);
+    setTransferPricingId('');
+    setTransferType('');
+    setFlightNumber('');
+    setPickupLocation('');
+    setDropoffLocation(item.name);
+    setPickupTime('');
   };
 
   const submitMutation = /** @type {any} */ (
@@ -162,6 +209,21 @@ export default function ClientHotelSearch() {
               room_type: OCCUPANCY_LABELS[selected.occupancy] || selected.occupancy,
               details: mealLabel,
             },
+            ...(addTransfer && transferItem
+              ? [
+                  {
+                    pricing_id: transferItem.pricing_id,
+                    quantity: transferQuantity,
+                    start_date: checkIn,
+                    end_date: checkOut,
+                    pickup_location: pickupLocation || undefined,
+                    dropoff_location: dropoffLocation || undefined,
+                    flight_number: flightNumber || undefined,
+                    service_time: pickupTime || undefined,
+                    details: transferType || undefined,
+                  },
+                ]
+              : []),
           ],
         });
       },
@@ -286,10 +348,17 @@ export default function ClientHotelSearch() {
           </DialogHeader>
           {selected && (
             <div className="space-y-4">
-              <div className="p-3 bg-muted rounded-lg text-sm">
+              <div className="p-3 bg-muted rounded-lg text-sm space-y-1">
                 <div className="font-semibold text-foreground">{selected.name}</div>
                 <div className="text-muted-foreground">
                   {matchedLocation} · {checkIn} – {checkOut} · {t('common.daysCount', { count: nights })}
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-muted-foreground">{t('hotelSearch.hotelPrice')}</span>
+                  <span className="font-semibold text-foreground">
+                    {getCurrencySymbol(selected.currency)}
+                    {hotelTotal.toFixed(2)}
+                  </span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -305,6 +374,95 @@ export default function ClientHotelSearch() {
                   placeholder={t('hotelSearch.notesPlaceholder')}
                 />
               </div>
+
+              <div className="space-y-2 border-t border-border pt-4">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
+                    {t('hotelSearch.addTransferLabel')}
+                  </Label>
+                  <Switch checked={addTransfer} onCheckedChange={setAddTransfer} />
+                </div>
+                {addTransfer &&
+                  (transferOptions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t('hotelSearch.noTransferAvailable', { location: matchedLocation })}
+                    </p>
+                  ) : (
+                    <div className="space-y-3 p-3 bg-muted rounded-lg">
+                      <Select value={transferPricingId} onValueChange={setTransferPricingId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('hotelSearch.selectTransfer')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {transferOptions.map((opt) => (
+                            <SelectItem key={opt.pricing_id} value={opt.pricing_id}>
+                              {opt.name} — {getCurrencySymbol(opt.currency)}
+                              {opt.unit_price.toFixed(2)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {transferItem && (
+                        <>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{t('hotelSearch.transferPrice')}</span>
+                            <span className="font-semibold text-foreground">
+                              {getCurrencySymbol(transferItem.currency)}
+                              {transferTotal.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              placeholder={t('hotelSearch.pickupLocation')}
+                              value={pickupLocation}
+                              onChange={(e) => setPickupLocation(e.target.value)}
+                            />
+                            <Input
+                              placeholder={t('hotelSearch.dropoffLocation')}
+                              value={dropoffLocation}
+                              onChange={(e) => setDropoffLocation(e.target.value)}
+                            />
+                            <Select value={transferType} onValueChange={setTransferType}>
+                              <SelectTrigger>
+                                <SelectValue placeholder={t('hotelSearch.transferTypePlaceholder')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TRANSFER_TYPES.map((tt) => (
+                                  <SelectItem key={tt} value={tt}>
+                                    {tt}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder={t('hotelSearch.flightNumber')}
+                                value={flightNumber}
+                                onChange={(e) => setFlightNumber(e.target.value)}
+                              />
+                              <Input
+                                type="time"
+                                className="w-28 shrink-0"
+                                value={pickupTime}
+                                onChange={(e) => setPickupTime(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <span className="font-semibold text-foreground">{t('hotelSearch.grandTotal')}</span>
+                <span className="text-lg font-bold text-foreground">
+                  {getCurrencySymbol(selected.currency)}
+                  {(hotelTotal + (addTransfer ? transferTotal : 0)).toFixed(2)}
+                </span>
+              </div>
+
               {isStaffPreview ? (
                 <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">
                   Staff preview is read-only — sign in as the client to submit a quote request.
