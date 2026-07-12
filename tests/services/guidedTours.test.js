@@ -241,5 +241,23 @@ describe('GuidedTour entity', () => {
       expect(tour.description).toBe('A guided walk through the historic peninsula.');
       expect(tour.coverImage).toBe('/uploads/walk.jpg');
     });
+
+    it('persists featured flag and a time-limited special offer', () => {
+      const tour = createEntity(
+        'GuidedTour',
+        {
+          name: 'Bosphorus Sunset',
+          mode: 'daily',
+          featured: true,
+          specialOffer: { percent: 20, startDate: '2026-08-01', endDate: '2026-08-31' },
+        },
+        admin,
+      );
+      createdIds.push(tour.id);
+      expect(tour.featured).toBe(true);
+      expect(tour.specialOffer.percent).toBe(20);
+      expect(tour.specialOffer.startDate).toBe('2026-08-01');
+      expect(tour.specialOffer.endDate).toBe('2026-08-31');
+    });
   });
 });

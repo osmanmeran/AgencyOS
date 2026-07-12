@@ -3,7 +3,7 @@
   "type": "object",
   "description": "A guided tour product catalog entry. Two modes are supported: 'daily' (a single-day experience) and 'multiday' (an extended tour with per-night lodging). Stored as a single entity type; the 'mode' field selects which fields apply.",
   "rls": {
-    "read": "staff with 'view_guided_tours' (or 'manage_guided_tours')",
+    "read": "staff with 'view_guided_tours' (or 'manage_guided_tours'); client-portal accounts may also read the catalog (featured tours + descriptions + cover photos are shown publicly)",
     "write": "staff with 'manage_guided_tours'"
   },
   "properties": {
@@ -64,6 +64,19 @@
           "lodging": { "type": "string" },
           "hotelMealTreatment": { "type": "string" }
         }
+      }
+    },
+    "featured": {
+      "type": "boolean",
+      "description": "When true, the tour is highlighted in the client-portal Featured Tours section. Set by staff from the tours page."
+    },
+    "specialOffer": {
+      "type": "object",
+      "description": "Time-limited percentage discount shown as a special offer in the client portal",
+      "properties": {
+        "percent": { "type": "number", "description": "Discount percentage (0-100)" },
+        "startDate": { "type": "string", "description": "ISO date the offer becomes valid" },
+        "endDate": { "type": "string", "description": "ISO date the offer expires" }
       }
     }
   }

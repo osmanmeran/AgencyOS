@@ -28,6 +28,8 @@ import {
   X,
   Repeat,
   CalendarCheck,
+  Star,
+  Tag,
 } from 'lucide-react';
 import { usePermissions } from '@/components/permissions/PermissionContext';
 import { useT } from '@/lib/i18n/I18nContext';
@@ -79,6 +81,8 @@ function emptyForm(mode) {
     coverImage: '',
     durationDays: 1,
     dayDescriptions: [{ day: 1, description: '', image: '' }],
+    featured: false,
+    specialOffer: { percent: 0, startDate: '', endDate: '' },
   };
 }
 
@@ -217,6 +221,13 @@ export default function GuidedTourManager({ mode }) {
     })
   );
 
+  const toggleFeaturedMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, featured }) => db.entities.GuidedTour.update(id, { featured }),
+      onError: (error) => showError(t('tours.updateError'), error.message),
+    })
+  );
+
   // --- Booking dialog state ---
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingTour, setBookingTour] = useState(null);
@@ -284,6 +295,14 @@ export default function GuidedTourManager({ mode }) {
         coverImage: tour.coverImage || '',
         durationDays: tour.durationDays ? Number(tour.durationDays) : 1,
         dayDescriptions: syncDayDescriptions(tour.dayDescriptions, tour.durationDays),
+        featured: !!tour.featured,
+        specialOffer: tour.specialOffer
+          ? {
+              percent: Number(tour.specialOffer.percent) || 0,
+              startDate: tour.specialOffer.startDate || '',
+              endDate: tour.specialOffer.endDate || '',
+            }
+          : { percent: 0, startDate: '', endDate: '' },
         sights: Array.isArray(tour.sights) ? [...tour.sights] : [],
         pricingTiers: Array.isArray(tour.pricingTiers) ? [...tour.pricingTiers] : [],
         nights: Array.isArray(tour.nights) ? [...tour.nights] : [],
@@ -334,6 +353,12 @@ export default function GuidedTourManager({ mode }) {
             image: d.image || '',
           }))
         : [],
+      featured: !!formData.featured,
+      specialOffer: {
+        percent: Number(formData.specialOffer?.percent) || 0,
+        startDate: formData.specialOffer?.startDate || '',
+        endDate: formData.specialOffer?.endDate || '',
+      },
     };
     if (editing) {
       updateMutation.mutate({ id: editing.id, data: payload });
@@ -457,6 +482,16 @@ export default function GuidedTourManager({ mode }) {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleFeaturedMutation.mutate({ id: tour.id, featured: !tour.featured })}
+                      title={t('tours.featured')}
+                    >
+                      <Star
+                        className={`w-4 h-4 ${tour.featured ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`}
+                      />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => openModal(tour)}>
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -787,6 +822,82 @@ export default function GuidedTourManager({ mode }) {
                 checked={!!formData.transportation}
                 onCheckedChange={(v) => setFormData({ ...formData, transportation: v })}
               />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4 rounded-lg border p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4" />
+                  <Label>{t('tours.featured')}</Label>
+                </div>
+                <Switch
+                  checked={!!formData.featured}
+                  onCheckedChange={(v) => setFormData({ ...formData, featured: v })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground -mt-2">{t('tours.featuredHelp')}</p>
+
+              <Separator />
+
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                <Label>{t('tours.specialOffer')}</Label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t('tours.discountPercent')}</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={formData.specialOffer?.percent ?? 0}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        specialOffer: {
+                          ...(f.specialOffer || { percent: 0, startDate: '', endDate: '' }),
+                          percent: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t('tours.discountStart')}</Label>
+                  <Input
+                    type="date"
+                    value={formData.specialOffer?.startDate || ''}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        specialOffer: {
+                          ...(f.specialOffer || { percent: 0, startDate: '', endDate: '' }),
+                          startDate: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t('tours.discountEnd')}</Label>
+                  <Input
+                    type="date"
+                    value={formData.specialOffer?.endDate || ''}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        specialOffer: {
+                          ...(f.specialOffer || { percent: 0, startDate: '', endDate: '' }),
+                          endDate: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">{t('tours.specialOfferHelp')}</p>
             </div>
 
             <Separator />

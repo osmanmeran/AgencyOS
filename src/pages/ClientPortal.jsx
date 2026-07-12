@@ -87,6 +87,35 @@ function isTourAvailableOn(tour, dateStr) {
   return getTourDepartureDates(tour).includes(dateStr);
 }
 
+/** Local YYYY-MM-DD for "today" (matches the YYYY-MM-DD stored on offers/dates). */
+function todayYmd() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Lowest per-person price from a tour's pricing tiers, or null if none. */
+function tourStartingPrice(tour) {
+  const tiers = Array.isArray(tour.pricingTiers) ? tour.pricingTiers : [];
+  if (!tiers.length) return null;
+  const prices = tiers.map((tier) => Number(tier.price) || 0).filter((p) => p > 0);
+  if (!prices.length) return null;
+  return Math.min(...prices);
+}
+
+/** Active special offer for a tour today, or null. */
+function activeDiscount(tour) {
+  const offer = tour.specialOffer;
+  const percent = Number(offer?.percent) || 0;
+  if (percent <= 0) return null;
+  const base = tourStartingPrice(tour);
+  if (base == null) return null;
+  const today = todayYmd();
+  if (offer.startDate && today < offer.startDate) return null;
+  if (offer.endDate && today > offer.endDate) return null;
+  const discounted = Math.round(base * (1 - percent / 100) * 100) / 100;
+  return { percent, base, discounted };
+}
+
 const PROPOSAL_STATUS_BADGE = {
   sent: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
   accepted: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
@@ -255,10 +284,44 @@ export default function ClientPortal() {
   const goToQuoteBuilder = (categoryKey, opts = {}) => {
     const params = new URLSearchParams({ category: categoryKey });
     if (opts.destination) params.set('destination', opts.destination);
-    if (opts.checkIn) params.set('checkin', opts.checkIn);
-    if (opts.checkOut) params.set('checkout', opts.checkOut);
+    if (opts.checkIn) params.set('checkin', checkIn);
+    if (opts.checkOut) params.set('checkout', checkOut);
     if (opts.guests) params.set('guests', String(opts.guests));
     navigate(createPageUrl(`ClientQuoteBuilder?${params.toString()}`));
+  };
+
+  // Tours flagged as featured by staff — always shown on the home page.
+  const featuredTours = React.useMemo(() => tours.filter((tour) => tour.featured), [tours]);
+
+  // Rendered price block for a tour, including an active special offer.
+  const renderTourPrice = (tour) => {
+    const base = tourStartingPrice(tour);
+    if (base == null) return null;
+    const offer = activeDiscount(tour);
+    if (offer) {
+      return (
+        <div className="flex items-center gap-2 mt-3">
+          <span className="text-base font-bold text-green-700 dark:text-green-300">
+            {currencySymbol}
+            {offer.discounted.toFixed(2)}
+          </span>
+          <span className="text-sm text-muted-foreground line-through">
+            {currencySymbol}
+            {offer.base.toFixed(2)}
+          </span>
+          <Badge className="bg-red-500 text-white">{offer.percent}% OFF</Badge>
+        </div>
+      );
+    }
+    return (
+      <div className="mt-3 flex items-baseline gap-1">
+        <span className="text-base font-bold text-foreground">
+          {currencySymbol}
+          {base.toFixed(2)}
+        </span>
+        <span className="text-xs text-muted-foreground">{t('clientPortal.fromLabel')}</span>
+      </div>
+    );
   };
 
   const activeCat = CATEGORIES.find((c) => c.key === activeCategory);
@@ -552,6 +615,45 @@ export default function ClientPortal() {
         )}
       </Card>
 
+      {/* Featured tours — chosen by staff, shown to all portal clients. */}
+      {featuredTours.length > 0 && (
+        <Card className="p-6 bg-card shadow-md">
+          <h2 className="text-xl font-bold text-foreground mb-5">{t('clientPortal.featuredTours')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {featuredTours.map((tour) => (
+              <div key={tour.id} className="border border-border rounded-xl overflow-hidden flex flex-col">
+                {tour.coverImage ? (
+                  <img src={tour.coverImage} alt={tour.name} className="w-full h-48 object-cover" />
+                ) : (
+                  <div className="h-48 bg-primary/10 flex items-center justify-center">
+                    <Compass className="w-10 h-10 text-primary" />
+                  </div>
+                )}
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold text-lg text-foreground">{tour.name}</h3>
+                    <Badge variant="secondary">
+                      {tour.mode === 'multiday' ? t('nav.multiDayTours') : t('nav.dailyTours')}
+                    </Badge>
+                  </div>
+                  {tourLocationLabel(tour) && (
+                    <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5" /> {tourLocationLabel(tour)}
+                    </p>
+                  )}
+                  {tour.description && (
+                    <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line line-clamp-3">
+                      {tour.description}
+                    </p>
+                  )}
+                  {renderTourPrice(tour)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Tour catalog search results — driven by the daily / multi-day tour
           pills and the date + destination filter in the hero. */}
       {isTourSearchActive && (
@@ -590,6 +692,7 @@ export default function ClientPortal() {
                     {tour.description && (
                       <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line">{tour.description}</p>
                     )}
+                    {renderTourPrice(tour)}
                     {tour.mode === 'multiday' &&
                       Array.isArray(tour.dayDescriptions) &&
                       tour.dayDescriptions.length > 0 && (
