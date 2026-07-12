@@ -279,7 +279,6 @@ function getActiveCatalogItems(db, markupPct) {
       season_start: p.season_start || null,
       season_end: p.season_end || null,
       car_category: p.car_category || null,
-      daily_rate: p.daily_rate || null,
       drop_off_surcharge: p.drop_off_surcharge || null,
       insurance_surcharge: p.insurance_surcharge || null,
       available_locations: p.available_locations || null,

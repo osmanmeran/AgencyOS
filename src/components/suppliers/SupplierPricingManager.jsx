@@ -155,7 +155,6 @@ const EMPTY_FORM = {
   child_price: '',
   child_client_price: '',
   car_category: '',
-  daily_rate: '',
   drop_off_surcharge: '',
   insurance_surcharge: '',
   duration_value: '',
@@ -220,7 +219,6 @@ const pricingToForm = (pricing) => ({
   child_price: pricing.child_price?.toString() || '',
   child_client_price: pricing.child_client_price?.toString() || '',
   car_category: pricing.car_category || '',
-  daily_rate: pricing.daily_rate?.toString() || '',
   drop_off_surcharge: pricing.drop_off_surcharge?.toString() || '',
   insurance_surcharge: pricing.insurance_surcharge?.toString() || '',
   duration_value: pricing.duration_value?.toString() || '',
@@ -911,37 +909,21 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
                   {t('supplierPricingManager.carRentalOptionsTitle')}
                 </h4>
                 <p className="text-xs text-muted-foreground mb-3">{t('supplierPricingManager.carRentalOptionsHint')}</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>{t('supplierPricingManager.carCategoryLabel')}</Label>
-                    <Select
-                      value={form.car_category || ''}
-                      onValueChange={(v) => setForm({ ...form, car_category: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('supplierPricingManager.selectCarCategoryPlaceholder')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CAR_CATEGORY_OPTION_KEYS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {t(opt.labelKey)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t('supplierPricingManager.dailyRateLabel')}</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={form.daily_rate || ''}
-                      onChange={(e) => setForm({ ...form, daily_rate: e.target.value })}
-                      placeholder={t('supplierPricingManager.dailyRatePlaceholder')}
-                    />
-                    <p className="text-xs text-muted-foreground">{t('supplierPricingManager.dailyRateHint')}</p>
-                  </div>
+                <div className="space-y-2">
+                  <Label>{t('supplierPricingManager.carCategoryLabel')}</Label>
+                  <Select value={form.car_category || ''} onValueChange={(v) => setForm({ ...form, car_category: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('supplierPricingManager.selectCarCategoryPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CAR_CATEGORY_OPTION_KEYS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {t(opt.labelKey)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">{t('supplierPricingManager.carRentalPriceHint')}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-3">
                   <div className="space-y-2">

@@ -99,10 +99,6 @@
       "enum": ["economy", "compact", "intermediate", "standard", "full_size", "premium", "luxury", "suv", "minivan", "convertible"],
       "description": "Car rental vehicle category"
     },
-    "daily_rate": {
-      "type": "number",
-      "description": "Car rental daily rate (separate from base_price)"
-    },
     "drop_off_surcharge": {
       "type": "number",
       "default": 0,
