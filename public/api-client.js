@@ -117,6 +117,7 @@
     'SupplierStopSale',
     'SupplierSubcategory',
     'TourContract',
+    'GuidedTour',
     'Trip',
   ];
 

@@ -1,0 +1,53 @@
+{
+  "name": "GuidedTour",
+  "type": "object",
+  "description": "A guided tour product catalog entry. Two modes are supported: 'daily' (a single-day experience) and 'multiday' (an extended tour with per-night lodging). Stored as a single entity type; the 'mode' field selects which fields apply.",
+  "rls": {
+    "read": "staff with 'view_guided_tours' (or 'manage_guided_tours')",
+    "write": "staff with 'manage_guided_tours'"
+  },
+  "properties": {
+    "name": { "type": "string", "description": "Tour name" },
+    "mode": { "type": "string", "enum": ["daily", "multiday"], "description": "Selects which field set applies" },
+    "language": { "type": "string", "description": "Tour language code (en/es/fr/de/it/tr)" },
+    "location": { "type": "string", "description": "Daily tour meeting/operating location" },
+    "startLocation": { "type": "string", "description": "Multiday: starting city/location" },
+    "endLocation": { "type": "string", "description": "Multiday: finishing city/location" },
+    "startingTime": { "type": "string", "description": "Daily start time (HH:mm)" },
+    "sights": { "type": "array", "items": { "type": "string" }, "description": "Museums and sights visited" },
+    "mealTreatment": { "type": "string", "description": "Daily meal treatment" },
+    "hotelMealTreatment": { "type": "string", "description": "Per-night hotel meal treatment (multiday)" },
+    "transportation": { "type": "boolean", "description": "Whether transportation is provided" },
+    "tourStyle": {
+      "type": "string",
+      "enum": ["private", "regular"],
+      "description": "Daily only. 'regular' groups other passengers into the same tour"
+    },
+    "minOccupancy": { "type": "number", "description": "Minimum occupancy" },
+    "maxOccupancy": { "type": "number", "description": "Maximum occupancy" },
+    "pricingTiers": {
+      "type": "array",
+      "description": "Pricing per participant tier",
+      "items": {
+        "type": "object",
+        "properties": {
+          "minParticipants": { "type": "number" },
+          "maxParticipants": { "type": "number" },
+          "price": { "type": "number" }
+        }
+      }
+    },
+    "nights": {
+      "type": "array",
+      "description": "Multiday: lodging for every night",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": { "type": "number" },
+          "lodging": { "type": "string" },
+          "hotelMealTreatment": { "type": "string" }
+        }
+      }
+    }
+  }
+}

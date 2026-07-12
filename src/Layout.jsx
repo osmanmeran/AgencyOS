@@ -46,6 +46,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import LocalShippingRounded from '@mui/icons-material/LocalShippingRounded';
 import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
 import VisibilityRounded from '@mui/icons-material/VisibilityRounded';
+import TourRounded from '@mui/icons-material/TourRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 
 import MarvelopsLogo from './components/layout/MarvelopsLogo';
@@ -90,6 +91,15 @@ const NAV_SECTIONS = {
     },
     { label: 'Quote Requests', icon: <RequestQuoteRounded />, page: 'QuoteRequests' },
     { label: 'Tasks', icon: <TaskAltRounded />, page: 'TaskBoard' },
+    {
+      label: t('nav.tours') || 'Tours',
+      icon: <TourRounded />,
+      page: 'DailyTours',
+      children: [
+        { label: t('nav.dailyTours'), page: 'DailyTours' },
+        { label: t('nav.multiDayTours'), page: 'MultiDayTours' },
+      ],
+    },
     // The client portal is entered per-client via "View portal as client" on a
     // CRM client record (see ClientDetails.jsx) — there is no generic staff
     // portal link, since the portal is meaningless without a client context.

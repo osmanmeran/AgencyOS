@@ -53,6 +53,12 @@ const ENTITY_PERMISSION_MAP = {
     update: 'manage_tour_contracts',
     delete: 'manage_tour_contracts',
   },
+  GuidedTour: {
+    create: 'manage_guided_tours',
+    read: 'view_guided_tours',
+    update: 'manage_guided_tours',
+    delete: 'manage_guided_tours',
+  },
   // Global config singleton. Readable by everyone (client-facing documents
   // need the agency branding — see userCanAccessEntity), but only admins may
   // write it: it holds tier_permissions, so an open update path would let any

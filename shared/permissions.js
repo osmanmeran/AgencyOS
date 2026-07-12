@@ -43,6 +43,22 @@ export const PERMISSION_GROUPS = [
     ],
   },
   {
+    key: 'tours',
+    label: 'Guided Tours',
+    permissions: [
+      {
+        key: 'view_guided_tours',
+        label: 'View Guided Tours',
+        description: 'View guided tour products (daily and multi-day)',
+      },
+      {
+        key: 'manage_guided_tours',
+        label: 'Manage Guided Tours',
+        description: 'Create, edit, and delete guided tour products',
+      },
+    ],
+  },
+  {
     key: 'clients',
     label: 'Clients & CRM',
     permissions: [
@@ -145,6 +161,8 @@ export const DEFAULT_TIER_PERMISSIONS = {
     'cancel_trips',
     'view_all_trips',
     'manage_tour_contracts',
+    'view_guided_tours',
+    'manage_guided_tours',
     'create_invoices',
     'modify_invoices',
     'delete_invoices',
@@ -183,6 +201,8 @@ export const DEFAULT_TIER_PERMISSIONS = {
     'cancel_trips',
     'view_all_trips',
     'manage_tour_contracts',
+    'view_guided_tours',
+    'manage_guided_tours',
     'create_invoices',
     'modify_invoices',
     'cancel_invoices',

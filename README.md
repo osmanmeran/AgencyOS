@@ -35,6 +35,15 @@ A full-stack travel agency operations management platform for tour operators and
 - **Service Library** — Reusable service categories and templates
 - **Import Hub** — Outlook contacts, bulk supplier CSV, AI price analyzer
 
+### Guided Tours
+
+- **Daily Tours** — Single-day experiences with language, location, starting time, visited museums & sights, meal treatment, transportation flag, and per-participant pricing tiers
+- **Multi-Day Tours** — Extended tours adding starting/finishing city, per-night lodging, and hotel meal treatment
+- **Occupancy** — Minimum and maximum occupancy enforced per tour
+- **Private or Regular** — Daily tours can be private or regular (other passengers grouped into the same departure)
+- **Pricing Tiers** — Per-participant pricing bands (min/max participants → price)
+- Accessible from two pills on the Dashboard home page and the **Tours** nav group
+
 ### Integrations
 
 - **Microsoft SSO** — Azure AD login with auto-provisioning
