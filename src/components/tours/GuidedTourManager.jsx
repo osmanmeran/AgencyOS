@@ -78,7 +78,7 @@ function emptyForm(mode) {
     description: '',
     coverImage: '',
     durationDays: 1,
-    dayDescriptions: [],
+    dayDescriptions: [{ day: 1, description: '', image: '' }],
   };
 }
 
