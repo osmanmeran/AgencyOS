@@ -77,7 +77,7 @@ function emptyForm(mode) {
     repeatWeekly: false,
     repeatStart: '',
     repeatEnd: '',
-    description: '',
+    description: {},
     coverImage: '',
     durationDays: 1,
     dayDescriptions: [{ day: 1, description: '', image: '' }],
@@ -96,6 +96,24 @@ function syncDayDescriptions(dayDescriptions, durationDays) {
   }
   return next;
 }
+
+/** Normalize a tour description into a localized map (object). */
+function normalizeDescription(desc) {
+  if (desc && typeof desc === 'object') return desc;
+  if (typeof desc === 'string' && desc) return { en: desc };
+  return {};
+}
+
+/** Resolve the best localized description for a language, with fallbacks. */
+function resolveTourDescription(desc, lang) {
+  if (!desc) return '';
+  if (typeof desc === 'string') return desc;
+  if (typeof desc !== 'object') return '';
+  return desc[lang] || desc.en || desc.it || Object.values(desc).find((v) => v) || '';
+}
+
+/** Languages offered in the multi-language description editor, in display order. */
+const TOUR_DESC_LANGS = ['en', 'it', 'tr', 'es', 'fr', 'de'];
 
 /** Local YYYY-MM-DD (avoids UTC off-by-one from toISOString). */
 function ymd(date) {
@@ -132,6 +150,7 @@ export default function GuidedTourManager({ mode }) {
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState(emptyForm(mode));
   const [sightInput, setSightInput] = useState('');
+  const [descLang, setDescLang] = useState('en');
 
   const { data: settings = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
@@ -291,7 +310,7 @@ export default function GuidedTourManager({ mode }) {
         supplierName: tour.supplierName || '',
         availability: tour.availability != null ? tour.availability : 1,
         repeatWeekly: !!tour.repeatWeekly,
-        description: tour.description || '',
+        description: normalizeDescription(tour.description),
         coverImage: tour.coverImage || '',
         durationDays: tour.durationDays ? Number(tour.durationDays) : 1,
         dayDescriptions: syncDayDescriptions(tour.dayDescriptions, tour.durationDays),
@@ -343,7 +362,7 @@ export default function GuidedTourManager({ mode }) {
       repeatWeekly: isMultiDay ? !!formData.repeatWeekly : false,
       repeatStart: isMultiDay && formData.repeatWeekly ? formData.repeatStart || '' : '',
       repeatEnd: isMultiDay && formData.repeatWeekly ? formData.repeatEnd || '' : '',
-      description: formData.description || '',
+      description: formData.description || {},
       coverImage: formData.coverImage || '',
       durationDays: isMultiDay ? Number(formData.durationDays) || 1 : 0,
       dayDescriptions: isMultiDay
@@ -524,8 +543,10 @@ export default function GuidedTourManager({ mode }) {
                   </Badge>
                 </div>
 
-                {tour.description && (
-                  <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{tour.description}</p>
+                {resolveTourDescription(tour.description) && (
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
+                    {resolveTourDescription(tour.description)}
+                  </p>
                 )}
 
                 {tour.startingTime && (
@@ -658,11 +679,34 @@ export default function GuidedTourManager({ mode }) {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label>{t('tours.description')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label>{t('tours.description')}</Label>
+                  <div className="flex flex-wrap gap-1">
+                    {TOUR_DESC_LANGS.map((lng) => (
+                      <button
+                        key={lng}
+                        type="button"
+                        onClick={() => setDescLang(lng)}
+                        className={`px-2 py-0.5 rounded text-xs font-medium border transition-colors ${
+                          descLang === lng
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background text-muted-foreground border-border hover:border-primary/40'
+                        }`}
+                      >
+                        {lng.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <textarea
                   className="w-full min-h-[80px] rounded-md border bg-background px-3 py-2 text-sm"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  value={(formData.description && formData.description[descLang]) || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      description: { ...(formData.description || {}), [descLang]: e.target.value },
+                    })
+                  }
                   placeholder={t('tours.descriptionPlaceholder')}
                 />
               </div>

@@ -10,7 +10,10 @@
     "name": { "type": "string", "description": "Tour name" },
     "supplierId": { "type": "string", "description": "Linked supplier (tour operator) id" },
     "supplierName": { "type": "string", "description": "Denormalized supplier name for display" },
-    "description": { "type": "string", "description": "Tour description (public, shown in the client portal)" },
+    "description": {
+      "type": "object",
+      "description": "Localized tour description keyed by language code (en/es/fr/de/it/tr). The client portal shows the entry matching the visitor's language, falling back to 'en' then 'it' then any available language. Stored as an object even when only one language is populated."
+    },
     "coverImage": { "type": "string", "description": "Cover photo URL for the tour" },
     "mode": { "type": "string", "enum": ["daily", "multiday"], "description": "Selects which field set applies" },
     "language": { "type": "string", "description": "Tour language code (en/es/fr/de/it/tr)" },

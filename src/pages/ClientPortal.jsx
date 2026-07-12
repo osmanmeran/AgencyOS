@@ -87,6 +87,14 @@ function isTourAvailableOn(tour, dateStr) {
   return getTourDepartureDates(tour).includes(dateStr);
 }
 
+/** Resolve the best localized description for a language, with fallbacks. */
+function resolveTourDescription(desc, lang) {
+  if (!desc) return '';
+  if (typeof desc === 'string') return desc;
+  if (typeof desc !== 'object') return '';
+  return desc[lang] || desc.en || desc.it || Object.values(desc).find((v) => v) || '';
+}
+
 /** Local YYYY-MM-DD for "today" (matches the YYYY-MM-DD stored on offers/dates). */
 function todayYmd() {
   const d = new Date();
@@ -136,7 +144,7 @@ function StatTile({ icon: Icon, label, value, gradient, sub = undefined }) {
 }
 
 export default function ClientPortal() {
-  const { t } = useT();
+  const { t, language } = useT();
   const navigate = useNavigate();
   const [user, setUser] = React.useState(null);
   const [client, setClient] = React.useState(null);
@@ -641,9 +649,9 @@ export default function ClientPortal() {
                       <MapPin className="w-3.5 h-3.5" /> {tourLocationLabel(tour)}
                     </p>
                   )}
-                  {tour.description && (
+                  {resolveTourDescription(tour.description, language) && (
                     <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line line-clamp-3">
-                      {tour.description}
+                      {resolveTourDescription(tour.description, language)}
                     </p>
                   )}
                   {renderTourPrice(tour)}
@@ -689,8 +697,10 @@ export default function ClientPortal() {
                         <MapPin className="w-3.5 h-3.5" /> {tourLocationLabel(tour)}
                       </p>
                     )}
-                    {tour.description && (
-                      <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line">{tour.description}</p>
+                    {resolveTourDescription(tour.description, language) && (
+                      <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line">
+                        {resolveTourDescription(tour.description, language)}
+                      </p>
                     )}
                     {renderTourPrice(tour)}
                     {tour.mode === 'multiday' &&

@@ -43,7 +43,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Private or Regular** — Daily tours can be private or regular (other passengers grouped into the same departure)
 - **Pricing Tiers** — Per-participant pricing bands (min/max participants → price)
 - **Supplier Link** — Each tour is associated with a supplier (tour operator)
-- **Descriptions & Cover Photos** — Every tour has a public description and a cover photo; multi-day tours also build a day-by-day itinerary (auto-generated from the number of days) with a description and cover photo per day
+- **Descriptions & Cover Photos** — Every tour has a public description and a cover photo; descriptions are stored per language (en/it/tr/es/fr/de) and shown in the visitor's language in the client portal. Multi-day tours also build a day-by-day itinerary (auto-generated from the number of days) with a description and cover photo per day
 - **Multi-Day Scheduling** — Compulsory departure date + general availability per departure; optional weekly repeat with a start/end repetition window (generates weekly departures)
 - **Bookings & Remaining Availability** — Staff can record bookings per departure; the staff tour list shows remaining availability (availability − booked) for every departure
 - **Featured Tours** — Staff flag any tour as _Featured_ from the tours page (star toggle or the edit form). Featured tours are highlighted in the client portal's Featured Tours section
