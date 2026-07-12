@@ -476,7 +476,11 @@ function buildRoomingBreakdown(passengers) {
 }
 
 function buildBookingEmailBody(trip, service, note) {
-  const sc = getCurrencySymbol(trip.selling_currency);
+  // This email is a booking request sent TO the supplier — it must quote
+  // the supplier/acquiring-side price and currency, not the client's
+  // selling currency (a service can be sold to the client in a different
+  // currency than the supplier is booked/paid in).
+  const sc = getCurrencySymbol(service.supplier_currency || trip.acquiring_currency || 'USD');
   const quantity = parseInt(service.quantity) || 1;
   const total = (parseFloat(service.acquiring_price) || 0) * quantity;
   const paxInfo = buildRoomingBreakdown(trip.passengers);

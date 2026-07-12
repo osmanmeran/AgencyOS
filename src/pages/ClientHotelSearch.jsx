@@ -1,29 +1,27 @@
 import { db } from '@/lib/DbContext';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { Loader2, Send, ArrowRightLeft } from 'lucide-react';
+import { Send, ArrowRightLeft } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
-import { getCatalog, submitQuote } from '@/lib/b2bApi';
+import { getCatalog } from '@/lib/b2bApi';
+import { addToCart, buildSeedRooms } from '@/lib/clientCart';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useMyClient } from '@/hooks/useMyClient';
-import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
-import TripAttachChoice from '@/components/b2b/TripAttachChoice';
 import {
   isLodgingCategory,
   locationOf,
@@ -67,9 +65,7 @@ function readInitialSearch() {
 export default function ClientHotelSearch() {
   const { t } = useT();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const client = useMyClient();
-  const upcomingTrip = useUpcomingTrip(client?.id);
   const actAsClientId = useActAsClientId();
   const [isStaffPreview, setIsStaffPreview] = useState(false);
 
@@ -82,8 +78,6 @@ export default function ClientHotelSearch() {
   const [childAges, setChildAges] = useState(/** @type {string[]} */ ([]));
 
   const [selected, setSelected] = useState(/** @type {any} */ (null));
-  const [requestTitle, setRequestTitle] = useState('');
-  const [notes, setNotes] = useState('');
 
   const [addTransfer, setAddTransfer] = useState(false);
   const [transferPricingId, setTransferPricingId] = useState('');
@@ -92,7 +86,6 @@ export default function ClientHotelSearch() {
   const [pickupLocation, setPickupLocation] = useState('');
   const [dropoffLocation, setDropoffLocation] = useState('');
   const [pickupTime, setPickupTime] = useState('');
-  const [attachToTrip, setAttachToTrip] = useState(false);
 
   useEffect(() => {
     db.auth.me().then((me) => {
@@ -178,8 +171,6 @@ export default function ClientHotelSearch() {
 
   const openConfirm = (item) => {
     setSelected(item);
-    setRequestTitle(`${item.name} — ${locationOf(item)}`);
-    setNotes('');
     setAddTransfer(false);
     setTransferPricingId('');
     setTransferType('');
@@ -187,60 +178,54 @@ export default function ClientHotelSearch() {
     setPickupLocation('');
     setDropoffLocation(item.name);
     setPickupTime('');
-    setAttachToTrip(false);
   };
 
-  const submitMutation = /** @type {any} */ (
-    useMutation({
-      mutationFn: () => {
-        const mealLabel = selected.meal_treatment
-          ? t(MEAL_TREATMENT_I18N_KEYS[selected.meal_treatment] || '') || undefined
-          : undefined;
-        return submitQuote({
-          title: requestTitle || `${selected.name} — ${locationOf(selected)}`,
-          destination: locationOf(selected),
-          destinations: [{ label: locationOf(selected) }],
-          start_date: checkIn,
-          end_date: checkOut,
-          notes,
-          trip_id: attachToTrip && upcomingTrip ? upcomingTrip.id : undefined,
-          passengers: client ? [{ name: client.name, age_category: 'adult', is_contact: true }] : [],
-          items: [
-            {
-              pricing_id: selected.pricing_id,
-              quantity: Math.max(selected.min_quantity || 1, roomCount || 1),
-              children_count: payingChildrenCount,
-              start_date: checkIn,
-              end_date: checkOut,
-              room_type: OCCUPANCY_LABELS[selected.occupancy] || selected.occupancy,
-              details: mealLabel,
-            },
-            ...(addTransfer && transferItem
-              ? [
-                  {
-                    pricing_id: transferItem.pricing_id,
-                    quantity: transferQuantity,
-                    start_date: checkIn,
-                    end_date: checkOut,
-                    pickup_location: pickupLocation || undefined,
-                    dropoff_location: dropoffLocation || undefined,
-                    flight_number: flightNumber || undefined,
-                    service_time: pickupTime || undefined,
-                    details: transferType || undefined,
-                  },
-                ]
-              : []),
-          ],
-        });
+  // Add the selected hotel (and optional transfer) to the client's quote cart
+  // instead of submitting instantly — passenger/contact details are collected
+  // in the Request-a-Quote builder before confirmation.
+  const addToCartHandler = () => {
+    if (!selected) return;
+    const mealLabel = selected.meal_treatment
+      ? t(MEAL_TREATMENT_I18N_KEYS[selected.meal_treatment] || '') || undefined
+      : undefined;
+    const seedRooms = buildSeedRooms(roomCount, adultsPerRoom, payingChildrenCount);
+    const items = /** @type {any[]} */ ([
+      {
+        _key: `cart-${Date.now()}`,
+        pricing_id: selected.pricing_id,
+        service_name: selected.name,
+        unit: selected.unit,
+        quantity: Math.max(selected.min_quantity || 1, roomCount || 1),
+        children_count: payingChildrenCount,
+        start_date: checkIn,
+        end_date: checkOut,
+        room_type: OCCUPANCY_LABELS[selected.occupancy] || selected.occupancy,
+        hotel_treatment: mealLabel,
+        seedRooms,
       },
-      onSuccess: (quote) => {
-        showSuccess(t('hotelSearch.submitSuccess'));
-        queryClient.invalidateQueries({ queryKey: ['myQuotes'] });
-        navigate(createPageUrl(`ClientQuoteDetails?id=${quote.id}`));
-      },
-      onError: (error) => showError(t('hotelSearch.submitError'), error.message),
-    })
-  );
+    ]);
+    if (addTransfer && transferItem) {
+      items.push({
+        _key: `cart-${Date.now()}-t`,
+        pricing_id: transferItem.pricing_id,
+        quantity: transferQuantity,
+        start_date: checkIn,
+        end_date: checkOut,
+        pickup_location: pickupLocation || undefined,
+        dropoff_location: dropoffLocation || undefined,
+        flight_number: flightNumber || undefined,
+        service_time: pickupTime || undefined,
+        details: transferType || undefined,
+      });
+    }
+    const allSaved = items.every((it) => addToCart(it));
+    if (!allSaved) {
+      showError(t('cart.addToCartFailed'));
+      return;
+    }
+    showSuccess(t('cart.addedToCart'));
+    navigate(createPageUrl('ClientQuoteBuilder'));
+  };
 
   if (!client || catLoading) return <SkeletonCard />;
 
@@ -367,20 +352,6 @@ export default function ClientHotelSearch() {
                   </span>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>{t('hotelSearch.requestTitleLabel')}</Label>
-                <Input value={requestTitle} onChange={(e) => setRequestTitle(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t('hotelSearch.notesLabel')}</Label>
-                <Textarea
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={t('hotelSearch.notesPlaceholder')}
-                />
-              </div>
-
               <div className="space-y-2 border-t border-border pt-4">
                 <div className="flex items-center justify-between">
                   <Label className="flex items-center gap-2">
@@ -469,25 +440,16 @@ export default function ClientHotelSearch() {
                 </span>
               </div>
 
-              <TripAttachChoice trip={upcomingTrip} attach={attachToTrip} onChange={setAttachToTrip} />
-
               {isStaffPreview ? (
                 <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">
                   Staff preview is read-only — sign in as the client to submit a quote request.
                 </p>
               ) : (
-                <Button className="w-full" disabled={submitMutation.isPending} onClick={() => submitMutation.mutate()}>
-                  {submitMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t('hotelSearch.submitting')}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      {t('hotelSearch.submitRequestButton')}
-                    </>
-                  )}
+                <Button className="w-full" onClick={addToCartHandler}>
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    {t('cart.addToCart')}
+                  </>
                 </Button>
               )}
             </div>

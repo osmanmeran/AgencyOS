@@ -30,10 +30,13 @@ import {
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { getCatalog, submitQuote } from '@/lib/b2bApi';
+import { getCart, clearCart } from '@/lib/clientCart';
 import { getCurrencySymbol } from '@/lib/formatters';
+import { useT } from '@/lib/i18n/I18nContext';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import LocationSearch from '@/components/services/LocationSearch';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
+import { tourStartingPrice, activeDiscount } from '@/lib/tourPricing';
 import {
   OCCUPANCY_LABELS,
   locationOf,
@@ -54,6 +57,27 @@ const AGE_CATEGORIES = [
 
 const NIGHT_UNITS = ['per_night', 'per_day'];
 const FIXED_UNITS = ['per_group', 'flat_rate'];
+
+// The in-progress cart (lines / rooms / contact) is persisted so the client
+// can jump between the search pages and the builder without losing work.
+const QUOTE_DRAFT_KEY = 'marvelops_quote_draft';
+function loadQuoteDraft() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(QUOTE_DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+function saveQuoteDraft(draft) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(QUOTE_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    /* ignore */
+  }
+}
 
 const isCarRentalCategory = (name) => {
   const c = (name || '').toLowerCase();
@@ -657,6 +681,73 @@ function ServicePickerDialog({
 // shown here are the client's own sell price: pulled from the catalog
 // (server already applied the client's markup and converted to their
 // preferred currency).
+function TourPickerDialog({ open, onOpenChange, tours, onSelect }) {
+  const { t } = useT();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{t('quoteBuilder.addTour')}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+          {tours.length === 0 ? (
+            <p className="text-muted-foreground text-center py-6">{t('quoteBuilder.noTours')}</p>
+          ) : (
+            tours.map((tour) => {
+              const start = tourStartingPrice(tour);
+              const disc = activeDiscount(tour);
+              return (
+                <button
+                  key={tour.id}
+                  type="button"
+                  onClick={() => onSelect(tour)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-border bg-muted hover:border-blue-300 dark:hover:border-blue-800 transition-colors text-left"
+                >
+                  {tour.coverImage ? (
+                    <img src={tour.coverImage} alt="" className="w-14 h-14 rounded-md object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+                      <Star className="w-5 h-5 text-blue-500" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-foreground truncate">{tour.name}</div>
+                    <div className="text-xs text-muted-foreground capitalize">
+                      {tour.mode === 'multiday' ? t('quoteBuilder.multiDay') : t('quoteBuilder.daily')}
+                      {tour.location ? ` · ${tour.location}` : ''}
+                    </div>
+                    {start != null && (
+                      <div className="text-xs mt-0.5">
+                        {disc && (
+                          <span className="line-through text-muted-foreground mr-1">
+                            {sym(tour.currency || 'USD')}
+                            {start.toFixed(2)}
+                          </span>
+                        )}
+                        <span className="font-medium text-green-700 dark:text-green-300">
+                          {sym(tour.currency || 'USD')}
+                          {(disc ? disc.discounted : start).toFixed(2)}
+                        </span>
+                        <span className="text-muted-foreground"> {t('quoteBuilder.perPerson')}</span>
+                        {disc && (
+                          <span className="ml-1 text-xs bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded-full">
+                            -{disc.percent}%
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Plus className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                </button>
+              );
+            })
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ServiceLineCard({
   line,
   services,
@@ -668,6 +759,7 @@ function ServiceLineCard({
   autoOpenPicker,
   initialPickerValues,
 }) {
+  const { t } = useT();
   const svc = servicesById.get(line.pricing_id);
   const catName = (svc?.category_name || '').toLowerCase();
   const isLodging = isLodgingCategory(catName);
@@ -678,6 +770,7 @@ function ServiceLineCard({
     catName.includes('guide') ||
     catName.includes('excursion') ||
     catName.includes('activity');
+  const isTour = !!line.tour_id;
   const isNightly = NIGHT_UNITS.includes(line.unit);
   const isFixed = FIXED_UNITS.includes(line.unit);
   const nights = nightsBetween(line.start_date, line.end_date);
@@ -741,7 +834,14 @@ function ServiceLineCard({
   return (
     <div className="border border-border rounded-lg bg-muted p-4 space-y-3">
       <div className="flex flex-wrap gap-3 items-start">
-        {svc ? (
+        {isTour ? (
+          <div className="flex-1 min-w-[220px] flex items-center gap-3 px-3 py-2.5 bg-card border border-border rounded-lg">
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-blue-600 dark:text-blue-300 font-medium">Guided Tour</div>
+              <div className="text-sm font-semibold text-foreground truncate">{line.service_name}</div>
+            </div>
+          </div>
+        ) : svc ? (
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
@@ -1118,6 +1218,47 @@ function ServiceLineCard({
           )}
         </>
       )}
+      {isTour && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{t('quoteBuilder.tourDate')}</Label>
+              <Input
+                type="date"
+                className="w-44"
+                value={line.service_date || ''}
+                onChange={(e) => set('service_date', e.target.value)}
+              />
+            </div>
+            {Number(line.tour_display_price) > 0 && (
+              <div className="flex items-center gap-2 pb-1 text-sm">
+                {line.tour_discount_percent > 0 && Number(line.tour_original_price) > 0 && (
+                  <span className="line-through text-muted-foreground">
+                    {sym(line.tour_display_currency)}
+                    {Number(line.tour_original_price).toFixed(2)}
+                  </span>
+                )}
+                <span className="font-semibold text-green-700 dark:text-green-300">
+                  {sym(line.tour_display_currency)}
+                  {Number(line.tour_display_price).toFixed(2)}
+                </span>
+                <span className="text-muted-foreground">{t('quoteBuilder.perPerson')}</span>
+                {line.tour_discount_percent > 0 && (
+                  <span className="text-xs bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded-full">
+                    -{line.tour_discount_percent}%
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          <Textarea
+            rows={2}
+            placeholder={t('quoteBuilder.tourDetailsPlaceholder')}
+            value={line.details || ''}
+            onChange={(e) => set('details', e.target.value)}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -1125,6 +1266,7 @@ function ServiceLineCard({
 export default function ClientQuoteBuilder() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useT();
 
   const [client, setClient] = useState(/** @type {any} */ (null));
   const [clientLoaded, setClientLoaded] = useState(false);
@@ -1143,6 +1285,11 @@ export default function ClientQuoteBuilder() {
   );
   const [rooms, setRooms] = useState(() => [newRoom()]);
   const [lines, setLines] = useState(() => [newLine()]);
+  // Compulsory contact details — the client must provide a contact phone (and
+  // name) before the cart can be submitted for confirmation.
+  const [contactPassenger, setContactPassenger] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const cartDrainedRef = useRef(false);
   const actAsClientId = useActAsClientId();
 
   useEffect(() => {
@@ -1172,6 +1319,48 @@ export default function ClientQuoteBuilder() {
       .catch(() => setClientLoaded(true));
   }, [actAsClientId]);
 
+  // Restore any saved draft, then drain services the client parked in the
+  // cart from the Hotel / Transfer / Car rental searches or the tour catalog.
+  // A hotel carries a rooms/passengers snapshot so its rooming & occupancy
+  // seed the cart.
+  useEffect(() => {
+    if (!clientLoaded || cartDrainedRef.current) return;
+    cartDrainedRef.current = true;
+    const draft = loadQuoteDraft();
+    const draftHasRooms = Array.isArray(draft?.rooms) && draft.rooms.length > 0;
+    if (draft) {
+      if (Array.isArray(draft.lines) && draft.lines.length) setLines(draft.lines);
+      if (draftHasRooms) setRooms(draft.rooms);
+      if (draft.contactPassenger) setContactPassenger(draft.contactPassenger);
+      if (draft.contactPhone) setContactPhone(draft.contactPhone);
+    } else if (!contactPassenger) {
+      setContactPassenger(client?.name || '');
+    }
+    const cart = getCart();
+    if (cart.length) {
+      const drainedLines = cart.map((it) => ({ ...newLine(), ...it, _key: it._key || rid('line') }));
+      setLines((prev) => {
+        const base = prev.filter((l) => l.pricing_id || l.tour_id);
+        const merged = [...base, ...drainedLines];
+        return merged.length ? merged : [newLine()];
+      });
+      // Only seed rooms from the newly-added cart item when there isn't
+      // already a restored draft with rooms — a client who already filled in
+      // passenger names for an earlier hotel shouldn't have them silently
+      // wiped by a blank seed from a second hotel added afterward.
+      const seeded = cart.find((it) => Array.isArray(it.seedRooms) && it.seedRooms.length);
+      if (seeded && !draftHasRooms) setRooms(seeded.seedRooms);
+      clearCart();
+    }
+    if (!contactPhone) setContactPhone(client?.phone || client?.mobile || '');
+  }, [clientLoaded, client, contactPassenger, contactPhone]);
+
+  // Persist the in-progress cart so navigation between pages doesn't lose it.
+  useEffect(() => {
+    if (!clientLoaded) return;
+    saveQuoteDraft({ lines, rooms, contactPassenger, contactPhone });
+  }, [clientLoaded, lines, rooms, contactPassenger, contactPhone]);
+
   const currency = client?.preferred_currency || 'USD';
 
   const { data: catalog, isLoading: catLoading } = /** @type {any} */ (
@@ -1188,6 +1377,59 @@ export default function ClientQuoteBuilder() {
   const services = catalog?.items || [];
   const servicesById = useMemo(() => new Map(services.map((s) => [s.pricing_id, s])), [services]);
   const stopSales = catalog?.stop_sales || [];
+
+  // Guided-tour catalog (the curated GuidedTour entity), client-portal readable.
+  const { data: toursData } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['builderTours'],
+      queryFn: () => db.entities.GuidedTour.list(),
+      enabled: !!client,
+    })
+  );
+  const tours = toursData || [];
+  const [tourPickerOpen, setTourPickerOpen] = useState(false);
+
+  // Tours keep their own currency (set by staff per-tour) which can differ
+  // from the client's preferred display currency that every other line in
+  // this builder is already shown/summed in (services are converted
+  // server-side — see the /catalog route). Convert here too, the same way
+  // the server converts tour prices at submit time (b2b.js convertItemsToCurrency),
+  // so the on-page total never silently adds mismatched currencies together.
+  const addTour = async (/** @type {any} */ tour) => {
+    // Close the picker immediately so a slow exchange-rate fetch below can't
+    // leave the dialog open and clickable, letting a double-click (or a
+    // second tour pick) fire a second concurrent add before this one lands.
+    setTourPickerOpen(false);
+    const start = tourStartingPrice(tour);
+    const disc = activeDiscount(tour);
+    const tourCurrency = tour.currency || 'USD';
+    let rate = 1;
+    let converted = tourCurrency === currency;
+    if (!converted) {
+      try {
+        rate = (await db.integrations.Core.GetExchangeRate(tourCurrency, currency))?.rate || 1;
+        converted = true;
+      } catch {
+        converted = false;
+      }
+    }
+    const scale = (v) => (v == null ? v : Math.round(v * rate * 100) / 100);
+    const original = start != null ? start : 0;
+    const display = disc ? disc.discounted : original;
+    const line = {
+      ...newLine(),
+      _key: rid('line'),
+      tour_id: tour.id,
+      service_name: tour.name,
+      tourMode: tour.mode || '',
+      unit: 'per_person',
+      tour_original_price: converted ? scale(original) : original,
+      tour_display_price: converted ? scale(display) : display,
+      tour_display_currency: converted ? currency : tourCurrency,
+      tour_discount_percent: disc ? disc.percent : 0,
+    };
+    setLines((prev) => (prev.length === 1 && !prev[0].pricing_id && !prev[0].tour_id ? [line] : [...prev, line]));
+  };
 
   // Destinations — one or more stops, each independently geocoded.
   const addDestination = () => setDestinations((prev) => [...prev, newDestination()]);
@@ -1235,17 +1477,25 @@ export default function ClientQuoteBuilder() {
   const updateLine = (key, updated) => setLines((prev) => prev.map((l) => (l._key === key ? updated : l)));
   const removeLine = (key) => setLines((prev) => (prev.length <= 1 ? [newLine()] : prev.filter((l) => l._key !== key)));
 
-  const validLines = lines.filter((l) => l.pricing_id);
+  const validLines = lines.filter((l) => l.pricing_id || l.tour_id);
   const blockedLines = validLines.filter((l) => {
+    if (l.tour_id) return false;
     const svc = servicesById.get(l.pricing_id);
     const supplierId = svc?.supplier_id || l.supplier_id;
     const start = l.start_date || l.service_date;
     const end = l.end_date || l.service_date;
     return !!getBlockingStopSale(stopSales, supplierId, start, end);
   });
+  // Tour lines price per paying participant (infants excluded), so this must
+  // be computed before `total` below, which reads it for tour_id lines.
+  const payingParticipants = allPassengers.filter((p) => p.age_category !== 'infant').length;
   const total = useMemo(
     () =>
       validLines.reduce((sum, l) => {
+        if (l.tour_id) {
+          const paying = payingParticipants || 1;
+          return sum + (Number(l.tour_display_price) || 0) * paying;
+        }
         const svc = servicesById.get(l.pricing_id);
         const unitPrice = unitPriceFor(svc, l.quantity);
         const carRentalDays = isCarRentalCategory(svc?.category_name) ? nightsBetween(l.start_date, l.end_date) : null;
@@ -1262,8 +1512,17 @@ export default function ClientQuoteBuilder() {
           )
         );
       }, 0),
-    [validLines, servicesById],
+    [validLines, servicesById, allPassengers],
   );
+
+  // Passenger / contact validation — the cart cannot be submitted for
+  // confirmation until these are satisfied.
+  const namedPassengers = allPassengers.filter((p) => (p.name || '').trim()).length;
+  const contactPhoneValid = contactPhone.trim().length > 0;
+  const contactPassengerValid = contactPassenger.trim().length > 0;
+  const passengerValid = namedPassengers > 0;
+  const canSubmit =
+    validLines.length > 0 && blockedLines.length === 0 && contactPhoneValid && contactPassengerValid && passengerValid;
 
   const namedDestinations = destinations.filter((d) => d.label);
 
@@ -1278,24 +1537,43 @@ export default function ClientQuoteBuilder() {
           end_date: trip.end_date,
           notes: trip.notes,
           passengers: allPassengers,
-          items: validLines.map((l) => ({
-            pricing_id: l.pricing_id,
-            quantity: l.quantity || 1,
-            children_count: l.children_count || 0,
-            start_date: l.start_date || l.service_date || undefined,
-            end_date: l.end_date || l.service_date || undefined,
-            room_type: l.room_type || undefined,
-            pickup_location: l.pickup_location || undefined,
-            dropoff_location: l.dropoff_location || undefined,
-            flight_number: l.flight_number || undefined,
-            service_time: l.service_time || undefined,
-            car_insurance: l.car_insurance || undefined,
-            details:
-              [l.hotel_treatment, l.transfer_type, l.duration, l.details].filter(Boolean).join(' · ') || undefined,
-          })),
+          contact_passenger: contactPassenger.trim(),
+          contact_phone: contactPhone.trim(),
+          items: validLines.map((l) => {
+            if (l.tour_id) {
+              const paying = allPassengers.filter((p) => p.age_category !== 'infant');
+              return {
+                tour_id: l.tour_id,
+                tour_name: l.service_name,
+                tour_mode: l.tourMode || '',
+                service_date: l.service_date || undefined,
+                adults: paying.filter((p) => p.age_category === 'adult').length,
+                children: paying.filter((p) => p.age_category === 'children').length,
+                infants: allPassengers.filter((p) => p.age_category === 'infant').length,
+                details: l.details || undefined,
+              };
+            }
+            return {
+              pricing_id: l.pricing_id,
+              quantity: l.quantity || 1,
+              children_count: l.children_count || 0,
+              start_date: l.start_date || l.service_date || undefined,
+              end_date: l.end_date || l.service_date || undefined,
+              room_type: l.room_type || undefined,
+              pickup_location: l.pickup_location || undefined,
+              dropoff_location: l.dropoff_location || undefined,
+              flight_number: l.flight_number || undefined,
+              service_time: l.service_time || undefined,
+              car_insurance: l.car_insurance || undefined,
+              details:
+                [l.hotel_treatment, l.transfer_type, l.duration, l.details].filter(Boolean).join(' · ') || undefined,
+            };
+          }),
         }),
       onSuccess: (quote) => {
         showSuccess('Quote request submitted');
+        saveQuoteDraft(null);
+        clearCart();
         queryClient.invalidateQueries({ queryKey: ['myQuotes'] });
         navigate(createPageUrl(`ClientQuoteDetails?id=${quote.id}`));
       },
@@ -1452,6 +1730,43 @@ export default function ClientQuoteBuilder() {
             </div>
           ))}
         </div>
+
+        <Separator className="my-4" />
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground">{t('quoteBuilder.contactDetails')}</h3>
+            <span className="text-xs text-red-600 dark:text-red-400">* {t('quoteBuilder.required')}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t('quoteBuilder.contactHelp', {
+              count: allPassengers.length,
+              rooms: rooms.length,
+            })}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{t('quoteBuilder.contactPassenger')}</Label>
+              <Input
+                value={contactPassenger}
+                onChange={(e) => setContactPassenger(e.target.value)}
+                placeholder={t('quoteBuilder.contactPassengerPlaceholder')}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                {t('quoteBuilder.contactPhone')} <span className="text-red-600">*</span>
+              </Label>
+              <Input
+                type="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder={t('quoteBuilder.contactPhonePlaceholder')}
+                className={!contactPhoneValid ? 'border-red-300 dark:border-red-800' : ''}
+              />
+            </div>
+          </div>
+        </div>
       </Card>
 
       {/* Services */}
@@ -1461,11 +1776,18 @@ export default function ClientQuoteBuilder() {
             <Building className="w-4 h-4 text-blue-600 dark:text-blue-300" />
             Services
           </h2>
-          <Button type="button" size="sm" variant="outline" onClick={addLine} disabled={services.length === 0}>
-            <Plus className="w-4 h-4 mr-1" />
-            Add service
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={addLine} disabled={services.length === 0}>
+              <Plus className="w-4 h-4 mr-1" />
+              Add service
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setTourPickerOpen(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Add tour
+            </Button>
+          </div>
         </div>
+        <TourPickerDialog open={tourPickerOpen} onOpenChange={setTourPickerOpen} tours={tours} onSelect={addTour} />
         {services.length === 0 ? (
           <p className="text-muted-foreground text-center py-6">
             No services are available in your portal yet. Please contact your travel agent.
@@ -1519,6 +1841,18 @@ export default function ClientQuoteBuilder() {
             — fix them above before submitting.
           </p>
         )}
+        {!contactPhoneValid && (
+          <p className="flex items-center gap-1.5 text-xs text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg py-2 px-3 mb-3">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            {t('quoteBuilder.contactPhoneRequired')}
+          </p>
+        )}
+        {contactPhoneValid && !passengerValid && (
+          <p className="flex items-center gap-1.5 text-xs text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg py-2 px-3 mb-3">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            {t('quoteBuilder.passengerNameRequired')}
+          </p>
+        )}
         {isStaffPreview ? (
           <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">
             Staff preview is read-only — sign in as the client to submit a quote request.
@@ -1526,7 +1860,7 @@ export default function ClientQuoteBuilder() {
         ) : (
           <Button
             className="w-full bg-blue-600 hover:bg-blue-700"
-            disabled={validLines.length === 0 || blockedLines.length > 0 || submitMutation.isPending}
+            disabled={!canSubmit || submitMutation.isPending}
             onClick={() => submitMutation.mutate()}
           >
             {submitMutation.isPending ? (

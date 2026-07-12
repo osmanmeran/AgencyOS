@@ -6,6 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { showSuccess, showError } from '@/lib/toast';
+import { addToCart } from '@/lib/clientCart';
 import { Input } from '@/components/ui/input';
 import { SkeletonStats } from '@/components/ui/skeletons';
 import {
@@ -28,6 +30,7 @@ import { useT } from '@/lib/i18n/I18nContext';
 import { sym } from '@/lib/formatters';
 import { getCatalog } from '@/lib/b2bApi';
 import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
+import { tourStartingPrice, activeDiscount } from '@/lib/tourPricing';
 import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import HotelSearchBar from '@/components/hotelSearch/HotelSearchBar';
 import CarRentalSearchBar, { SAME_AS_PICKUP } from '@/components/carRental/CarRentalSearchBar';
@@ -93,35 +96,6 @@ function resolveTourDescription(desc, lang) {
   if (typeof desc === 'string') return desc;
   if (typeof desc !== 'object') return '';
   return desc[lang] || desc.en || desc.it || Object.values(desc).find((v) => v) || '';
-}
-
-/** Local YYYY-MM-DD for "today" (matches the YYYY-MM-DD stored on offers/dates). */
-function todayYmd() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-/** Lowest per-person price from a tour's pricing tiers, or null if none. */
-function tourStartingPrice(tour) {
-  const tiers = Array.isArray(tour.pricingTiers) ? tour.pricingTiers : [];
-  if (!tiers.length) return null;
-  const prices = tiers.map((tier) => Number(tier.price) || 0).filter((p) => p > 0);
-  if (!prices.length) return null;
-  return Math.min(...prices);
-}
-
-/** Active special offer for a tour today, or null. */
-function activeDiscount(tour) {
-  const offer = tour.specialOffer;
-  const percent = Number(offer?.percent) || 0;
-  if (percent <= 0) return null;
-  const base = tourStartingPrice(tour);
-  if (base == null) return null;
-  const today = todayYmd();
-  if (offer.startDate && today < offer.startDate) return null;
-  if (offer.endDate && today > offer.endDate) return null;
-  const discounted = Math.round(base * (1 - percent / 100) * 100) / 100;
-  return { percent, base, discounted };
 }
 
 const PROPOSAL_STATUS_BADGE = {
@@ -330,6 +304,48 @@ export default function ClientPortal() {
         <span className="text-xs text-muted-foreground">{t('clientPortal.fromLabel')}</span>
       </div>
     );
+  };
+
+  // Adds a tour to the client's quote cart; passenger/contact details are
+  // collected in the Request-a-Quote builder before confirmation. Tours
+  // keep their own currency (set by staff) which can differ from the
+  // client's preferred display currency every other cart line is shown in
+  // — convert here the same way ClientQuoteBuilder's own addTour does, so
+  // the builder never silently sums mismatched currencies together.
+  const addTourToCart = async (/** @type {any} */ tour) => {
+    const start = tourStartingPrice(tour);
+    const disc = activeDiscount(tour);
+    const tourCurrency = tour.currency || 'USD';
+    const displayCurrency = client?.preferred_currency || 'USD';
+    let rate = 1;
+    let converted = tourCurrency === displayCurrency;
+    if (!converted) {
+      try {
+        rate = (await db.integrations.Core.GetExchangeRate(tourCurrency, displayCurrency))?.rate || 1;
+        converted = true;
+      } catch {
+        converted = false;
+      }
+    }
+    const scale = (v) => (v == null ? v : Math.round(v * rate * 100) / 100);
+    const original = start != null ? start : 0;
+    const display = disc ? disc.discounted : original;
+    const saved = addToCart({
+      _key: `cart-${tour.id}-${Date.now()}`,
+      tour_id: tour.id,
+      service_name: tour.name,
+      tourMode: tour.mode,
+      unit: 'per_person',
+      tour_original_price: converted ? scale(original) : original,
+      tour_display_price: converted ? scale(display) : display,
+      tour_display_currency: converted ? displayCurrency : tourCurrency,
+      tour_discount_percent: disc ? disc.percent : 0,
+    });
+    if (!saved) {
+      showError(t('cart.addToCartFailed'));
+      return;
+    }
+    showSuccess(t('cart.addedToCart'));
   };
 
   const activeCat = CATEGORIES.find((c) => c.key === activeCategory);
@@ -655,6 +671,9 @@ export default function ClientPortal() {
                     </p>
                   )}
                   {renderTourPrice(tour)}
+                  <Button className="mt-4 w-full" variant="outline" onClick={() => addTourToCart(tour)}>
+                    {t('cart.addToCart')}
+                  </Button>
                 </div>
               </div>
             ))}
@@ -703,6 +722,9 @@ export default function ClientPortal() {
                       </p>
                     )}
                     {renderTourPrice(tour)}
+                    <Button className="mt-4 w-full" variant="outline" onClick={() => addTourToCart(tour)}>
+                      {t('cart.addToCart')}
+                    </Button>
                     {tour.mode === 'multiday' &&
                       Array.isArray(tour.dayDescriptions) &&
                       tour.dayDescriptions.length > 0 && (

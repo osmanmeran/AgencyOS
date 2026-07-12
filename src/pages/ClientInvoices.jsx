@@ -11,6 +11,7 @@ import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
 import { FileText, Calendar, CheckCircle } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 export default function ClientInvoices() {
   const { t } = useT();
@@ -50,6 +51,7 @@ export default function ClientInvoices() {
           {sortedInvoices.map((invoice) => {
             const isOverdue = invoice.status !== 'paid' && isBefore(parseISO(invoice.due_date), new Date());
             const isPaid = invoice.status === 'paid';
+            const cs = getCurrencySymbol(invoice.currency || 'USD');
 
             return (
               <Link key={invoice.id} to={createPageUrl(`ClientInvoiceDetails?id=${invoice.id}`)}>
@@ -89,11 +91,12 @@ export default function ClientInvoices() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-green-700 dark:text-green-300 mb-1">
-                        ${invoice.total_amount.toFixed(2)}
+                        {cs}
+                        {invoice.total_amount.toFixed(2)}
                       </div>
                       {!isPaid && invoice.amount_due > 0 && (
                         <div className="text-sm text-orange-600 dark:text-orange-300">
-                          {t('clientInvoices.dueAmount', { amount: `$${invoice.amount_due.toFixed(2)}` })}
+                          {t('clientInvoices.dueAmount', { amount: `${cs}${invoice.amount_due.toFixed(2)}` })}
                         </div>
                       )}
                       {isPaid && (

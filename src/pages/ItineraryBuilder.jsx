@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const CATEGORY_ICONS = {
   flight: {
@@ -583,12 +584,14 @@ export default function ItineraryBuilder() {
                                   <div className="text-right text-xs flex-shrink-0">
                                     {event.cost && (
                                       <div className="font-semibold text-green-600 dark:text-green-300">
-                                        ${parseFloat(event.cost).toFixed(0)}
+                                        {getCurrencySymbol(selectedTrip?.selling_currency || 'USD')}
+                                        {parseFloat(event.cost).toFixed(0)}
                                       </div>
                                     )}
                                     {event.supplier_cost && (
                                       <div className="text-muted-foreground">
-                                        cost: ${parseFloat(event.supplier_cost).toFixed(0)}
+                                        cost: {getCurrencySymbol(selectedTrip?.acquiring_currency || 'USD')}
+                                        {parseFloat(event.supplier_cost).toFixed(0)}
                                       </div>
                                     )}
                                   </div>

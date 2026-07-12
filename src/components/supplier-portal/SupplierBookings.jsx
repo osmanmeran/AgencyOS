@@ -15,6 +15,7 @@ import { CheckCircle, XCircle, Clock, FileText, Calendar, Users, DollarSign, Dow
 import { format } from 'date-fns';
 import BookingEmailSender from '../booking/BookingEmailSender';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const STATUS_COLORS = {
   pending: 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300',
@@ -135,7 +136,7 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
 <div class="row"><strong>${t('supplierPortalBookings.numGuestsColonLabel')}</strong><span>${booking.num_guests}</span></div>
 <div class="row"><strong>${t('supplierPortalBookings.tripColonLabel')}</strong><span>${trip?.name || na}</span></div>
 <div class="row"><strong>${t('supplierPortalBookings.clientColonLabel')}</strong><span>${client?.name || na}</span></div>
-<div class="row"><strong>${t('supplierPortalBookings.totalCostColonLabel')}</strong><span>$${booking.total_cost?.toFixed(2) || '0.00'}</span></div>
+<div class="row"><strong>${t('supplierPortalBookings.totalCostColonLabel')}</strong><span>${getCurrencySymbol(booking.currency || 'USD')}${booking.total_cost?.toFixed(2) || '0.00'}</span></div>
 </div>
 <div class="details">
 <h3>${t('supplierPortalBookings.serviceDetailsColonTitle')}</h3>
@@ -232,7 +233,10 @@ body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding
                 </div>
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  <span>${booking.total_cost?.toFixed(2) || '0.00'}</span>
+                  <span>
+                    {getCurrencySymbol(booking.currency || 'USD')}
+                    {booking.total_cost?.toFixed(2) || '0.00'}
+                  </span>
                 </div>
                 {booking.supplier_confirmed && (
                   <div className="flex items-center gap-2 text-green-600 dark:text-green-300">

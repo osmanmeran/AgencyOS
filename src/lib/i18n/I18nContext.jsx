@@ -4,6 +4,31 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const translations = {
   en: {
+    quoteBuilder: {
+      addTour: 'Add tour',
+      noTours: 'No tours are available in your portal yet.',
+      multiDay: 'Multi-day',
+      daily: 'Daily',
+      perPerson: 'per person',
+      tourDate: 'Tour date',
+      tourDetailsPlaceholder: 'Extra details for this tour (optional)',
+      contactDetails: 'Contact details',
+      required: 'required',
+      contactHelp: 'We will use this to confirm your {count} passenger(s) across {rooms} room(s).',
+      contactPassenger: 'Contact passenger',
+      contactPassengerPlaceholder: 'Full name of the main contact',
+      contactPhone: 'Contact phone',
+      contactPhonePlaceholder: 'e.g. +90 5xx xxx xx xx',
+      contactPhoneRequired: 'A contact phone number is required before submitting.',
+      passengerNameRequired: 'Enter at least one passenger name before submitting.',
+    },
+    cart: {
+      addedToCart: 'Added to your quote — open "Request a Quote" to continue.',
+      addToCartFailed: "Couldn't save this to your cart — please try again.",
+      viewCart: 'View cart',
+      addToCart: 'Add to cart',
+      inCart: 'In cart',
+    },
     common: {
       all: 'All',
       pending: 'Pending',

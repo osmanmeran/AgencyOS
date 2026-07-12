@@ -1,31 +1,28 @@
 import { db } from '@/lib/DbContext';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { DateField } from '@/components/ui/date-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { Loader2, Send, AlertTriangle } from 'lucide-react';
+import { Send, AlertTriangle } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
-import { getCatalog, submitQuote } from '@/lib/b2bApi';
+import { getCatalog } from '@/lib/b2bApi';
+import { addToCart } from '@/lib/clientCart';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useMyClient } from '@/hooks/useMyClient';
-import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { nightsBetween } from '@/lib/hotelPricing';
 import { CAR_RENTAL_LOCATIONS } from '@/lib/carRentalLocations';
 import CarRentalResultCard from '@/components/carRental/CarRentalResultCard';
-import TripAttachChoice from '@/components/b2b/TripAttachChoice';
 
 const isCarRentalCategory = (name) => {
   const c = (name || '').toLowerCase();
@@ -52,9 +49,7 @@ function readInitialSearch() {
 export default function ClientCarRentalSearch() {
   const { t } = useT();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const client = useMyClient();
-  const upcomingTrip = useUpcomingTrip(client?.id);
   const actAsClientId = useActAsClientId();
   const [isStaffPreview, setIsStaffPreview] = useState(false);
 
@@ -65,10 +60,7 @@ export default function ClientCarRentalSearch() {
   const [dropoffDate, setDropoffDate] = useState(initialSearch.dropoffdate);
 
   const [selected, setSelected] = useState(/** @type {any} */ (null));
-  const [requestTitle, setRequestTitle] = useState('');
-  const [notes, setNotes] = useState('');
   const [insurance, setInsurance] = useState(false);
-  const [attachToTrip, setAttachToTrip] = useState(false);
 
   useEffect(() => {
     db.auth.me().then((me) => {
@@ -110,10 +102,7 @@ export default function ClientCarRentalSearch() {
 
   const openConfirm = (item) => {
     setSelected(item);
-    setRequestTitle(`${item.name} — ${pickupLocation}`);
-    setNotes('');
     setInsurance(false);
-    setAttachToTrip(false);
   };
 
   const rentalTotal = selected ? selected.unit_price * days : 0;
@@ -121,40 +110,32 @@ export default function ClientCarRentalSearch() {
   const insuranceTotal = selected && insurance ? (selected.insurance_surcharge || 0) * days : 0;
   const grandTotal = rentalTotal + dropOffFee + insuranceTotal;
 
-  const submitMutation = /** @type {any} */ (
-    useMutation({
-      mutationFn: () =>
-        submitQuote({
-          title: requestTitle || `${selected.name} — ${pickupLocation}`,
-          destination: pickupLocation,
-          destinations: [{ label: pickupLocation }],
-          start_date: pickupDate,
-          end_date: dropoffDate,
-          notes,
-          trip_id: attachToTrip && upcomingTrip ? upcomingTrip.id : undefined,
-          passengers: client ? [{ name: client.name, age_category: 'adult', is_contact: true }] : [],
-          items: [
-            {
-              pricing_id: selected.pricing_id,
-              quantity: 1,
-              start_date: pickupDate,
-              end_date: dropoffDate,
-              pickup_location: pickupLocation,
-              dropoff_location: dropoffLocationEffective,
-              car_category: selected.car_category || undefined,
-              car_rental_days: days,
-              car_insurance: insurance,
-            },
-          ],
-        }),
-      onSuccess: (quote) => {
-        showSuccess(t('hotelSearch.submitSuccess'));
-        queryClient.invalidateQueries({ queryKey: ['myQuotes'] });
-        navigate(createPageUrl(`ClientQuoteDetails?id=${quote.id}`));
-      },
-      onError: (error) => showError(t('hotelSearch.submitError'), error.message),
-    })
-  );
+  // Add the selected car rental to the client's quote cart instead of
+  // submitting instantly — passenger/contact details are collected in the
+  // Request-a-Quote builder before confirmation.
+  const addToCartHandler = () => {
+    if (!selected) return;
+    const saved = addToCart({
+      _key: `cart-${Date.now()}`,
+      pricing_id: selected.pricing_id,
+      service_name: selected.name,
+      unit: selected.unit,
+      quantity: 1,
+      start_date: pickupDate,
+      end_date: dropoffDate,
+      pickup_location: pickupLocation,
+      dropoff_location: dropoffLocationEffective,
+      car_category: selected.car_category || undefined,
+      car_rental_days: days,
+      car_insurance: insurance,
+    });
+    if (!saved) {
+      showError(t('cart.addToCartFailed'));
+      return;
+    }
+    showSuccess(t('cart.addedToCart'));
+    navigate(createPageUrl('ClientQuoteBuilder'));
+  };
 
   if (!client || catLoading) return <SkeletonCard />;
 
@@ -278,20 +259,6 @@ export default function ClientCarRentalSearch() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label>{t('hotelSearch.requestTitleLabel')}</Label>
-                <Input value={requestTitle} onChange={(e) => setRequestTitle(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t('hotelSearch.notesLabel')}</Label>
-                <Textarea
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={t('hotelSearch.notesPlaceholder')}
-                />
-              </div>
-
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <span className="font-semibold text-foreground">{t('hotelSearch.grandTotal')}</span>
                 <span className="text-lg font-bold text-foreground">
@@ -300,25 +267,16 @@ export default function ClientCarRentalSearch() {
                 </span>
               </div>
 
-              <TripAttachChoice trip={upcomingTrip} attach={attachToTrip} onChange={setAttachToTrip} />
-
               {isStaffPreview ? (
                 <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">
                   Staff preview is read-only — sign in as the client to submit a quote request.
                 </p>
               ) : (
-                <Button className="w-full" disabled={submitMutation.isPending} onClick={() => submitMutation.mutate()}>
-                  {submitMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t('hotelSearch.submitting')}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      {t('hotelSearch.submitRequestButton')}
-                    </>
-                  )}
+                <Button className="w-full" onClick={addToCartHandler}>
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    {t('cart.addToCart')}
+                  </>
                 </Button>
               )}
             </div>

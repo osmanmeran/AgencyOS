@@ -84,6 +84,7 @@ export default function ServiceBookingRequest({ open, onClose, service, tripId, 
           service_details: `${service?.name}\n\n${formData.service_details}`,
           num_guests: parseInt(String(formData.num_guests)),
           total_cost: parseFloat(formData.total_cost),
+          currency: service?.currency || 'USD',
           status: 'pending',
         });
 

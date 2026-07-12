@@ -221,36 +221,53 @@ export const schemas = {
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     passengers: z.array(z.record(z.unknown())).optional(),
+    // Compulsory contact details, captured in the client cart before submit.
+    contact_passenger: z.string().optional(),
+    contact_phone: z.string().optional(),
     // Attaches this request to one of the client's own existing trips
     // instead of it being a standalone request — ownership is re-checked
     // server-side (server/routes/b2b.js), this id is never trusted as-is.
     trip_id: z.string().optional(),
     items: z
       .array(
-        z.object({
-          pricing_id: z.string().min(1, 'pricing_id is required'),
-          quantity: z.number().positive().optional().default(1),
-          // Total children (across all rooms) on a lodging line — priced via
-          // the pricing row's child supplement, infants excluded client-side.
-          children_count: z.number().nonnegative().optional().default(0),
-          // Optional per-line trip details (lodging nights, transfer logistics).
-          start_date: z.string().optional(),
-          end_date: z.string().optional(),
-          room_type: z.string().optional(),
-          pickup_location: z.string().optional(),
-          dropoff_location: z.string().optional(),
-          flight_number: z.string().optional(),
-          service_time: z.string().optional(),
-          details: z.string().optional(),
-          // Car rental specifics — were missing here even though b2b.js reads
-          // them off the request body (server/routes/b2b.js), so Zod silently
-          // stripped them before the route ever saw them: every car rental
-          // quote was priced as a 1-day rental with no insurance regardless
-          // of what the client actually selected.
-          car_category: z.string().optional(),
-          car_rental_days: z.number().positive().optional(),
-          car_insurance: z.boolean().optional(),
-        }),
+        z
+          .object({
+            pricing_id: z.string().optional(),
+            // Guided-tour catalog items (the curated GuidedTour entity) are added
+            // by tour_id rather than a B2B pricing_id; pricing is resolved
+            // server-side from the tour's participant tiers + active special offer.
+            tour_id: z.string().optional(),
+            tour_name: z.string().optional(),
+            tour_mode: z.string().optional(),
+            quantity: z.number().positive().optional().default(1),
+            // Total children (across all rooms) on a lodging line — priced via
+            // the pricing row's child supplement, infants excluded client-side.
+            children_count: z.number().nonnegative().optional().default(0),
+            // Optional per-line trip details (lodging nights, transfer logistics).
+            start_date: z.string().optional(),
+            end_date: z.string().optional(),
+            service_date: z.string().optional(),
+            room_type: z.string().optional(),
+            pickup_location: z.string().optional(),
+            dropoff_location: z.string().optional(),
+            flight_number: z.string().optional(),
+            service_time: z.string().optional(),
+            adults: z.number().nonnegative().optional(),
+            children: z.number().nonnegative().optional(),
+            infants: z.number().nonnegative().optional(),
+            details: z.string().optional(),
+            // Car rental specifics — were missing here even though b2b.js reads
+            // them off the request body (server/routes/b2b.js), so Zod silently
+            // stripped them before the route ever saw them: every car rental
+            // quote was priced as a 1-day rental with no insurance regardless
+            // of what the client actually selected.
+            car_category: z.string().optional(),
+            car_rental_days: z.number().positive().optional(),
+            car_insurance: z.boolean().optional(),
+          })
+          .refine((item) => !!item.pricing_id || !!item.tour_id, {
+            message: 'Each item must have either pricing_id or tour_id',
+          }),
       )
       .min(1, 'At least one item is required'),
     notes: z.string().optional(),

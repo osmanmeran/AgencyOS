@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Link2, Copy, CheckCircle, CreditCard } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 function signPaymentPayload(payload) {
   const data = JSON.stringify(payload);
@@ -54,7 +55,7 @@ export default function PaymentLinkPanel({ invoice, client }) {
       <p className="text-sm text-muted-foreground">
         {t('paymentLink.shareText', {
           client: client?.name || t('paymentLink.defaultClient'),
-          amount: `$${invoice.amount_due?.toFixed(2)}`,
+          amount: `${getCurrencySymbol(invoice.currency || 'USD')}${invoice.amount_due?.toFixed(2)}`,
         })}
       </p>
 

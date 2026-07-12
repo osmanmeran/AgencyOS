@@ -51,6 +51,7 @@ import { format } from 'date-fns';
 import ClientProfile from '../components/clients/ClientProfile';
 import ClientTasksPanel from '../components/clients/ClientTasksPanel';
 import LocationSearch from '@/components/services/LocationSearch';
+import { getCurrencySymbol, mixedCurrencyLabel } from '@/lib/formatters';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
@@ -136,7 +137,12 @@ export default function ClientDetails() {
 
   const addPaymentMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: (/** @type {any} */ data) => db.entities.ClientPayment.create({ ...data, client_id: clientId }),
+      mutationFn: (/** @type {any} */ data) =>
+        db.entities.ClientPayment.create({
+          ...data,
+          client_id: clientId,
+          currency: client.preferred_currency || 'USD',
+        }),
       onSuccess: async (/** @type {any} */ payment) => {
         showSuccess('Payment added');
         const newTotal = (client.total_paid || 0) + payment.amount;
@@ -242,6 +248,7 @@ export default function ClientDetails() {
   };
 
   const totalPaid = payments.filter((p) => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
+  const clientCs = getCurrencySymbol(client?.preferred_currency || 'USD');
 
   if (isLoading) {
     return <SkeletonCard />;
@@ -413,7 +420,10 @@ export default function ClientDetails() {
             <div className="text-sm opacity-90">Total Paid</div>
             <DollarSign className="w-5 h-5 opacity-80" />
           </div>
-          <div className="text-3xl font-bold">${totalPaid.toFixed(2)}</div>
+          <div className="text-3xl font-bold">
+            {clientCs}
+            {totalPaid.toFixed(2)}
+          </div>
         </Card>
 
         <Card className="p-6 bg-gradient-to-br from-orange-500 to-orange-600 text-white">
@@ -421,7 +431,10 @@ export default function ClientDetails() {
             <div className="text-sm opacity-90">Total Owed</div>
             <DollarSign className="w-5 h-5 opacity-80" />
           </div>
-          <div className="text-3xl font-bold">${(client.total_owed || 0).toFixed(2)}</div>
+          <div className="text-3xl font-bold">
+            {clientCs}
+            {(client.total_owed || 0).toFixed(2)}
+          </div>
         </Card>
 
         <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
@@ -464,7 +477,8 @@ export default function ClientDetails() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                          ${payment.amount.toFixed(2)}
+                          {getCurrencySymbol(payment.currency || client.preferred_currency || 'USD')}
+                          {payment.amount.toFixed(2)}
                         </div>
                         <Badge className={PAYMENT_STATUS_COLORS[payment.status]}>{payment.status}</Badge>
                       </div>
@@ -541,11 +555,13 @@ export default function ClientDetails() {
                           {invoice.status}
                         </Badge>
                         <div className="font-bold text-green-700 dark:text-green-300 mt-2">
-                          ${invoice.total_amount.toFixed(2)}
+                          {getCurrencySymbol(invoice.currency || 'USD')}
+                          {invoice.total_amount.toFixed(2)}
                         </div>
                         {invoice.amount_due > 0 && (
                           <div className="text-sm text-orange-600 dark:text-orange-300">
-                            Due: ${invoice.amount_due.toFixed(2)}
+                            Due: {getCurrencySymbol(invoice.currency || 'USD')}
+                            {invoice.amount_due.toFixed(2)}
                           </div>
                         )}
                       </div>
@@ -583,7 +599,8 @@ export default function ClientDetails() {
                         {proposal.status}
                       </Badge>
                       <div className="font-bold text-green-700 dark:text-green-300">
-                        ${(proposal.total_cost || 0).toFixed(2)}
+                        {mixedCurrencyLabel(proposal.services, 'client_currency').label}
+                        {(proposal.total_cost || 0).toFixed(2)}
                       </div>
                     </div>
                   </Card>

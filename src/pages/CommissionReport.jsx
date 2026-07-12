@@ -18,6 +18,7 @@ import {
 import { DollarSign, TrendingUp, Download } from 'lucide-react';
 import { useExport } from '@/hooks/useExport';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -193,11 +194,18 @@ export default function CommissionReport() {
                 <tr key={t.id} className="hover:bg-muted">
                   <td className="px-4 py-2 text-sm font-medium">{t.name}</td>
                   <td className="px-4 py-2 text-sm text-muted-foreground">{t.client_name || '—'}</td>
-                  <td className="px-4 py-2 text-sm">${(t.final_price || 0).toLocaleString()}</td>
-                  <td className="px-4 py-2 text-sm text-green-600 dark:text-green-300">${t.profit.toLocaleString()}</td>
+                  <td className="px-4 py-2 text-sm">
+                    {getCurrencySymbol(t.currency || 'USD')}
+                    {(t.final_price || 0).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-2 text-sm text-green-600 dark:text-green-300">
+                    {getCurrencySymbol(t.currency || 'USD')}
+                    {t.profit.toLocaleString()}
+                  </td>
                   <td className="px-4 py-2 text-sm">{(t.commissionRate * 100).toFixed(1)}%</td>
                   <td className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-300">
-                    ${t.commission.toLocaleString()}
+                    {getCurrencySymbol(t.currency || 'USD')}
+                    {t.commission.toLocaleString()}
                   </td>
                 </tr>
               ))}

@@ -376,7 +376,7 @@ export default function ReservationDetails() {
           history.push(
             changeEntry(
               'invoice_created',
-              `Invoice ${existingFull.invoice_number} updated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`,
+              `Invoice ${existingFull.invoice_number} updated for full amount (${currSymbol(trip.selling_currency || 'USD')}${subtotal.toFixed(2)})`,
             ),
           );
         } else {
@@ -403,7 +403,7 @@ export default function ReservationDetails() {
           history.push(
             changeEntry(
               'invoice_created',
-              `Invoice ${invNumber} auto-generated for full amount (${trip.selling_currency || 'USD'}${subtotal.toFixed(2)})`,
+              `Invoice ${invNumber} auto-generated for full amount (${currSymbol(trip.selling_currency || 'USD')}${subtotal.toFixed(2)})`,
             ),
           );
         }
@@ -1200,8 +1200,8 @@ export default function ReservationDetails() {
                   );
                 }
                 const supplierName = service.supplier_id ? supplierMap[service.supplier_id] || '—' : null;
-                const scSupplier = getCurrencySymbol(service.supplier_currency);
-                const scClient = getCurrencySymbol(service.client_currency);
+                const scSupplier = getCurrencySymbol(service.supplier_currency || 'USD');
+                const scClient = getCurrencySymbol(service.client_currency || 'USD');
                 const serviceEffQty = (s) => {
                   const qty = parseInt(s.quantity) || 1;
                   if (s.unit === 'per_night' || s.unit === 'per_day') {

@@ -18,7 +18,10 @@ export default function BookingRequestEmail({
   onConfirmSend,
 }) {
   const { t } = useT();
-  const sc = currSymbol(trip.selling_currency || 'USD');
+  // Sent to the supplier — quote the supplier/acquiring-side price and
+  // currency (service.acquiring_price below), not the client's selling
+  // currency, which can differ.
+  const sc = currSymbol(service.supplier_currency || trip.acquiring_currency || 'USD');
   const quantity = parseInt(service.quantity) || 1;
   const total = (parseFloat(service.acquiring_price) || 0) * quantity;
   const senderInfo = appSettings?.invoice_header || {};

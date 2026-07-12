@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, X, Users, ArrowLeft, List, Search, TrendingUp, UserCheck, Star, DollarSign } from 'lucide-react';
 import { filterClientsByCompany } from '../lib/companySearch';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 function usePipelineStages() {
   const { t } = useT();
@@ -66,7 +67,8 @@ function DealCard({ client }) {
       {client.email && <div className="text-[11px] text-muted-foreground truncate">{client.email}</div>}
       {client.total_paid > 0 && (
         <div className="mt-2 text-xs font-semibold text-green-700 dark:text-green-300">
-          ${(client.total_paid || 0).toFixed(0)}
+          {getCurrencySymbol(client.preferred_currency || 'USD')}
+          {(client.total_paid || 0).toFixed(0)}
         </div>
       )}
       <div className="mt-1.5 flex items-center gap-1.5">

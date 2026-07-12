@@ -146,6 +146,7 @@ export default function InvoiceDetails() {
         await db.entities.ClientPayment.create({
           client_id: invoice.client_id,
           amount: payment,
+          currency: invoice.currency || 'USD',
           payment_date: new Date().toISOString().split('T')[0],
           payment_method: 'bank_transfer',
           status: 'completed',

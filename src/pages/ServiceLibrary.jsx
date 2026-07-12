@@ -30,6 +30,7 @@ import {
 import ServiceBookingRequest from '../components/services/ServiceBookingRequest';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { showSuccess, showError } from '@/lib/toast';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const UNIT_LABELS = {
   per_person: 'Per Person',
@@ -436,7 +437,10 @@ export default function ServiceLibrary() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="font-bold text-green-700 dark:text-green-300">${service.base_price?.toFixed(2)}</div>
+                  <div className="font-bold text-green-700 dark:text-green-300">
+                    {getCurrencySymbol(service.currency || 'USD')}
+                    {service.base_price?.toFixed(2)}
+                  </div>
                   <Button size="sm" variant="outline" onClick={() => openBookingModal(service)}>
                     <Send className="w-3 h-3 mr-1" /> Book
                   </Button>

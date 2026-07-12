@@ -38,6 +38,7 @@ import ScheduledReportsCard from '../components/reports/ScheduledReportsCard';
 import PaymentReminderButton from '../components/invoices/PaymentReminderButton';
 import { useExport } from '@/hooks/useExport';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 // Maps invoice status to a MUI Chip color so badges adapt to light/dark mode
 // via the theme rather than hardcoded Tailwind colors.
@@ -222,7 +223,8 @@ function OverviewTab() {
                           {format(parseISO(inv.due_date), 'MMM d')}
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.dark' }}>
-                          ${inv.amount_due?.toFixed(2)}
+                          {getCurrencySymbol(inv.currency || 'USD')}
+                          {inv.amount_due?.toFixed(2)}
                         </Typography>
                       </Box>
                     </Box>
@@ -340,7 +342,7 @@ function InvoicesTab() {
         await db.integrations.Core.SendEmail({
           to: client.email,
           subject: `[OVERDUE] Payment Reminder – Invoice ${inv.invoice_number}`,
-          body: `Dear ${client.name},\n\nThis is a reminder that invoice ${inv.invoice_number} for $${inv.amount_due?.toFixed(2)} is overdue (was due ${format(new Date(inv.due_date), 'MMM d, yyyy')}).\n\nPlease arrange payment as soon as possible.\n\nThank you,\nTravelPro`,
+          body: `Dear ${client.name},\n\nThis is a reminder that invoice ${inv.invoice_number} for ${getCurrencySymbol(inv.currency || 'USD')}${inv.amount_due?.toFixed(2)} is overdue (was due ${format(new Date(inv.due_date), 'MMM d, yyyy')}).\n\nPlease arrange payment as soon as possible.\n\nThank you,\nTravelPro`,
         });
       }
     }
@@ -570,11 +572,13 @@ function InvoicesTab() {
                       )}
                       <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="h5" sx={{ fontWeight: 700, color: 'success.dark', mb: 0.5 }}>
-                          ${invoice.total_amount.toFixed(2)}
+                          {getCurrencySymbol(invoice.currency || 'USD')}
+                          {invoice.total_amount.toFixed(2)}
                         </Typography>
                         {invoice.amount_due > 0 && (
                           <Typography variant="caption" color="warning.main">
-                            Due: ${invoice.amount_due.toFixed(2)}
+                            Due: {getCurrencySymbol(invoice.currency || 'USD')}
+                            {invoice.amount_due.toFixed(2)}
                           </Typography>
                         )}
                       </Box>

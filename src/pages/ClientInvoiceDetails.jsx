@@ -12,6 +12,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 export default function ClientInvoiceDetails() {
   const { t } = useT();
@@ -47,6 +48,7 @@ export default function ClientInvoiceDetails() {
 
   const isOverdue = invoice.status !== 'paid' && isBefore(parseISO(invoice.due_date), new Date());
   const isPaid = invoice.status === 'paid';
+  const cs = getCurrencySymbol(invoice.currency || 'USD');
 
   const handlePrint = () => {
     window.print();
@@ -163,8 +165,14 @@ export default function ClientInvoiceDetails() {
                 <tr key={index} className="border-b border-border">
                   <td className="py-4">{item.description}</td>
                   <td className="py-4 text-center">{item.quantity}</td>
-                  <td className="py-4 text-right">${item.unit_price.toFixed(2)}</td>
-                  <td className="py-4 text-right font-semibold">${item.amount.toFixed(2)}</td>
+                  <td className="py-4 text-right">
+                    {cs}
+                    {item.unit_price.toFixed(2)}
+                  </td>
+                  <td className="py-4 text-right font-semibold">
+                    {cs}
+                    {item.amount.toFixed(2)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -176,25 +184,37 @@ export default function ClientInvoiceDetails() {
           <div className="w-80 space-y-3">
             <div className="flex justify-between text-lg">
               <span className="text-muted-foreground">{t('clientInvoiceDetails.subtotal')}</span>
-              <span className="font-semibold">${invoice.subtotal?.toFixed(2)}</span>
+              <span className="font-semibold">
+                {cs}
+                {invoice.subtotal?.toFixed(2)}
+              </span>
             </div>
             {invoice.tax_amount > 0 && (
               <div className="flex justify-between text-lg">
                 <span className="text-muted-foreground">
                   {t('clientInvoiceDetails.taxLabel', { rate: invoice.tax_rate })}
                 </span>
-                <span className="font-semibold">${invoice.tax_amount.toFixed(2)}</span>
+                <span className="font-semibold">
+                  {cs}
+                  {invoice.tax_amount.toFixed(2)}
+                </span>
               </div>
             )}
             <div className="flex justify-between text-2xl font-bold border-t-2 pt-3">
               <span>{t('clientInvoiceDetails.total')}</span>
-              <span className="text-green-700 dark:text-green-300">${invoice.total_amount.toFixed(2)}</span>
+              <span className="text-green-700 dark:text-green-300">
+                {cs}
+                {invoice.total_amount.toFixed(2)}
+              </span>
             </div>
             {invoice.amount_paid > 0 && (
               <>
                 <div className="flex justify-between text-lg text-green-600 dark:text-green-300">
                   <span>{t('clientInvoiceDetails.amountPaid')}</span>
-                  <span className="font-semibold">-${invoice.amount_paid.toFixed(2)}</span>
+                  <span className="font-semibold">
+                    -{cs}
+                    {invoice.amount_paid.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-xl font-bold border-t pt-3">
                   <span>{t('clientInvoiceDetails.amountDue')}</span>
@@ -205,7 +225,8 @@ export default function ClientInvoiceDetails() {
                         : 'text-green-700 dark:text-green-300'
                     }
                   >
-                    ${invoice.amount_due?.toFixed(2)}
+                    {cs}
+                    {invoice.amount_due?.toFixed(2)}
                   </span>
                 </div>
               </>

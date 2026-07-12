@@ -113,7 +113,11 @@ async function convertItemsToCurrency(items, displayCurrency) {
     return {
       ...item,
       original_currency: src,
-      original_unit_price: item.unit_price,
+      // Tour items already set original_unit_price to their pre-discount
+      // price (see the tour_id branch above) — preserve that instead of
+      // clobbering it with the (already-discounted) unit_price being
+      // converted here; only default to unit_price when nothing set it yet.
+      original_unit_price: item.original_unit_price ?? item.unit_price,
       currency: displayCurrency,
       exchange_rate: rate,
       unit_price: Math.round(item.unit_price * rate * 100) / 100,
@@ -340,10 +344,98 @@ router.post(
       : [];
     const suppliers = Object.fromEntries(supplierRows.map((r) => [r.id, { id: r.id, ...JSON.parse(r.data) }]));
 
+    // Guided-tour catalog items referenced by tour_id (the curated GuidedTour
+    // entity, not the B2B SupplierPricing table).
+    const tourIds = [...new Set(req.body.items.map((i) => i.tour_id).filter(Boolean))];
+    const tourRows = tourIds.length
+      ? db
+          .prepare(`SELECT * FROM entities WHERE type = 'GuidedTour' AND id IN (${tourIds.map(() => '?').join(',')})`)
+          .all(...tourIds)
+      : [];
+    const tours = Object.fromEntries(tourRows.map((r) => [r.id, { id: r.id, ...JSON.parse(r.data) }]));
+
+    // Total paying participants (adults + children; infants ride free) drive
+    // per-person tour pricing.
+    const paxArr = Array.isArray(req.body.passengers) ? req.body.passengers : [];
+    const totalParticipants = Math.max(
+      1,
+      paxArr.reduce((n, p) => n + (p && p.age_category === 'infant' ? 0 : 1), 0),
+    );
+
     // Build each line authoritatively from the DB in its supplier currency —
     // never trust a client-sent price. Trip-specific details (dates, transfer
     // logistics) are carried through as-is.
     const rawItems = req.body.items.map((reqItem) => {
+      // Guided-tour catalog items are priced from the tour's participant tiers
+      // (not the B2B SupplierPricing table).
+      if (reqItem.tour_id) {
+        const tour = tours[reqItem.tour_id];
+        if (!tour) throw new BadRequestError(`Unknown tour_id: ${reqItem.tour_id}`);
+        // Prefer this line's own attendee count when the request specifies
+        // one (a client could someday send a subset of the trip's passengers
+        // for a given tour) — only fall back to the whole request's
+        // passenger count when the line doesn't say.
+        const itemAttendees = (Number(reqItem.adults) || 0) + (Number(reqItem.children) || 0);
+        const participants = itemAttendees > 0 ? itemAttendees : totalParticipants;
+        const tiers = Array.isArray(tour.pricingTiers) ? tour.pricingTiers : [];
+        let perPerson = 0;
+        if (tiers.length) {
+          const ordered = [...tiers].sort((a, b) => (a.minParticipants || 0) - (b.minParticipants || 0));
+          const match = ordered.find(
+            (t) =>
+              (t.minParticipants || 1) <= participants &&
+              (t.maxParticipants == null || participants <= t.maxParticipants),
+          );
+          const chosen = match || ordered[ordered.length - 1];
+          perPerson = Number(chosen.price) || 0;
+        }
+        let discountPercent = 0;
+        const offer = tour.specialOffer;
+        const op = Number(offer?.percent) || 0;
+        if (op > 0) {
+          const today = new Date().toISOString().slice(0, 10);
+          if ((!offer.startDate || today >= offer.startDate) && (!offer.endDate || today <= offer.endDate)) {
+            discountPercent = op;
+          }
+        }
+        const discounted =
+          discountPercent > 0 ? Math.round(perPerson * (1 - discountPercent / 100) * 100) / 100 : perPerson;
+        const tourCurrency = tour.currency || 'USD';
+        return {
+          tour_id: tour.id,
+          tour_name: tour.name,
+          tour_mode: tour.mode || '',
+          supplier_id: tour.supplierId || '',
+          supplier_name: tour.supplierName || '',
+          service_name: tour.name,
+          image_url: tour.coverImage || '',
+          unit: 'per_person',
+          currency: tourCurrency,
+          unit_price: discounted,
+          original_unit_price: perPerson,
+          discount_percent: discountPercent,
+          quantity: participants,
+          adults: reqItem.adults ?? undefined,
+          children: reqItem.children ?? undefined,
+          infants: reqItem.infants ?? undefined,
+          start_date: reqItem.service_date || reqItem.start_date || '',
+          end_date: reqItem.service_date || reqItem.end_date || '',
+          service_date: reqItem.service_date || '',
+          nights: null,
+          room_type: '',
+          pickup_location: '',
+          dropoff_location: '',
+          flight_number: '',
+          service_time: '',
+          details: reqItem.details || '',
+          car_category: '',
+          car_rental_days: null,
+          car_insurance: false,
+          car_drop_off_surcharge: 0,
+          insurance_surcharge: 0,
+          child_unit_price: 0,
+        };
+      }
       const pricing = pricings[reqItem.pricing_id];
       if (!pricing) throw new BadRequestError(`Unknown pricing_id: ${reqItem.pricing_id}`);
       if (pricing.is_active === false || pricing.approval_status !== 'approved') {
@@ -460,6 +552,8 @@ router.post(
       start_date: req.body.start_date || '',
       end_date: req.body.end_date || '',
       passengers: Array.isArray(req.body.passengers) ? req.body.passengers : [],
+      contact_passenger: req.body.contact_passenger || '',
+      contact_phone: req.body.contact_phone || '',
       items,
       markup_percentage: markupPct,
       subtotal,

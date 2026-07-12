@@ -11,6 +11,7 @@ import { createPageUrl } from '../../utils';
 import { FolderTree, Users, ClipboardList, ChevronDown, ChevronRight, ArrowRight, Star, Tag } from 'lucide-react';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol, mixedCurrencyLabel } from '@/lib/formatters';
 
 export default function SupplierCategorySummary() {
   const { t } = useT();
@@ -80,10 +81,33 @@ export default function SupplierCategorySummary() {
             catSuppliers.reduce((sum, s) => sum + (s.rating || 0), 0) / catSuppliers.filter((s) => s.rating).length || 0
           ).toFixed(1)
         : '—';
-    const minPrice = catPricing.length > 0 ? Math.min(...catPricing.map((p) => p.base_price)) : null;
-    const maxPrice = catPricing.length > 0 ? Math.max(...catPricing.map((p) => p.base_price)) : null;
+    // Price tiers can each carry a different currency (SupplierPricing.currency)
+    // — a raw min/max across all of them would mix magnitudes from different
+    // currencies into one meaningless range. Range on the first currency
+    // found (same rule mixedCurrencyLabel uses everywhere else), and flag
+    // when other currencies exist too.
+    const {
+      symbol: priceSymbol,
+      currencies: priceCurrencies,
+      isMixed: hasMixedCurrencies,
+    } = mixedCurrencyLabel(catPricing, 'currency');
+    const primaryCurrency = priceCurrencies[0] || 'USD';
+    const primaryPricing = catPricing.filter((p) => (p.currency || 'USD') === primaryCurrency);
+    const minPrice = primaryPricing.length > 0 ? Math.min(...primaryPricing.map((p) => p.base_price)) : null;
+    const maxPrice = primaryPricing.length > 0 ? Math.max(...primaryPricing.map((p) => p.base_price)) : null;
 
-    return { catSuppliers, catPricing, catBookings, pendingBookings, confirmedBookings, avgRating, minPrice, maxPrice };
+    return {
+      catSuppliers,
+      catPricing,
+      catBookings,
+      pendingBookings,
+      confirmedBookings,
+      avgRating,
+      minPrice,
+      maxPrice,
+      priceSymbol,
+      hasMixedCurrencies,
+    };
   };
 
   if (categories.length === 0) {
@@ -125,6 +149,8 @@ export default function SupplierCategorySummary() {
           avgRating,
           minPrice,
           maxPrice,
+          priceSymbol,
+          hasMixedCurrencies,
         } = getCategoryStats(category.id);
         const isExpanded = expandedCategories[category.id];
         const color = category.color || '#3B82F6';
@@ -173,9 +199,15 @@ export default function SupplierCategorySummary() {
                 {minPrice !== null && (
                   <div className="text-center">
                     <div className="font-bold text-green-700 dark:text-green-300">
-                      ${minPrice}–${maxPrice}
+                      {priceSymbol}
+                      {minPrice}–{priceSymbol}
+                      {maxPrice}
+                      {hasMixedCurrencies && '*'}
                     </div>
-                    <div className="text-xs text-muted-foreground">{t('supplierCategorySummary.priceRangeLabel')}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {t('supplierCategorySummary.priceRangeLabel')}
+                      {hasMixedCurrencies && ' *other currencies too'}
+                    </div>
                   </div>
                 )}
               </div>
@@ -303,7 +335,8 @@ export default function SupplierCategorySummary() {
                             <span className="text-muted-foreground flex-shrink-0 ml-auto">{booking.service_date}</span>
                             {booking.total_cost > 0 && (
                               <span className="text-green-700 dark:text-green-300 font-medium flex-shrink-0">
-                                ${booking.total_cost}
+                                {getCurrencySymbol(booking.currency || 'USD')}
+                                {booking.total_cost}
                               </span>
                             )}
                           </div>

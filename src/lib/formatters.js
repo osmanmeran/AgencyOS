@@ -43,6 +43,29 @@ export const sym = (code) => getCurrencySymbol(code);
 
 export const CURRENCY_SYMBOLS = CURATED_CURRENCY_SYMBOLS;
 
+/**
+ * Picks a representative currency across a set of records that can each
+ * carry their own currency (proposal services, cart items, pricing tiers),
+ * and discloses the rest when they differ rather than silently labeling a
+ * mixed-currency total with one (possibly wrong) symbol. Uses the first
+ * currency encountered, in record order — deterministic, and consistent
+ * with how these totals are otherwise built up (first line first).
+ * @param {any[]} records
+ * @param {string} currencyKey - property name holding each record's currency code
+ */
+export function mixedCurrencyLabel(records, currencyKey) {
+  const currencies = [...new Set((records || []).map((r) => r?.[currencyKey]).filter(Boolean))];
+  const primary = currencies[0] || 'USD';
+  const symbol = getCurrencySymbol(primary);
+  const isMixed = currencies.length > 1;
+  return {
+    symbol,
+    currencies,
+    isMixed,
+    label: isMixed ? `${symbol} (${currencies.join('/')})` : symbol,
+  };
+}
+
 /** Formats a number as localized currency (e.g. `$1,234.56`), falling back to a plain `CUR amount` string for unsupported currency codes. */
 export function formatCurrency(amount, currency = 'USD') {
   if (amount == null || isNaN(amount)) return '$0.00';

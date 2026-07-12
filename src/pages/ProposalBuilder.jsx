@@ -31,6 +31,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
 import { applyMarkup } from '@/lib/pricing';
+import { getCurrencySymbol, mixedCurrencyLabel } from '@/lib/formatters';
 
 const UNIT_LABELS = {
   per_person: 'Per Person',
@@ -154,6 +155,10 @@ export default function ProposalBuilder() {
   };
 
   const total = selectedItems.reduce((sum, item) => sum + calcLineTotal(item, markupPct), 0);
+  // Selected items can each carry their own currency (from ServiceTemplate) —
+  // show the first one found, disclosing the rest rather than silently
+  // labeling a mixed sum with a single (possibly wrong) symbol.
+  const totalCurrencyLabel = mixedCurrencyLabel(selectedItems, 'currency').label;
 
   const toggleCategory = (catId) => {
     setExpandedCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
@@ -262,7 +267,8 @@ export default function ProposalBuilder() {
                                 <div className="text-sm font-medium text-foreground truncate">{svc.name}</div>
                                 <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                   <span className="font-semibold text-green-700 dark:text-green-300">
-                                    ${svc.base_price?.toFixed(2)}
+                                    {getCurrencySymbol(svc.currency || 'USD')}
+                                    {svc.base_price?.toFixed(2)}
                                   </span>
                                   <span>· {UNIT_LABELS[svc.price_unit] || svc.price_unit}</span>
                                 </div>
@@ -517,7 +523,8 @@ export default function ProposalBuilder() {
                                     <div className="col-span-2 flex items-center justify-end">
                                       {isPreviewing ? (
                                         <span className="text-sm text-foreground">
-                                          ${parseFloat(item.unit_price).toFixed(2)}
+                                          {getCurrencySymbol(item.currency || 'USD')}
+                                          {parseFloat(item.unit_price).toFixed(2)}
                                         </span>
                                       ) : (
                                         <Input
@@ -533,7 +540,8 @@ export default function ProposalBuilder() {
 
                                     <div className="col-span-1 flex items-center justify-end gap-1">
                                       <span className="font-bold text-green-700 dark:text-green-300 text-sm">
-                                        ${lineTotal.toFixed(2)}
+                                        {getCurrencySymbol(item.currency || 'USD')}
+                                        {lineTotal.toFixed(2)}
                                       </span>
                                       {!isPreviewing && (
                                         <Button
@@ -586,12 +594,18 @@ export default function ProposalBuilder() {
                   <Separator />
                   <div className="flex justify-between text-lg font-bold text-foreground">
                     <span>Total</span>
-                    <span className="text-green-700 dark:text-green-300">${total.toFixed(2)}</span>
+                    <span className="text-green-700 dark:text-green-300">
+                      {totalCurrencyLabel}
+                      {total.toFixed(2)}
+                    </span>
                   </div>
                   {numTravelers > 1 && (
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Per person ({numTravelers} travelers)</span>
-                      <span>${(total / numTravelers).toFixed(2)}</span>
+                      <span>
+                        {totalCurrencyLabel}
+                        {(total / numTravelers).toFixed(2)}
+                      </span>
                     </div>
                   )}
                 </div>

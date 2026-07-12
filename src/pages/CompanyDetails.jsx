@@ -33,6 +33,7 @@ import {
   Star,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const PAYMENT_METHODS = ['credit_card', 'bank_transfer', 'paypal', 'check', 'cash', 'other'];
 
@@ -263,13 +264,13 @@ export default function CompanyDetails() {
             />
             <Stat
               label={t('companyDetails.paidStat')}
-              value={`$${rollup.paid.toFixed(0)}`}
+              value={`${getCurrencySymbol(company.preferred_currency || 'USD')}${rollup.paid.toFixed(0)}`}
               icon={DollarSign}
               tone="text-green-700 dark:text-green-300"
             />
             <Stat
               label={t('companyDetails.outstandingStat')}
-              value={`$${rollup.owed.toFixed(0)}`}
+              value={`${getCurrencySymbol(company.preferred_currency || 'USD')}${rollup.owed.toFixed(0)}`}
               icon={DollarSign}
               tone="text-orange-600 dark:text-orange-300"
             />
@@ -453,7 +454,8 @@ export default function CompanyDetails() {
                       </div>
                       {(c.total_paid || 0) > 0 && (
                         <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                          ${(c.total_paid || 0).toFixed(0)}
+                          {getCurrencySymbol(c.preferred_currency || company.preferred_currency || 'USD')}
+                          {(c.total_paid || 0).toFixed(0)}
                         </span>
                       )}
                       <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

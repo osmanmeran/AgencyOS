@@ -120,7 +120,7 @@ export default function ClientProposalDetails() {
         {proposal.services && proposal.services.length > 0 ? (
           <div className="space-y-4">
             {proposal.services.map((service, index) => {
-              const sc = getCurrencySymbol(service.client_currency);
+              const sc = getCurrencySymbol(service.client_currency || 'USD');
               return (
                 <div key={index} className="border-b border-border pb-4 last:border-0">
                   <div className="flex justify-between items-start mb-2">

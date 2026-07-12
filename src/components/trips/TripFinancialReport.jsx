@@ -10,11 +10,17 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, Receipt, Calculator, Save, Percent } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 export default function TripFinancialReport({ trip, events, invoices }) {
   const { t } = useT();
   const queryClient = useQueryClient();
   const [markupPercentage, setMarkupPercentage] = useState(trip.markup_percentage || 0);
+  // Expenses are supplier-side (acquiring currency); price/paid/profit are
+  // client-facing sell amounts (selling currency) — same split the rest of
+  // the reservation UI uses (see ReservationDetails.jsx, TripCostSummary.jsx).
+  const ac = getCurrencySymbol(trip.acquiring_currency || 'USD');
+  const sc = getCurrencySymbol(trip.selling_currency || 'USD');
 
   const totalExpenses = events.reduce((sum, e) => sum + (e.cost || 0), 0);
   const markupAmount = totalExpenses * (markupPercentage / 100);
@@ -50,21 +56,33 @@ export default function TripFinancialReport({ trip, events, invoices }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-4 bg-gradient-to-br from-slate-500 to-slate-600 text-white">
           <div className="text-sm opacity-80 mb-1">{t('tripFinancialReport.totalExpenses')}</div>
-          <div className="text-2xl font-bold">${totalExpenses.toFixed(2)}</div>
+          <div className="text-2xl font-bold">
+            {ac}
+            {totalExpenses.toFixed(2)}
+          </div>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <div className="text-sm opacity-80 mb-1">{t('tripFinancialReport.finalPrice')}</div>
-          <div className="text-2xl font-bold">${finalPrice.toFixed(2)}</div>
+          <div className="text-2xl font-bold">
+            {sc}
+            {finalPrice.toFixed(2)}
+          </div>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-green-500 to-green-600 text-white">
           <div className="text-sm opacity-80 mb-1">{t('tripFinancialReport.paid')}</div>
-          <div className="text-2xl font-bold">${totalPaid.toFixed(2)}</div>
+          <div className="text-2xl font-bold">
+            {sc}
+            {totalPaid.toFixed(2)}
+          </div>
         </Card>
         <Card
           className={`p-4 bg-gradient-to-br ${profit >= 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white`}
         >
           <div className="text-sm opacity-80 mb-1">{t('tripFinancialReport.profit')}</div>
-          <div className="text-2xl font-bold">${profit.toFixed(2)}</div>
+          <div className="text-2xl font-bold">
+            {sc}
+            {profit.toFixed(2)}
+          </div>
           <div className="text-xs opacity-80">
             {t('tripFinancialReport.marginLabel', { percent: profitMargin.toFixed(1) })}
           </div>
@@ -80,7 +98,10 @@ export default function TripFinancialReport({ trip, events, invoices }) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <Label className="text-sm text-muted-foreground">{t('tripFinancialReport.totalExpenses')}</Label>
-            <div className="text-2xl font-bold text-foreground">${totalExpenses.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-foreground">
+              {ac}
+              {totalExpenses.toFixed(2)}
+            </div>
           </div>
           <div className="space-y-2">
             <Label>{t('tripFinancialReport.markupPercent')}</Label>
@@ -96,12 +117,18 @@ export default function TripFinancialReport({ trip, events, invoices }) {
           </div>
           <div>
             <Label className="text-sm text-muted-foreground">{t('tripFinancialReport.markupAmount')}</Label>
-            <div className="text-xl font-bold text-blue-600 dark:text-blue-300">+${markupAmount.toFixed(2)}</div>
+            <div className="text-xl font-bold text-blue-600 dark:text-blue-300">
+              +{sc}
+              {markupAmount.toFixed(2)}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div>
               <Label className="text-sm text-muted-foreground">{t('tripFinancialReport.finalPrice')}</Label>
-              <div className="text-2xl font-bold text-green-700 dark:text-green-300">${finalPrice.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                {sc}
+                {finalPrice.toFixed(2)}
+              </div>
             </div>
             <Button onClick={() => updateMutation.mutate()} className="ml-auto bg-blue-600 hover:bg-blue-700">
               <Save className="w-4 h-4 mr-2" /> {t('common.save')}
@@ -127,7 +154,10 @@ export default function TripFinancialReport({ trip, events, invoices }) {
                   <div className="text-sm text-muted-foreground">{event.date}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-foreground">${(event.cost || 0).toFixed(2)}</div>
+                  <div className="font-bold text-foreground">
+                    {ac}
+                    {(event.cost || 0).toFixed(2)}
+                  </div>
                   {event.quantity > 1 && <div className="text-xs text-muted-foreground">x{event.quantity}</div>}
                 </div>
               </div>
@@ -135,7 +165,10 @@ export default function TripFinancialReport({ trip, events, invoices }) {
           )}
           <div className="flex justify-between items-center p-3 bg-muted rounded-lg font-bold">
             <span>{t('clientProposalDetails.total')}</span>
-            <span>${totalExpenses.toFixed(2)}</span>
+            <span>
+              {ac}
+              {totalExpenses.toFixed(2)}
+            </span>
           </div>
         </div>
       </Card>
@@ -167,10 +200,15 @@ export default function TripFinancialReport({ trip, events, invoices }) {
                   </Badge>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-foreground">${(invoice.total_amount || 0).toFixed(2)}</div>
+                  <div className="font-bold text-foreground">
+                    {getCurrencySymbol(invoice.currency || 'USD')}
+                    {(invoice.total_amount || 0).toFixed(2)}
+                  </div>
                   {invoice.amount_due > 0 && (
                     <div className="text-sm text-orange-600 dark:text-orange-300">
-                      {t('tripFinancialReport.due', { amount: `$${invoice.amount_due.toFixed(2)}` })}
+                      {t('tripFinancialReport.due', {
+                        amount: `${getCurrencySymbol(invoice.currency || 'USD')}${invoice.amount_due.toFixed(2)}`,
+                      })}
                     </div>
                   )}
                 </div>

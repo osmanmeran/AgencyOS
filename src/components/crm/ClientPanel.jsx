@@ -40,6 +40,7 @@ import EmailComposer from './EmailComposer';
 import { colleaguesOf } from '../../lib/companySearch';
 import CompanyPicker from './CompanyPicker';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
@@ -309,13 +310,19 @@ export default function ClientPanel({ client, onClientUpdated }) {
             <div className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">
               {t('clientPanel.paidStat')}
             </div>
-            <div className="font-bold text-green-700 dark:text-green-300 text-lg">${totalPaid.toFixed(0)}</div>
+            <div className="font-bold text-green-700 dark:text-green-300 text-lg">
+              {getCurrencySymbol(client.preferred_currency || 'USD')}
+              {totalPaid.toFixed(0)}
+            </div>
           </div>
           <div className="bg-card rounded-xl p-3 shadow-sm border border-border">
             <div className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wider">
               {t('clientPanel.outstandingStat')}
             </div>
-            <div className="font-bold text-orange-600 dark:text-orange-300 text-lg">${totalOwed.toFixed(0)}</div>
+            <div className="font-bold text-orange-600 dark:text-orange-300 text-lg">
+              {getCurrencySymbol(client.preferred_currency || 'USD')}
+              {totalOwed.toFixed(0)}
+            </div>
           </div>
         </div>
       </div>
@@ -391,7 +398,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
                     Icon = DollarSign;
                     color = 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-300';
                     label = item.invoice_number;
-                    sublabel = `$${(item.total_amount || 0).toFixed(0)} · ${item.status}`;
+                    sublabel = `${getCurrencySymbol(item.currency || 'USD')}${(item.total_amount || 0).toFixed(0)} · ${item.status}`;
                     href = createPageUrl(`InvoiceDetails?id=${item.id}`);
                   } else {
                     Icon = Plane;
@@ -714,7 +721,8 @@ export default function ClientPanel({ client, onClientUpdated }) {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {p.total_cost > 0 && (
                       <span className="text-sm font-bold text-green-700 dark:text-green-300">
-                        ${p.total_cost.toFixed(0)}
+                        {getCurrencySymbol((p.services || []).map((s) => s.client_currency).find(Boolean) || 'USD')}
+                        {p.total_cost.toFixed(0)}
                       </span>
                     )}
                     <Badge className={`text-xs ${PROPOSAL_STATUS_COLORS[p.status]}`}>{p.status}</Badge>
@@ -754,7 +762,10 @@ export default function ClientPanel({ client, onClientUpdated }) {
                     </div>
                   </Link>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-sm font-bold text-foreground">${(inv.total_amount || 0).toFixed(0)}</span>
+                    <span className="text-sm font-bold text-foreground">
+                      {getCurrencySymbol(inv.currency || 'USD')}
+                      {(inv.total_amount || 0).toFixed(0)}
+                    </span>
                     <Badge className={`text-xs ${INVOICE_STATUS_COLORS[inv.status]}`}>{inv.status}</Badge>
                     <Button
                       size="sm"

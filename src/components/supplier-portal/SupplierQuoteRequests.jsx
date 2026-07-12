@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { MessageSquare, Calendar, Users, DollarSign, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300',
@@ -155,7 +156,9 @@ export default function SupplierQuoteRequests({ supplierId }) {
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-muted-foreground" />
                     <span>
-                      {t('supplierQuoteRequests.budgetLabel', { amount: `$${request.total_cost.toFixed(2)}` })}
+                      {t('supplierQuoteRequests.budgetLabel', {
+                        amount: `${getCurrencySymbol(request.currency || 'USD')}${request.total_cost.toFixed(2)}`,
+                      })}
                     </span>
                   </div>
                 )}

@@ -15,6 +15,7 @@ import { showSuccess, showError } from '@/lib/toast';
 import { DollarSign, Plus, Edit, Trash2, Copy, Check, XCircle, Loader2, MousePointerClick } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 import { AIRPORT_LOCATIONS } from '@/lib/airportLocations';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const UNIT_LABEL_KEYS = {
   per_person: 'supplierPricingManager.unitPerPerson',
@@ -443,12 +444,14 @@ export default function SupplierPricingManager({ supplierId, categories = /** @t
           </div>
           <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
             <span className="font-semibold text-green-700 dark:text-green-300">
-              ${pricing.base_price?.toFixed(2)}{' '}
+              {getCurrencySymbol(pricing.currency || 'USD')}
+              {pricing.base_price?.toFixed(2)}{' '}
               <span className="font-normal text-muted-foreground">{t('supplierPricingManager.baseSuffix')}</span>
             </span>
             {pricing.client_price != null && (
               <span className="font-semibold text-blue-700 dark:text-blue-300">
-                ${pricing.client_price?.toFixed(2)}{' '}
+                {getCurrencySymbol(pricing.currency || 'USD')}
+                {pricing.client_price?.toFixed(2)}{' '}
                 <span className="font-normal text-muted-foreground">{t('supplierPricingManager.sellSuffix')}</span>
               </span>
             )}

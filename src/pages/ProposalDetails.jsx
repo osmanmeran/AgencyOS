@@ -1,5 +1,5 @@
 import { db } from '@/lib/DbContext';
-import { getCurrencySymbol } from '@/lib/formatters';
+import { getCurrencySymbol, mixedCurrencyLabel } from '@/lib/formatters';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -240,8 +240,10 @@ export default function ProposalDetails() {
     setBookingModalOpen(true);
   };
 
-  const proposalCurrencies = [...new Set((proposal.services || []).map((s) => s.client_currency).filter(Boolean))];
-  const proposalCurrencySymbol = getCurrencySymbol(proposalCurrencies[0] || 'USD');
+  const { symbol: proposalCurrencySymbol, currencies: proposalCurrencies } = mixedCurrencyLabel(
+    proposal.services,
+    'client_currency',
+  );
 
   return (
     <div className="space-y-6 print:space-y-4">
@@ -444,7 +446,7 @@ export default function ProposalDetails() {
             {proposal.services.map((service, index) => {
               const bsConfig = BOOKING_STATUS_CONFIG[service.booking_status || 'not_requested'];
               const BsIcon = bsConfig.icon;
-              const sc = getCurrencySymbol(service.client_currency);
+              const sc = getCurrencySymbol(service.client_currency || 'USD');
               return (
                 <div key={index} className="border border-border rounded-lg p-5">
                   <div className="flex justify-between items-start mb-3">
@@ -590,7 +592,8 @@ export default function ProposalDetails() {
                   )}
                   {entry.previous_total && (
                     <div className="mt-2 text-sm text-muted-foreground">
-                      Previous total: ${entry.previous_total.toFixed(2)}
+                      Previous total: {proposalCurrencySymbol}
+                      {entry.previous_total.toFixed(2)}
                     </div>
                   )}
                 </div>
@@ -870,6 +873,7 @@ function ResponseEditor({ service, _serviceIdx, onSave, loading }) {
 }
 
 function buildProposalBookingEmail(proposal, service, note) {
+  const sc = getCurrencySymbol(service.client_currency || 'USD');
   return [
     'Hello,',
     '',
@@ -882,8 +886,8 @@ function buildProposalBookingEmail(proposal, service, note) {
       ? `DATES: ${format(new Date(proposal.start_date), 'MMM d')} – ${format(new Date(proposal.end_date), 'MMM d, yyyy')}`
       : '',
     `QUANTITY: ${service.quantity || 1}`,
-    `UNIT PRICE: $${(service.cost || 0).toFixed(2)}`,
-    `TOTAL: $${((service.cost || 0) * (service.quantity || 1)).toFixed(2)}`,
+    `UNIT PRICE: ${sc}${(service.cost || 0).toFixed(2)}`,
+    `TOTAL: ${sc}${((service.cost || 0) * (service.quantity || 1)).toFixed(2)}`,
     service.description ? `DESCRIPTION: ${service.description}` : '',
     proposal.num_travelers ? `TRAVELERS: ${proposal.num_travelers}` : '',
     '',

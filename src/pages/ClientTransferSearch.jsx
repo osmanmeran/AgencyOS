@@ -1,32 +1,30 @@
 import { db } from '@/lib/DbContext';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { DateField } from '@/components/ui/date-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { Loader2, Send, MapPin, Users } from 'lucide-react';
+import { Send, MapPin, Users } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
-import { getCatalog, submitQuote } from '@/lib/b2bApi';
+import { getCatalog } from '@/lib/b2bApi';
+import { addToCart } from '@/lib/clientCart';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useMyClient } from '@/hooks/useMyClient';
-import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { unitPriceFor } from '@/lib/hotelPricing';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
 import { AIRPORT_LOCATIONS } from '@/lib/airportLocations';
 import TransferResultCard from '@/components/transfer/TransferResultCard';
-import TripAttachChoice from '@/components/b2b/TripAttachChoice';
 
 const isTransferCategory = (name) => (name || '').toLowerCase().includes('transfer');
 const FIXED_UNITS = ['per_group', 'flat_rate'];
@@ -54,9 +52,7 @@ function readInitialSearch() {
 export default function ClientTransferSearch() {
   const { t } = useT();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const client = useMyClient();
-  const upcomingTrip = useUpcomingTrip(client?.id);
   const actAsClientId = useActAsClientId();
   const [isStaffPreview, setIsStaffPreview] = useState(false);
 
@@ -68,13 +64,10 @@ export default function ClientTransferSearch() {
   const [passengers, setPassengers] = useState(initialSearch.passengers);
 
   const [selected, setSelected] = useState(/** @type {any} */ (null));
-  const [requestTitle, setRequestTitle] = useState('');
-  const [notes, setNotes] = useState('');
   const [pickupLocation, setPickupLocation] = useState('');
   const [dropoffLocation, setDropoffLocation] = useState('');
   const [transferType, setTransferType] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
-  const [attachToTrip, setAttachToTrip] = useState(false);
 
   useEffect(() => {
     db.auth.me().then((me) => {
@@ -114,52 +107,41 @@ export default function ClientTransferSearch() {
 
   const openConfirm = (item) => {
     setSelected(item);
-    setRequestTitle(`${item.name} — ${fromLocation} → ${toLocation}`);
-    setNotes('');
     setPickupLocation(fromLocation);
     setDropoffLocation(toLocation);
     setTransferType('');
     setFlightNumber('');
-    setAttachToTrip(false);
   };
 
   const quantity = selected ? (FIXED_UNITS.includes(selected.unit) ? 1 : Math.max(1, passengers)) : 1;
   const total = selected ? unitPriceFor(selected, quantity) * quantity : 0;
 
-  const submitMutation = /** @type {any} */ (
-    useMutation({
-      mutationFn: () =>
-        submitQuote({
-          title: requestTitle || `${selected.name} — ${fromLocation} → ${toLocation}`,
-          destination: toLocation,
-          destinations: [{ label: `${fromLocation} → ${toLocation}` }],
-          start_date: serviceDate,
-          end_date: serviceDate,
-          notes,
-          trip_id: attachToTrip && upcomingTrip ? upcomingTrip.id : undefined,
-          passengers: client ? [{ name: client.name, age_category: 'adult', is_contact: true }] : [],
-          items: [
-            {
-              pricing_id: selected.pricing_id,
-              quantity,
-              start_date: serviceDate,
-              end_date: serviceDate,
-              pickup_location: pickupLocation || undefined,
-              dropoff_location: dropoffLocation || undefined,
-              flight_number: flightNumber || undefined,
-              service_time: serviceTime || undefined,
-              details: transferType || undefined,
-            },
-          ],
-        }),
-      onSuccess: (quote) => {
-        showSuccess(t('hotelSearch.submitSuccess'));
-        queryClient.invalidateQueries({ queryKey: ['myQuotes'] });
-        navigate(createPageUrl(`ClientQuoteDetails?id=${quote.id}`));
-      },
-      onError: (error) => showError(t('hotelSearch.submitError'), error.message),
-    })
-  );
+  // Add the selected transfer to the client's quote cart instead of submitting
+  // instantly — passenger/contact details are collected in the Request-a-Quote
+  // builder before confirmation.
+  const addToCartHandler = () => {
+    if (!selected) return;
+    const saved = addToCart({
+      _key: `cart-${Date.now()}`,
+      pricing_id: selected.pricing_id,
+      service_name: selected.name,
+      unit: selected.unit,
+      quantity,
+      start_date: serviceDate,
+      end_date: serviceDate,
+      pickup_location: pickupLocation || undefined,
+      dropoff_location: dropoffLocation || undefined,
+      flight_number: flightNumber || undefined,
+      service_time: serviceTime || undefined,
+      details: transferType || undefined,
+    });
+    if (!saved) {
+      showError(t('cart.addToCartFailed'));
+      return;
+    }
+    showSuccess(t('cart.addedToCart'));
+    navigate(createPageUrl('ClientQuoteBuilder'));
+  };
 
   if (!client || catLoading) return <SkeletonCard />;
 
@@ -293,39 +275,16 @@ export default function ClientTransferSearch() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>{t('hotelSearch.requestTitleLabel')}</Label>
-                <Input value={requestTitle} onChange={(e) => setRequestTitle(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t('hotelSearch.notesLabel')}</Label>
-                <Textarea
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={t('hotelSearch.notesPlaceholder')}
-                />
-              </div>
-
-              <TripAttachChoice trip={upcomingTrip} attach={attachToTrip} onChange={setAttachToTrip} />
-
               {isStaffPreview ? (
                 <p className="text-center text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg py-2.5">
                   Staff preview is read-only — sign in as the client to submit a quote request.
                 </p>
               ) : (
-                <Button className="w-full" disabled={submitMutation.isPending} onClick={() => submitMutation.mutate()}>
-                  {submitMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t('hotelSearch.submitting')}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      {t('hotelSearch.submitRequestButton')}
-                    </>
-                  )}
+                <Button className="w-full" onClick={addToCartHandler}>
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    {t('cart.addToCart')}
+                  </>
                 </Button>
               )}
             </div>

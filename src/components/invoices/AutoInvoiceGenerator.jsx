@@ -11,6 +11,7 @@ import { format, addDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import { useT } from '@/lib/i18n/I18nContext';
+import { getCurrencySymbol } from '@/lib/formatters';
 
 const MILESTONE_CONFIG = [
   { key: 'deposit', labelKey: 'milestoneDepositLabel', descKey: 'milestoneDepositDesc', percentage: 0.3, dueDays: 7 },
@@ -38,6 +39,8 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
   const queryClient = useQueryClient();
 
   const totalAmount = trip.final_price || trip.total_expenses || 0;
+  const currency = trip.selling_currency || 'USD';
+  const cs = getCurrencySymbol(currency);
 
   const existingMilestoneKeys = existingInvoices.map((inv) => inv.milestone_key).filter(Boolean);
 
@@ -62,6 +65,7 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
           invoice_number: invoiceNumber,
           client_id: trip.client_id,
           trip_id: trip.id,
+          currency,
           issue_date: issueDate,
           due_date: dueDate,
           line_items: lineItems,
@@ -82,7 +86,7 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
           await db.integrations.Core.SendEmail({
             to: client.email,
             subject: `Invoice ${invoiceNumber} – ${trip.name}`,
-            body: `Dear ${client.name},\n\nPlease find attached your invoice ${invoiceNumber} for the amount of $${amount.toFixed(2)}.\n\nDue date: ${format(new Date(dueDate), 'MMM d, yyyy')}\n\nThank you for choosing us.\n\nBest regards,\n${settings?.invoice_header?.company_name || 'TravelPro'}`,
+            body: `Dear ${client.name},\n\nPlease find attached your invoice ${invoiceNumber} for the amount of ${cs}${amount.toFixed(2)}.\n\nDue date: ${format(new Date(dueDate), 'MMM d, yyyy')}\n\nThank you for choosing us.\n\nBest regards,\n${settings?.invoice_header?.company_name || 'TravelPro'}`,
           });
         }
 
@@ -121,7 +125,7 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
 
           <div className="space-y-4 mt-2">
             <div className="bg-muted rounded-lg p-3 text-sm text-foreground">
-              <span className="font-semibold">{t('autoInvoiceGenerator.tripTotalLabel')}</span> $
+              <span className="font-semibold">{t('autoInvoiceGenerator.tripTotalLabel')}</span> {cs}
               {totalAmount.toFixed(2)}
               {client && <span className="ml-4 font-semibold">{t('autoInvoiceGenerator.clientColonLabel')}</span>}
               {client && <span className="ml-1">{client.name}</span>}
@@ -154,7 +158,10 @@ export default function AutoInvoiceGenerator({ trip, client, existingInvoices = 
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground">${(totalAmount * m.percentage).toFixed(2)}</span>
+                        <span className="font-bold text-foreground">
+                          {cs}
+                          {(totalAmount * m.percentage).toFixed(2)}
+                        </span>
                         {alreadyExists && (
                           <Badge className="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 text-xs">
                             <CheckCircle className="w-3 h-3 mr-1" />
