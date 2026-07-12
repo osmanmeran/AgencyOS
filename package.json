@@ -19,6 +19,7 @@
     "db:migrate": "node server/migrations/cli.js up",
     "db:migrate:down": "node server/migrations/cli.js down",
     "db:migrate:status": "node server/migrations/cli.js status",
+    "seed:tours": "node scripts/seedItalianDailyTours.mjs && node scripts/localizeItalianTours.mjs",
     "db:backup:list": "node scripts/backup-cli.mjs list",
     "db:backup:restore": "node scripts/backup-cli.mjs restore",
     "test": "vitest run",
