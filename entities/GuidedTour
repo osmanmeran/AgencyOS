@@ -8,6 +8,8 @@
   },
   "properties": {
     "name": { "type": "string", "description": "Tour name" },
+    "supplierId": { "type": "string", "description": "Linked supplier (tour operator) id" },
+    "supplierName": { "type": "string", "description": "Denormalized supplier name for display" },
     "mode": { "type": "string", "enum": ["daily", "multiday"], "description": "Selects which field set applies" },
     "language": { "type": "string", "description": "Tour language code (en/es/fr/de/it/tr)" },
     "location": { "type": "string", "description": "Daily tour meeting/operating location" },

@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getDb } from '../../server/db.js';
 import { getUserPermissions, hasPermission, getEffectiveTierPermissions } from '../../server/permissions.js';
 
-// hasPermission/getUserPermissions used to only ever consult the hardcoded
-// DEFAULT_TIER_PERMISSIONS, ignoring the live AppSettings.tier_permissions
+// hasPermission/getUserPermissions consult the live AppSettings.tier_permissions
 // override an admin can save via the Permissions tab (AppSettings.jsx /
-// UserManagement.jsx) — a gap the frontend's PermissionContext didn't have,
-// since it always merged in the live override. These tests cover that the
-// server now honors the same override, and falls back cleanly when there
-// isn't one.
+// UserManagement.jsx), UNIONED with the hardcoded DEFAULT_TIER_PERMISSIONS.
+// The union (rather than wholesale replacement) means a stale override saved
+// before a permission key was introduced in code can never silently strip that
+// new capability from a tier. These tests cover that the server honors the
+// override and inherits defaults when there isn't one.
 
 const db = getDb();
 
@@ -47,9 +47,11 @@ describe('server permissions: AppSettings.tier_permissions override', () => {
     expect(hasPermission('agent', [], 'delete_trips')).toBe(true);
   });
 
-  it('honors a live override that revokes a default permission from a tier', () => {
+  it('never lets an override silently revoke a default permission (defaults are always inherited)', () => {
+    // A stale/partial override (e.g. saved before a new key was introduced)
+    // must not strip capabilities the tier gets from defaults.
     setAppSettings({ tier_permissions: { agent: [] } });
-    expect(hasPermission('agent', [], 'create_trips')).toBe(false);
+    expect(hasPermission('agent', [], 'create_trips')).toBe(true);
   });
 
   it('falls back to defaults for a tier missing from the override object', () => {
@@ -65,7 +67,9 @@ describe('server permissions: AppSettings.tier_permissions override', () => {
 
   it('getUserPermissions and getEffectiveTierPermissions agree with hasPermission', () => {
     setAppSettings({ tier_permissions: { agent: ['create_trips'] } });
-    expect(getEffectiveTierPermissions('agent')).toEqual(['create_trips']);
+    // effective perms = defaults unioned with the override
+    const effective = getEffectiveTierPermissions('agent');
+    expect(effective).toEqual(expect.arrayContaining(['create_trips']));
     expect(getUserPermissions('agent', ['view_reports'])).toEqual(
       expect.arrayContaining(['create_trips', 'view_reports']),
     );

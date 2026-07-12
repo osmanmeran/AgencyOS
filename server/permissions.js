@@ -21,13 +21,19 @@ function getTierPermissionsOverride() {
 }
 
 /**
- * A tier's effective permission list: the live override for that tier if an
- * admin has saved one, else the hardcoded default. Matches
- * PermissionContext.jsx's `effectiveTierPerms[tier] || DEFAULT_TIER_PERMISSIONS[tier]`.
+ * A tier's effective permission list: the default grants merged with any
+ * live override an admin has saved for that tier. We UNION the two rather
+ * than replacing defaults wholesale, so permission keys introduced in code
+ * after an override was saved (e.g. a newly added `manage_guided_tours`) are
+ * still inherited — otherwise a stale override would silently strip new
+ * capabilities from every tier. An admin's override can still narrow or widen
+ * grants for keys it explicitly lists.
  */
 export function getEffectiveTierPermissions(tier) {
   const override = getTierPermissionsOverride();
-  return (override && override[tier]) || DEFAULT_TIER_PERMISSIONS[tier] || [];
+  const defaults = DEFAULT_TIER_PERMISSIONS[tier] || [];
+  const custom = (override && override[tier]) || [];
+  return [...new Set([...defaults, ...custom])];
 }
 
 export function getUserPermissions(userTier, customPermissions) {

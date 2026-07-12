@@ -42,6 +42,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Occupancy** — Minimum and maximum occupancy enforced per tour
 - **Private or Regular** — Daily tours can be private or regular (other passengers grouped into the same departure)
 - **Pricing Tiers** — Per-participant pricing bands (min/max participants → price)
+- **Supplier Link** — Each tour is associated with a supplier (tour operator)
 - Accessible from two pills on the Dashboard home page and the **Tours** nav group
 
 ### Integrations

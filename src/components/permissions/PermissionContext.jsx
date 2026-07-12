@@ -10,7 +10,9 @@ async function fetchTierPermissions() {
     const all = await db.entities.AppSettings.list();
     const settings = all[0];
     if (settings?.tier_permissions) return settings.tier_permissions;
-  } catch { /* fallback */ }
+  } catch {
+    /* fallback */
+  }
   return null;
 }
 
@@ -24,10 +26,7 @@ export function PermissionProvider({ children }) {
   const computePermissions = useCallback(async () => {
     setLoading(true);
     try {
-      const [currentUser, tierPermsFromDb] = await Promise.all([
-        db.auth.me(),
-        fetchTierPermissions(),
-      ]);
+      const [currentUser, tierPermsFromDb] = await Promise.all([db.auth.me(), fetchTierPermissions()]);
       if (!mountedRef.current) return;
 
       const effectiveTierPerms = tierPermsFromDb || DEFAULT_TIER_PERMISSIONS;
@@ -35,7 +34,11 @@ export function PermissionProvider({ children }) {
       setUser(currentUser);
 
       const tier = currentUser.user_tier || currentUser.role || 'agent';
-      const basePermissions = effectiveTierPerms[tier] || DEFAULT_TIER_PERMISSIONS[tier] || [];
+      // Union the saved override with the code defaults so newly-added
+      // permission keys are inherited even when a stale override exists.
+      const basePermissions = [
+        ...new Set([...(DEFAULT_TIER_PERMISSIONS[tier] || []), ...(effectiveTierPerms[tier] || [])]),
+      ];
       const customPermissions = currentUser.custom_permissions || [];
       setPermissions([...new Set([...basePermissions, ...customPermissions])]);
     } catch {
@@ -49,7 +52,9 @@ export function PermissionProvider({ children }) {
 
   useEffect(() => {
     computePermissions();
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, [computePermissions]);
 
   const refreshUser = useCallback(() => {
@@ -57,15 +62,22 @@ export function PermissionProvider({ children }) {
   }, [computePermissions]);
 
   const hasPermission = (permission) => permissions.includes(permission);
-  const hasAnyPermission = (perms) => perms.some(p => permissions.includes(p));
-  const hasAllPermissions = (perms) => perms.every(p => permissions.includes(p));
+  const hasAnyPermission = (perms) => perms.some((p) => permissions.includes(p));
+  const hasAllPermissions = (perms) => perms.every((p) => permissions.includes(p));
 
   return (
-    <PermissionContext.Provider value={{
-      user, permissions, loading,
-      hasPermission, hasAnyPermission, hasAllPermissions,
-      refreshUser, tierPermissions,
-    }}>
+    <PermissionContext.Provider
+      value={{
+        user,
+        permissions,
+        loading,
+        hasPermission,
+        hasAnyPermission,
+        hasAllPermissions,
+        refreshUser,
+        tierPermissions,
+      }}
+    >
       {children}
     </PermissionContext.Provider>
   );

@@ -40,6 +40,8 @@ function emptyForm(mode) {
   return {
     name: '',
     mode,
+    supplierId: '',
+    supplierName: '',
     language: 'en',
     location: '',
     startingTime: '',
@@ -72,6 +74,12 @@ export default function GuidedTourManager({ mode }) {
     useQuery({
       queryKey: ['appSettingsSingleton'],
       queryFn: () => db.entities.AppSettings.list(),
+    })
+  );
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['tourSuppliers'],
+      queryFn: () => db.entities.Supplier.list(),
     })
   );
   const currency = (settings && settings[0] && settings[0].defaultCurrency) || 'EUR';
@@ -139,6 +147,8 @@ export default function GuidedTourManager({ mode }) {
       setFormData({
         ...emptyForm(mode),
         ...tour,
+        supplierId: tour.supplierId || '',
+        supplierName: tour.supplierName || '',
         sights: Array.isArray(tour.sights) ? [...tour.sights] : [],
         pricingTiers: Array.isArray(tour.pricingTiers) ? [...tour.pricingTiers] : [],
         nights: Array.isArray(tour.nights) ? [...tour.nights] : [],
@@ -300,6 +310,11 @@ export default function GuidedTourManager({ mode }) {
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 mb-3">
+                  {tour.supplierName && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Users className="w-3 h-3" /> {tour.supplierName}
+                    </Badge>
+                  )}
                   <Badge variant="secondary" className="capitalize">
                     {tour.language}
                   </Badge>
@@ -378,6 +393,33 @@ export default function GuidedTourManager({ mode }) {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label>{t('tours.supplier')}</Label>
+                <Select
+                  value={formData.supplierId || '__none__'}
+                  onValueChange={(v) => {
+                    const supplier = v && v !== '__none__' ? suppliers.find((s) => s.id === v) : null;
+                    setFormData({
+                      ...formData,
+                      supplierId: supplier ? supplier.id : '',
+                      supplierName: supplier ? supplier.name : '',
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('tours.selectSupplier')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">{t('tours.noSupplier')}</SelectItem>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

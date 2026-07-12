@@ -73,6 +73,27 @@ describe('GuidedTour entity', () => {
     expect(tour.created_by).toBe(admin.id);
   });
 
+  it('associates a tour with a supplier', () => {
+    const tour = createEntity(
+      'GuidedTour',
+      {
+        name: 'Supplier Tour',
+        mode: 'daily',
+        supplierId: 'sup-123',
+        supplierName: 'Acme Tours',
+      },
+      admin,
+    );
+    createdIds.push(tour.id);
+    expect(tour.supplierId).toBe('sup-123');
+    expect(tour.supplierName).toBe('Acme Tours');
+
+    const [fetched] = findEntities('GuidedTour', { filter: '{"mode":"daily"}', user: admin });
+    const match =
+      fetched.id === tour.id ? fetched : findEntities('GuidedTour', { user: admin }).find((t) => t.id === tour.id);
+    expect(match.supplierName).toBe('Acme Tours');
+  });
+
   it('creates a multi-day tour with start/end locations and per-night lodging', () => {
     const tour = createEntity(
       'GuidedTour',
