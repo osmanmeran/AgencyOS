@@ -37,6 +37,10 @@ function isHotel(categoryName) {
 function isTransfer(categoryName) {
   return categoryName?.toLowerCase().includes('transfer');
 }
+function isCarRental(categoryName) {
+  const c = categoryName?.toLowerCase() || '';
+  return c.includes('rent a car') || c.includes('car rental') || c.includes('rental');
+}
 
 export default function SupplierBookingForm({ open, onClose, onCreated, supplier, categoryName }) {
   const { t } = useT();
@@ -69,6 +73,10 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
     num_nights: 1,
     check_in_date: '',
     check_out_date: '',
+    // Car rental fields
+    pickup_date: '',
+    num_days: 1,
+    dropoff_date: '',
   });
 
   const { data: pricings = /** @type {any} */ ([]) } = /** @type {any} */ (
@@ -102,8 +110,16 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
       enabled: open,
     })
   );
-  const bookingStart = isHotel(categoryName) ? form.check_in_date : form.service_date;
-  const bookingEnd = isHotel(categoryName) ? form.check_out_date : form.service_date;
+  const bookingStart = isHotel(categoryName)
+    ? form.check_in_date
+    : isCarRental(categoryName)
+      ? form.pickup_date
+      : form.service_date;
+  const bookingEnd = isHotel(categoryName)
+    ? form.check_out_date
+    : isCarRental(categoryName)
+      ? form.dropoff_date
+      : form.service_date;
   const stopSale = getBlockingStopSale(stopSales, supplier?.id, bookingStart, bookingEnd);
 
   useEffect(() => {
@@ -135,6 +151,16 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
     }
   }, [form.check_in_date, form.num_nights]);
 
+  // Auto-set dropoff_date from pickup_date + days (car rental)
+  useEffect(() => {
+    if (form.pickup_date && form.num_days > 0) {
+      const d = new Date(form.pickup_date);
+      d.setDate(d.getDate() + Number(form.num_days));
+      const out = d.toISOString().split('T')[0];
+      setForm((f) => ({ ...f, dropoff_date: out, service_date: form.pickup_date }));
+    }
+  }, [form.pickup_date, form.num_days]);
+
   const createMutation = /** @type {any} */ (
     useMutation({
       mutationFn: (/** @type {any} */ data) => db.entities.SupplierBooking.create(data),
@@ -158,6 +184,14 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
     }
   }, [form.pricing_id, form.num_nights, form.check_in_date]);
 
+  // Auto-calculate total from pricing for car rental (daily rate × days)
+  useEffect(() => {
+    if (selectedPricing && isCarRental(categoryName) && form.num_days > 0) {
+      const total = selectedPricing.base_price * Number(form.num_days);
+      setForm((f) => ({ ...f, total_cost: total.toFixed(2) }));
+    }
+  }, [form.pricing_id, form.num_days, form.pickup_date]);
+
   const handlePricingSelect = (id) => {
     const p = pricings.find((x) => x.id === id);
     setForm((f) => ({
@@ -179,6 +213,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
       num_people: Number(form.num_people),
       total_cost: form.total_cost ? Number(form.total_cost) : undefined,
       num_nights: form.num_nights ? Number(form.num_nights) : undefined,
+      num_days: form.num_days ? Number(form.num_days) : undefined,
     };
     // Clean up unused fields
     if (!isTransfer(categoryName)) {
@@ -199,6 +234,11 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
       delete payload.num_nights;
       delete payload.check_in_date;
       delete payload.check_out_date;
+    }
+    if (!isCarRental(categoryName)) {
+      delete payload.pickup_date;
+      delete payload.dropoff_date;
+      delete payload.num_days;
     }
     createMutation.mutate(payload);
   };
@@ -262,7 +302,7 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
           )}
           {/* Common Fields */}
           <div className="grid grid-cols-2 gap-4">
-            {!isHotel(categoryName) && (
+            {!isHotel(categoryName) && !isCarRental(categoryName) && (
               <div className="space-y-2">
                 <Label>{t('supplierBookingForm.serviceDateLabel')}</Label>
                 <Input
@@ -600,6 +640,45 @@ export default function SupplierBookingForm({ open, onClose, onCreated, supplier
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CAR RENTAL-SPECIFIC FIELDS */}
+          {isCarRental(categoryName) && (
+            <div className="border rounded-lg p-4 space-y-4 bg-amber-50 dark:bg-amber-950/40">
+              <h3 className="font-semibold text-amber-900 dark:text-amber-300 text-sm">
+                {t('supplierBookingForm.carRentalDetailsTitle')}
+              </h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('supplierBookingForm.pickupDateLabel')}</Label>
+                  <Input
+                    type="date"
+                    value={form.pickup_date}
+                    onChange={(e) => set('pickup_date', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('supplierBookingForm.numberOfDaysLabel')}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={form.num_days}
+                    onChange={(e) => set('num_days', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('supplierBookingForm.dropoffDateLabel')}</Label>
+                  <Input
+                    type="date"
+                    value={form.dropoff_date}
+                    readOnly
+                    className="bg-card cursor-not-allowed opacity-70"
+                  />
                 </div>
               </div>
             </div>

@@ -71,6 +71,8 @@ export default function SupplierBookingDetails() {
   const { color, icon: StatusIcon } = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
   const isHotel = booking.category_name?.toLowerCase().includes('hotel');
   const isTransfer = booking.category_name?.toLowerCase().includes('transfer');
+  const catName = booking.category_name?.toLowerCase() || '';
+  const isCarRental = catName.includes('rent a car') || catName.includes('car rental') || catName.includes('rental');
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -142,6 +144,21 @@ export default function SupplierBookingDetails() {
               <div>
                 <span className="text-muted-foreground">{t('supplierBookingDetails.nights')}</span>
                 <p className="font-medium">{booking.num_nights}</p>
+              </div>
+            </div>
+          ) : isCarRental && booking.pickup_date ? (
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">{t('supplierBookingDetails.pickupDate')}</span>
+                <p className="font-medium">{booking.pickup_date}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t('supplierBookingDetails.dropoffDate')}</span>
+                <p className="font-medium">{booking.dropoff_date}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t('supplierBookingDetails.days')}</span>
+                <p className="font-medium">{booking.num_days}</p>
               </div>
             </div>
           ) : (

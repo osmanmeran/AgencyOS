@@ -103,6 +103,20 @@
     "check_out_date": {
       "type": "string",
       "format": "date"
+    },
+    "pickup_date": {
+      "type": "string",
+      "format": "date",
+      "description": "For Car Rental: pick-up date"
+    },
+    "dropoff_date": {
+      "type": "string",
+      "format": "date",
+      "description": "For Car Rental: drop-off date"
+    },
+    "num_days": {
+      "type": "number",
+      "description": "For Car Rental: rental days, total_cost = pricing rate * num_days"
     }
   },
   "required": [

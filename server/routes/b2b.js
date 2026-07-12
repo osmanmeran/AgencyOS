@@ -402,7 +402,12 @@ router.post(
         service_time: reqItem.service_time || '',
         details: reqItem.details || '',
         car_category: pricing.car_category || reqItem.car_category || '',
-        car_rental_days: isCarRental ? reqItem.car_rental_days || 1 : null,
+        // Authoritative day count — always derived from start_date/end_date,
+        // never trusting a client-sent number, so the total always matches
+        // the actual pickup->dropoff range. Falls back to the client-sent
+        // value only when dates are missing, so older callers that don't
+        // send date-driven car rental requests still get a total.
+        car_rental_days: isCarRental ? (nights > 0 ? nights : Math.max(1, reqItem.car_rental_days || 1)) : null,
         car_insurance: isCarRental ? !!reqItem.car_insurance : false,
         car_drop_off_surcharge: carDropOffSurchargeVal,
         insurance_surcharge: pricing.insurance_surcharge || 0,

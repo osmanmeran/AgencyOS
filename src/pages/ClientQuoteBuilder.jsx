@@ -55,6 +55,11 @@ const AGE_CATEGORIES = [
 const NIGHT_UNITS = ['per_night', 'per_day'];
 const FIXED_UNITS = ['per_group', 'flat_rate'];
 
+const isCarRentalCategory = (name) => {
+  const c = (name || '').toLowerCase();
+  return c.includes('rent a car') || c.includes('rental') || c.includes('car rental');
+};
+
 // The client portal home's hero search hands off here via ?category=...
 // (plus destination/checkin/checkout/guests for the hotels flow). Category
 // names are whatever suppliers were entered under, so matching a hero pill to
@@ -159,7 +164,6 @@ const newLine = () => ({
   flight_number: '',
   transfer_type: '',
   car_category: '',
-  car_rental_days: 1,
   car_drop_off_surcharge: 0,
   car_insurance: false,
   service_date: '',
@@ -177,16 +181,22 @@ function lineQty(line) {
   return qty;
 }
 
-function lineTotal(line, unitPrice, surcharges = {}) {
+// carRentalDays is the pickup->dropoff night count, computed by the caller
+// from line.start_date/end_date (nightsBetween) — never a manually-typed
+// number — so the total always tracks the actual date range selected. Pass
+// null for non-car-rental lines; 0 means "car rental but no valid date range
+// yet," which prices as 0 rather than silently assuming 1 day.
+function lineTotal(line, unitPrice, surcharges = {}, carRentalDays = null) {
   if (!unitPrice) return 0;
   let total;
   if (FIXED_UNITS.includes(line.unit)) {
     total = unitPrice;
-  } else if (line.car_rental_days) {
+  } else if (carRentalDays != null) {
     // Car rental: daily_rate * days + drop-off surcharge + insurance surcharge
-    total = unitPrice * line.car_rental_days * (line.quantity || 1);
+    if (carRentalDays <= 0) return 0;
+    total = unitPrice * carRentalDays * (line.quantity || 1);
     if (line.car_insurance) {
-      total += line.car_rental_days * (surcharges.insuranceSurcharge || 0);
+      total += carRentalDays * (surcharges.insuranceSurcharge || 0);
     }
     if (line.car_drop_off_surcharge) {
       total += line.car_drop_off_surcharge;
@@ -824,7 +834,15 @@ function ServiceLineCard({
             )}
             {isNightly && nights > 0 && (
               <div className="flex items-end text-xs text-muted-foreground pb-2">
-                {nights} night{nights !== 1 ? 's' : ''}
+                {isCarRental ? (
+                  <>
+                    {nights} day{nights !== 1 ? 's' : ''}
+                  </>
+                ) : (
+                  <>
+                    {nights} night{nights !== 1 ? 's' : ''}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -995,29 +1013,23 @@ function ServiceLineCard({
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-orange-700 dark:text-orange-300">Category</Label>
-                  {svc?.car_category ? (
-                    <Input
-                      value={CAR_CATEGORY_LABELS[svc.car_category] || svc.car_category}
-                      readOnly
-                      className="bg-card"
-                    />
-                  ) : (
-                    <Input value={line.car_category || svc?.name || 'Standard'} readOnly className="bg-card" />
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-orange-700 dark:text-orange-300">Rental Days</Label>
+              <div className="space-y-1">
+                <Label className="text-xs text-orange-700 dark:text-orange-300">Category</Label>
+                {svc?.car_category ? (
                   <Input
-                    type="number"
-                    min="1"
-                    value={line.car_rental_days || 1}
-                    onChange={(e) => set('car_rental_days', parseInt(e.target.value) || 1)}
+                    value={CAR_CATEGORY_LABELS[svc.car_category] || svc.car_category}
+                    readOnly
+                    className="bg-card"
                   />
-                </div>
+                ) : (
+                  <Input value={line.car_category || svc?.name || 'Standard'} readOnly className="bg-card" />
+                )}
               </div>
+              {nights <= 0 && (
+                <p className="text-xs text-orange-700 dark:text-orange-300">
+                  Pick a pick-up and drop-off date above to price this rental by day.
+                </p>
+              )}
               {line.pickup_location && line.dropoff_location && line.pickup_location !== line.dropoff_location && (
                 <div className="flex items-center gap-2 text-sm text-orange-800 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/40 px-3 py-2 rounded-lg">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -1055,10 +1067,15 @@ function ServiceLineCard({
                 <span className="text-orange-800 dark:text-orange-300 font-medium">Total</span>
                 <span className="font-semibold text-green-700 dark:text-green-300">
                   {sym(currency)}
-                  {lineTotal(line, unitPrice, {
-                    insuranceSurcharge: svc?.insurance_surcharge || 0,
-                    childUnitPrice: svc?.child_unit_price || 0,
-                  }).toFixed(2)}
+                  {lineTotal(
+                    line,
+                    unitPrice,
+                    {
+                      insuranceSurcharge: svc?.insurance_surcharge || 0,
+                      childUnitPrice: svc?.child_unit_price || 0,
+                    },
+                    nights,
+                  ).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -1086,25 +1103,9 @@ function ServiceLineCard({
           {line.pricing_id && !isCarRental && (
             <div className="flex items-center justify-between text-sm pt-1">
               <span className="text-muted-foreground">
-                {isCarRental ? (
-                  <>
-                    {sym(currency)}
-                    {unitPrice.toFixed(2)} / day · {line.car_rental_days || 1} day
-                    {(line.car_rental_days || 1) > 1 ? 's' : ''}
-                  </>
-                ) : (
-                  <>
-                    {sym(currency)}
-                    {unitPrice.toFixed(2)} {line.unit?.replace('per_', '/ ')}
-                    {isNightly && nights > 0 ? ` · ${nights} night${nights !== 1 ? 's' : ''}` : ''}
-                  </>
-                )}
-                {line.car_insurance && svc?.insurance_surcharge > 0 && (
-                  <span className="ml-2 text-orange-600 dark:text-orange-400">+ ins.</span>
-                )}
-                {line.car_drop_off_surcharge > 0 && (
-                  <span className="ml-2 text-orange-600 dark:text-orange-400">+ drop-off fee</span>
-                )}
+                {sym(currency)}
+                {unitPrice.toFixed(2)} {line.unit?.replace('per_', '/ ')}
+                {isNightly && nights > 0 ? ` · ${nights} night${nights !== 1 ? 's' : ''}` : ''}
               </span>
               <span className="font-semibold text-green-700 dark:text-green-300">
                 {sym(currency)}
@@ -1247,12 +1248,18 @@ export default function ClientQuoteBuilder() {
       validLines.reduce((sum, l) => {
         const svc = servicesById.get(l.pricing_id);
         const unitPrice = unitPriceFor(svc, l.quantity);
+        const carRentalDays = isCarRentalCategory(svc?.category_name) ? nightsBetween(l.start_date, l.end_date) : null;
         return (
           sum +
-          lineTotal(l, unitPrice, {
-            insuranceSurcharge: svc?.insurance_surcharge || 0,
-            childUnitPrice: svc?.child_unit_price || 0,
-          })
+          lineTotal(
+            l,
+            unitPrice,
+            {
+              insuranceSurcharge: svc?.insurance_surcharge || 0,
+              childUnitPrice: svc?.child_unit_price || 0,
+            },
+            carRentalDays,
+          )
         );
       }, 0),
     [validLines, servicesById],
@@ -1282,6 +1289,7 @@ export default function ClientQuoteBuilder() {
             dropoff_location: l.dropoff_location || undefined,
             flight_number: l.flight_number || undefined,
             service_time: l.service_time || undefined,
+            car_insurance: l.car_insurance || undefined,
             details:
               [l.hotel_treatment, l.transfer_type, l.duration, l.details].filter(Boolean).join(' · ') || undefined,
           })),
