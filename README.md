@@ -43,8 +43,11 @@ A full-stack travel agency operations management platform for tour operators and
 - **Private or Regular** — Daily tours can be private or regular (other passengers grouped into the same departure)
 - **Pricing Tiers** — Per-participant pricing bands (min/max participants → price)
 - **Supplier Link** — Each tour is associated with a supplier (tour operator)
+- **Descriptions & Cover Photos** — Every tour has a public description and a cover photo; multi-day tours also build a day-by-day itinerary (auto-generated from the number of days) with a description and cover photo per day
 - **Multi-Day Scheduling** — Compulsory departure date + general availability per departure; optional weekly repeat with a start/end repetition window (generates weekly departures)
 - **Bookings & Remaining Availability** — Staff can record bookings per departure; the staff tour list shows remaining availability (availability − booked) for every departure
+- **Featured Tours** — Staff flag any tour as _Featured_ from the tours page (star toggle or the edit form). Featured tours are highlighted in the client portal's Featured Tours section
+- **Special Offers** — Staff set a time-limited percentage discount (valid-from / valid-until dates) per tour. While active, the client portal shows the original price, the discounted price, and the discount percentage as a special offer
 - Accessible from two pills on the Dashboard home page and the **Tours** nav group
 
 ### Integrations
@@ -69,6 +72,7 @@ A full-stack travel agency operations management platform for tour operators and
 ### Portal Access
 
 - **Client Portal** — View proposals, trips, invoices
+- **Tour Catalog Search** — Clients browse the tour catalog from two pills (**Daily Tours** / **Multi-Day Tours**), filter by travel date and a destination dropdown of all available destinations, and see cover photos, descriptions, and day-by-day itineraries. Featured tours are highlighted in a dedicated section, and active special offers show original/discounted prices with the discount percentage. Tours are readable by all authenticated portal users (writes remain staff-only)
 - **B2B Client Quoting** — Curated e-shop catalog (categories, suppliers, photos) with markup-based pricing; clients submit quote requests, staff review/price/approve, accepted quotes convert into reservations
 - **Supplier Portal** — View bookings, invoices, ratings
 
