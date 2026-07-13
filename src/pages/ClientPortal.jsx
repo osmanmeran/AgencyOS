@@ -522,7 +522,7 @@ export default function ClientPortal() {
         <div className="flex justify-center">
           <div className="flex items-center justify-center min-w-0">
             {companyLogoUrl ? (
-              <img src={companyLogoUrl} alt={companyName} className="h-20 md:h-28 w-auto max-w-full object-contain" />
+              <img src={companyLogoUrl} alt={companyName} className="h-32 md:h-48 w-auto max-w-full object-contain" />
             ) : (
               <span className="text-2xl font-bold text-primary truncate">{companyName}</span>
             )}
