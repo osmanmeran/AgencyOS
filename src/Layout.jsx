@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { useEntitySync } from '@/hooks/useEntitySync';
@@ -26,7 +26,6 @@ import FormControl from '@mui/material/FormControl';
 import Button from '@mui/material/Button';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/material';
-import Popover from '@mui/material/Popover';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardRounded from '@mui/icons-material/DashboardRounded';
@@ -227,106 +226,41 @@ function NavItem({ item, currentPageName, depth = 0 }) {
 }
 
 function RailNavItem({ item, currentPageName }) {
-  const hasChildren = item.children?.length > 0;
   const isActive = currentPageName === item.page || item.children?.some((c) => c.page === currentPageName);
-  const [flyout, setFlyout] = useState(false);
-  const anchorRef = useRef(null);
-  const closeTimer = useRef(null);
-
-  const openFlyout = () => {
-    if (!hasChildren) return;
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setFlyout(true);
-  };
-  const scheduleClose = () => {
-    if (!hasChildren) return;
-    closeTimer.current = setTimeout(() => setFlyout(false), 120);
-  };
 
   return (
-    <>
-      <Box
-        ref={anchorRef}
-        onMouseEnter={openFlyout}
-        onMouseLeave={scheduleClose}
-        sx={{ display: 'flex', justifyContent: 'center' }}
-      >
-        <Tooltip
-          title={hasChildren ? '' : item.label}
-          placement="right"
-          disableInteractive
-          disableHoverListener={hasChildren}
-          enterDelay={200}
-        >
-          <ListItemButton
-            component={item.page ? Link : 'div'}
-            to={item.page ? createPageUrl(item.page) + (item.query || '') : undefined}
-            selected={isActive && !hasChildren}
-            onClick={() => hasChildren && setFlyout(false)}
-            sx={{
-              justifyContent: 'center',
-              mx: 0.5,
-              my: 0.25,
-              width: 44,
-              borderRadius: '10px',
-              minHeight: 44,
-              '&.Mui-selected': {
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
-              },
-            }}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: 0,
-                justifyContent: 'center',
-                color: isActive ? 'inherit' : 'text.secondary',
-              }}
-            >
-              {item.icon}
-            </ListItemIcon>
-          </ListItemButton>
-        </Tooltip>
-      </Box>
-      {hasChildren && (
-        <Popover
-          open={flyout}
-          anchorEl={anchorRef.current}
-          onClose={() => setFlyout(false)}
-          anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'center', horizontal: 'left' }}
-          disableRestoreFocus
-          slotProps={{
-            paper: {
-              onMouseEnter: openFlyout,
-              onMouseLeave: scheduleClose,
-              sx: { ml: -0.5 },
+    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Tooltip title={item.label} placement="right" disableInteractive enterDelay={200}>
+        <ListItemButton
+          component={item.page ? Link : 'div'}
+          to={item.page ? createPageUrl(item.page) + (item.query || '') : undefined}
+          selected={isActive}
+          sx={{
+            justifyContent: 'center',
+            mx: 0.5,
+            my: 0.25,
+            width: 44,
+            borderRadius: '10px',
+            minHeight: 44,
+            '&.Mui-selected': {
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
             },
           }}
         >
-          <Box sx={{ py: 1, minWidth: 210 }}>
-            <Typography
-              variant="caption"
-              sx={{ px: 2, display: 'block', color: 'text.secondary', fontWeight: 600, mb: 0.5 }}
-            >
-              {item.label}
-            </Typography>
-            {item.children.map((child) => (
-              <ListItemButton
-                key={child.page}
-                component={Link}
-                to={createPageUrl(child.page)}
-                selected={currentPageName === child.page}
-                sx={{ py: 0.75, px: 2 }}
-              >
-                <ListItemText primary={child.label} slotProps={{ primary: { sx: { fontSize: '0.8125rem' } } }} />
-              </ListItemButton>
-            ))}
-          </Box>
-        </Popover>
-      )}
-    </>
+          <ListItemIcon
+            sx={{
+              minWidth: 0,
+              justifyContent: 'center',
+              color: isActive ? 'inherit' : 'text.secondary',
+            }}
+          >
+            {item.icon}
+          </ListItemIcon>
+        </ListItemButton>
+      </Tooltip>
+    </Box>
   );
 }
 
