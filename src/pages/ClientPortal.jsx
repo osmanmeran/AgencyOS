@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { showSuccess, showError } from '@/lib/toast';
-import { addToCart } from '@/lib/clientCart';
+import { addToCart, getCartCount, subscribeCart } from '@/lib/clientCart';
 import { Input } from '@/components/ui/input';
 import { SkeletonStats } from '@/components/ui/skeletons';
 import {
@@ -21,6 +21,7 @@ import {
   ArrowRightLeft,
   CalendarDays,
   MapPin,
+  ShoppingCart,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -223,6 +224,15 @@ export default function ClientPortal() {
 
   const [tourDate, setTourDate] = React.useState('');
   const [tourDestination, setTourDestination] = React.useState('');
+
+  // Live count of parked cart items (tours/hotels/etc. staged for a quote).
+  const [cartCount, setCartCount] = React.useState(() => getCartCount());
+  React.useEffect(() => {
+    const unsub = subscribeCart(() => setCartCount(getCartCount()));
+    return () => {
+      unsub();
+    };
+  }, []);
 
   React.useEffect(() => {
     db.auth.me().then(async (currentUser) => {
@@ -494,11 +504,23 @@ export default function ClientPortal() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-sm font-medium text-muted-foreground mb-1">{t('clientPortal.welcomeBack')}</p>
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-          {t('clientPortal.heroHeadline', { name: client.name })}
-        </h1>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground mb-1">{t('clientPortal.welcomeBack')}</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+            {t('clientPortal.heroHeadline', { name: client.name })}
+          </h1>
+        </div>
+        <Button asChild variant="outline" size="icon" className="relative shrink-0" aria-label={t('cart.viewCart')}>
+          <Link to={createPageUrl('ClientQuoteBuilder')}>
+            <ShoppingCart className="w-5 h-5" />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+        </Button>
       </div>
 
       {/* Hero search card */}

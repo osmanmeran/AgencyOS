@@ -724,6 +724,7 @@ function TourPickerDialog({ open, onOpenChange, tours, onSelect }) {
                             {start.toFixed(2)}
                           </span>
                         )}
+                        <span className="text-muted-foreground mr-0.5">{t('clientPortal.fromLabel')}</span>
                         <span className="font-medium text-green-700 dark:text-green-300">
                           {sym(tour.currency || 'USD')}
                           {(disc ? disc.discounted : start).toFixed(2)}
