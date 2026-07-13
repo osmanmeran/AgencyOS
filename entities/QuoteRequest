@@ -81,9 +81,34 @@
           "details": { "type": "string", "description": "Free-text client detail/notes for this line" },
           "line_total": {
             "type": "number"
+          },
+          "tour_id": {
+            "type": "string",
+            "description": "For curated GuidedTour catalog items added to the client cart (priced from participant tiers, not SupplierPricing)"
+          },
+          "tour_name": { "type": "string" },
+          "tour_mode": { "type": "string", "enum": ["daily", "multiday"] },
+          "adults": { "type": "number", "description": "Paying adults on this tour line" },
+          "children": { "type": "number", "description": "Paying children on this tour line" },
+          "infants": { "type": "number", "description": "Infants (free) on this tour line" },
+          "original_unit_price": {
+            "type": "number",
+            "description": "Tour per-person price before any active special-offer discount"
+          },
+          "discount_percent": {
+            "type": "number",
+            "description": "Active special-offer discount % applied to the tour line"
           }
         }
       }
+    },
+    "contact_passenger": {
+      "type": "string",
+      "description": "Name of the main contact passenger, required before the client cart can be submitted"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Compulsory contact phone number for the quote request"
     },
     "markup_percentage": {
       "type": "number",
