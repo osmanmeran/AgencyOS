@@ -283,6 +283,19 @@ export default function ClientPortal() {
     })
   );
 
+  // Agency branding — the company logo shown in the portal header.
+  const { data: settings } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['appSettings'],
+      queryFn: async () => {
+        const all = await db.entities.AppSettings.list();
+        return all[0] || {};
+      },
+    })
+  );
+  const companyLogoUrl = settings?.logo_url || '';
+  const companyName = settings?.app_name || 'Company';
+
   const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['myPayments', client?.id],
@@ -505,11 +518,12 @@ export default function ClientPortal() {
   return (
     <div className="space-y-8">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground mb-1">{t('clientPortal.welcomeBack')}</p>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-            {t('clientPortal.heroHeadline', { name: client.name })}
-          </h1>
+        <div className="flex items-center min-w-0">
+          {companyLogoUrl ? (
+            <img src={companyLogoUrl} alt={companyName} className="h-20 md:h-28 w-auto max-w-full object-contain" />
+          ) : (
+            <span className="text-2xl font-bold text-primary truncate">{companyName}</span>
+          )}
         </div>
         <Button asChild variant="outline" size="icon" className="relative shrink-0" aria-label={t('cart.viewCart')}>
           <Link to={createPageUrl('ClientQuoteBuilder')}>
@@ -521,6 +535,13 @@ export default function ClientPortal() {
             )}
           </Link>
         </Button>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground mb-1">{t('clientPortal.welcomeBack')}</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+          {t('clientPortal.heroHeadline', { name: client.name })}
+        </h1>
       </div>
 
       {/* Hero search card */}
