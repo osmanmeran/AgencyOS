@@ -293,7 +293,8 @@ export default function ClientPortal() {
       },
     })
   );
-  const companyLogoUrl = settings?.logo_url || '';
+  const invoiceHeader = settings?.invoice_header || {};
+  const companyLogoUrl = invoiceHeader.logo_url || settings?.logo_url || '';
   const companyName = settings?.app_name || 'Company';
 
   const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (
@@ -517,15 +518,23 @@ export default function ClientPortal() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center min-w-0">
-          {companyLogoUrl ? (
-            <img src={companyLogoUrl} alt={companyName} className="h-20 md:h-28 w-auto max-w-full object-contain" />
-          ) : (
-            <span className="text-2xl font-bold text-primary truncate">{companyName}</span>
-          )}
+      <div className="relative">
+        <div className="flex justify-center">
+          <div className="flex items-center justify-center min-w-0">
+            {companyLogoUrl ? (
+              <img src={companyLogoUrl} alt={companyName} className="h-20 md:h-28 w-auto max-w-full object-contain" />
+            ) : (
+              <span className="text-2xl font-bold text-primary truncate">{companyName}</span>
+            )}
+          </div>
         </div>
-        <Button asChild variant="outline" size="icon" className="relative shrink-0" aria-label={t('cart.viewCart')}>
+        <Button
+          asChild
+          variant="outline"
+          size="icon"
+          className="absolute right-0 top-0 shrink-0"
+          aria-label={t('cart.viewCart')}
+        >
           <Link to={createPageUrl('ClientQuoteBuilder')}>
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
