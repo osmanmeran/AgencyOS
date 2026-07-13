@@ -80,6 +80,11 @@ export const PERMISSION_GROUPS = [
         label: 'Manage Quote Requests',
         description: 'Review and update the status of B2B quote requests',
       },
+      {
+        key: 'grant_client_portal',
+        label: 'Grant Client Portal Access',
+        description: 'Create a client’s Client Portal login and grant/revoke portal access',
+      },
     ],
   },
   {
@@ -194,6 +199,7 @@ export const DEFAULT_TIER_PERMISSIONS = {
     'search_references',
     'view_quote_requests',
     'manage_quote_requests',
+    'grant_client_portal',
   ],
   manager: [
     'create_trips',
@@ -226,6 +232,7 @@ export const DEFAULT_TIER_PERMISSIONS = {
     'search_references',
     'view_quote_requests',
     'manage_quote_requests',
+    'grant_client_portal',
   ],
   agent: [
     'create_trips',

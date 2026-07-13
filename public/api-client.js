@@ -270,6 +270,16 @@
           return result.user;
         });
       },
+      // Client Portal access provisioning (requires grant_client_portal)
+      getClientPortal: function (clientId) {
+        return api('/auth/client-portal/' + clientId);
+      },
+      grantClientPortal: function (clientId) {
+        return api('/auth/client-portal/grant', { method: 'POST', body: JSON.stringify({ clientId: clientId }) });
+      },
+      revokeClientPortal: function (clientId) {
+        return api('/auth/client-portal/revoke', { method: 'POST', body: JSON.stringify({ clientId: clientId }) });
+      },
     },
     entities: entityApis,
     integrations: {

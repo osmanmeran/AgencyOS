@@ -12,6 +12,9 @@ const db = globalThis.__B44_DB__ || {
     acceptInvite: async () => {
       throw new Error('API client not loaded');
     },
+    getClientPortal: async () => ({}),
+    grantClientPortal: async () => ({}),
+    revokeClientPortal: async () => ({}),
     loginViaEmailPassword: async () => {
       throw new Error('API client not loaded');
     },

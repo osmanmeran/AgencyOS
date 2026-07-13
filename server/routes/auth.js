@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { getDb, uid, hasFts } from '../db.js';
 import { generateToken, authMiddleware } from '../middleware/auth.js';
-import { requireTier } from '../middleware/permissions.js';
-import { catchAsync, BadRequestError, NotFoundError, ForbiddenError } from '../middleware/errors.js';
+import { requireTier, requirePermission } from '../middleware/permissions.js';
+import { catchAsync, BadRequestError, NotFoundError, ForbiddenError, ConflictError } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
 import {
   authenticateLocal,
@@ -21,6 +23,50 @@ import {
 import { sendEmail } from '../services/email.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
 import logger from '../lib/logger.js';
+
+/**
+ * Generate a reasonably strong temporary password for admin-provisioned
+ * client-portal accounts. Excludes ambiguous characters (0/O, 1/l/I).
+ * @returns {string}
+ */
+function generateTempPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const bytes = crypto.randomBytes(16);
+  let pw = '';
+  for (let i = 0; i < 12; i += 1) pw += chars[bytes[i] % chars.length];
+  return pw;
+}
+
+/** Mirror of services/entities.js upsertFts (not exported) for direct inserts. */
+function upsertFtsInline(db, id, type, data) {
+  if (!hasFts(db)) return;
+  try {
+    db.prepare('DELETE FROM entities_fts WHERE id = ?').run(id);
+    db.prepare('INSERT INTO entities_fts(id, type, label, content) VALUES (?, ?, ?, ?)').run(
+      id,
+      type,
+      type,
+      JSON.stringify(data),
+    );
+  } catch {
+    /* FTS is best-effort */
+  }
+}
+
+/** @returns {object|null} The Client entity row ({ id, data }) or null. */
+function getClientRow(db, clientId) {
+  const row = db.prepare("SELECT * FROM entities WHERE type = 'Client' AND id = ?").get(clientId);
+  if (!row) return null;
+  return { id: row.id, data: JSON.parse(row.data) };
+}
+
+/** @returns {{exists: boolean, is_active: boolean, linked: boolean}} Client-portal account state for an email. */
+function getClientAccountState(db, email, clientId) {
+  if (!email) return { exists: false, is_active: false, linked: false };
+  const u = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+  if (!u || u.user_tier !== 'client') return { exists: false, is_active: false, linked: false };
+  return { exists: true, is_active: !!u.is_active, linked: u.client_id === clientId };
+}
 
 const router = Router();
 
@@ -207,5 +253,172 @@ router.post('/logout', authMiddleware, (req, res) => {
   res.clearCookie('csrf_token', { path: '/' });
   res.json({ success: true, message: 'Logged out' });
 });
+
+// --- Client Portal access provisioning -------------------------------------
+// Gated by `grant_client_portal` (not tier), so admins can delegate the
+// ability to provision client logins to non-admin staff via custom permissions.
+
+router.get(
+  '/client-portal/:clientId',
+  authMiddleware,
+  requirePermission('grant_client_portal'),
+  catchAsync(async (req, res) => {
+    const { clientId } = req.params;
+    const db = getDb();
+    const client = getClientRow(db, clientId);
+    if (!client) throw new NotFoundError('Client not found');
+
+    const account = getClientAccountState(db, client.data.email, clientId);
+    let company = null;
+    if (client.data.company_id) {
+      const cRow = db.prepare("SELECT * FROM entities WHERE type = 'Company' AND id = ?").get(client.data.company_id);
+      if (cRow) company = { id: cRow.id, name: JSON.parse(cRow.data).name };
+    }
+
+    res.json({ portal_access: !!client.data.portal_access, account, company });
+  }),
+);
+
+router.post(
+  '/client-portal/grant',
+  authMiddleware,
+  requirePermission('grant_client_portal'),
+  validate(schemas.clientPortalAction),
+  catchAsync(async (req, res) => {
+    const { clientId } = req.body;
+    const db = getDb();
+    const client = getClientRow(db, clientId);
+    if (!client) throw new NotFoundError('Client not found');
+
+    const email = client.data.email;
+    if (!email) throw new BadRequestError('Client must have an email address to grant portal access');
+
+    // 1. Find or create the client-tier login account.
+    let tempPassword = null;
+    const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+    if (existing) {
+      if (existing.user_tier !== 'client') {
+        throw new ConflictError('This email already belongs to a staff account; use a different contact email');
+      }
+      if (existing.client_id && existing.client_id !== clientId) {
+        throw new ConflictError('This email is already linked to a different client');
+      }
+      updateUser(existing.id, { is_active: true, client_id: clientId });
+    } else {
+      tempPassword = generateTempPassword();
+      createUser({
+        email,
+        password: tempPassword,
+        name: client.data.name || String(email).split('@')[0],
+        user_tier: 'client',
+        client_id: clientId,
+      });
+    }
+
+    // 2. Ensure a Company exists and is linked to the client.
+    let companyId = client.data.company_id;
+    let companyRow = companyId
+      ? db.prepare("SELECT * FROM entities WHERE type = 'Company' AND id = ?").get(companyId)
+      : null;
+    if (!companyRow && client.data.company) {
+      companyRow = db
+        .prepare("SELECT * FROM entities WHERE type = 'Company' AND LOWER(json_extract(data, '$.name')) = ?")
+        .get(String(client.data.company).toLowerCase());
+      if (companyRow) companyId = companyRow.id;
+    }
+    let companyCreated = false;
+    if (!companyRow) {
+      companyId = uid();
+      const companyData = {
+        name: client.data.company || client.data.name || 'Company',
+        status: 'active',
+        email: client.data.email || '',
+        phone: client.data.phone || '',
+        address: client.data.address || '',
+        city: client.data.city || '',
+        country: client.data.country || '',
+        invoice_address: client.data.invoice_address || '',
+        tax_id: client.data.tax_id || '',
+        website: client.data.website || '',
+        created_by: req.user.id,
+      };
+      const now = new Date().toISOString();
+      db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+        companyId,
+        'Company',
+        JSON.stringify(companyData),
+        now,
+        now,
+      );
+      upsertFtsInline(db, companyId, 'Company', companyData);
+      companyCreated = true;
+    }
+
+    // 3. Mark the client as portal-enabled and link the company.
+    const newClientData = { ...client.data, portal_access: true, company_id: companyId };
+    if (!newClientData.company && client.data.name) newClientData.company = client.data.name;
+    db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
+      JSON.stringify(newClientData),
+      new Date().toISOString(),
+      clientId,
+    );
+
+    logAudit({
+      userId: req.user.id,
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.PORTAL_GRANT,
+      entityType: 'Client',
+      entityId: clientId,
+      ip: req.ip,
+    });
+
+    res.json({
+      success: true,
+      portal_access: true,
+      tempPassword,
+      email,
+      company: { id: companyId, created: companyCreated },
+    });
+  }),
+);
+
+router.post(
+  '/client-portal/revoke',
+  authMiddleware,
+  requirePermission('grant_client_portal'),
+  validate(schemas.clientPortalAction),
+  catchAsync(async (req, res) => {
+    const { clientId } = req.body;
+    const db = getDb();
+    const client = getClientRow(db, clientId);
+    if (!client) throw new NotFoundError('Client not found');
+
+    const email = client.data.email;
+    if (email) {
+      const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+      if (existing && existing.user_tier === 'client') {
+        updateUser(existing.id, { is_active: false });
+      }
+    }
+
+    const newClientData = { ...client.data, portal_access: false };
+    db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
+      JSON.stringify(newClientData),
+      new Date().toISOString(),
+      clientId,
+    );
+
+    logAudit({
+      userId: req.user.id,
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.PORTAL_REVOKE,
+      entityType: 'Client',
+      entityId: clientId,
+      ip: req.ip,
+    });
+
+    res.json({ success: true, portal_access: false });
+  }),
+);
 
 export default router;

@@ -23,6 +23,8 @@ export const AUDIT_ACTIONS = {
   EMAIL_SENT: 'email_sent',
   PDF_GENERATED: 'pdf_generated',
   UPLOAD: 'upload',
+  PORTAL_GRANT: 'portal_grant',
+  PORTAL_REVOKE: 'portal_revoke',
 };
 
 /**

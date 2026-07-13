@@ -149,6 +149,9 @@ export const schemas = {
     limit: z.coerce.number().int().min(1).max(500).optional(),
     offset: z.coerce.number().int().min(0).optional(),
   }),
+  clientPortalAction: z.object({
+    clientId: z.string().min(1, 'clientId is required'),
+  }),
 
   bulkCreateEntity: z.object({
     records: z.array(z.record(z.unknown())).min(1, 'records must be a non-empty array'),
