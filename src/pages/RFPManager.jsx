@@ -24,7 +24,7 @@ const STATUS_STYLES = {
   cancelled: 'bg-muted text-muted-foreground border-border',
 };
 
-function RFPWizard({ onClose, suppliers, categories, _services }) {
+function RFPWizard({ onClose, suppliers, categories }) {
   const { t } = useT();
   const [step, setStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -310,13 +310,6 @@ export default function RFPManager() {
     })
   );
 
-  const { data: services = /** @type {any} */ ([]) } = /** @type {any} */ (
-    useQuery({
-      queryKey: ['serviceTemplates'],
-      queryFn: () => db.entities.ServiceTemplate.list(),
-    })
-  );
-
   const updateStatus = /** @type {any} */ (
     useMutation({
       mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.BookingRequest.update(id, data),
@@ -352,12 +345,7 @@ export default function RFPManager() {
             <DialogHeader>
               <DialogTitle>{t('rfpManager.newRfpDialogTitle')}</DialogTitle>
             </DialogHeader>
-            <RFPWizard
-              onClose={() => setWizardOpen(false)}
-              suppliers={suppliers}
-              categories={categories}
-              _services={services}
-            />
+            <RFPWizard onClose={() => setWizardOpen(false)} suppliers={suppliers} categories={categories} />
           </DialogContent>
         </Dialog>
       </div>

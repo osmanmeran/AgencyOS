@@ -31,14 +31,12 @@ const CreateInvoice = lazy(() => import('./pages/CreateInvoice'));
 const InvoiceDetails = lazy(() => import('./pages/InvoiceDetails'));
 const ClientInvoices = lazy(() => import('./pages/ClientInvoices'));
 const ClientInvoiceDetails = lazy(() => import('./pages/ClientInvoiceDetails'));
-const ServiceLibrary = lazy(() => import('./pages/ServiceLibrary'));
 const SupplierPortal = lazy(() => import('./pages/SupplierPortal'));
 const SupplierBookingDetails = lazy(() => import('./pages/SupplierBookingDetails'));
 const AppSettings = lazy(() => import('./pages/AppSettings'));
 const Profile = lazy(() => import('./pages/Profile'));
 const BookingTemplates = lazy(() => import('./pages/BookingTemplates'));
 const Reservations = lazy(() => import('./pages/Reservations'));
-const ProposalBuilder = lazy(() => import('./pages/ProposalBuilder'));
 const ClientCRM = lazy(() => import('./pages/ClientCRM'));
 const Companies = lazy(() => import('./pages/Companies'));
 const CompanyDetails = lazy(() => import('./pages/CompanyDetails'));
@@ -82,14 +80,12 @@ export const PAGES = {
   Dashboard: Dashboard,
   ClientInvoices: ClientInvoices,
   ClientInvoiceDetails: ClientInvoiceDetails,
-  ServiceLibrary: ServiceLibrary,
   SupplierPortal: SupplierPortal,
   SupplierBookingDetails: SupplierBookingDetails,
   AppSettings: AppSettings,
   Profile: Profile,
   BookingTemplates: BookingTemplates,
   Reservations: Reservations,
-  ProposalBuilder: ProposalBuilder,
   ClientCRM: ClientCRM,
   Companies: Companies,
   CompanyDetails: CompanyDetails,

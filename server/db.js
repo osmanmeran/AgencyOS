@@ -36,8 +36,6 @@ const ENTITIES = [
   'ProposalTemplate',
   'QuoteRequest',
   'ReferenceCounter',
-  'ServiceCategory',
-  'ServiceTemplate',
   'Supplier',
   'SupplierBooking',
   'SupplierCategory',

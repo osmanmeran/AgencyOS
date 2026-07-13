@@ -10,10 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { SkeletonTable } from '@/components/ui/skeletons';
-import { Plus, Edit, Trash2, FolderTree, BookOpen, ArrowRight } from 'lucide-react';
+import { Plus, Edit, Trash2, FolderTree } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { useT } from '@/lib/i18n/I18nContext';
 
 export default function Categories() {
@@ -30,12 +28,24 @@ export default function Categories() {
     })
   );
 
-  const { data: serviceTemplates = /** @type {any} */ ([]) } = /** @type {any} */ (
+  const { data: supplierServices = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
-      queryKey: ['serviceTemplates'],
-      queryFn: () => db.entities.ServiceTemplate.list(),
+      queryKey: ['supplierServices'],
+      queryFn: () => db.entities.SupplierService.list(),
     })
   );
+
+  const { data: supplierSubcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierSubcategoriesAll'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+
+  const subcategoryCategoryMap = supplierSubcategories.reduce((/** @type {any} */ acc, /** @type {any} */ sub) => {
+    if (sub.id && sub.category_id) acc[sub.id] = sub.category_id;
+    return acc;
+  }, /** @type {any} */ ({}));
 
   const createMutation = /** @type {any} */ (
     useMutation({
@@ -105,7 +115,8 @@ export default function Categories() {
     return <SkeletonTable />;
   }
 
-  const getServiceCount = (categoryId) => serviceTemplates.filter((s) => s.category_id === categoryId).length;
+  const getServiceCount = (categoryId) =>
+    supplierServices.filter((s) => subcategoryCategoryMap[s.subcategory_id] === categoryId).length;
 
   return (
     <div className="space-y-8">
@@ -116,12 +127,6 @@ export default function Categories() {
           <p className="text-muted-foreground">{t('categories.subtitle')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to={createPageUrl('ServiceLibrary')}>
-            <Button variant="outline">
-              <BookOpen className="w-5 h-5 mr-2" />
-              {t('categories.serviceLibrary')}
-            </Button>
-          </Link>
           <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 shadow-lg">
             <Plus className="w-5 h-5 mr-2" />
             {t('categories.newCategory')}
@@ -173,11 +178,6 @@ export default function Categories() {
                     { count: getServiceCount(category.id) },
                   )}
                 </span>
-                <Link to={createPageUrl(`ServiceLibrary?category=${category.id}`)}>
-                  <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-300">
-                    {t('categories.view')} <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
               </div>
             </Card>
           ))}

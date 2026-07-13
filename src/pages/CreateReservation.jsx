@@ -170,38 +170,6 @@ export default function CreateReservation() {
   const [rooms, setRooms] = useState(() => [newRoom()]);
   const [services, setServices] = useState([emptyService()]);
   const [markupPct, setMarkupPct] = useState(0);
-  const [templateOpen, setTemplateOpen] = useState(false);
-  const [templateName, setTemplateName] = useState('');
-  const [templateDesc, setTemplateDesc] = useState('');
-
-  const { data: templates = /** @type {any} */ ([]) } = /** @type {any} */ (
-    useQuery({
-      queryKey: ['serviceTemplates'],
-      queryFn: () => db.entities.ServiceTemplate.list(),
-    })
-  );
-
-  const createTemplateMutation = /** @type {any} */ (
-    useMutation({
-      mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
-      onSuccess: () => {
-        showSuccess('Template created');
-        queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
-      },
-      onError: (error) => showError('Failed to create template', error.message),
-    })
-  );
-
-  const deleteTemplateMutation = /** @type {any} */ (
-    useMutation({
-      mutationFn: (/** @type {any} */ id) => db.entities.ServiceTemplate.delete(id),
-      onSuccess: () => {
-        showSuccess('Template deleted');
-        queryClient.invalidateQueries({ queryKey: ['serviceTemplates'] });
-      },
-      onError: (error) => showError('Failed to delete template', error.message),
-    })
-  );
   const [acquiringCurrency, setAcquiringCurrency] = useState('USD');
   const [sellingCurrency, setSellingCurrency] = useState('USD');
   const [exchangeRate, setExchangeRate] = useState(1);
@@ -1293,10 +1261,6 @@ export default function CreateReservation() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" onClick={() => setTemplateOpen(true)} variant="outline" className="gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    Templates
-                  </Button>
                   <Button type="button" onClick={addService} variant="outline">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Service
@@ -1463,118 +1427,6 @@ export default function CreateReservation() {
           </form>
         </div>
       </div>
-
-      {/* Templates Dialog */}
-      <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              Service Templates
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            {/* Save current as template */}
-            <div className="p-4 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h3 className="font-semibold text-sm text-blue-800 dark:text-blue-300 mb-2">
-                Save Current Services as Template
-              </h3>
-              <div className="space-y-2">
-                <Input
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  placeholder="Template name (e.g. Istanbul Classic)"
-                />
-                <Textarea
-                  value={templateDesc}
-                  onChange={(e) => setTemplateDesc(e.target.value)}
-                  placeholder="Description (optional)"
-                  rows={2}
-                  className="text-sm"
-                />
-                <Button
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                  disabled={!templateName || services.every((s) => !s.name) || createTemplateMutation.isPending}
-                  onClick={() => {
-                    const svcs = services.map((s) => {
-                      const { _key, ...rest } = s;
-                      return rest;
-                    });
-                    createTemplateMutation.mutate({
-                      name: templateName,
-                      description: templateDesc,
-                      category: 'package',
-                      services: svcs,
-                    });
-                    setTemplateName('');
-                    setTemplateDesc('');
-                  }}
-                >
-                  {createTemplateMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save as Template'
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* Existing templates */}
-            <h3 className="font-semibold text-sm text-foreground">Saved Templates</h3>
-            {templates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No templates saved yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {templates.map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between p-3 bg-card border border-border rounded-lg"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-foreground truncate">{t.name}</div>
-                      {t.description && <div className="text-xs text-muted-foreground truncate">{t.description}</div>}
-                      <div className="text-xs text-muted-foreground mt-0.5">{t.services?.length || 0} services</div>
-                    </div>
-                    <div className="flex gap-1 ml-2 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-green-600 dark:text-green-300 border-green-300 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/40"
-                        onClick={() => {
-                          const loadedServices = (t.services || []).map((s) => ({
-                            ...s,
-                            _key: `svc-${Date.now()}-${Math.random()}`,
-                            start_date: '',
-                            end_date: '',
-                          }));
-                          setServices((prev) => [...prev, ...loadedServices]);
-                          setTemplateOpen(false);
-                        }}
-                      >
-                        Load
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-500 dark:text-red-300 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/40"
-                        onClick={() => {
-                          if (confirm(`Delete template "${t.name}"?`)) deleteTemplateMutation.mutate(t.id);
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Add Provider Dialog */}
       <Dialog open={addProviderOpen} onOpenChange={setAddProviderOpen}>

@@ -36,7 +36,6 @@ import {
   Zap,
   AlertCircle,
   FileText,
-  BookOpen,
   Loader2,
   Share2,
   Check,
@@ -125,9 +124,6 @@ export default function ReservationDetails() {
   const [sendEmailTo, setSendEmailTo] = useState('');
   const [editingServiceIdx, setEditingServiceIdx] = useState(null);
   const [addingNewService, setAddingNewService] = useState(false);
-  const [templateSaveOpen, setTemplateSaveOpen] = useState(false);
-  const [templateName, setTemplateName] = useState('');
-  const [templateDesc, setTemplateDesc] = useState('');
   const [targetMarginPct, setTargetMarginPct] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
   const [showItinerary, setShowItinerary] = useState(false);
@@ -215,19 +211,6 @@ export default function ReservationDetails() {
         navigate(createPageUrl('Reservations'));
       },
       onError: (error) => showError('Failed to delete reservation', error.message),
-    })
-  );
-
-  const createTemplateMutation = /** @type {any} */ (
-    useMutation({
-      mutationFn: (/** @type {any} */ data) => db.entities.ServiceTemplate.create(data),
-      onSuccess: () => {
-        showSuccess('Template created');
-        setTemplateSaveOpen(false);
-        setTemplateName('');
-        setTemplateDesc('');
-      },
-      onError: (error) => showError('Failed to create template', error.message),
     })
   );
 
@@ -564,16 +547,6 @@ export default function ReservationDetails() {
             <Printer className="w-4 h-4 mr-2" />
             Print
           </Button>
-          {trip.services?.length > 0 && (
-            <Button
-              onClick={() => setTemplateSaveOpen(true)}
-              variant="outline"
-              className="border-purple-300 dark:border-purple-800 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
-              Save as Template
-            </Button>
-          )}
           <Button
             variant="outline"
             className="border-red-300 dark:border-red-800 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40"
@@ -1697,59 +1670,6 @@ export default function ReservationDetails() {
                   </div>
                 </div>
               ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Save as Template Dialog */}
-      <Dialog open={templateSaveOpen} onOpenChange={setTemplateSaveOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              Save as Template
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <p className="text-sm text-muted-foreground">
-              Save the services from this reservation as a reusable template.
-            </p>
-            <div className="space-y-2">
-              <Input
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-                placeholder="Template name (e.g. Istanbul Classic)"
-              />
-              <Textarea
-                value={templateDesc}
-                onChange={(e) => setTemplateDesc(e.target.value)}
-                placeholder="Description (optional)"
-                rows={2}
-                className="text-sm"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setTemplateSaveOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                disabled={!templateName || createTemplateMutation.isPending}
-                onClick={() => {
-                  const svcs = (trip.services || []).map((s) => {
-                    const { _key, ...rest } = s;
-                    return rest;
-                  });
-                  createTemplateMutation.mutate({
-                    name: templateName,
-                    description: templateDesc,
-                    category: 'package',
-                    services: svcs,
-                  });
-                }}
-              >
-                {createTemplateMutation.isPending ? 'Saving...' : 'Save Template'}
-              </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -105,8 +105,6 @@
     'QuoteRequest',
     'ReferenceCounter',
     'ReportSchedule',
-    'ServiceCategory',
-    'ServiceTemplate',
     'Supplier',
     'SupplierBooking',
     'SupplierCategory',

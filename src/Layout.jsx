@@ -116,7 +116,7 @@ const NAV_SECTIONS = {
     {
       label: t('nav.services'),
       icon: <InventoryRounded />,
-      page: 'ServiceLibrary',
+      page: 'BookingTemplates',
       children: [
         { label: t('nav.templates'), page: 'BookingTemplates' },
         { label: t('nav.itineraryBuilder') || 'Itinerary Builder', page: 'ItineraryBuilder' },
