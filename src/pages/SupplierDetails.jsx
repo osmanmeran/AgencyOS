@@ -278,6 +278,7 @@ export default function SupplierDetails() {
       email: result.email || editForm.email || supplier.email || '',
       phone: result.phone || editForm.phone || supplier.phone || '',
       website: result.website || editForm.website || supplier.website || '',
+      image_url: result.photo || editForm.image_url || supplier.image_url || '',
       address: result.address || editForm.address || supplier.address || '',
       city: editForm.city || supplier.city || '',
       area: editForm.area || supplier.area || '',
@@ -851,6 +852,17 @@ export default function SupplierDetails() {
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
+                      {result.photo && (
+                        <img
+                          src={result.photo}
+                          alt={result.name}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          className="w-16 h-16 rounded-lg object-cover mb-2 border border-border"
+                        />
+                      )}
                       <h3 className="font-semibold text-lg text-foreground">{result.name}</h3>
                       <span className="text-xs text-muted-foreground uppercase tracking-wide">{result.source}</span>
                     </div>

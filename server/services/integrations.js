@@ -398,6 +398,15 @@ async function searchWikidata(name, city) {
     if (v && typeof v === 'object' && v.id) return `https://www.wikidata.org/wiki/${v.id}`;
     return '';
   };
+  // P18 is a Commons filename; build a direct image URL from it.
+  const getImage = (claims) => {
+    const arr = claims.P18;
+    if (!arr || !arr.length) return '';
+    const raw = arr[0].mainsnak?.datavalue?.value;
+    if (typeof raw !== 'string') return '';
+    const file = raw.replace(/^File:/i, '').trim();
+    return file ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}` : '';
+  };
 
   for (const e of entities) {
     const ent = detail.entities?.[e.id];
@@ -406,8 +415,9 @@ async function searchWikidata(name, city) {
     const website = getClaim(claims, 'P856');
     const phone = getClaim(claims, 'P1329');
     const email = getClaim(claims, 'P968');
+    const photo = getImage(claims);
     const description = ent.descriptions?.en?.value || e.description || '';
-    if (!website && !phone && !email && !description) continue;
+    if (!website && !phone && !email && !photo && !description) continue;
     out.push({
       name: e.label || e.match?.text?.replace(/<[^>]+>/g, '') || '',
       address: '',
@@ -419,42 +429,157 @@ async function searchWikidata(name, city) {
       source: 'wikidata',
       brand: '',
       opening_hours: '',
+      photo,
     });
+  }
+  return out;
+}
+
+const PHOTON_ENDPOINT = 'https://photon.komoot.io/api/';
+
+// Photon returns OSM types as single letters; Overpass wants the full word.
+const PHOTON_OSM_TYPE = { N: 'node', W: 'way', R: 'relation' };
+
+/**
+ * Photon (komoot) geocoding — an OSM-based search engine with better fuzzy
+ * matching/relevance than Nominatim. Returns candidate places carrying their
+ * OSM ids so they can be merged with and enriched alongside the Nominatim
+ * hits (they share the same OSM id space). Key-less; best-effort.
+ * @returns {Promise<object[]>} Candidate OSM hits (may be empty).
+ */
+async function searchPhoton(name, city) {
+  const hits = [];
+  const q = [name, city].filter(Boolean).join(' ');
+  if (!q) return hits;
+  try {
+    const res = await fetch(`${PHOTON_ENDPOINT}?q=${encodeURIComponent(q)}&limit=10`, {
+      headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return hits;
+    const data = await res.json();
+    for (const f of data.features || []) {
+      const p = f.properties || {};
+      if (!p.name) continue;
+      const coords = f.geometry?.coordinates;
+      hits.push({
+        name: p.name,
+        address: [p.housenumber, p.street, p.city, p.postcode, p.country].filter(Boolean).join(', '),
+        phone: '',
+        website: '',
+        email: '',
+        description: p.osm_value ? `${p.osm_value} in ${p.city || ''}, ${p.country || ''}`.trim() : '',
+        rating: 0,
+        source: 'openstreetmap',
+        matched_query: q,
+        osm_id: p.osm_id,
+        osm_type: PHOTON_OSM_TYPE[p.osm_type] || '',
+        lat: coords ? coords[1] : '',
+        lon: coords ? coords[0] : '',
+        brand: '',
+        opening_hours: '',
+        photo: '',
+      });
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Photon search failed');
+  }
+  return hits;
+}
+
+/**
+ * Yelp Fusion business search — the richest free source for supplier details
+ * (phone, rating, review count, categories, address). Requires YELP_API_KEY;
+ * returns [] if unset so the rest of the search is unaffected. Note Yelp only
+ * exposes its own business page URL, not the official website. Best-effort.
+ * @returns {Promise<object[]>} Candidate businesses (may be empty).
+ */
+async function searchYelp(name, city) {
+  const apiKey = process.env.YELP_API_KEY;
+  if (!apiKey || !city) return [];
+  const out = [];
+  try {
+    const url = `https://api.yelp.com/v3/businesses/search?term=${encodeURIComponent(
+      name,
+    )}&location=${encodeURIComponent(city)}&limit=5`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return out;
+    const data = await res.json();
+    for (const b of data.businesses || []) {
+      const loc = b.location || {};
+      const cats = (b.categories || [])
+        .map((c) => c.title)
+        .filter(Boolean)
+        .join(', ');
+      const ratingStr = typeof b.rating === 'number' ? `⭐ ${b.rating} (${b.review_count || 0} reviews)` : '';
+      out.push({
+        name: b.name || '',
+        address: (loc.display_address || []).join(', '),
+        phone: b.display_phone || b.phone || '',
+        website: b.url || '',
+        email: '',
+        description: [cats, ratingStr].filter(Boolean).join(' — ') || 'Yelp',
+        rating: typeof b.rating === 'number' ? b.rating : 0,
+        source: 'yelp',
+        brand: '',
+        opening_hours: '',
+        photo: b.image_url || '',
+        lat: b.coordinates?.latitude ?? null,
+        lon: b.coordinates?.longitude ?? null,
+      });
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Yelp search failed');
   }
   return out;
 }
 
 /**
  * Look up candidate supplier details by combining several open, key-less
- * data sources so the user gets both more candidates and more fillable
- * fields:
- *   1. Nominatim (OpenStreetMap) geocoding — tries progressively broader
+ * (or key-optional) data sources so the user gets both more candidates and
+ * more fillable fields:
+ *   1. Nominatim (OpenStreetMap) geocoding — progressively broader
  *      "name, city" → bare name → stripped-name variants.
- *   2. OSM Overpass — enriches those place hits with structured contact
- *      tags (phone, website, email, brand, opening hours) that Nominatim's
- *      summary omits.
- *   3. Wikipedia full-text search — fuzzy description + Wikipedia link.
- *   4. Wikidata — structured entity data (official site, phone, email) for
- *      candidates Nominatim may miss entirely.
+ *   2. Photon (komoot) — OSM-based geocoding with better fuzzy matching;
+ *      shares the OSM id space with Nominatim so hits are deduped.
+ *   3. OSM Overpass — enriches the OSM hits with structured contact tags
+ *      (phone, website, email, brand, opening hours) the geocoders omit.
+ *   4. Wikipedia full-text search — fuzzy description + Wikipedia link.
+ *   5. Wikidata — structured entity data (official site, phone, email) for
+ *      candidates OSM may miss entirely.
+ *   6. Yelp Fusion (optional, needs YELP_API_KEY) — phone, rating, reviews,
+ *      categories, and address for the richest supplier profile.
  * Every source is best-effort: a failure in any one is logged and skipped.
  * @returns {Promise<object[]>} Best-effort candidates; empty if all sources fail.
  */
 export async function searchSupplier(name, city) {
   const results = [];
   const seen = new Set();
-  const MAX_RESULTS = 12;
+  const seenOsm = new Set();
+  const osmHits = [];
+  const MAX_RESULTS = 14;
   const pushResult = (r) => {
     const key = `${r.source}:${r.name}:${r.website || r.address || ''}`.toLowerCase();
     if (seen.has(key)) return;
     seen.add(key);
     results.push(r);
   };
+  const pushOsmHit = (h) => {
+    if (h.osm_id && h.osm_type) {
+      const k = `${h.osm_type}:${h.osm_id}`;
+      if (seenOsm.has(k)) return;
+      seenOsm.add(k);
+    }
+    osmHits.push(h);
+  };
 
   const variants = buildQueryVariants(name, city);
 
   // 1) Nominatim geocoding.
-  const nominatimHits = [];
-  for (let i = 0; i < variants.length && nominatimHits.length < MAX_RESULTS; i += 1) {
+  for (let i = 0; i < variants.length && osmHits.length < MAX_RESULTS; i += 1) {
     // Nominatim's usage policy caps clients at 1 request/second.
     if (i > 0) await new Promise((r) => setTimeout(r, 1100));
     try {
@@ -467,7 +592,7 @@ export async function searchSupplier(name, city) {
       for (const place of geoData) {
         if (!place.display_name) continue;
         const addr = place.address || {};
-        nominatimHits.push({
+        pushOsmHit({
           name: place.name || place.display_name.split(',')[0],
           address: place.display_name,
           phone: '',
@@ -485,19 +610,28 @@ export async function searchSupplier(name, city) {
           lon: place.lon,
           brand: '',
           opening_hours: '',
+          photo: '',
         });
-        if (nominatimHits.length >= MAX_RESULTS) break;
+        if (osmHits.length >= MAX_RESULTS) break;
       }
     } catch (err) {
       logger.error({ err: err.message, query: variants[i] }, 'Nominatim search failed');
     }
   }
 
-  // 2) Enrich OSM hits with detailed contact tags from Overpass.
-  await enrichOsmContacts(nominatimHits);
-  nominatimHits.forEach(pushResult);
+  // 2) Photon — better fuzzy matching, deduped against Nominatim via OSM id.
+  try {
+    const photon = await searchPhoton(name, city);
+    photon.forEach(pushOsmHit);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Photon search failed');
+  }
 
-  // 3) Wikipedia full-text search (fuzzy) — returns several candidate pages.
+  // 3) Enrich OSM hits (Nominatim + Photon) with detailed contact tags.
+  await enrichOsmContacts(osmHits);
+  osmHits.forEach(pushResult);
+
+  // 4) Wikipedia full-text search (fuzzy) — returns several candidate pages.
   try {
     const wikiRes = await fetch(
       `https://en.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(name)}&limit=3`,
@@ -520,6 +654,7 @@ export async function searchSupplier(name, city) {
           source: 'wikipedia',
           brand: '',
           opening_hours: '',
+          photo: '',
         });
       }
     }
@@ -527,12 +662,20 @@ export async function searchSupplier(name, city) {
     logger.error({ err: err.message }, 'Wikipedia search failed');
   }
 
-  // 4) Wikidata structured entity search (official site / phone / email).
+  // 5) Wikidata structured entity search (official site / phone / email).
   try {
     const wd = await searchWikidata(name, city);
     wd.forEach(pushResult);
   } catch (err) {
     logger.error({ err: err.message }, 'Wikidata search failed');
+  }
+
+  // 6) Yelp Fusion (requires YELP_API_KEY; no-op if unset).
+  try {
+    const yelp = await searchYelp(name, city);
+    yelp.forEach(pushResult);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Yelp search failed');
   }
 
   return results.slice(0, MAX_RESULTS);

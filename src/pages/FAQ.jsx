@@ -164,6 +164,11 @@ const FAQS = [
     a: 'On the Suppliers page, click "Columns" (admin only) to add custom fields like contact info, tags, or region. These appear as new columns in the table and as editable fields in the supplier form.',
     category: 'suppliers',
   },
+  {
+    q: 'How does the supplier "Search Web" feature work?',
+    a: 'Open a supplier and click "Search Web". The app queries several sources to find matching businesses and returns a list of candidates you can pick from: OpenStreetMap via Nominatim and Photon (both enriched through Overpass for phone, website, email, brand, and opening hours — Photon adds better fuzzy matching), Wikipedia, Wikidata (official site / phone / email), and optionally Yelp Fusion (phone, rating, reviews, categories) when a YELP_API_KEY is configured. Pick one and click "Apply Data" to autofill the supplier\'s name, address, phone, website, email, rating, and notes (including brand and opening hours) into the edit form. Queries broaden automatically (name + city → bare name → stripped of generic words) so it still finds suppliers whose listed name differs from the official one.',
+    category: 'suppliers',
+  },
 ];
 
 export default function FAQ() {
