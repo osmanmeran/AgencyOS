@@ -23,10 +23,8 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
-import TourRounded from '@mui/icons-material/TourRounded';
 
 import FlightTakeoffRounded from '@mui/icons-material/FlightTakeoffRounded';
 import FlightLandRounded from '@mui/icons-material/FlightLandRounded';
@@ -121,27 +119,6 @@ export default function Dashboard() {
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           {t('dashboard.subtitle')}
         </Typography>
-      </Box>
-
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-        <Button
-          component={Link}
-          to={createPageUrl('DailyTours')}
-          variant="contained"
-          startIcon={<TourRounded />}
-          sx={{ borderRadius: '999px', textTransform: 'none' }}
-        >
-          {t('nav.dailyTours')}
-        </Button>
-        <Button
-          component={Link}
-          to={createPageUrl('MultiDayTours')}
-          variant="outlined"
-          startIcon={<TourRounded />}
-          sx={{ borderRadius: '999px', textTransform: 'none' }}
-        >
-          {t('nav.multiDayTours')}
-        </Button>
       </Box>
 
       <Grid container spacing={2.5}>

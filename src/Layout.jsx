@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { useEntitySync } from '@/hooks/useEntitySync';
@@ -25,6 +25,8 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Button from '@mui/material/Button';
 import { alpha, useTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/material';
+import Popover from '@mui/material/Popover';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardRounded from '@mui/icons-material/DashboardRounded';
@@ -58,6 +60,7 @@ import ThemeToggle from './components/layout/ThemeToggle';
 import { useT } from '@/lib/i18n/I18nContext';
 
 const DRAWER_WIDTH = 260;
+const RAIL_WIDTH = 64;
 
 const NAV_SECTIONS = {
   main: (t) => [
@@ -223,7 +226,111 @@ function NavItem({ item, currentPageName, depth = 0 }) {
   );
 }
 
-function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
+function RailNavItem({ item, currentPageName }) {
+  const hasChildren = item.children?.length > 0;
+  const isActive = currentPageName === item.page || item.children?.some((c) => c.page === currentPageName);
+  const [flyout, setFlyout] = useState(false);
+  const anchorRef = useRef(null);
+  const closeTimer = useRef(null);
+
+  const openFlyout = () => {
+    if (!hasChildren) return;
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setFlyout(true);
+  };
+  const scheduleClose = () => {
+    if (!hasChildren) return;
+    closeTimer.current = setTimeout(() => setFlyout(false), 120);
+  };
+
+  return (
+    <>
+      <Box
+        ref={anchorRef}
+        onMouseEnter={openFlyout}
+        onMouseLeave={scheduleClose}
+        sx={{ display: 'flex', justifyContent: 'center' }}
+      >
+        <Tooltip
+          title={hasChildren ? '' : item.label}
+          placement="right"
+          disableInteractive
+          disableHoverListener={hasChildren}
+          enterDelay={200}
+        >
+          <ListItemButton
+            component={item.page ? Link : 'div'}
+            to={item.page ? createPageUrl(item.page) + (item.query || '') : undefined}
+            selected={isActive && !hasChildren}
+            onClick={() => hasChildren && setFlyout(false)}
+            sx={{
+              justifyContent: 'center',
+              mx: 0.5,
+              my: 0.25,
+              width: 44,
+              borderRadius: '10px',
+              minHeight: 44,
+              '&.Mui-selected': {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+              },
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: 0,
+                justifyContent: 'center',
+                color: isActive ? 'inherit' : 'text.secondary',
+              }}
+            >
+              {item.icon}
+            </ListItemIcon>
+          </ListItemButton>
+        </Tooltip>
+      </Box>
+      {hasChildren && (
+        <Popover
+          open={flyout}
+          anchorEl={anchorRef.current}
+          onClose={() => setFlyout(false)}
+          anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'center', horizontal: 'left' }}
+          disableRestoreFocus
+          slotProps={{
+            paper: {
+              onMouseEnter: openFlyout,
+              onMouseLeave: scheduleClose,
+              sx: { ml: -0.5 },
+            },
+          }}
+        >
+          <Box sx={{ py: 1, minWidth: 210 }}>
+            <Typography
+              variant="caption"
+              sx={{ px: 2, display: 'block', color: 'text.secondary', fontWeight: 600, mb: 0.5 }}
+            >
+              {item.label}
+            </Typography>
+            {item.children.map((child) => (
+              <ListItemButton
+                key={child.page}
+                component={Link}
+                to={createPageUrl(child.page)}
+                selected={currentPageName === child.page}
+                sx={{ py: 0.75, px: 2 }}
+              >
+                <ListItemText primary={child.label} slotProps={{ primary: { sx: { fontSize: '0.8125rem' } } }} />
+              </ListItemButton>
+            ))}
+          </Box>
+        </Popover>
+      )}
+    </>
+  );
+}
+
+function SidebarContent({ currentPageName, t, isClientPortal, userTier, collapsed = false }) {
   const isAdmin = userTier === 'admin' || userTier === 'manager';
   // Staff viewing the portal "as" a client (via "View portal as client" on a
   // CRM record) still carry their own userTier (never 'client') — give them an
@@ -233,63 +340,97 @@ function SidebarContent({ currentPageName, t, isClientPortal, userTier }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Toolbar sx={{ px: 2, minHeight: '64px !important' }}>
+      <Toolbar sx={{ px: 2, minHeight: '64px !important', justifyContent: collapsed ? 'center' : 'flex-start' }}>
         <Box
           component={Link}
           to={createPageUrl('Dashboard')}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none' }}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none', justifyContent: 'center' }}
         >
           <MarvelopsLogo size={28} />
-          <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', lg: 'block' } }}
-          >
-            Marvelops
-          </Typography>
+          {!collapsed && (
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              Marvelops
+            </Typography>
+          )}
         </Box>
       </Toolbar>
       <Divider />
       <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
         {isStaffPreviewingClient && (
           <>
-            <List disablePadding>
-              <ListItemButton
-                component={Link}
-                to={createPageUrl('Dashboard')}
-                onClick={clearActAsClient}
-                sx={{ pl: 2, pr: 1.5, py: 1, mx: 1, mb: 0.25, borderRadius: '10px', minHeight: 42 }}
-              >
-                <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
-                  <ArrowBackRounded />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Back to Admin"
-                  slotProps={{ primary: { sx: { fontSize: '0.8125rem', fontWeight: 500 } } }}
-                />
-              </ListItemButton>
-            </List>
-            <Divider sx={{ my: 1.5, mx: 2 }} />
+            {collapsed ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.5 }}>
+                <Tooltip title="Back to Operations" placement="right">
+                  <ListItemButton
+                    component={Link}
+                    to={createPageUrl('Dashboard')}
+                    onClick={clearActAsClient}
+                    sx={{ justifyContent: 'center', mx: 0.5, width: 44, borderRadius: '10px', minHeight: 44 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 0, justifyContent: 'center', color: 'text.secondary' }}>
+                      <ArrowBackRounded />
+                    </ListItemIcon>
+                  </ListItemButton>
+                </Tooltip>
+              </Box>
+            ) : (
+              <List disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={createPageUrl('Dashboard')}
+                  onClick={clearActAsClient}
+                  sx={{ pl: 2, pr: 1.5, py: 1, mx: 1, mb: 0.25, borderRadius: '10px', minHeight: 42 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                    <ArrowBackRounded />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Back to Operations"
+                    slotProps={{ primary: { sx: { fontSize: '0.8125rem', fontWeight: 500 } } }}
+                  />
+                </ListItemButton>
+              </List>
+            )}
+            <Divider sx={{ my: 1.5, mx: collapsed ? 1 : 2 }} />
           </>
         )}
         <List disablePadding>
           {navSections.main(t).map((item) => (
-            <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
+            <Fragment key={item.page + item.label}>
+              {collapsed ? (
+                <RailNavItem item={item} currentPageName={currentPageName} />
+              ) : (
+                <NavItem item={item} currentPageName={currentPageName} />
+              )}
+            </Fragment>
           ))}
         </List>
         {!isClientPortal && (
           <>
-            <Divider sx={{ my: 1.5, mx: 2 }} />
+            <Divider sx={{ my: 1.5, mx: collapsed ? 1 : 2 }} />
             <List disablePadding>
               {navSections.secondary(t).map((item) => (
-                <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
+                <Fragment key={item.page + item.label}>
+                  {collapsed ? (
+                    <RailNavItem item={item} currentPageName={currentPageName} />
+                  ) : (
+                    <NavItem item={item} currentPageName={currentPageName} />
+                  )}
+                </Fragment>
               ))}
             </List>
             {isAdmin && (
               <>
-                <Divider sx={{ my: 1.5, mx: 2 }} />
+                <Divider sx={{ my: 1.5, mx: collapsed ? 1 : 2 }} />
                 <List disablePadding>
                   {navSections.admin(t).map((item) => (
-                    <NavItem key={item.page + item.label} item={item} currentPageName={currentPageName} />
+                    <Fragment key={item.page + item.label}>
+                      {collapsed ? (
+                        <RailNavItem item={item} currentPageName={currentPageName} />
+                      ) : (
+                        <NavItem item={item} currentPageName={currentPageName} />
+                      )}
+                    </Fragment>
                   ))}
                 </List>
               </>
@@ -357,6 +498,15 @@ export default function Layout({ children, currentPageName }) {
 
   const isSupplierPortal = currentPageName === 'SupplierPortal';
 
+  // Desktop sidebar collapses to an icon rail (icons always visible, hover
+  // reveals the label); the hamburger toggles between rail and full width.
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+  const [collapsed, setCollapsed] = useState(true);
+  const handleMenuToggle = () => {
+    if (isDesktop) setCollapsed((c) => !c);
+    else setMobileOpen((o) => !o);
+  };
+
   const handleLanguageChange = async (lang) => {
     setI18nLanguage(lang);
     await db.auth.updateMe({ language: lang });
@@ -412,17 +562,25 @@ export default function Layout({ children, currentPageName }) {
         {/* Desktop Sidebar */}
         <Box
           component="nav"
-          sx={{ width: { lg: DRAWER_WIDTH }, flexShrink: { lg: 0 }, display: { xs: 'none', lg: 'block' } }}
+          sx={{
+            width: { lg: collapsed ? RAIL_WIDTH : DRAWER_WIDTH },
+            flexShrink: { lg: 0 },
+            display: { xs: 'none', lg: 'block' },
+          }}
         >
           <Drawer
             variant="permanent"
             sx={{
               '& .MuiDrawer-paper': {
-                width: DRAWER_WIDTH,
+                width: collapsed ? RAIL_WIDTH : DRAWER_WIDTH,
                 boxSizing: 'border-box',
                 borderRight: '1px solid',
                 borderColor: 'divider',
                 bgcolor: 'background.paper',
+                overflowX: 'hidden',
+                transition: theme.transitions.create('width', {
+                  duration: theme.transitions.duration.enteringScreen,
+                }),
               },
             }}
           >
@@ -431,6 +589,7 @@ export default function Layout({ children, currentPageName }) {
               t={t}
               isClientPortal={isClientPortal}
               userTier={user?.user_tier}
+              collapsed={collapsed}
             />
           </Drawer>
         </Box>
@@ -455,6 +614,7 @@ export default function Layout({ children, currentPageName }) {
             t={t}
             isClientPortal={isClientPortal}
             userTier={user?.user_tier}
+            collapsed={false}
           />
         </Drawer>
 
@@ -472,12 +632,7 @@ export default function Layout({ children, currentPageName }) {
             }}
           >
             <Toolbar sx={{ minHeight: '56px !important', gap: 1 }}>
-              <IconButton
-                color="inherit"
-                edge="start"
-                onClick={() => setMobileOpen(!mobileOpen)}
-                sx={{ display: { lg: 'none' } }}
-              >
+              <IconButton color="inherit" edge="start" onClick={handleMenuToggle}>
                 <MenuIcon />
               </IconButton>
 
@@ -549,7 +704,8 @@ export default function Layout({ children, currentPageName }) {
             >
               <VisibilityRounded fontSize="small" />
               <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
-                Viewing the client portal as {actAsClient?.name || 'this client'} — this is a read-only staff preview.
+                Viewing the client portal as {actAsClient?.name || 'this client'} — this is a read-only operations
+                preview.
               </Typography>
               <Button
                 size="small"
