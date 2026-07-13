@@ -1,21 +1,48 @@
 import { db } from '@/lib/DbContext';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
-import { FolderTree, Users, ClipboardList, ChevronDown, ChevronRight, ArrowRight, Star, Tag } from 'lucide-react';
+import {
+  FolderTree,
+  Users,
+  ClipboardList,
+  ChevronDown,
+  ChevronRight,
+  ArrowRight,
+  Star,
+  Tag,
+  Plus,
+  Edit,
+  Trash2,
+} from 'lucide-react';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol, mixedCurrencyLabel } from '@/lib/formatters';
+import { usePermissions } from '@/components/permissions/PermissionContext';
+import { showSuccess, showError } from '@/lib/toast';
 
 export default function SupplierCategorySummary() {
   const { t } = useT();
+  const { hasPermission } = usePermissions();
+  const queryClient = useQueryClient();
   const [expandedCategories, setExpandedCategories] = useState(/** @type {any} */ ({}));
+
+  // Category management (create/edit/delete) lives here now — this tab
+  // replaced the old standalone Categories page.
+  const canManage = hasPermission('manage_categories');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(/** @type {any} */ (null));
+  const [formData, setFormData] = useState({ name: '', description: '', color: '#3B82F6' });
 
   const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
@@ -58,6 +85,131 @@ export default function SupplierCategorySummary() {
   const toggleCategory = (id) => {
     setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }));
   };
+
+  // Both query keys are in use: this tab caches under 'supplierCategories',
+  // while ReservationDetails still reads the same list under 'categories'.
+  const invalidateCategories = () => {
+    queryClient.invalidateQueries({ queryKey: ['supplierCategories'] });
+    queryClient.invalidateQueries({ queryKey: ['categories'] });
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditingCategory(null);
+  };
+
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ data) => db.entities.SupplierCategory.create(data),
+      onSuccess: () => {
+        showSuccess(t('categories.createSuccess'));
+        invalidateCategories();
+        closeModal();
+      },
+      onError: (error) => showError(t('categories.createError'), error.message),
+    })
+  );
+
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.SupplierCategory.update(id, data),
+      onSuccess: () => {
+        showSuccess(t('categories.updateSuccess'));
+        invalidateCategories();
+        closeModal();
+      },
+      onError: (error) => showError(t('categories.updateError'), error.message),
+    })
+  );
+
+  const deleteMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ id) => db.entities.SupplierCategory.delete(id),
+      onSuccess: () => {
+        showSuccess(t('categories.deleteSuccess'));
+        invalidateCategories();
+      },
+      onError: (error) => showError(t('categories.deleteError'), error.message),
+    })
+  );
+
+  const openModal = (category = null) => {
+    if (category) {
+      setEditingCategory(category);
+      setFormData({
+        name: category.name || '',
+        description: category.description || '',
+        color: category.color || '#3B82F6',
+      });
+    } else {
+      setEditingCategory(null);
+      setFormData({ name: '', description: '', color: '#3B82F6' });
+    }
+    setModalOpen(true);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (editingCategory) {
+      updateMutation.mutate({ id: editingCategory.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const categoryModal = (
+    <Dialog open={modalOpen} onOpenChange={(o) => !o && closeModal()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{editingCategory ? t('categories.editCategory') : t('categories.createCategory')}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="cat-name">{t('categories.categoryNameLabel')}</Label>
+            <Input
+              id="cat-name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder={t('categories.categoryNamePlaceholder')}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cat-description">{t('categories.descriptionLabel')}</Label>
+            <Textarea
+              id="cat-description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder={t('categories.descriptionPlaceholder')}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cat-color">{t('categories.colorLabel')}</Label>
+            <div className="flex gap-3 items-center">
+              <Input
+                id="cat-color"
+                type="color"
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                className="w-20 h-10"
+              />
+              <span className="text-sm text-muted-foreground">{formData.color}</span>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={closeModal}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit">{editingCategory ? t('categories.update') : t('categories.create')}</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 
   const getCategoryStats = (categoryId) => {
     const catSuppliers = suppliers.filter((s) =>
@@ -115,9 +267,13 @@ export default function SupplierCategorySummary() {
       <Card className="p-12 text-center bg-card">
         <FolderTree className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
         <p className="text-muted-foreground">{t('supplierCategorySummary.noCategoriesTitle')}</p>
-        <Link to={createPageUrl('Categories')}>
-          <Button className="mt-4">{t('supplierCategorySummary.goToCategories')}</Button>
-        </Link>
+        {canManage && (
+          <Button className="mt-4" onClick={() => openModal()}>
+            <Plus className="w-4 h-4 mr-2" />
+            {t('categories.createCategory')}
+          </Button>
+        )}
+        {categoryModal}
       </Card>
     );
   }
@@ -132,11 +288,11 @@ export default function SupplierCategorySummary() {
             bookings: bookingRequests.length,
           })}
         </p>
-        <Link to={createPageUrl('Categories')}>
-          <Button variant="outline" size="sm">
-            {t('supplierCategorySummary.manageCategories')} <ArrowRight className="w-3.5 h-3.5 ml-1" />
+        {canManage && (
+          <Button variant="outline" size="sm" onClick={() => openModal()}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> {t('categories.newCategory')}
           </Button>
-        </Link>
+        )}
       </div>
 
       {categories.map((category) => {
@@ -346,7 +502,7 @@ export default function SupplierCategorySummary() {
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-1">
+                <div className="flex gap-2 pt-1 flex-wrap">
                   <Link to={createPageUrl(`Suppliers?category=${category.id}`)}>
                     <Button variant="outline" size="sm" className="text-xs">
                       <Users className="w-3.5 h-3.5 mr-1" /> {t('supplierCategorySummary.allSuppliers')}
@@ -357,12 +513,28 @@ export default function SupplierCategorySummary() {
                       <ClipboardList className="w-3.5 h-3.5 mr-1" /> {t('supplierCategorySummary.allBookings')}
                     </Button>
                   </Link>
+                  {canManage && (
+                    <>
+                      <Button variant="outline" size="sm" className="text-xs" onClick={() => openModal(category)}>
+                        <Edit className="w-3.5 h-3.5 mr-1" /> {t('categories.editCategory')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        onClick={() => deleteMutation.mutate(category.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> {t('common.delete')}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
           </Card>
         );
       })}
+      {categoryModal}
     </div>
   );
 }

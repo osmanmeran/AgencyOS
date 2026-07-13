@@ -2,7 +2,6 @@ import { lazy } from 'react';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const TripDetails = lazy(() => import('./pages/TripDetails'));
-const Categories = lazy(() => import('./pages/Categories'));
 const Suppliers = lazy(() => import('./pages/Suppliers'));
 const SupplierDetails = lazy(() => import('./pages/SupplierDetails'));
 const Proposals = lazy(() => import('./pages/Proposals'));
@@ -55,7 +54,6 @@ import __Layout from './Layout.jsx';
 
 export const PAGES = {
   TripDetails: TripDetails,
-  Categories: Categories,
   Suppliers: Suppliers,
   SupplierDetails: SupplierDetails,
   Proposals: Proposals,

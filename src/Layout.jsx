@@ -80,7 +80,6 @@ const NAV_SECTIONS = {
       icon: <BusinessRounded />,
       page: 'Suppliers',
       children: [
-        { label: t('nav.categories'), page: 'Categories' },
         { label: t('nav.bookings'), page: 'SupplierBookings' },
         { label: 'RFP Manager', page: 'RFPManager' },
       ],

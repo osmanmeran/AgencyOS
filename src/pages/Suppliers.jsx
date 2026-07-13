@@ -55,7 +55,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SkeletonTable } from '@/components/ui/skeletons';
 import BulkActionsBar from '@/components/shared/BulkActionsBar';
 import PaginationControls from '@/components/shared/PaginationControls';
-import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { showSuccess, showError } from '@/lib/toast';
@@ -77,6 +76,7 @@ const SortHeader = ({ field, label, filter, filterActive, sortField, handleSort 
 );
 
 export default function Suppliers() {
+  const [activeTab, setActiveTab] = useState('list');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [columnManagerOpen, setColumnManagerOpen] = useState(false);
@@ -451,16 +451,20 @@ export default function Suppliers() {
       {categories.length === 0 && (
         <Card className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
           <p className="text-sm text-amber-800 dark:text-amber-300">
-            No categories set up yet — a supplier's category is now determined by its service lines. Go to{' '}
-            <Link to={createPageUrl('Categories')} className="underline font-medium">
-              Categories
-            </Link>{' '}
-            to create some, then add subcategories under each supplier's Pricing Management tab.
+            No categories set up yet — a supplier's category is now determined by its service lines. Open the{' '}
+            <button
+              type="button"
+              onClick={() => setActiveTab('summary')}
+              className="underline font-medium hover:text-amber-900 dark:hover:text-amber-200"
+            >
+              Category Summary
+            </button>{' '}
+            tab to create some, then add subcategories under each supplier's Pricing Management tab.
           </p>
         </Card>
       )}
 
-      <Tabs defaultValue="list" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-card border border-border p-1">
           <TabsTrigger value="list" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             All Suppliers
