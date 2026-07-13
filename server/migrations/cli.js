@@ -6,24 +6,24 @@ import { fileURLToPath } from 'url';
 import { migrate, migrationStatus } from './runner.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', '..', 'data');
 const DB_PATH = path.join(DATA_DIR, 'marvelops.db');
 
 const command = process.argv[2];
 
-function main() {
+async function main() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   const db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
 
   switch (command) {
     case 'up': {
-      const applied = migrate(db, { direction: 'up' });
+      await migrate(db, { direction: 'up' });
       process.exit(0);
     }
 
     case 'down': {
-      const rolledBack = migrate(db, { direction: 'down' });
+      await migrate(db, { direction: 'down' });
       process.exit(0);
     }
 
@@ -32,7 +32,7 @@ function main() {
       if (statuses.length === 0) {
         console.log('No migration files found.');
       } else {
-        const maxLen = Math.max(...statuses.map(s => s.name.length), 10);
+        const maxLen = Math.max(...statuses.map((s) => s.name.length), 10);
         console.log('Migration'.padEnd(maxLen + 2) + 'Status');
         console.log('-'.repeat(maxLen + 2) + '--------');
         for (const s of statuses) {
@@ -49,4 +49,7 @@ function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

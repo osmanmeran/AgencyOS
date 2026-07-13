@@ -909,7 +909,7 @@ export default function ServiceLineEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(CURRENCY_CODES).map((cur) => (
+                      {CURRENCY_CODES.map((cur) => (
                         <SelectItem key={cur} value={cur}>
                           {cur}
                         </SelectItem>
@@ -937,7 +937,7 @@ export default function ServiceLineEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(CURRENCY_CODES).map((cur) => (
+                      {CURRENCY_CODES.map((cur) => (
                         <SelectItem key={cur} value={cur}>
                           {cur}
                         </SelectItem>
@@ -991,7 +991,7 @@ export default function ServiceLineEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(CURRENCY_CODES).map((cur) => (
+                      {CURRENCY_CODES.map((cur) => (
                         <SelectItem key={cur} value={cur}>
                           {cur}
                         </SelectItem>
@@ -1019,7 +1019,7 @@ export default function ServiceLineEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(CURRENCY_CODES).map((cur) => (
+                      {CURRENCY_CODES.map((cur) => (
                         <SelectItem key={cur} value={cur}>
                           {cur}
                         </SelectItem>

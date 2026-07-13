@@ -1,5 +1,8 @@
-function up(db) {
-  const columns = db.prepare("PRAGMA table_info('users')").all().map(c => c.name);
+export function up(db) {
+  const columns = db
+    .prepare("PRAGMA table_info('users')")
+    .all()
+    .map((c) => c.name);
 
   if (!columns.includes('microsoft_id')) {
     db.exec('ALTER TABLE users ADD COLUMN microsoft_id TEXT');
@@ -10,8 +13,6 @@ function up(db) {
   }
 }
 
-function down(db) {
+export function down(db) {
   console.warn('[Migration 002] Skipping down — SQLite cannot drop columns safely.');
 }
-
-module.exports = { up, down };

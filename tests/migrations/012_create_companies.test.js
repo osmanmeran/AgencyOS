@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createRequire } from 'module';
 import Database from 'better-sqlite3';
-
-const require = createRequire(import.meta.url);
-const migration = require('../../server/migrations/012_create_companies_from_contacts.cjs');
+import * as migration from '../../server/migrations/012_create_companies_from_contacts.js';
 
 function makeDb() {
   const db = new Database(':memory:');
@@ -18,13 +15,20 @@ function makeDb() {
 }
 
 function insertClient(db, id, data) {
-  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)')
-    .run(id, 'Client', JSON.stringify(data), 'now', 'now');
+  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+    id,
+    'Client',
+    JSON.stringify(data),
+    'now',
+    'now',
+  );
 }
 
 function companies(db) {
-  return db.prepare("SELECT id, data FROM entities WHERE type = 'Company'").all()
-    .map(r => ({ id: r.id, ...JSON.parse(r.data) }));
+  return db
+    .prepare("SELECT id, data FROM entities WHERE type = 'Company'")
+    .all()
+    .map((r) => ({ id: r.id, ...JSON.parse(r.data) }));
 }
 function client(db, id) {
   return JSON.parse(db.prepare('SELECT data FROM entities WHERE id = ?').get(id).data);
@@ -32,7 +36,9 @@ function client(db, id) {
 
 describe('012 create companies from contacts', () => {
   let db;
-  beforeEach(() => { db = makeDb(); });
+  beforeEach(() => {
+    db = makeDb();
+  });
 
   it('groups contacts by normalized company name and links them', () => {
     insertClient(db, 'a', { name: 'Jane', company: 'Acme Corp' });
@@ -45,7 +51,7 @@ describe('012 create companies from contacts', () => {
     const comps = companies(db);
     expect(comps).toHaveLength(2); // Acme + Globex, not the empty one
 
-    const acme = comps.find(c => c.name.toLowerCase() === 'acme corp');
+    const acme = comps.find((c) => c.name.toLowerCase() === 'acme corp');
     expect(client(db, 'a').company_id).toBe(acme.id);
     expect(client(db, 'b').company_id).toBe(acme.id);
     // Denormalized name normalized to canonical casing.

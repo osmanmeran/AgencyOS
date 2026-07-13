@@ -12,11 +12,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Tests get a throwaway DB in a fresh temp dir instead of the real dev
 // database — otherwise every test run permanently writes real rows (users,
-// entities) into data/marvelops.db with no cleanup.
+// entities) into data/marvelops.db with no cleanup. Otherwise honor DATA_DIR
+// (documented in the README, already respected for uploads in app.js /
+// routes/documents.js / routes/integrations.js) so the DB lives on the same
+// configurable path — on Railway the persistent volume is mounted at the
+// default `./data` already, so this is a no-op there, not a path change.
 const DATA_DIR =
   process.env.NODE_ENV === 'test'
     ? fs.mkdtempSync(path.join(os.tmpdir(), 'marvelops-test-'))
-    : path.join(__dirname, '..', 'data');
+    : process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const DB_PATH = path.join(DATA_DIR, 'marvelops.db');
 
 const ENTITIES = [
@@ -78,7 +82,7 @@ if (process.env.NODE_ENV !== 'test' && migrationStatus(db).some((m) => !m.applie
   }
 }
 
-migrate(db, { quiet: false });
+await migrate(db, { quiet: false });
 
 logger.info({ path: DB_PATH }, 'Database initialized');
 
@@ -98,10 +102,10 @@ export function closeDb() {
   }
 }
 
-export function reopenDb() {
+export async function reopenDb() {
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
-  migrate(db, { quiet: false });
+  await migrate(db, { quiet: false });
 }
 
 export function getDbPath() {

@@ -1,4 +1,4 @@
-function up(db) {
+export function up(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -44,7 +44,7 @@ function up(db) {
   `);
 }
 
-function down(db) {
+export function down(db) {
   db.exec(`
     DROP TABLE IF EXISTS app_logs;
     DROP TABLE IF EXISTS email_logs;
@@ -53,5 +53,3 @@ function down(db) {
     DROP TABLE IF EXISTS users;
   `);
 }
-
-module.exports = { up, down };

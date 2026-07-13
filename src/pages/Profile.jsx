@@ -12,6 +12,7 @@ import { User, Mail, Phone, Globe, Lock, Save, Loader2, CreditCard, Camera, X } 
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
 import { getCsrfToken } from '@/lib/csrf';
+import { useSupportedCurrencies, getCurrencyName } from '@/lib/currencies';
 
 const LANGUAGES = [
   { code: 'en', name: 'English' },
@@ -22,12 +23,11 @@ const LANGUAGES = [
   { code: 'tr', name: 'Türkçe' },
 ];
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
-
 export default function Profile() {
   const queryClient = useQueryClient();
   const { language, setLanguage } = useT();
   const fileInputRef = useRef(null);
+  const supportedCurrencies = useSupportedCurrencies();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [outlookStatus, setOutlookStatus] = useState(null);
   const [outlookLoading, setOutlookLoading] = useState(false);
@@ -367,9 +367,9 @@ export default function Profile() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {CURRENCIES.map((c) => (
+                {supportedCurrencies.map((c) => (
                   <SelectItem key={c} value={c}>
-                    {c}
+                    {c} — {getCurrencyName(c)}
                   </SelectItem>
                 ))}
               </SelectContent>

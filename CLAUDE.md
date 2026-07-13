@@ -8,9 +8,9 @@ auth, WebSocket real-time sync. See `README.md` for features/setup and
 ## Commands
 
 - `npm run dev` — Vite dev server; `npm run server` — Express backend
-- `npm test` — Vitest (21 files, ~192 tests, backend-only)
+- `npm test` — Vitest (26 files, ~248 tests, backend-only)
 - `npm run lint` / `npm run typecheck` — both run in CI alongside test + build
-- `npm run db:migrate` / `db:migrate:status` — migrations (`server/migrations/*.cjs`, filename order)
+- `npm run db:migrate` / `db:migrate:status` — migrations (`server/migrations/*.js`, filename order)
 
 ## Things to know before editing
 
@@ -74,20 +74,25 @@ from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
    apply immediately. The JWT now only proves identity. (Refresh-token
    rotation is still a worthwhile future upgrade.)
 
-6. **CSP allows `unsafe-inline` and `unsafe-eval`** (`server/app.js:47`).
-   Test whether MUI/Recharts actually need `unsafe-eval`; work toward nonces.
-   Left open: needs runtime verification across every page before tightening.
+6. ✅ **FIXED — CSP tightened** (`server/app.js`) — `scriptSrc` is `'self'`
+   only now (no `unsafe-inline`/`unsafe-eval`); verified zero inline
+   `<script>` tags in the built output. `styleSrc` keeps `unsafe-inline`,
+   which MUI/emotion's runtime style injection genuinely needs.
 
-7. **No CSRF protection for cookie auth** — relies on `sameSite: 'strict'`
-   plus same-origin only. Left open: adding token-based CSRF touches every
-   frontend mutation; plan it as its own change.
+7. ✅ **FIXED — CSRF protection added** — double-submit cookie pattern
+   (`server/middleware/csrf.js` + `setTokenCookie` in `services/auth.js`);
+   every frontend fetch wrapper attaches `X-CSRF-Token`. Covered by
+   `tests/middleware/csrf.test.js`.
 
 ## 🟠 Architecture & scalability
 
-8. **In-memory entity querying** — `findEntities` loads the whole table for a
-   type, then filters/sorts/paginates in JS. Fine today; will degrade with
-   data growth. Push filter/sort/pagination into SQL via `json_extract`
-   (migration 013's indexes already exist for the hot paths).
+8. ✅ **FIXED — In-memory entity querying pushed into SQL where safe** —
+   `findEntities` (`server/services/entities.js`) runs filter/sort/pagination
+   as SQL via `json_extract` (migration 013's indexes) whenever the caller has
+   unconditional read access to the type (`hasUnconditionalReadAccess`) and
+   isn't doing a text `search`. Row-scoped reads stay on the JS path (already
+   bounded to one client/supplier/user). Covered by
+   `tests/services/entitiesFindSql.test.js`.
 
 9. **Triple entity registration is error-prone** — `server/db.js`,
    `public/api-client.js`, and `CLIENT_SCOPED_TYPES` must be kept in sync by
@@ -97,14 +102,15 @@ from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
    calls `/api/suggestions` directly). Longer term, generate the client list
    at build time or serve it from the API.
 
-10. **Duplicated permission logic** — the two `hasPermission` implementations
-    (server + `src/lib`) are "parity-kept" by convention only. ✅ Parity test
-    added in `tests/lib/parity.test.js` (and found real drift: the frontend
-    was missing `view_quote_requests`/`manage_quote_requests` and the `client`
-    tier — now synced). Extracting a true `shared/` module remains open.
-    Note: the server ignores the live `AppSettings.tier_permissions` overrides
-    that the frontend honors — server enforcement uses the hardcoded defaults
-    plus per-user custom_permissions. Unifying these is the next step here.
+10. ✅ **FIXED — Permission logic deduplicated** — `PERMISSION_GROUPS`/
+    `ALL_PERMISSION_KEYS`/`DEFAULT_TIER_PERMISSIONS` now live in
+    `shared/permissions.js`, imported by both `server/permissions.js` and
+    `src/lib/permissions.js`. `server/permissions.js` also gained
+    `getEffectiveTierPermissions`, which reads the admin-configurable
+    `AppSettings.tier_permissions` override the same way the frontend already
+    did — closing the gap where an admin revoking a permission via that
+    override hid the UI but the backend still allowed it. Covered by
+    `tests/services/permissions.test.js` and `tests/lib/parity.test.js`.
 
 11. **`I18nContext.jsx` is ~14,100 lines** — six locales inlined in one JSX
     file that every bundle chunk depends on. Split into per-locale JSON files
@@ -126,17 +132,45 @@ from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
 14. ✅ **FIXED — ESLint is warning-free** (was 9 warnings of unused
     vars/imports). Keep it at zero so warnings stay a meaningful signal.
 
-15. **Migrations are `.cjs` in an ESM project** — standardize to ESM
-    (roadmap item; low risk, do opportunistically).
+15. ✅ **FIXED — Migrations converted from `.cjs` to ESM `.js`** (2026-07-13) —
+    all 17 files renamed and rewritten as `export function up/down`. The
+    tricky part: the runner tracked applied migrations by exact filename in
+    the `_migrations` table, so a naive rename would make every existing
+    database (including production) look like it had 17 pending migrations
+    again on the next deploy. `server/migrations/runner.js` now compares
+    names with the extension stripped (`normalizeName`), so a `.cjs` name
+    already recorded in `_migrations` still matches its renamed `.js` file —
+    verified by seeding a temp DB's `_migrations` table with the old `.cjs`
+    names and confirming `migrationStatus`/`migrate` treat all 17 as already
+    applied. Migration loading is now `import()` (async), so `migrate()` and
+    `reopenDb()` are async now too; `server/db.js`'s module-level call uses
+    top-level await. `npm run db:migrate:down` also had to change: it used to
+    reload the exact filename recorded in `_migrations` (which no longer
+    exists post-rename) — it now resolves the current on-disk file via the
+    same normalized-name match.
 
 16. ✅ **FIXED — `schemas.entityData` is wired** into the entity POST/PUT
     routes, rejecting prohibited keys with a 400 before they reach
     `sanitizeEntityData` (which remains as defense in depth).
 
-17. **Complete `ENTITY_PERMISSION_MAP` write coverage** — types without a
-    mapping (ServiceTemplate, SupplierCategory, ItineraryEvent, …) are
-    writable by any staff tier. Each addition needs care to not break agent
-    workflows; AppSettings (the dangerous one) is now mapped.
+17. ✅ **FIXED — `ENTITY_PERMISSION_MAP` write coverage completed** (2026-07-13)
+    — the 11 remaining unmapped types (`SupplierCategory`, `SupplierSubcategory`,
+    `SupplierPricing`, `SupplierService`, `SupplierReview`, `ItineraryEvent`,
+    `PackingItem`, `ProposalTemplate`, `BookingRequest`, `ReferenceCounter`,
+    `ReportSchedule`) were previously writable by any authenticated staff tier,
+    including `accounting` (nominally read-only). Each is now gated by an
+    existing permission already held by the tier that actually uses it
+    (`manage_categories`, `manage_pricing`, `modify_suppliers_basic`,
+    `create_trips`, `create_proposals`/`modify_proposals`, `view_reports`), with
+    matching `STAFF_READ_EXTRA` entries so agent/accounting read access isn't
+    regressed. Verified via `createEntity`/`findEntities` against the isolated
+    test DB (agent can write, accounting is rejected) before removing the
+    scratch test. Note: while investigating this, found the Supplier Portal
+    (`linked_supplier_id` accounts) has no production provisioning path
+    anywhere in the codebase — only `/api/testing/create-test-user*` sets that
+    field, and that route is disabled in production. The portal UI
+    (`SupplierPortal.jsx` and friends) is effectively unreachable by a real
+    supplier today; worth a follow-up if the feature is meant to be live.
 
 ## Deployment/ops notes
 

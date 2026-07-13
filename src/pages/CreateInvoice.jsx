@@ -284,7 +284,7 @@ export default function CreateInvoice() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(CURRENCY_CODES).map((cur) => (
+                  {CURRENCY_CODES.map((cur) => (
                     <SelectItem key={cur} value={cur}>
                       {getCurrencySymbol(cur)} {cur}
                     </SelectItem>

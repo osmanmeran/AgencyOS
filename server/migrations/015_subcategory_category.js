@@ -8,14 +8,12 @@
 // the first category from its supplier's (pre-migration 014) category_ids,
 // as a starting guess to review. The now-unused category_ids field is
 // dropped from Supplier records.
-module.exports.up = function (db) {
+export function up(db) {
   const now = new Date().toISOString();
   const updateEntity = db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?');
 
   const supplierRows = db.prepare("SELECT id, data FROM entities WHERE type = 'Supplier'").all();
-  const supplierCategoryIds = new Map(
-    supplierRows.map((r) => [r.id, JSON.parse(r.data).category_ids || []]),
-  );
+  const supplierCategoryIds = new Map(supplierRows.map((r) => [r.id, JSON.parse(r.data).category_ids || []]));
 
   const subcatRows = db.prepare("SELECT id, data FROM entities WHERE type = 'SupplierSubcategory'").all();
   for (const r of subcatRows) {
@@ -33,9 +31,9 @@ module.exports.up = function (db) {
     delete data.category_ids;
     updateEntity.run(JSON.stringify(data), now, r.id);
   }
-};
+}
 
-module.exports.down = function (db) {
+export function down(db) {
   const now = new Date().toISOString();
   const updateEntity = db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?');
 
@@ -61,4 +59,4 @@ module.exports.down = function (db) {
     delete data.category_id;
     updateEntity.run(JSON.stringify(data), now, r.id);
   }
-};
+}

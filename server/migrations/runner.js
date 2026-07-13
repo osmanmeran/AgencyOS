@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,26 +22,43 @@ function getAppliedMigrations(db) {
   return db
     .prepare(`SELECT name FROM ${MIGRATIONS_TABLE} ORDER BY id ASC`)
     .all()
-    .map(r => r.name);
+    .map((r) => r.name);
 }
 
 function getMigrationFiles() {
   return fs
     .readdirSync(__dirname)
-    .filter(f => /^\d+_.+\.cjs$/.test(f))
+    .filter((f) => /^\d+_.+\.(cjs|js)$/.test(f))
     .sort();
 }
 
+// Migrations were originally written as .cjs; existing databases (including
+// production) have their filenames-with-extension recorded in `_migrations`.
+// Converting a file to ESM `.js` must not make the runner think it's a new,
+// unapplied migration — so every name comparison strips the extension and
+// compares on the numeric-prefix + slug alone.
+function normalizeName(name) {
+  return name.replace(/\.(cjs|mjs|js)$/, '');
+}
+
 function getPendingMigrations(db) {
-  const applied = new Set(getAppliedMigrations(db));
-  return getMigrationFiles().filter(f => !applied.has(f));
+  const applied = new Set(getAppliedMigrations(db).map(normalizeName));
+  return getMigrationFiles().filter((f) => !applied.has(normalizeName(f)));
 }
 
-function loadMigration(file) {
-  return require(path.join(__dirname, file));
+// Resolves a name recorded in `_migrations` (possibly with a since-renamed
+// extension) back to the file that currently exists on disk for it.
+function resolveFile(appliedName) {
+  const target = normalizeName(appliedName);
+  return getMigrationFiles().find((f) => normalizeName(f) === target);
 }
 
-export function migrate(db, { direction = 'up', quiet = false } = {}) {
+async function loadMigration(file) {
+  if (file.endsWith('.cjs')) return require(path.join(__dirname, file));
+  return import(pathToFileURL(path.join(__dirname, file)).href);
+}
+
+export async function migrate(db, { direction = 'up', quiet = false } = {}) {
   ensureMetaTable(db);
 
   if (direction === 'up') {
@@ -53,7 +70,7 @@ export function migrate(db, { direction = 'up', quiet = false } = {}) {
 
     const applied = [];
     for (const file of pending) {
-      const migration = loadMigration(file);
+      const migration = await loadMigration(file);
       if (!quiet) console.log(`[Migrations] Applying: ${file}`);
       db.transaction(() => {
         migration.up(db);
@@ -72,17 +89,21 @@ export function migrate(db, { direction = 'up', quiet = false } = {}) {
       return [];
     }
 
-    const lastFile = appliedNames[appliedNames.length - 1];
-    const migration = loadMigration(lastFile);
-    if (!quiet) console.log(`[Migrations] Rolling back: ${lastFile}`);
+    const lastName = appliedNames[appliedNames.length - 1];
+    const lastFile = resolveFile(lastName);
+    if (!lastFile) {
+      throw new Error(`Cannot roll back "${lastName}": no matching migration file found on disk.`);
+    }
+    const migration = await loadMigration(lastFile);
+    if (!quiet) console.log(`[Migrations] Rolling back: ${lastName}`);
 
     db.transaction(() => {
       if (migration.down) migration.down(db);
-      db.prepare(`DELETE FROM ${MIGRATIONS_TABLE} WHERE name = ?`).run(lastFile);
+      db.prepare(`DELETE FROM ${MIGRATIONS_TABLE} WHERE name = ?`).run(lastName);
     })();
 
     if (!quiet) console.log('[Migrations] Rolled back 1 migration.');
-    return [lastFile];
+    return [lastName];
   }
 
   throw new Error(`Unknown migration direction: ${direction}`);
@@ -90,9 +111,9 @@ export function migrate(db, { direction = 'up', quiet = false } = {}) {
 
 export function migrationStatus(db) {
   ensureMetaTable(db);
-  const applied = new Set(getAppliedMigrations(db));
-  return getMigrationFiles().map(f => ({
+  const applied = new Set(getAppliedMigrations(db).map(normalizeName));
+  return getMigrationFiles().map((f) => ({
     name: f,
-    applied: applied.has(f),
+    applied: applied.has(normalizeName(f)),
   }));
 }

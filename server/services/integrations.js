@@ -1,39 +1,12 @@
 import { getDb, uid } from '../db.js';
 import { UnauthorizedError, BadRequestError } from '../middleware/errors.js';
 import logger from '../lib/logger.js';
+import { getExchangeRate as getStoredExchangeRate, refreshRates, getStoredRates } from './exchangeRates.js';
 
-let rateCache = { rates: null, timestamp: 0 };
-const CACHE_TTL = 3600000;
-
-async function fetchRates() {
-  if (rateCache.rates && Date.now() - rateCache.timestamp < CACHE_TTL) {
-    return rateCache.rates;
-  }
-  const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json', {
-    signal: AbortSignal.timeout(5000),
-  });
-  const data = await res.json();
-  rateCache = { rates: data.usd, timestamp: Date.now() };
-  return data.usd;
-}
-
-/**
- * Look up the conversion rate between two currencies, using an hour-long
- * in-memory cache of the full rate table.
- * @returns {Promise<{rate: number, source: string, timestamp: string}>}
- * @throws {BadRequestError} If either currency code is unsupported.
- */
-export async function getExchangeRate(from, to) {
-  const fromLower = from.toLowerCase();
-  const toLower = to.toLowerCase();
-  const rates = await fetchRates();
-  const fromRate = rates[fromLower];
-  const toRate = rates[toLower];
-  if (!fromRate || !toRate) {
-    throw new BadRequestError(`Unsupported currency: ${!fromRate ? from : to}`);
-  }
-  return { rate: toRate / fromRate, source: 'fawazahmed0/currency-api', timestamp: new Date().toISOString() };
-}
+// Rate lookups now read from the daily snapshot stored in the `exchange_rates`
+// table (with a live-API fallback), managed by server/services/exchangeRates.js.
+export { refreshRates, getStoredRates };
+export const getExchangeRate = getStoredExchangeRate;
 
 /** Record a sent email in `email_logs` (used after sending via Outlook, which has no local log of its own). */
 export function logEmail(to, subject, body) {

@@ -22,7 +22,7 @@ CREATE TABLE entities (
 CREATE INDEX idx_entities_type ON entities(type);
 ```
 
-`users` is the one major exception — it's a real typed table (`server/migrations/001_initial_schema.cjs`),
+`users` is the one major exception — it's a real typed table (`server/migrations/001_initial_schema.js`),
 since auth needs indexed lookups and column constraints the generic table
 doesn't offer.
 
@@ -135,10 +135,12 @@ above) instead of importing the one from `server/db.js`.
 
 ## Migrations
 
-`server/migrations/*.cjs` are plain SQL migration files run in filename
-order by `server/migrations/runner.js` (`migrate(db)` / `migrationStatus(db)`).
-They're CommonJS (`.cjs`) rather than ES modules, unlike the rest of the
-backend — see the README's roadmap item to standardize this. A pre-migration
+`server/migrations/*.js` are plain SQL migration files (ES modules, `export
+function up(db)` / `down(db)`) run in filename order by
+`server/migrations/runner.js` (`migrate(db)` / `migrationStatus(db)`).
+Applied migrations are tracked by name (extension stripped) in the
+`_migrations` table, so renaming a migration file doesn't make the runner
+re-apply it. A pre-migration
 DB snapshot (`server/services/backup.js`'s `createBackupSync`) is taken
 automatically whenever `server/db.js` detects unapplied migrations at
 startup, so a bad migration can be undone by restoring that file instead of

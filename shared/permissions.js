@@ -40,6 +40,11 @@ export const PERMISSION_GROUPS = [
       { key: 'delete_suppliers', label: 'Delete Suppliers', description: 'Remove supplier records' },
       { key: 'manage_categories', label: 'Manage Categories', description: 'Create and edit supplier categories' },
       { key: 'manage_pricing', label: 'Manage Pricing', description: 'Edit supplier pricing information' },
+      {
+        key: 'grant_supplier_portal',
+        label: 'Grant Supplier Portal Access',
+        description: 'Create a supplier’s Supplier Portal login and grant/revoke portal access',
+      },
     ],
   },
   {
@@ -200,6 +205,7 @@ export const DEFAULT_TIER_PERMISSIONS = {
     'view_quote_requests',
     'manage_quote_requests',
     'grant_client_portal',
+    'grant_supplier_portal',
   ],
   manager: [
     'create_trips',
@@ -233,6 +239,7 @@ export const DEFAULT_TIER_PERMISSIONS = {
     'view_quote_requests',
     'manage_quote_requests',
     'grant_client_portal',
+    'grant_supplier_portal',
   ],
   agent: [
     'create_trips',
@@ -255,4 +262,7 @@ export const DEFAULT_TIER_PERMISSIONS = {
   // their own client_id (see the server's userCanAccessEntity) and the
   // dedicated /api/b2b routes.
   client: [],
+  // Supplier-portal accounts: no staff permissions. Access is instead scoped
+  // to their own linked_supplier_id (see the server's userCanAccessEntity).
+  supplier: [],
 };

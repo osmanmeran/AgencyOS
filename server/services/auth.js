@@ -10,7 +10,7 @@ import logger from '../lib/logger.js';
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
 const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
 
-export const VALID_TIERS = ['admin', 'manager', 'accounting', 'agent', 'client'];
+export const VALID_TIERS = ['admin', 'manager', 'accounting', 'agent', 'client', 'supplier'];
 
 /**
  * Canonicalize an email for storage and lookup. Emails are treated
@@ -209,6 +209,7 @@ export function updateUser(id, fields) {
     default_currency: 'default_currency',
     avatar_url: 'avatar_url',
     client_id: 'client_id',
+    linked_supplier_id: 'linked_supplier_id',
     email_notifications: 'email_notifications',
   };
   const booleanFields = new Set(['is_active', 'email_notifications']);
@@ -344,6 +345,7 @@ export function createUser({
   departments,
   is_active,
   client_id,
+  linked_supplier_id,
 }) {
   const db = getDb();
   email = normalizeEmail(email);
@@ -354,6 +356,9 @@ export function createUser({
   if (tier === 'client' && !client_id) {
     throw new BadRequestError('client_id is required when creating a client-tier user');
   }
+  if (tier === 'supplier' && !linked_supplier_id) {
+    throw new BadRequestError('linked_supplier_id is required when creating a supplier-tier user');
+  }
   const perms = Array.isArray(custom_permissions) ? custom_permissions : [];
   const deps = Array.isArray(departments) ? departments : [];
   const active = is_active !== undefined ? (is_active ? 1 : 0) : 1;
@@ -362,7 +367,7 @@ export function createUser({
   const id = uid();
 
   db.prepare(
-    'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, client_id, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, client_id, linked_supplier_id, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     id,
     email,
@@ -375,6 +380,7 @@ export function createUser({
     JSON.stringify(deps),
     active,
     tier === 'client' ? client_id : null,
+    tier === 'supplier' ? linked_supplier_id : null,
     now,
     now,
   );

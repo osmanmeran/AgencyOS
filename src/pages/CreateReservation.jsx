@@ -1,5 +1,6 @@
 import { db } from '@/lib/DbContext';
 import { getCurrencySymbol } from '@/lib/formatters';
+import { DEFAULT_CURRENCIES } from '@/lib/currencies';
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -49,7 +50,7 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { applyMarkup } from '@/lib/pricing';
 import { categoryIdsBySupplier, getSupplierCategoryIds, createSupplierWithCategory } from '@/lib/supplierCategories';
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
+const CURRENCIES = DEFAULT_CURRENCIES;
 const currSymbol = (cur) => getCurrencySymbol(cur);
 
 const newPassenger = () => ({

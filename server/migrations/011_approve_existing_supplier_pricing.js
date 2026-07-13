@@ -8,7 +8,7 @@
 // Pre-existing pricing was already relied on for staff-built proposals
 // before this gate existed, so treat it as already vetted rather than
 // silently blocking every client's catalog after this deploy.
-module.exports.up = function (db) {
+export function up(db) {
   const rows = db.prepare("SELECT id, data FROM entities WHERE type = 'SupplierPricing'").all();
   const update = db.prepare('UPDATE entities SET data = ? WHERE id = ?');
 
@@ -19,9 +19,9 @@ module.exports.up = function (db) {
       update.run(JSON.stringify(data), row.id);
     }
   }
-};
+}
 
-module.exports.down = function () {
+export function down() {
   // Not meaningfully reversible — approval_status becomes ambiguous once
   // mixed with tiers approved through the normal UI flow afterward.
-};
+}

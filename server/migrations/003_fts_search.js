@@ -1,4 +1,4 @@
-function up(db) {
+export function up(db) {
   // Create FTS5 virtual table for full-text search on entities
   db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS entities_fts USING fts5(
@@ -48,7 +48,7 @@ function up(db) {
   }
 }
 
-function down(db) {
+export function down(db) {
   db.exec(`
     DROP TRIGGER IF EXISTS entities_fts_insert;
     DROP TRIGGER IF EXISTS entities_fts_delete;
@@ -56,5 +56,3 @@ function down(db) {
     DROP TABLE IF EXISTS entities_fts;
   `);
 }
-
-module.exports = { up, down };

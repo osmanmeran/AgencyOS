@@ -10,6 +10,8 @@
 // pre-migration backup taken on 2026-07-07. Guarded so it only acts on
 // suppliers that still have zero subcategories (no-op everywhere else,
 // including fresh installs and dev).
+import crypto from 'crypto';
+
 const RECOVERED_SUPPLIER_CATEGORY = {
   n5m26jzr: 'ic550l2y', // Marveltour -> Package Trip
   nnorctl8: 'hsjiflkk', // Hagia Sophia Mansions -> Hotels
@@ -44,15 +46,18 @@ const RECOVERED_SUPPLIER_CATEGORY = {
   '1a0e814f4535329a': 'hsjiflkk', // Lokalist -> Hotels
 };
 
-module.exports.up = function (db) {
+export function up(db) {
   const now = new Date().toISOString();
   const insertEntity = db.prepare(
     'INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)',
   );
-  const uid = () => require('crypto').randomBytes(8).toString('hex');
+  const uid = () => crypto.randomBytes(8).toString('hex');
 
   const existingSupplierIds = new Set(
-    db.prepare("SELECT id FROM entities WHERE type = 'Supplier'").all().map((r) => r.id),
+    db
+      .prepare("SELECT id FROM entities WHERE type = 'Supplier'")
+      .all()
+      .map((r) => r.id),
   );
   const subcatCountBySupplier = new Map();
   for (const r of db.prepare("SELECT data FROM entities WHERE type = 'SupplierSubcategory'").all()) {
@@ -66,9 +71,9 @@ module.exports.up = function (db) {
     const data = { supplier_id: supplierId, category_id: categoryId, name: 'General' };
     insertEntity.run(uid(), 'SupplierSubcategory', JSON.stringify(data), now, now);
   }
-};
+}
 
-module.exports.down = function () {
+export function down() {
   // Not reversible: would need to distinguish these seeded rows from ones a
   // user has since edited or added services to. Leave as-is on rollback.
-};
+}

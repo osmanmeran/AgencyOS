@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createRequire } from 'module';
 import Database from 'better-sqlite3';
-
-const require = createRequire(import.meta.url);
-const migration = require('../../server/migrations/013_add_entity_query_indexes.cjs');
+import * as migration from '../../server/migrations/013_add_entity_query_indexes.js';
 
 function makeDb() {
   const db = new Database(':memory:');

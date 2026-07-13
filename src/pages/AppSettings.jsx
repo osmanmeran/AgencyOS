@@ -23,6 +23,7 @@ import {
   FileText,
   Mail,
   Loader2,
+  RefreshCw,
   CheckCircle2,
   AlertCircle,
   Shield,
@@ -35,6 +36,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useT } from '@/lib/i18n/I18nContext';
 import { showSuccess, showError } from '@/lib/toast';
 import { getCsrfToken } from '@/lib/csrf';
+import { DEFAULT_CURRENCIES, getCurrencyName } from '@/lib/currencies';
 
 const LANGUAGES = [
   { code: 'en', name: 'English' },
@@ -44,8 +46,6 @@ const LANGUAGES = [
   { code: 'it', name: 'Italiano' },
   { code: 'tr', name: 'Türkçe' },
 ];
-
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
 
 const PERMISSION_TIERS = [
   {
@@ -81,6 +81,7 @@ export default function AppSettings() {
   const { t } = useT();
   const [activeTab, setActiveTab] = useState('general');
   const [newDepartment, setNewDepartment] = useState('');
+  const [newCurrency, setNewCurrency] = useState('');
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, email: '', name: '' });
   const [outlookLoading, setOutlookLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -110,6 +111,7 @@ export default function AppSettings() {
     },
     default_payment_terms: 'Due within 30 days',
     default_invoice_notes: '',
+    supported_currencies: DEFAULT_CURRENCIES,
   });
 
   const { data: settings } = /** @type {any} */ (
@@ -151,6 +153,9 @@ export default function AppSettings() {
         },
         default_payment_terms: settings.default_payment_terms || 'Due within 30 days',
         default_invoice_notes: settings.default_invoice_notes || '',
+        supported_currencies: Array.isArray(settings.supported_currencies)
+          ? settings.supported_currencies
+          : DEFAULT_CURRENCIES,
       });
     }
   }, [settings]);
@@ -218,6 +223,60 @@ export default function AppSettings() {
       .catch(() => {});
   };
 
+  // --- Supported Currencies handlers ---
+  const addCurrency = () => {
+    const code = newCurrency.trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(code)) {
+      showError('Invalid currency', 'Enter a 3-letter ISO 4217 code (e.g. USD)');
+      return;
+    }
+    if ((formData.supported_currencies || []).includes(code)) {
+      showError('Already added', `${code} is already in the list`);
+      return;
+    }
+    setFormData({
+      ...formData,
+      supported_currencies: [...(formData.supported_currencies || []), code],
+    });
+    setNewCurrency('');
+  };
+
+  const removeCurrency = (code) => {
+    setFormData({
+      ...formData,
+      supported_currencies: (formData.supported_currencies || []).filter((c) => c !== code),
+    });
+  };
+
+  const resetCurrencies = () => {
+    setFormData({ ...formData, supported_currencies: DEFAULT_CURRENCIES });
+  };
+
+  // --- Exchange rates (daily snapshot) ---
+  const [refreshingRates, setRefreshingRates] = useState(false);
+  const { data: ratesInfo, refetch: refetchRates } = useQuery({
+    queryKey: ['exchangeRates'],
+    queryFn: async () => {
+      const res = await fetch('/api/integrations/exchange-rates', { credentials: 'include' });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    retry: false,
+  });
+
+  const refreshExchangeRates = async () => {
+    setRefreshingRates(true);
+    try {
+      await apiFetch('/integrations/exchange-rates/refresh', { method: 'POST' });
+      await refetchRates();
+      showSuccess('Rates updated', 'Exchange rates refreshed from provider');
+    } catch (err) {
+      showError('Refresh failed', err.message || 'Could not refresh rates');
+    } finally {
+      setRefreshingRates(false);
+    }
+  };
+
   const saveSettingsMutation = /** @type {any} */ (
     useMutation({
       mutationFn: async (/** @type {any} */ data) => {
@@ -247,6 +306,11 @@ export default function AppSettings() {
           cleanData.default_payment_terms = data.default_payment_terms.trim();
         if (data.default_invoice_notes && data.default_invoice_notes.trim())
           cleanData.default_invoice_notes = data.default_invoice_notes.trim();
+        if (Array.isArray(data.supported_currencies) && data.supported_currencies.length > 0) {
+          cleanData.supported_currencies = data.supported_currencies.map((c) => String(c).toUpperCase());
+        } else {
+          cleanData.supported_currencies = DEFAULT_CURRENCIES;
+        }
         if (settings?.id) {
           return db.entities.AppSettings.update(settings.id, cleanData);
         } else {
@@ -507,15 +571,89 @@ export default function AppSettings() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CURRENCIES.map((c) => (
+                    {(formData.supported_currencies || DEFAULT_CURRENCIES).map((c) => (
                       <SelectItem key={c} value={c}>
-                        {c}
+                        {c} — {getCurrencyName(c)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">Used as default in new reservations</p>
               </div>
+            </div>
+          </Card>
+
+          {/* Supported Currencies */}
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <Globe className="w-5 h-5" /> Supported Currencies
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Currencies offered in currency dropdowns across the app (client portal, proposals, invoices). The
+              admin-configured list overrides the default set; leave it empty to fall back to defaults.
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(formData.supported_currencies || []).map((code) => (
+                <Badge key={code} variant="secondary" className="px-3 py-1">
+                  {code} — {getCurrencyName(code)}
+                  <button onClick={() => removeCurrency(code)} className="ml-2">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+              {(formData.supported_currencies || []).length === 0 && (
+                <span className="text-xs text-muted-foreground">Using default currency set</span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Input
+                placeholder="Add ISO code (e.g. USD)"
+                value={newCurrency}
+                maxLength={3}
+                className="w-48 uppercase"
+                onChange={(e) => setNewCurrency(e.target.value.toUpperCase())}
+                onKeyPress={(e) => e.key === 'Enter' && addCurrency()}
+              />
+              <Button onClick={addCurrency} variant="outline">
+                <Plus className="w-4 h-4" />
+              </Button>
+              <Button onClick={resetCurrencies} variant="ghost">
+                <RotateCcw className="w-4 h-4 mr-1" /> Reset to defaults
+              </Button>
+            </div>
+          </Card>
+
+          {/* Exchange Rates */}
+          <Card className="p-6 bg-card">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <Globe className="w-5 h-5" /> Exchange Rates
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Rates are refreshed automatically once per day and stored on the server. You can also force an immediate
+              refresh below.
+            </p>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="text-sm text-muted-foreground">
+                {ratesInfo ? (
+                  <>
+                    Last updated:{' '}
+                    <span className="font-medium text-foreground">
+                      {new Date(ratesInfo.updated_at).toLocaleString()}
+                    </span>{' '}
+                    · Source: <span className="font-medium text-foreground">{ratesInfo.source}</span>
+                  </>
+                ) : (
+                  'No rates stored yet — they will populate on the next daily refresh.'
+                )}
+              </div>
+              <Button onClick={refreshExchangeRates} disabled={refreshingRates} variant="outline">
+                {refreshingRates ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Refresh now
+              </Button>
             </div>
           </Card>
 

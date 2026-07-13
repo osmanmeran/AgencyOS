@@ -2,7 +2,7 @@
 // supplier can provide services across several categories (e.g. a company
 // offering both transport and guiding), so this migration moves suppliers
 // to a `category_ids` array, seeded from their existing single category.
-module.exports.up = function (db) {
+export function up(db) {
   const now = new Date().toISOString();
   const updateEntity = db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?');
 
@@ -14,9 +14,9 @@ module.exports.up = function (db) {
     delete data.category_id;
     updateEntity.run(JSON.stringify(data), now, r.id);
   }
-};
+}
 
-module.exports.down = function (db) {
+export function down(db) {
   const now = new Date().toISOString();
   const updateEntity = db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?');
 
@@ -28,4 +28,4 @@ module.exports.down = function (db) {
     delete data.category_ids;
     updateEntity.run(JSON.stringify(data), now, r.id);
   }
-};
+}

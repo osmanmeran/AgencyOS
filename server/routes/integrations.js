@@ -14,6 +14,8 @@ import {
   disconnectOutlook,
   sendOutlookEmail,
   searchSupplier,
+  refreshRates,
+  getStoredRates,
 } from '../services/integrations.js';
 import { sendEmail, isSmtpConfigured, renderTemplate } from '../services/email.js';
 import { sanitizeFilename } from '../lib/sanitizeFilename.js';
@@ -56,6 +58,24 @@ router.get(
   validate(schemas.exchangeRate, 'query'),
   catchAsync(async (req, res) => {
     const result = await getExchangeRate(req.query.from, req.query.to);
+    res.json(result);
+  }),
+);
+
+// Latest stored daily exchange-rate snapshot (source + fetch timestamp).
+router.get('/exchange-rates', (req, res) => {
+  const stored = getStoredRates();
+  if (!stored) {
+    return res.status(404).json({ error: { code: 'NO_RATES', message: 'No exchange rates stored yet' } });
+  }
+  res.json(stored);
+});
+
+// Force an immediate refresh of the stored snapshot from the provider.
+router.post(
+  '/exchange-rates/refresh',
+  catchAsync(async (req, res) => {
+    const result = await refreshRates();
     res.json(result);
   }),
 );

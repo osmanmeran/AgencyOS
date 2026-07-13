@@ -237,7 +237,6 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 
 ### Code Quality
 
-- **Standardize module system** — Migrate remaining CJS files (`migrations/*.cjs`) to ESM
 - **Import ordering** — Enforce import ordering rules and eliminate barrel files that cause circular dependencies
 
 ### Backend

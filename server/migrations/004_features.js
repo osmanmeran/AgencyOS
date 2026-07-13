@@ -1,4 +1,4 @@
-function up(db) {
+export function up(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS notifications (
       id TEXT PRIMARY KEY,
@@ -45,12 +45,10 @@ function up(db) {
   `);
 }
 
-function down(db) {
+export function down(db) {
   db.exec(`
     DROP TABLE IF EXISTS notifications;
     DROP TABLE IF EXISTS documents;
     DROP TABLE IF EXISTS audit_logs;
   `);
 }
-
-module.exports = { up, down };

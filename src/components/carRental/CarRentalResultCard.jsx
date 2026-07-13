@@ -22,10 +22,14 @@ const CAR_CATEGORY_LABELS = {
   convertible: 'Convertible',
 };
 
-export default function CarRentalResultCard({ item, days, onSelect }) {
+export default function CarRentalResultCard({ item, days, isDifferentDropoff, onSelect }) {
   const { t } = useT();
   const sym = getCurrencySymbol(item.currency);
   const total = item.unit_price * days;
+  // One-time drop-off surcharge applies only when the return location differs
+  // from pick-up. Shown underlined and rolled into the displayed total.
+  const dropOffFee = isDifferentDropoff ? Number(item.drop_off_surcharge) || 0 : 0;
+  const grandTotal = total + dropOffFee;
   const categoryLabel = CAR_CATEGORY_LABELS[item.car_category] || item.car_category;
 
   return (
@@ -63,9 +67,17 @@ export default function CarRentalResultCard({ item, days, onSelect }) {
               {item.unit_price.toFixed(2)}{' '}
               <span className="text-sm font-normal text-muted-foreground">{t('carRentalSearch.perDay')}</span>
             </div>
+            {dropOffFee > 0 && (
+              <div className="text-sm text-muted-foreground whitespace-nowrap mb-0.5">
+                <span className="underline">
+                  {t('carRentalSearch.dropOffSurchargeLabel')}: {sym}
+                  {dropOffFee.toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="text-sm text-muted-foreground whitespace-nowrap">
               {t('carRentalSearch.totalForDays', { count: days })}: {sym}
-              {total.toFixed(2)}
+              {grandTotal.toFixed(2)}
             </div>
           </div>
           <Button size="sm" onClick={() => onSelect(item)} className="whitespace-nowrap">

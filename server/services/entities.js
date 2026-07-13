@@ -83,6 +83,55 @@ const ENTITY_PERMISSION_MAP = {
     update: 'manage_quote_requests',
     delete: 'manage_quote_requests',
   },
+  SupplierCategory: {
+    create: 'manage_categories',
+    read: 'view_all_data',
+    update: 'manage_categories',
+    delete: 'manage_categories',
+  },
+  SupplierSubcategory: {
+    create: 'manage_categories',
+    read: 'view_all_data',
+    update: 'manage_categories',
+    delete: 'manage_categories',
+  },
+  SupplierPricing: {
+    create: 'manage_pricing',
+    read: 'view_all_data',
+    update: 'manage_pricing',
+    delete: 'manage_pricing',
+  },
+  SupplierService: {
+    create: 'modify_suppliers_basic',
+    read: 'view_all_data',
+    update: 'modify_suppliers_basic',
+    delete: 'modify_suppliers_basic',
+  },
+  SupplierReview: {
+    create: 'modify_suppliers_basic',
+    read: 'view_all_data',
+    update: 'modify_suppliers_basic',
+    delete: 'modify_suppliers_basic',
+  },
+  ItineraryEvent: { create: 'create_trips', read: 'view_all_trips', update: 'create_trips', delete: 'create_trips' },
+  PackingItem: { create: 'create_trips', read: 'view_all_trips', update: 'create_trips', delete: 'create_trips' },
+  ProposalTemplate: {
+    create: 'create_proposals',
+    read: 'view_all_data',
+    update: 'modify_proposals',
+    delete: 'modify_proposals',
+  },
+  BookingRequest: { create: 'create_trips', read: 'view_all_trips', update: 'create_trips', delete: 'create_trips' },
+  // Per-department/month sequence used to mint reservation reference numbers
+  // (see src/lib/referenceNumber.js) — gated the same as trip creation, the
+  // only workflow that touches it.
+  ReferenceCounter: {
+    create: 'create_trips',
+    read: 'view_all_trips',
+    update: 'create_trips',
+    delete: 'create_trips',
+  },
+  ReportSchedule: { create: 'view_reports', read: 'view_reports', update: 'view_reports', delete: 'view_reports' },
 };
 
 // Additional permissions that grant agent/accounting staff read access to a
@@ -93,6 +142,16 @@ const ENTITY_PERMISSION_MAP = {
 const STAFF_READ_EXTRA = {
   Supplier: ['modify_suppliers_basic', 'manage_pricing'],
   SupplierStopSale: ['manage_pricing'],
+  SupplierCategory: ['create_trips', 'create_proposals', 'modify_suppliers_basic', 'manage_pricing'],
+  SupplierSubcategory: ['create_trips', 'create_proposals', 'modify_suppliers_basic', 'manage_pricing'],
+  SupplierPricing: ['modify_suppliers_basic', 'manage_pricing', 'create_trips', 'create_proposals'],
+  SupplierService: ['modify_suppliers_basic', 'manage_pricing'],
+  SupplierReview: ['modify_suppliers_basic', 'manage_pricing'],
+  ItineraryEvent: ['create_trips'],
+  PackingItem: ['create_trips'],
+  ProposalTemplate: ['create_proposals', 'modify_proposals'],
+  BookingRequest: ['create_trips'],
+  ReferenceCounter: ['create_trips'],
   Client: ['create_trips', 'create_proposals'],
   Company: ['create_trips', 'create_proposals', 'create_invoices'],
   BookingTemplate: ['create_trips'],
@@ -120,7 +179,31 @@ function staffCanReadType(user, entityType) {
   return grantKeys.some((key) => hasPermission(user.user_tier || 'agent', perms, key));
 }
 
-function requireEntityPermission(user, entityType, action) {
+// Supplier-portal accounts (linked_supplier_id) write exactly these two
+// types through the generic entity API — there's no dedicated
+// /api/supplier-portal route module the way the client portal has /api/b2b.
+// They hold no staff permissions (tier 'supplier' grants none by design), so
+// the normal ENTITY_PERMISSION_MAP gate below would always reject them.
+// Bypassed here instead, scoped to their own supplier_id: for 'create' that's
+// checked directly against the submitted body (no existing row yet); for
+// 'update' the row itself is scoped by userCanAccessEntity right after this
+// check runs, but that only validates the *existing* row — without also
+// checking here, a supplier could pass a different supplier_id in the update
+// body and reassign someone else's record to themselves (or vice versa), so
+// an update body that touches supplier_id must still match their own.
+const SUPPLIER_PORTAL_WRITE_TYPES = ['BookingRequest', 'SupplierService'];
+
+function requireEntityPermission(user, entityType, action, body) {
+  if (user?.linked_supplier_id && SUPPLIER_PORTAL_WRITE_TYPES.includes(entityType)) {
+    if (action === 'create' && body?.supplier_id !== user.linked_supplier_id) {
+      throw new ForbiddenError('supplier_id must match your linked supplier');
+    }
+    if (action === 'update' && body?.supplier_id !== undefined && body.supplier_id !== user.linked_supplier_id) {
+      throw new ForbiddenError('supplier_id must match your linked supplier');
+    }
+    return;
+  }
+
   const mapping = ENTITY_PERMISSION_MAP[entityType];
   if (!mapping) return;
   const requiredPermission = mapping[action];
@@ -210,7 +293,19 @@ export function userCanAccessEntity(user, entityType, entityData) {
 
   // Supplier portal users can only see their own supplier's data
   if (user.linked_supplier_id) {
-    if (entityType === 'SupplierBooking' || entityType === 'SupplierInvoice') {
+    // Their own Supplier record, since the portal needs it to resolve "who
+    // am I" (see SupplierPortal.jsx) — not writable (ENTITY_PERMISSION_MAP
+    // grants the 'supplier' tier no modify_suppliers* permission).
+    if (entityType === 'Supplier') {
+      return entityData.id === user.linked_supplier_id;
+    }
+    if (
+      entityType === 'SupplierBooking' ||
+      entityType === 'SupplierInvoice' ||
+      entityType === 'BookingRequest' ||
+      entityType === 'SupplierService' ||
+      entityType === 'SupplierReview'
+    ) {
       return entityData.supplier_id === user.linked_supplier_id;
     }
   }
@@ -555,7 +650,7 @@ export function findEntityById(type, id, user) {
  */
 export function createEntity(type, body, user) {
   assertValidEntityType(type);
-  requireEntityPermission(user, type, 'create');
+  requireEntityPermission(user, type, 'create', body);
   const now = new Date().toISOString();
   const id = uid();
   const data = sanitizeEntityData({ ...body });
@@ -583,7 +678,7 @@ export function createEntity(type, body, user) {
  */
 export function updateEntity(type, id, body, user) {
   assertValidEntityType(type);
-  requireEntityPermission(user, type, 'update');
+  requireEntityPermission(user, type, 'update', body);
   const db = getDb();
   const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
   if (!existing) throw new NotFoundError('Record not found');

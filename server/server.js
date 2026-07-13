@@ -12,6 +12,7 @@ import { setBroadcastFn } from './services/notifications.js';
 import { startReminderService } from './services/reminders.js';
 import { startReportScheduler } from './services/reportScheduler.js';
 import { startBackupScheduler } from './services/backupScheduler.js';
+import { startExchangeRateScheduler } from './services/exchangeRateScheduler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
@@ -53,6 +54,7 @@ const onServerStart = () => {
   startReminderService();
   startReportScheduler();
   startBackupScheduler();
+  startExchangeRateScheduler();
 };
 
 let server;

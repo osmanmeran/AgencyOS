@@ -82,22 +82,15 @@ export default function ClientCarRentalSearch() {
   const isDifferentDropoff =
     !!pickupLocation && !!dropoffLocationEffective && dropoffLocationEffective !== pickupLocation;
 
-  // One card per rental company (supplier) at the chosen pick-up location —
-  // same reasoning as the hotel results: a supplier can have several
-  // matching pricing rows (different car categories), and this is a search
-  // results list, not a flat price list. Cheapest per supplier wins.
+  // Every matching car type at the chosen pick-up location is its own result
+  // card (a supplier may offer several categories — economy, SUV, … — each
+  // priced separately). Sorted cheapest-first.
   const results = useMemo(() => {
     if (!pickupLocation || days <= 0) return [];
     const candidates = catalogItems.filter(
       (item) => isCarRentalCategory(item.category_name) && (item.car_rental_locations || []).includes(pickupLocation),
     );
-    const bestBySupplier = new Map();
-    for (const item of candidates) {
-      const key = item.supplier_id || item.supplier_name;
-      const current = bestBySupplier.get(key);
-      if (!current || item.unit_price < current.unit_price) bestBySupplier.set(key, item);
-    }
-    return [...bestBySupplier.values()].sort((a, b) => a.unit_price - b.unit_price);
+    return [...candidates].sort((a, b) => a.unit_price - b.unit_price);
   }, [catalogItems, pickupLocation, days]);
 
   const openConfirm = (item) => {
@@ -205,7 +198,13 @@ export default function ClientCarRentalSearch() {
       ) : (
         <div className="space-y-4">
           {results.map((item) => (
-            <CarRentalResultCard key={item.pricing_id} item={item} days={days} onSelect={openConfirm} />
+            <CarRentalResultCard
+              key={item.pricing_id}
+              item={item}
+              days={days}
+              isDifferentDropoff={isDifferentDropoff}
+              onSelect={openConfirm}
+            />
           ))}
         </div>
       )}

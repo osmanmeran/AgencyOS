@@ -38,7 +38,7 @@ const INDEX_STATEMENTS = [
      ON entities(type, json_extract(data, '$.approval_status'))`,
 ];
 
-function up(db) {
+export function up(db) {
   const malformed = db.prepare('SELECT COUNT(*) AS c FROM entities WHERE json_valid(data) = 0').get().c;
   if (malformed > 0) {
     console.warn(
@@ -50,7 +50,7 @@ function up(db) {
   for (const stmt of INDEX_STATEMENTS) db.exec(stmt);
 }
 
-function down(db) {
+export function down(db) {
   db.exec(`
     DROP INDEX IF EXISTS idx_entities_type_status;
     DROP INDEX IF EXISTS idx_entities_type_due_date;
@@ -59,5 +59,3 @@ function down(db) {
     DROP INDEX IF EXISTS idx_entities_type_approval_status;
   `);
 }
-
-module.exports = { up, down };

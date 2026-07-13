@@ -278,6 +278,22 @@
       revokeClientPortal: function (clientId) {
         return api('/auth/client-portal/revoke', { method: 'POST', body: JSON.stringify({ clientId: clientId }) });
       },
+      // Supplier Portal access provisioning (requires grant_supplier_portal)
+      getSupplierPortal: function (supplierId) {
+        return api('/auth/supplier-portal/' + supplierId);
+      },
+      grantSupplierPortal: function (supplierId) {
+        return api('/auth/supplier-portal/grant', {
+          method: 'POST',
+          body: JSON.stringify({ supplierId: supplierId }),
+        });
+      },
+      revokeSupplierPortal: function (supplierId) {
+        return api('/auth/supplier-portal/revoke', {
+          method: 'POST',
+          body: JSON.stringify({ supplierId: supplierId }),
+        });
+      },
     },
     entities: entityApis,
     integrations: {

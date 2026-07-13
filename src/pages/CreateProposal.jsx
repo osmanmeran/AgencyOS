@@ -1,5 +1,6 @@
 import { db } from '@/lib/DbContext';
 import { getCurrencySymbol } from '@/lib/formatters';
+import { DEFAULT_CURRENCIES } from '@/lib/currencies';
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,7 +35,7 @@ import ServiceLibraryPanel from '../components/proposals/ServiceLibraryPanel';
 import { applyMarkup } from '@/lib/pricing';
 import { createSupplierWithCategory } from '@/lib/supplierCategories';
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
+const CURRENCIES = DEFAULT_CURRENCIES;
 
 const emptyService = (supCur = 'USD', cliCur = 'USD') => ({
   _key: `svc-${Date.now()}-${Math.random()}`,

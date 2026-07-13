@@ -54,6 +54,7 @@ import ClientTasksPanel from '../components/clients/ClientTasksPanel';
 import CompanyPicker from '../components/crm/CompanyPicker';
 import LocationSearch from '@/components/services/LocationSearch';
 import { getCurrencySymbol, mixedCurrencyLabel } from '@/lib/formatters';
+import { useSupportedCurrencies, getCurrencyName } from '@/lib/currencies';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
@@ -74,6 +75,7 @@ export default function ClientDetails() {
   const clientId = searchParams.get('id');
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
+  const supportedCurrencies = useSupportedCurrencies();
 
   // Open the client portal scoped to this client so staff can see exactly what
   // the client sees (read-only). The selection is remembered by actAsClient.js
@@ -889,9 +891,9 @@ export default function ClientDetails() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'].map((c) => (
+                    {supportedCurrencies.map((c) => (
                       <SelectItem key={c} value={c}>
-                        {c}
+                        {c} — {getCurrencyName(c)}
                       </SelectItem>
                     ))}
                   </SelectContent>

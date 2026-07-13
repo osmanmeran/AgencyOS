@@ -126,6 +126,39 @@ export default function SupplierDetails() {
     })
   );
 
+  const [tempPassword, setTempPassword] = useState(/** @type {any} */ (null));
+
+  const { data: portalStatus, isLoading: portalLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierPortal', supplierId],
+      queryFn: () => db.auth.getSupplierPortal(supplierId),
+      enabled: !!supplierId && hasPermission('grant_supplier_portal'),
+    })
+  );
+
+  const grantPortalMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () => db.auth.grantSupplierPortal(supplierId),
+      onSuccess: (/** @type {any} */ res) => {
+        showSuccess('Supplier Portal access granted');
+        if (res.tempPassword) setTempPassword(res.tempPassword);
+        queryClient.invalidateQueries({ queryKey: ['supplierPortal', supplierId] });
+      },
+      onError: (error) => showError('Failed to grant access', error.message),
+    })
+  );
+
+  const revokePortalMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () => db.auth.revokeSupplierPortal(supplierId),
+      onSuccess: () => {
+        showSuccess('Supplier Portal access revoked');
+        queryClient.invalidateQueries({ queryKey: ['supplierPortal', supplierId] });
+      },
+      onError: (error) => showError('Failed to revoke access', error.message),
+    })
+  );
+
   const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['supplierCategories'],
@@ -463,6 +496,70 @@ export default function SupplierDetails() {
           </div>
         </div>
       </Card>
+
+      {hasPermission('grant_supplier_portal') && (
+        <Card className="p-6 bg-card shadow-md">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">Supplier Portal Access</h3>
+              <p className="text-sm text-muted-foreground">
+                {portalStatus?.account?.is_active
+                  ? `Portal login active for ${supplier.email}`
+                  : portalStatus?.account?.exists
+                    ? 'Portal login created but inactive'
+                    : 'No portal login created yet'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span
+                className={
+                  portalStatus?.portal_access
+                    ? 'text-green-600 dark:text-green-400 font-medium'
+                    : 'text-muted-foreground'
+                }
+              >
+                {portalStatus?.portal_access ? 'Enabled' : 'Disabled'}
+              </span>
+              <Switch
+                checked={!!portalStatus?.portal_access}
+                disabled={portalLoading || grantPortalMutation.isPending || revokePortalMutation.isPending}
+                onCheckedChange={(/** @type {boolean} */ enabled) =>
+                  enabled ? grantPortalMutation.mutate() : revokePortalMutation.mutate()
+                }
+              />
+            </div>
+          </div>
+          {!supplier.email && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+              Add an email address to this supplier before granting portal access.
+            </p>
+          )}
+        </Card>
+      )}
+
+      <Dialog open={!!tempPassword} onOpenChange={(/** @type {boolean} */ o) => !o && setTempPassword(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supplier Portal login created</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              A Supplier Portal account was created for <strong>{supplier?.email}</strong>. Share this temporary
+              password with the supplier — they can change it after logging in.
+            </p>
+            <div className="flex items-center gap-2">
+              <Input readOnly value={tempPassword || ''} className="font-mono" />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigator.clipboard?.writeText(tempPassword || '')}
+              >
+                Copy
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {inStopSaleToday && (
         <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 flex items-start gap-3">

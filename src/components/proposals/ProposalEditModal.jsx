@@ -1,5 +1,6 @@
 import { db } from '@/lib/DbContext';
 import { getCurrencySymbol } from '@/lib/formatters';
+import { DEFAULT_CURRENCIES } from '@/lib/currencies';
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +21,7 @@ import { createSupplierWithCategory } from '@/lib/supplierCategories';
 import { Plus, Trash2, TrendingUp, Building2, RefreshCw, ArrowRightLeft, Users, X, Save } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'EGP', 'MAD', 'JPY', 'CHF', 'CAD', 'AUD'];
+const CURRENCIES = DEFAULT_CURRENCIES;
 
 const emptyService = (supCur = 'USD', cliCur = 'USD') => ({
   _key: `svc-${Date.now()}-${Math.random()}`,

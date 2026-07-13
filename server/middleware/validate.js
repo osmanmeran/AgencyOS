@@ -153,6 +153,10 @@ export const schemas = {
     clientId: z.string().min(1, 'clientId is required'),
   }),
 
+  supplierPortalAction: z.object({
+    supplierId: z.string().min(1, 'supplierId is required'),
+  }),
+
   bulkCreateEntity: z.object({
     records: z.array(z.record(z.unknown())).min(1, 'records must be a non-empty array'),
   }),

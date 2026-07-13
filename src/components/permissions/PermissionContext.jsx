@@ -51,6 +51,11 @@ export function PermissionProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    // StrictMode (dev only) mounts, cleans up, then mounts again — reset the
+    // flag here (not just at useRef's initial value) so the second, real
+    // mount's in-flight computePermissions() call isn't silently dropped by
+    // the `!mountedRef.current` guard left over from the simulated unmount.
+    mountedRef.current = true;
     computePermissions();
     return () => {
       mountedRef.current = false;

@@ -33,6 +33,7 @@ import { getCatalog } from '@/lib/b2bApi';
 import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
 import { tourStartingPrice, activeDiscount, tourPriceForPax } from '@/lib/tourPricing';
 import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 import HotelSearchBar from '@/components/hotelSearch/HotelSearchBar';
 import CarRentalSearchBar, { SAME_AS_PICKUP } from '@/components/carRental/CarRentalSearchBar';
 import TransferSearchBar from '@/components/transfer/TransferSearchBar';
@@ -779,21 +780,30 @@ export default function ClientPortal() {
         )}
       </Card>
 
-      {/* Featured tours — chosen by staff, shown to all portal clients. */}
-      {featuredTours.length > 0 && (
+      {/* Featured tours — chosen by staff, shown to all portal clients.
+          Shown as a carousel and hidden while a tour search is listing
+          results, so the search results are the only tour list on screen. */}
+      {!isTourSearchActive && featuredTours.length > 0 && (
         <Card className="p-6 bg-card shadow-md">
           <h2 className="text-xl font-bold text-foreground mb-5">{t('clientPortal.featuredTours')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {featuredTours.map((tour) => (
-              <TourCard
-                key={tour.id}
-                tour={tour}
-                language={language}
-                t={t}
-                onAdd={addTourToCart}
-                renderPrice={renderTourPrice}
-              />
-            ))}
+          <div className="px-10">
+            <Carousel opts={{ align: 'start' }} className="w-full">
+              <CarouselContent>
+                {featuredTours.map((tour) => (
+                  <CarouselItem key={tour.id} className="basis-full sm:basis-1/2 lg:basis-1/3">
+                    <TourCard
+                      tour={tour}
+                      language={language}
+                      t={t}
+                      onAdd={addTourToCart}
+                      renderPrice={renderTourPrice}
+                    />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="-left-2" />
+              <CarouselNext className="-right-2" />
+            </Carousel>
           </div>
         </Card>
       )}

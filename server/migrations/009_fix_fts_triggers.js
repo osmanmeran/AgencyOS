@@ -6,7 +6,7 @@
 // UPDATE/DELETE against the entities table has been failing since the
 // initial commit. Replace both triggers with plain DELETE/INSERT statements,
 // matching the (correct) upsertFts/deleteFts helpers in services/entities.js.
-function up(db) {
+export function up(db) {
   db.exec(`
     DROP TRIGGER IF EXISTS entities_fts_delete;
     DROP TRIGGER IF EXISTS entities_fts_update;
@@ -23,7 +23,7 @@ function up(db) {
   `);
 }
 
-function down(db) {
+export function down(db) {
   db.exec(`
     DROP TRIGGER IF EXISTS entities_fts_delete;
     DROP TRIGGER IF EXISTS entities_fts_update;
@@ -41,5 +41,3 @@ function down(db) {
     END;
   `);
 }
-
-module.exports = { up, down };

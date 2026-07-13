@@ -68,6 +68,21 @@ function getClientAccountState(db, email, clientId) {
   return { exists: true, is_active: !!u.is_active, linked: u.client_id === clientId };
 }
 
+/** @returns {object|null} The Supplier entity row ({ id, data }) or null. */
+function getSupplierRow(db, supplierId) {
+  const row = db.prepare("SELECT * FROM entities WHERE type = 'Supplier' AND id = ?").get(supplierId);
+  if (!row) return null;
+  return { id: row.id, data: JSON.parse(row.data) };
+}
+
+/** @returns {{exists: boolean, is_active: boolean, linked: boolean}} Supplier-portal account state for an email. */
+function getSupplierAccountState(db, email, supplierId) {
+  if (!email) return { exists: false, is_active: false, linked: false };
+  const u = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+  if (!u || u.user_tier !== 'supplier') return { exists: false, is_active: false, linked: false };
+  return { exists: true, is_active: !!u.is_active, linked: u.linked_supplier_id === supplierId };
+}
+
 const router = Router();
 
 router.post(
@@ -414,6 +429,121 @@ router.post(
       action: AUDIT_ACTIONS.PORTAL_REVOKE,
       entityType: 'Client',
       entityId: clientId,
+      ip: req.ip,
+    });
+
+    res.json({ success: true, portal_access: false });
+  }),
+);
+
+// --- Supplier Portal access provisioning ------------------------------------
+// Mirrors the Client Portal flow above, gated by `grant_supplier_portal`.
+// Simpler than the client flow: a Supplier record already exists by the time
+// staff grant portal access (created via SupplierDetails), so there's no
+// analogous "auto-create the parent record" step.
+
+router.get(
+  '/supplier-portal/:supplierId',
+  authMiddleware,
+  requirePermission('grant_supplier_portal'),
+  catchAsync(async (req, res) => {
+    const { supplierId } = req.params;
+    const db = getDb();
+    const supplier = getSupplierRow(db, supplierId);
+    if (!supplier) throw new NotFoundError('Supplier not found');
+
+    const account = getSupplierAccountState(db, supplier.data.email, supplierId);
+    res.json({ portal_access: !!supplier.data.portal_access, account });
+  }),
+);
+
+router.post(
+  '/supplier-portal/grant',
+  authMiddleware,
+  requirePermission('grant_supplier_portal'),
+  validate(schemas.supplierPortalAction),
+  catchAsync(async (req, res) => {
+    const { supplierId } = req.body;
+    const db = getDb();
+    const supplier = getSupplierRow(db, supplierId);
+    if (!supplier) throw new NotFoundError('Supplier not found');
+
+    const email = supplier.data.email;
+    if (!email) throw new BadRequestError('Supplier must have an email address to grant portal access');
+
+    let tempPassword = null;
+    const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+    if (existing) {
+      if (existing.user_tier !== 'supplier') {
+        throw new ConflictError('This email already belongs to a staff account; use a different contact email');
+      }
+      if (existing.linked_supplier_id && existing.linked_supplier_id !== supplierId) {
+        throw new ConflictError('This email is already linked to a different supplier');
+      }
+      updateUser(existing.id, { is_active: true, linked_supplier_id: supplierId });
+    } else {
+      tempPassword = generateTempPassword();
+      createUser({
+        email,
+        password: tempPassword,
+        name: supplier.data.name || String(email).split('@')[0],
+        user_tier: 'supplier',
+        linked_supplier_id: supplierId,
+      });
+    }
+
+    const newSupplierData = { ...supplier.data, portal_access: true };
+    db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
+      JSON.stringify(newSupplierData),
+      new Date().toISOString(),
+      supplierId,
+    );
+
+    logAudit({
+      userId: req.user.id,
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.PORTAL_GRANT,
+      entityType: 'Supplier',
+      entityId: supplierId,
+      ip: req.ip,
+    });
+
+    res.json({ success: true, portal_access: true, tempPassword, email });
+  }),
+);
+
+router.post(
+  '/supplier-portal/revoke',
+  authMiddleware,
+  requirePermission('grant_supplier_portal'),
+  validate(schemas.supplierPortalAction),
+  catchAsync(async (req, res) => {
+    const { supplierId } = req.body;
+    const db = getDb();
+    const supplier = getSupplierRow(db, supplierId);
+    if (!supplier) throw new NotFoundError('Supplier not found');
+
+    const email = supplier.data.email;
+    if (email) {
+      const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+      if (existing && existing.user_tier === 'supplier') {
+        updateUser(existing.id, { is_active: false });
+      }
+    }
+
+    const newSupplierData = { ...supplier.data, portal_access: false };
+    db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
+      JSON.stringify(newSupplierData),
+      new Date().toISOString(),
+      supplierId,
+    );
+
+    logAudit({
+      userId: req.user.id,
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.PORTAL_REVOKE,
+      entityType: 'Supplier',
+      entityId: supplierId,
       ip: req.ip,
     });
 

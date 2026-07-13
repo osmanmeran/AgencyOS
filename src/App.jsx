@@ -105,6 +105,17 @@ const AuthenticatedApp = () => {
     return <Navigate to="/ClientPortal" replace />;
   }
 
+  // Supplier-portal accounts (user_tier 'supplier') land nowhere useful on
+  // the default Dashboard either — send them straight to SupplierPortal.
+  if (
+    isAuthenticated &&
+    user?.user_tier === 'supplier' &&
+    !NON_REDIRECT_ROUTES.includes(location.pathname) &&
+    location.pathname.replace(/^\//, '') !== 'SupplierPortal'
+  ) {
+    return <Navigate to="/SupplierPortal" replace />;
+  }
+
   // Render the main app
   return (
     <Suspense
