@@ -1,0 +1,636 @@
+[
+  {
+    "name": "Tour Meraviglia",
+    "mode": "multiday",
+    "language": "it",
+    "location": "Istanbul",
+    "startLocation": "Istanbul",
+    "endLocation": "Kusadasi",
+    "startingTime": "",
+    "sights": ["Istanbul", "Ankara", "Cappadocia", "Pamukkale", "Ephesus", "Kusadasi"],
+    "mealTreatment": "Full board",
+    "pricingTiers": [
+      {
+        "minParticipants": 2,
+        "maxParticipants": 2,
+        "price": 3888.15
+      },
+      {
+        "minParticipants": 4,
+        "maxParticipants": 4,
+        "price": 2918.43
+      },
+      {
+        "minParticipants": 6,
+        "maxParticipants": 6,
+        "price": 2147.82
+      },
+      {
+        "minParticipants": 8,
+        "maxParticipants": 8,
+        "price": 1934.59
+      },
+      {
+        "minParticipants": 10,
+        "maxParticipants": 10,
+        "price": 1806.65
+      },
+      {
+        "minParticipants": 12,
+        "maxParticipants": 12,
+        "price": 1721.36
+      }
+    ],
+    "transportation": true,
+    "tourStyle": "private",
+    "minOccupancy": 2,
+    "maxOccupancy": 12,
+    "nights": [
+      {
+        "day": 1,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 2,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 3,
+        "lodging": "Ankara - New Park 5*",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 4,
+        "lodging": "Cappadocia - Hu of Cappadocia",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 5,
+        "lodging": "Cappadocia - Hu of Cappadocia",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 6,
+        "lodging": "Pamukkale - Adempira",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 7,
+        "lodging": "Kusadasi - Qlusive",
+        "hotelMealTreatment": "Full board"
+      }
+    ],
+    "departureDate": "",
+    "availability": 1,
+    "repeatWeekly": false,
+    "repeatStart": "",
+    "repeatEnd": "",
+    "description": {
+      "it": "Tour privato di 8 giorni / 7 notti alla scoperta della Turchia classica: Istanbul, Ankara, Cappadocia, Pamukkale e la costa egea di Efeso e Kusadasi. Trattamento di pensione completa, guida professionale di lingua italiana, ingressi e trasferimenti inclusi. Pernottamenti in hotel 5* e Categoria Speciale / Luxury.",
+      "en": "Private 8-day / 7-night tour of classical Turkey: Istanbul, Ankara, Cappadocia, Pamukkale and the Aegean coast of Ephesus and Kusadasi. Full-board treatment, professional Italian-speaking guide, entries and transfers included. Overnight stays in 5* and Special Category / Luxury hotels."
+    },
+    "coverImage": "",
+    "durationDays": 8,
+    "dayDescriptions": [
+      {
+        "day": 1,
+        "description": "Arrivo in aeroporto dove verrete accolti dal nostro assistente al punto già comunicato in precedenza nella Guida al Viaggio, verrete direttamente portati in albergo. Pasti liberi.",
+        "image": ""
+      },
+      {
+        "day": 2,
+        "description": "Dopo la colazione in albergo incontro con la guida e partenza alla volta della scoperta del Palazzo Topkapi, il palazzo imperiale dei Sultani Ottomani e della loro corte, dove ammirare i loro tesori e scoprire gli aspetti più interessanti della vita quotidiana di una corte imperiale. Si prosegue verso la Cisterna Sotterranea, un grande spazio sotterraneo usato nell'antichità come cisterna e che oggi con le sue antichissime e maestose colonne è considerato uno dei luoghi più suggestivi della città. Scenderete poi verso il mare prima per un bel pranzo a base di pesce in uno dei classici ristoranti sotto il ponte di Galata, approfittando di una delle viste più iconiche al mondo, e dopo per fare una bella crociera sul Bosforo, su uno dei battelli di linea. Alla fine, passerete per il Mercato delle Spezie.\n\nSubito si riparte alla volta dell'Ippodromo Bizantino, dove poter ammirare ancora molti reperti dell'antico Impero Romano e raggiungere poi il Gran Bazar e le sue migliaia di negozi. Qui, nel mercato al chiuso più grande ed antico al mondo, si ha il tempo di sbizzarrirsi con lo shopping. Rientro in hotel. Cena libera e pernottamento.",
+        "image": ""
+      },
+      {
+        "day": 3,
+        "description": "Si comincia raggiungendo a piedi (l'hotel è a breve distanza dalle principali attrazioni della città) la Moschea Blu (Sultanahmet) con le sue oltre ventimila ceramiche turchesi; si raggiunge poi uno dei monumenti più importanti della Turchia e del mondo, Santa Sofia, che con la sua cupola definisce il paesaggio di tutta la città ed infine si raggiunge un luogo affascinante. Pranzo in un ristorante per assaggiare uno dei piatti più tipici della cucina turca: il Döner Kebab, uno dei “street food” più famosi al mondo. Verso le 13:00 un assistente vi verrà a prendere per il viaggio verso Ankara, la capitale della Turchia, con arrivo previsto verso l'ora di cena. Cena in albergo e pernottamento.",
+        "image": ""
+      },
+      {
+        "day": 4,
+        "description": "Avrete la prima parte della mattinata libera, per avere un respiro dai ritmi incalzanti del tour, dove potete esplorare da soli le strade della Capitale; vi ritroverete in albergo alle 11:00 con il resto del gruppo diretti ad uno dei musei più premiati d'Europa, il Museo delle Civiltà Anatoliche, che racchiude in sé millenni di storia delle civiltà che hanno abitato la Penisola Anatolica. Dopo la visita si ripartirà per la Cappadocia; dopo il pranzo con tipici piatti turchi ci si fermerà per una sosta al Lago Salato dal suo suggestivo panorama. Arrivo prima di cena in albergo.",
+        "image": ""
+      },
+      {
+        "day": 5,
+        "description": "Si parte la mattina all'alba per poter partecipare all'escursione (facoltativa, a pagamento e soggetta a condizioni meteorologiche) del giro in mongolfiera per ammirare il paesaggio 'lunare' della Cappadocia, cominciando dalla Valle di Devrent, famosa per le sue caratteristiche formazioni rocciose e i coni vulcanici di colore rosato, dove osserverete i celebri camini di fata. Pranzo ad Avanos, villaggio sulle rive del fiume Kizilirmak (Fiume Rosso), famoso per le sue ceramiche di terracotta; si passerà anche per l'antico villaggio greco di Cavusin, per poi visitare il museo all'aria aperta di Göreme, uno dei più grandi complessi monastici di chiese e cappelle rupestri in Turchia e nel mondo. L'ultima tappa sarà la visita esterna del castello di Uchisar.",
+        "image": ""
+      },
+      {
+        "day": 6,
+        "description": "Questa mattina si parte molto presto per arrivare a Pamukkale; vi verrà preparata la colazione al sacco da parte dell'hotel e la partenza è prevista per le 06:30. Sul percorso visiterete un antico Caravanserraglio, mercati tipici del Medioriente e luoghi di scambio di culture e commerci, quello Selgiuchide di Sultanhani. Passerete per il pranzo con piatti tipici dell'Anatolia centrale. In serata arriverete alla antica capitale della Frigia: Hierapolis; se ci sarà tempo la visiterete in questa occasione, altrimenti la mattina successiva (il sito archeologico è curato dal 1957 dall'Università di Torino) insieme alla sua Necropoli. Poi visita ad uno dei più suggestivi patrimoni dell'Umanità UNESCO: le cascate pietrificate di Pamukkale (Castello di Cotone in turco), dopodiché passerete in albergo prima della cena dove potrete approfittare delle acque termali naturali direttamente nella vostra camera d'albergo.",
+        "image": ""
+      },
+      {
+        "day": 7,
+        "description": "Se non è stato fatto la sera precedente, dopo la colazione visiterete le rovine di Hierapolis, antica città greca della Frigia (il sito archeologico è curato dal 1957 dall'Università di Torino) e la sua Necropoli. Poi visita ad uno dei più suggestivi patrimoni dell'Umanità UNESCO: le cascate pietrificate di Pamukkale (Castello di Cotone in turco). Si prosegue per Efeso (l'unica delle antiche sette meraviglie a non essere un monumento ma l'intera città!); nel tragitto farete tappa in uno dei più suggestivi luoghi di culto della cristianità: la Casa della Vergine Maria, dove passò gli ultimi anni della sua vita terrestre. Vi fermerete poi in un ristorante sul tragitto per Efeso per assaggiare piatti tipici dell'Egeo. Il pomeriggio è dedicato alla visita di Efeso: le Rovine di Efeso, il Tempio di Adriano, la Biblioteca di Celso, il Grande Teatro. Passerete poi ad una delle località di villeggiatura più famose della Turchia: Kusadasi; l'albergo sarà molto vicino alla spiaggia e potrete approfittarne per un giro per la marina e magari un tuffo! La cena sarà servita in albergo.",
+        "image": ""
+      },
+      {
+        "day": 8,
+        "description": "I nostri autisti vi verranno a prendere in albergo, dopo la colazione, per accompagnarvi all'aeroporto di Izmir (Smirne) per il rientro, oppure potete continuare il vostro soggiorno mare.",
+        "image": ""
+      }
+    ],
+    "featured": false,
+    "specialOffer": {
+      "percent": 0,
+      "startDate": "",
+      "endDate": ""
+    }
+  },
+  {
+    "name": "Wonder Tour",
+    "mode": "multiday",
+    "language": "en",
+    "location": "Istanbul",
+    "startLocation": "Istanbul",
+    "endLocation": "Kusadasi",
+    "startingTime": "",
+    "sights": ["Istanbul", "Ankara", "Cappadocia", "Pamukkale", "Ephesus", "Kusadasi"],
+    "mealTreatment": "Full board",
+    "pricingTiers": [
+      {
+        "minParticipants": 2,
+        "maxParticipants": 2,
+        "price": 3888.15
+      },
+      {
+        "minParticipants": 4,
+        "maxParticipants": 4,
+        "price": 2918.43
+      },
+      {
+        "minParticipants": 6,
+        "maxParticipants": 6,
+        "price": 2147.82
+      },
+      {
+        "minParticipants": 8,
+        "maxParticipants": 8,
+        "price": 1934.59
+      },
+      {
+        "minParticipants": 10,
+        "maxParticipants": 10,
+        "price": 1806.65
+      },
+      {
+        "minParticipants": 12,
+        "maxParticipants": 12,
+        "price": 1721.36
+      }
+    ],
+    "transportation": true,
+    "tourStyle": "private",
+    "minOccupancy": 2,
+    "maxOccupancy": 12,
+    "nights": [
+      {
+        "day": 1,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 2,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 3,
+        "lodging": "Ankara - New Park 5*",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 4,
+        "lodging": "Cappadocia - Hu of Cappadocia",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 5,
+        "lodging": "Cappadocia - Hu of Cappadocia",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 6,
+        "lodging": "Pamukkale - Adempira",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 7,
+        "lodging": "Kusadasi - Qlusive",
+        "hotelMealTreatment": "Full board"
+      }
+    ],
+    "departureDate": "",
+    "availability": 1,
+    "repeatWeekly": false,
+    "repeatStart": "",
+    "repeatEnd": "",
+    "description": {
+      "it": "Tour privato di 8 giorni / 7 notti alla scoperta della Turchia classica: Istanbul, Ankara, Cappadocia, Pamukkale e la costa egea di Efeso e Kusadasi. Trattamento di pensione completa, guida professionale di lingua italiana, ingressi e trasferimenti inclusi. Pernottamenti in hotel 5* e Categoria Speciale / Luxury.",
+      "en": "Private 8-day / 7-night tour of classical Turkey: Istanbul, Ankara, Cappadocia, Pamukkale and the Aegean coast of Ephesus and Kusadasi. Full-board treatment, professional Italian-speaking guide, entries and transfers included. Overnight stays in 5* and Special Category / Luxury hotels."
+    },
+    "coverImage": "",
+    "durationDays": 8,
+    "dayDescriptions": [
+      {
+        "day": 1,
+        "description": "Arrival at the airport where you will be welcomed by our assistant at the meeting point already communicated previously in the Travel Guide; you will be taken directly to the hotel. Meals at leisure.",
+        "image": ""
+      },
+      {
+        "day": 2,
+        "description": "After breakfast at the hotel, meeting with the guide and departure to discover Topkapi Palace, the imperial palace of the Ottoman Sultans and their court, where you can admire their treasures and discover the most interesting aspects of daily life at an imperial court. We continue to the Basilica Cistern, a large underground space used in antiquity as a cistern and which today, with its ancient and majestic columns, is considered one of the most evocative places in the city. You will then head down towards the sea for a nice fish-based lunch in one of the classic restaurants under the Galata Bridge, enjoying one of the most iconic views in the world, and then for a pleasant Bosphorus cruise on one of the regular boats. At the end, you will pass through the Spice Market.\n\nImmediately after, we set off again for the Byzantine Hippodrome, where you can still admire many relics of the ancient Roman Empire, and then reach the Grand Bazaar and its thousands of shops. Here, in the largest and oldest covered market in the world, you have time to indulge in shopping. Return to hotel. Dinner at leisure and overnight.",
+        "image": ""
+      },
+      {
+        "day": 3,
+        "description": "We begin on foot (the hotel is a short distance from the city's main attractions) reaching the Blue Mosque (Sultanahmet) with its over twenty thousand turquoise ceramics; we then reach one of the most important monuments in Turkey and the world, Hagia Sophia, which with its dome defines the landscape of the entire city, and finally reach a fascinating place. Lunch in a restaurant to taste one of the most typical dishes of Turkish cuisine: the Döner Kebab, one of the most famous 'street foods' in the world. Around 13:00 an assistant will pick you up for your journey to Ankara, the capital of Turkey, with expected arrival around dinner time. Dinner at the hotel and overnight.",
+        "image": ""
+      },
+      {
+        "day": 4,
+        "description": "You will have the first part of the morning free, to take a breather from the tour's hectic pace, where you can explore the streets of the Capital on your own; you will meet at the hotel at 11:00 with the rest of the group heading to one of the most awarded museums in Europe, the Museum of Anatolian Civilizations, which contains millennia of history of the civilizations that inhabited the Anatolian Peninsula. After the visit we will depart for Cappadocia; after lunch with typical Turkish dishes we will stop at the Salt Lake with its evocative panorama. Arrival at the hotel before dinner.",
+        "image": ""
+      },
+      {
+        "day": 5,
+        "description": "We leave at dawn to take part in the (optional, paid and subject to weather conditions) hot-air balloon ride to admire the 'lunar' landscape of Cappadocia, starting from Devrent Valley, famous for its characteristic rock formations and pinkish volcanic cones, where you will observe the famous fairy chimneys. Lunch in Avanos, a village on the banks of the Kizilirmak River (Red River), famous for its terracotta ceramics; we will also pass through the ancient Greek village of Cavusin, and then visit the Göreme open-air museum, one of the largest monastic complexes of rock-cut churches and chapels in Turkey and the world. The last stop will be the external visit of Uchisar Castle.",
+        "image": ""
+      },
+      {
+        "day": 6,
+        "description": "This morning we leave very early to reach Pamukkale; the hotel will prepare a packed breakfast for you and departure is scheduled for 06:30. On the way you will visit an ancient Caravanserai, typical Middle Eastern markets and places of cultural and commercial exchange — the Seljuk one of Sultanhani. You will stop for lunch with typical dishes of central Anatolia. In the evening you will arrive at the ancient capital of Phrygia: Hierapolis; if there is time you will visit it on this occasion, otherwise the next morning (the archaeological site has been curated since 1957 by the University of Turin) together with its Necropolis. Then a visit to one of the most evocative UNESCO World Heritage sites: the petrified waterfalls of Pamukkale (Cotton Castle in Turkish), after which you will go to the hotel before dinner where you can enjoy the natural thermal waters directly in your hotel room.",
+        "image": ""
+      },
+      {
+        "day": 7,
+        "description": "If it was not done the previous evening, after breakfast you will visit the ruins of Hierapolis, an ancient Greek city of Phrygia (the archaeological site has been curated since 1957 by the University of Turin) and its Necropolis. Then a visit to one of the most evocative UNESCO World Heritage sites: the petrified waterfalls of Pamukkale (Cotton Castle in Turkish). We continue to Ephesus (the only one of the ancient seven wonders not to be a monument but the entire city!); on the way you will stop at one of the most evocative places of worship of Christianity: the House of the Virgin Mary, where she spent the last years of her earthly life. You will then stop at a restaurant on the way to Ephesus to taste typical Aegean dishes. The afternoon is dedicated to the visit of Ephesus: the Ruins of Ephesus, the Temple of Hadrian, the Library of Celsus, the Great Theatre. You will then move to one of the most famous resorts in Turkey: Kusadasi; the hotel will be very close to the beach and you can take a stroll along the marina and maybe a dip! Dinner will be served at the hotel.",
+        "image": ""
+      },
+      {
+        "day": 8,
+        "description": "Our drivers will pick you up at the hotel, after breakfast, to take you to Izmir (Smyrna) airport for your return, or you can continue your seaside stay.",
+        "image": ""
+      }
+    ],
+    "featured": false,
+    "specialOffer": {
+      "percent": 0,
+      "startDate": "",
+      "endDate": ""
+    }
+  },
+  {
+    "name": "Grand Tour",
+    "mode": "multiday",
+    "language": "it",
+    "location": "Istanbul",
+    "startLocation": "Istanbul",
+    "endLocation": "Istanbul",
+    "startingTime": "",
+    "sights": [
+      "Istanbul",
+      "Ankara",
+      "Cappadocia",
+      "Pamukkale",
+      "Ephesus",
+      "Kusadasi",
+      "Pergamon",
+      "Troy",
+      "Canakkale",
+      "Bursa"
+    ],
+    "mealTreatment": "Full board",
+    "pricingTiers": [
+      {
+        "minParticipants": 2,
+        "maxParticipants": 2,
+        "price": 4514.9
+      },
+      {
+        "minParticipants": 4,
+        "maxParticipants": 4,
+        "price": 3416.65
+      },
+      {
+        "minParticipants": 6,
+        "maxParticipants": 6,
+        "price": 2510.07
+      },
+      {
+        "minParticipants": 8,
+        "maxParticipants": 8,
+        "price": 2266.65
+      },
+      {
+        "minParticipants": 10,
+        "maxParticipants": 10,
+        "price": 2120.6
+      },
+      {
+        "minParticipants": 12,
+        "maxParticipants": 12,
+        "price": 2023.23
+      }
+    ],
+    "transportation": true,
+    "tourStyle": "private",
+    "minOccupancy": 2,
+    "maxOccupancy": 12,
+    "nights": [
+      {
+        "day": 1,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 2,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 3,
+        "lodging": "Ankara - New Park 5*",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 4,
+        "lodging": "Cappadocia - Hu of Cappadocia",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 5,
+        "lodging": "Cappadocia - Hu of Cappadocia",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 6,
+        "lodging": "Pamukkale - Adempira",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 7,
+        "lodging": "Kusadasi - Qlusive",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 8,
+        "lodging": "Canakkale - Kolin",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 9,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      }
+    ],
+    "departureDate": "",
+    "availability": 1,
+    "repeatWeekly": false,
+    "repeatStart": "",
+    "repeatEnd": "",
+    "description": {
+      "it": "Grand tour privato di 10 giorni / 9 notti attraverso la Turchia: Istanbul, Ankara, Cappadocia, Pamukkale, Efeso, Kusadasi, Pergamo, Troia, Canakkale e Bursa. Pensione completa, guida italiana, ingressi e trasferimenti inclusi, hotel 5* / Lusso.",
+      "en": "Private grand tour of 10 days / 9 nights across Turkey: Istanbul, Ankara, Cappadocia, Pamukkale, Ephesus, Kusadasi, Pergamon, Troy, Canakkale and Bursa. Full board, Italian guide, entries and transfers included, 5* / Luxury hotels."
+    },
+    "coverImage": "",
+    "durationDays": 10,
+    "dayDescriptions": [
+      {
+        "day": 1,
+        "description": "Arrivo in aeroporto dove verrete accolti dal nostro assistente al punto già comunicato in precedenza nella Guida al Viaggio, verrete direttamente portati in albergo. Pasti liberi.",
+        "image": ""
+      },
+      {
+        "day": 2,
+        "description": "Dopo la colazione in albergo incontro con la guida e partenza alla volta della scoperta del Palazzo Topkapi, il palazzo imperiale dei Sultani Ottomani e della loro corte, dove ammirare i loro tesori e scoprire gli aspetti più interessanti della vita quotidiana di una corte imperiale. Si prosegue verso la Cisterna Sotterranea, un grande spazio sotterraneo usato nell'antichità come cisterna e che oggi con le sue antichissime e maestose colonne è considerato uno dei luoghi più suggestivi della città. Scenderete poi verso il mare prima per un bel pranzo a base di pesce in uno dei classici ristoranti sotto il ponte di Galata, approfittando di una delle viste più iconiche al mondo, e dopo per fare una bella crociera sul Bosforo, su uno dei battelli di linea. Alla fine, passerete per il Mercato delle Spezie.\n\nSubito si riparte alla volta dell'Ippodromo Bizantino, dove poter ammirare ancora molti reperti dell'antico Impero Romano e raggiungere poi il Gran Bazar e le sue migliaia di negozi. Qui, nel mercato al chiuso più grande ed antico al mondo, si ha il tempo di sbizzarrirsi con lo shopping. Rientro in hotel. Cena libera e pernottamento.",
+        "image": ""
+      },
+      {
+        "day": 3,
+        "description": "Si comincia raggiungendo a piedi (l'hotel è a breve distanza dalle principali attrazioni della città) la Moschea Blu (Sultanahmet) con le sue oltre ventimila ceramiche turchesi; si raggiunge poi uno dei monumenti più importanti della Turchia e del mondo, Santa Sofia, che con la sua cupola definisce il paesaggio di tutta la città ed infine si raggiunge un luogo affascinante. Pranzo in un ristorante per assaggiare uno dei piatti più tipici della cucina turca: il Döner Kebab, uno dei “street food” più famosi al mondo. Verso le 13:00 un assistente vi verrà a prendere per il viaggio verso Ankara, la capitale della Turchia, con arrivo previsto verso l'ora di cena. Cena in albergo e pernottamento.",
+        "image": ""
+      },
+      {
+        "day": 4,
+        "description": "Avrete la prima parte della mattinata libera, per avere un respiro dai ritmi incalzanti del tour, dove potete esplorare da soli le strade della Capitale; vi ritroverete in albergo alle 11:00 con il resto del gruppo diretti ad uno dei musei più premiati d'Europa, il Museo delle Civiltà Anatoliche, che racchiude in sé millenni di storia delle civiltà che hanno abitato la Penisola Anatolica. Dopo la visita si ripartirà per la Cappadocia; dopo il pranzo con tipici piatti turchi ci si fermerà per una sosta al Lago Salato dal suo suggestivo panorama. Arrivo prima di cena in albergo.",
+        "image": ""
+      },
+      {
+        "day": 5,
+        "description": "Si parte la mattina all'alba per poter partecipare all'escursione (facoltativa, a pagamento e soggetta a condizioni meteorologiche) del giro in mongolfiera per ammirare il paesaggio 'lunare' della Cappadocia, cominciando dalla Valle di Devrent, famosa per le sue caratteristiche formazioni rocciose e i coni vulcanici di colore rosato, dove osserverete i celebri camini di fata. Pranzo ad Avanos, villaggio sulle rive del fiume Kizilirmak (Fiume Rosso), famoso per le sue ceramiche di terracotta; si passerà anche per l'antico villaggio greco di Cavusin, per poi visitare il museo all'aria aperta di Göreme, uno dei più grandi complessi monastici di chiese e cappelle rupestri in Turchia e nel mondo. L'ultima tappa sarà la visita esterna del castello di Uchisar.",
+        "image": ""
+      },
+      {
+        "day": 6,
+        "description": "Questa mattina si parte molto presto per arrivare a Pamukkale; vi verrà preparata la colazione al sacco da parte dell'hotel e la partenza è prevista per le 06:30. Sul percorso visiterete un antico Caravanserraglio, mercati tipici del Medioriente e luoghi di scambio di culture e commerci, quello Selgiuchide di Sultanhani. Passerete per il pranzo con piatti tipici dell'Anatolia centrale. In serata arriverete alla antica capitale della Frigia: Hierapolis; se ci sarà tempo la visiterete in questa occasione, altrimenti la mattina successiva (il sito archeologico è curato dal 1957 dall'Università di Torino) insieme alla sua Necropoli. Poi visita ad uno dei più suggestivi patrimoni dell'Umanità UNESCO: le cascate pietrificate di Pamukkale (Castello di Cotone in turco), dopodiché passerete in albergo prima della cena dove potrete approfittare delle acque termali naturali direttamente nella vostra camera d'albergo.",
+        "image": ""
+      },
+      {
+        "day": 7,
+        "description": "Se non è stato fatto la sera precedente, dopo la colazione visiterete le rovine di Hierapolis, antica città greca della Frigia (il sito archeologico è curato dal 1957 dall'Università di Torino) e la sua Necropoli. Poi visita ad uno dei più suggestivi patrimoni dell'Umanità UNESCO: le cascate pietrificate di Pamukkale (Castello di Cotone in turco). Si prosegue per Efeso (l'unica delle antiche sette meraviglie a non essere un monumento ma l'intera città!); nel tragitto farete tappa in uno dei più suggestivi luoghi di culto della cristianità: la Casa della Vergine Maria, dove passò gli ultimi anni della sua vita terrestre. Vi fermerete poi in un ristorante sul tragitto per Efeso per assaggiare piatti tipici dell'Egeo. Il pomeriggio è dedicato alla visita di Efeso: le Rovine di Efeso, il Tempio di Adriano, la Biblioteca di Celso, il Grande Teatro. Passerete poi ad una delle località di villeggiatura più famose della Turchia: Kusadasi; l'albergo sarà molto vicino alla spiaggia e potrete approfittarne per un giro per la marina e magari un tuffo! La cena sarà servita in albergo.",
+        "image": ""
+      },
+      {
+        "day": 8,
+        "description": "Come sempre si parte presto la mattina; in questa giornata continuerete a visitare la storia ellenica dell'Anatolia. Prima tappa l'Asklepion di Bergama (Pergamo): seconda solo ad Atene per importanza artistica e culturale e al tempo stesso sede di una delle sette chiese dell'Apocalisse. Dopo pranzo sarà la volta della visita alle rovine leggendarie di Troia; per la serata passerete in riva al famoso stretto dei Dardanelli, sulle cui sponde si trova una delle più importanti città dell'antichità: Canakkale (Gallipoli). Cena in albergo e pernottamento.",
+        "image": ""
+      },
+      {
+        "day": 9,
+        "description": "Dopo la colazione in albergo, raggiungerete la prima capitale dell'Impero Ottomano prima della conquista di Costantinopoli; Bursa è famosa per le sue moschee, le acque termali nei bagni turchi e la produzione di seta. Visiterete la Moschea e il Mausoleo Verde, il famosissimo bazaar della seta e mangerete in un ristorante le pietanze locali, ripartendo poi alla volta di Istanbul. Arrivati in albergo avrete la serata libera per visitare autonomamente il centro. Pernottamento in albergo in centro.",
+        "image": ""
+      },
+      {
+        "day": 10,
+        "description": "Colazione in albergo; avrete tempo libero per compere fino al transfer per il rientro a casa, 4 ore prima del volo.",
+        "image": ""
+      }
+    ],
+    "featured": false,
+    "specialOffer": {
+      "percent": 0,
+      "startDate": "",
+      "endDate": ""
+    }
+  },
+  {
+    "name": "Grand Tour (English)",
+    "mode": "multiday",
+    "language": "en",
+    "location": "Istanbul",
+    "startLocation": "Istanbul",
+    "endLocation": "Istanbul",
+    "startingTime": "",
+    "sights": [
+      "Istanbul",
+      "Ankara",
+      "Cappadocia",
+      "Pamukkale",
+      "Ephesus",
+      "Kusadasi",
+      "Pergamon",
+      "Troy",
+      "Canakkale",
+      "Bursa"
+    ],
+    "mealTreatment": "Full board",
+    "pricingTiers": [
+      {
+        "minParticipants": 2,
+        "maxParticipants": 2,
+        "price": 4514.9
+      },
+      {
+        "minParticipants": 4,
+        "maxParticipants": 4,
+        "price": 3416.65
+      },
+      {
+        "minParticipants": 6,
+        "maxParticipants": 6,
+        "price": 2510.07
+      },
+      {
+        "minParticipants": 8,
+        "maxParticipants": 8,
+        "price": 2266.65
+      },
+      {
+        "minParticipants": 10,
+        "maxParticipants": 10,
+        "price": 2120.6
+      },
+      {
+        "minParticipants": 12,
+        "maxParticipants": 12,
+        "price": 2023.23
+      }
+    ],
+    "transportation": true,
+    "tourStyle": "private",
+    "minOccupancy": 2,
+    "maxOccupancy": 12,
+    "nights": [
+      {
+        "day": 1,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 2,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 3,
+        "lodging": "Ankara - New Park 5*",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 4,
+        "lodging": "Cappadocia - Hu of Cappadocia",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 5,
+        "lodging": "Cappadocia - Hu of Cappadocia",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 6,
+        "lodging": "Pamukkale - Adempira",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 7,
+        "lodging": "Kusadasi - Qlusive",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 8,
+        "lodging": "Canakkale - Kolin",
+        "hotelMealTreatment": "Full board"
+      },
+      {
+        "day": 9,
+        "lodging": "Istanbul - Lokal-Ist (Bosphorus view room)",
+        "hotelMealTreatment": "Full board"
+      }
+    ],
+    "departureDate": "",
+    "availability": 1,
+    "repeatWeekly": false,
+    "repeatStart": "",
+    "repeatEnd": "",
+    "description": {
+      "it": "Grand tour privato di 10 giorni / 9 notti attraverso la Turchia: Istanbul, Ankara, Cappadocia, Pamukkale, Efeso, Kusadasi, Pergamo, Troia, Canakkale e Bursa. Pensione completa, guida italiana, ingressi e trasferimenti inclusi, hotel 5* / Lusso.",
+      "en": "Private grand tour of 10 days / 9 nights across Turkey: Istanbul, Ankara, Cappadocia, Pamukkale, Ephesus, Kusadasi, Pergamon, Troy, Canakkale and Bursa. Full board, Italian guide, entries and transfers included, 5* / Luxury hotels."
+    },
+    "coverImage": "",
+    "durationDays": 10,
+    "dayDescriptions": [
+      {
+        "day": 1,
+        "description": "Arrival at the airport where you will be welcomed by our assistant at the meeting point already communicated previously in the Travel Guide; you will be taken directly to the hotel. Meals at leisure.",
+        "image": ""
+      },
+      {
+        "day": 2,
+        "description": "After breakfast at the hotel, meeting with the guide and departure to discover Topkapi Palace, the imperial palace of the Ottoman Sultans and their court, where you can admire their treasures and discover the most interesting aspects of daily life at an imperial court. We continue to the Basilica Cistern, a large underground space used in antiquity as a cistern and which today, with its ancient and majestic columns, is considered one of the most evocative places in the city. You will then head down towards the sea for a nice fish-based lunch in one of the classic restaurants under the Galata Bridge, enjoying one of the most iconic views in the world, and then for a pleasant Bosphorus cruise on one of the regular boats. At the end, you will pass through the Spice Market.\n\nImmediately after, we set off again for the Byzantine Hippodrome, where you can still admire many relics of the ancient Roman Empire, and then reach the Grand Bazaar and its thousands of shops. Here, in the largest and oldest covered market in the world, you have time to indulge in shopping. Return to hotel. Dinner at leisure and overnight.",
+        "image": ""
+      },
+      {
+        "day": 3,
+        "description": "We begin on foot (the hotel is a short distance from the city's main attractions) reaching the Blue Mosque (Sultanahmet) with its over twenty thousand turquoise ceramics; we then reach one of the most important monuments in Turkey and the world, Hagia Sophia, which with its dome defines the landscape of the entire city, and finally reach a fascinating place. Lunch in a restaurant to taste one of the most typical dishes of Turkish cuisine: the Döner Kebab, one of the most famous 'street foods' in the world. Around 13:00 an assistant will pick you up for your journey to Ankara, the capital of Turkey, with expected arrival around dinner time. Dinner at the hotel and overnight.",
+        "image": ""
+      },
+      {
+        "day": 4,
+        "description": "You will have the first part of the morning free, to take a breather from the tour's hectic pace, where you can explore the streets of the Capital on your own; you will meet at the hotel at 11:00 with the rest of the group heading to one of the most awarded museums in Europe, the Museum of Anatolian Civilizations, which contains millennia of history of the civilizations that inhabited the Anatolian Peninsula. After the visit we will depart for Cappadocia; after lunch with typical Turkish dishes we will stop at the Salt Lake with its evocative panorama. Arrival at the hotel before dinner.",
+        "image": ""
+      },
+      {
+        "day": 5,
+        "description": "We leave at dawn to take part in the (optional, paid and subject to weather conditions) hot-air balloon ride to admire the 'lunar' landscape of Cappadocia, starting from Devrent Valley, famous for its characteristic rock formations and pinkish volcanic cones, where you will observe the famous fairy chimneys. Lunch in Avanos, a village on the banks of the Kizilirmak River (Red River), famous for its terracotta ceramics; we will also pass through the ancient Greek village of Cavusin, and then visit the Göreme open-air museum, one of the largest monastic complexes of rock-cut churches and chapels in Turkey and the world. The last stop will be the external visit of Uchisar Castle.",
+        "image": ""
+      },
+      {
+        "day": 6,
+        "description": "This morning we leave very early to reach Pamukkale; the hotel will prepare a packed breakfast for you and departure is scheduled for 06:30. On the way you will visit an ancient Caravanserai, typical Middle Eastern markets and places of cultural and commercial exchange — the Seljuk one of Sultanhani. You will stop for lunch with typical dishes of central Anatolia. In the evening you will arrive at the ancient capital of Phrygia: Hierapolis; if there is time you will visit it on this occasion, otherwise the next morning (the archaeological site has been curated since 1957 by the University of Turin) together with its Necropolis. Then a visit to one of the most evocative UNESCO World Heritage sites: the petrified waterfalls of Pamukkale (Cotton Castle in Turkish), after which you will go to the hotel before dinner where you can enjoy the natural thermal waters directly in your hotel room.",
+        "image": ""
+      },
+      {
+        "day": 7,
+        "description": "If it was not done the previous evening, after breakfast you will visit the ruins of Hierapolis, an ancient Greek city of Phrygia (the archaeological site has been curated since 1957 by the University of Turin) and its Necropolis. Then a visit to one of the most evocative UNESCO World Heritage sites: the petrified waterfalls of Pamukkale (Cotton Castle in Turkish). We continue to Ephesus (the only one of the ancient seven wonders not to be a monument but the entire city!); on the way you will stop at one of the most evocative places of worship of Christianity: the House of the Virgin Mary, where she spent the last years of her earthly life. You will then stop at a restaurant on the way to Ephesus to taste typical Aegean dishes. The afternoon is dedicated to the visit of Ephesus: the Ruins of Ephesus, the Temple of Hadrian, the Library of Celsus, the Great Theatre. You will then move to one of the most famous resorts in Turkey: Kusadasi; the hotel will be very close to the beach and you can take a stroll along the marina and maybe a dip! Dinner will be served at the hotel.",
+        "image": ""
+      },
+      {
+        "day": 8,
+        "description": "As always we leave early in the morning; on this day you will continue to visit the Hellenic history of Anatolia. First stop the Asklepion of Bergama (Pergamon): second only to Athens in artistic and cultural importance and at the same time the seat of one of the seven churches of the Apocalypse. After lunch it will be the turn of the visit to the legendary ruins of Troy; for the evening you will pass along the famous Dardanelles strait, on whose shores lies one of the most important cities of antiquity: Canakkale (Gallipoli). Dinner at the hotel and overnight.",
+        "image": ""
+      },
+      {
+        "day": 9,
+        "description": "After breakfast at the hotel, you will reach the first capital of the Ottoman Empire before the conquest of Constantinople; Bursa is famous for its mosques, the thermal waters in the Turkish baths and silk production. You will visit the Green Mosque and Mausoleum, the famous silk bazaar and eat local dishes in a restaurant, then depart again for Istanbul. Once at the hotel you will have the evening free to visit the center independently. Overnight at hotel in the center.",
+        "image": ""
+      },
+      {
+        "day": 10,
+        "description": "Breakfast at the hotel; you will have free time for shopping until the transfer for the return home, 4 hours before the flight.",
+        "image": ""
+      }
+    ],
+    "featured": false,
+    "specialOffer": {
+      "percent": 0,
+      "startDate": "",
+      "endDate": ""
+    }
+  }
+]
