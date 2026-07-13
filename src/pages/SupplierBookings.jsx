@@ -33,7 +33,10 @@ export default function SupplierBookings() {
   };
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  // Default to "active" so cancelled/rejected bookings are hidden; users can
+  // switch to "All Status" (or a specific status) to see everything.
+  const [statusFilter, setStatusFilter] = useState('active');
+  const ACTIVE_STATUSES = ['pending', 'confirmed'];
 
   const { data: bookings = /** @type {any} */ ([]), isLoading } = /** @type {any} */ (
     useQuery({
@@ -71,7 +74,13 @@ export default function SupplierBookings() {
       b.supplier_name?.toLowerCase().includes(search.toLowerCase()) ||
       b.service_type?.toLowerCase().includes(search.toLowerCase()) ||
       b.category_name?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'all' || b.status === statusFilter;
+    const effectiveStatus = b.status || 'pending';
+    const matchStatus =
+      statusFilter === 'all'
+        ? true
+        : statusFilter === 'active'
+          ? ACTIVE_STATUSES.includes(effectiveStatus)
+          : effectiveStatus === statusFilter;
     return matchSearch && matchStatus;
   });
 
@@ -102,6 +111,7 @@ export default function SupplierBookings() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="active">{t('common.active')}</SelectItem>
             <SelectItem value="all">{t('supplierBookings.allStatus')}</SelectItem>
             <SelectItem value="pending">{t('common.pending')}</SelectItem>
             <SelectItem value="confirmed">{t('common.confirmed')}</SelectItem>
