@@ -30,7 +30,7 @@ import { useT } from '@/lib/i18n/I18nContext';
 import { sym } from '@/lib/formatters';
 import { getCatalog } from '@/lib/b2bApi';
 import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
-import { tourStartingPrice, activeDiscount } from '@/lib/tourPricing';
+import { tourStartingPrice, activeDiscount, tourPriceForPax } from '@/lib/tourPricing';
 import { useUpcomingTrip } from '@/hooks/useUpcomingTrip';
 import HotelSearchBar from '@/components/hotelSearch/HotelSearchBar';
 import CarRentalSearchBar, { SAME_AS_PICKUP } from '@/components/carRental/CarRentalSearchBar';
@@ -114,6 +114,88 @@ function StatTile({ icon: Icon, label, value, gradient, sub = undefined }) {
       <div className="text-xl font-bold">{value}</div>
       {sub && <div className="text-[11px] opacity-90 mt-0.5">{sub}</div>}
     </Card>
+  );
+}
+
+/**
+ * Tour catalog card. Holds its own passenger count so the displayed and
+ * cart-stored per-person price matches the selected pricing tier (not just
+ * the cheapest "from" price).
+ */
+function TourCard({ tour, language, t, onAdd, renderPrice }) {
+  const tiers = Array.isArray(tour.pricingTiers) ? tour.pricingTiers : [];
+  const minP = Math.max(1, Number(tour.minOccupancy) || (tiers.length ? Number(tiers[0].minParticipants) : 1));
+  const maxP = Math.max(
+    minP,
+    Number(tour.maxOccupancy) || (tiers.length ? Number(tiers[tiers.length - 1].maxParticipants) : minP),
+  );
+  const [pax, setPax] = React.useState(minP);
+  const dec = () => setPax((p) => Math.max(minP, p - 1));
+  const inc = () => setPax((p) => Math.min(maxP, p + 1));
+
+  return (
+    <div className="border border-border rounded-xl overflow-hidden flex flex-col">
+      {tour.coverImage ? (
+        <img src={tour.coverImage} alt={tour.name} className="w-full h-48 object-cover" />
+      ) : (
+        <div className="h-48 bg-primary/10 flex items-center justify-center">
+          <Compass className="w-10 h-10 text-primary" />
+        </div>
+      )}
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="font-semibold text-lg text-foreground">{tour.name}</h3>
+          <Badge variant="secondary">{tour.mode === 'multiday' ? t('nav.multiDayTours') : t('nav.dailyTours')}</Badge>
+        </div>
+        {tourLocationLabel(tour) && (
+          <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5" /> {tourLocationLabel(tour)}
+          </p>
+        )}
+        {resolveTourDescription(tour.description, language) && (
+          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line line-clamp-3">
+            {resolveTourDescription(tour.description, language)}
+          </p>
+        )}
+        {renderPrice(tour, pax)}
+        <div className="flex items-center justify-between mt-3">
+          <span className="text-sm text-muted-foreground">{t('clientPortal.passengersLabel', { count: pax })}</span>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" className="w-7 h-7 p-0" onClick={dec} aria-label="-">
+              -
+            </Button>
+            <span className="w-6 text-center text-sm">{pax}</span>
+            <Button variant="outline" size="sm" className="w-7 h-7 p-0" onClick={inc} aria-label="+">
+              +
+            </Button>
+          </div>
+        </div>
+        <Button className="mt-3 w-full" variant="outline" onClick={() => onAdd(tour, pax)}>
+          {t('cart.addToCart')}
+        </Button>
+        {tour.mode === 'multiday' && Array.isArray(tour.dayDescriptions) && tour.dayDescriptions.length > 0 && (
+          <div className="space-y-3 mt-3">
+            {tour.dayDescriptions.map((day, i) => (
+              <div key={i} className="flex gap-3">
+                {day.image ? (
+                  <img src={day.image} alt="" className="w-16 h-16 object-cover rounded-md border shrink-0" />
+                ) : (
+                  <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center text-muted-foreground text-[10px] shrink-0">
+                    {t('tours.day')} {i + 1}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {t('tours.day')} {i + 1}
+                  </p>
+                  {day.description && <p className="text-xs text-muted-foreground line-clamp-3">{day.description}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -276,20 +358,23 @@ export default function ClientPortal() {
   const featuredTours = React.useMemo(() => tours.filter((tour) => tour.featured), [tours]);
 
   // Rendered price block for a tour, including an active special offer.
-  const renderTourPrice = (tour) => {
-    const base = tourStartingPrice(tour);
+  // `pax` selects the matching pricing tier; falls back to the "from" (cheapest)
+  // price when no participant count is provided.
+  const renderTourPrice = (tour, pax) => {
+    const base = tourPriceForPax(tour, pax) ?? tourStartingPrice(tour);
     if (base == null) return null;
     const offer = activeDiscount(tour);
     if (offer) {
+      const discounted = Math.round(base * (1 - offer.percent / 100) * 100) / 100;
       return (
         <div className="flex items-center gap-2 mt-3">
           <span className="text-base font-bold text-green-700 dark:text-green-300">
             {currencySymbol}
-            {offer.discounted.toFixed(2)}
+            {discounted.toFixed(2)}
           </span>
           <span className="text-sm text-muted-foreground line-through">
             {currencySymbol}
-            {offer.base.toFixed(2)}
+            {base.toFixed(2)}
           </span>
           <Badge className="bg-red-500 text-white">{offer.percent}% OFF</Badge>
         </div>
@@ -301,7 +386,9 @@ export default function ClientPortal() {
           {currencySymbol}
           {base.toFixed(2)}
         </span>
-        <span className="text-xs text-muted-foreground">{t('clientPortal.fromLabel')}</span>
+        <span className="text-xs text-muted-foreground">
+          {pax ? t('quoteBuilder.perPerson') : t('clientPortal.fromLabel')}
+        </span>
       </div>
     );
   };
@@ -312,8 +399,8 @@ export default function ClientPortal() {
   // client's preferred display currency every other cart line is shown in
   // — convert here the same way ClientQuoteBuilder's own addTour does, so
   // the builder never silently sums mismatched currencies together.
-  const addTourToCart = async (/** @type {any} */ tour) => {
-    const start = tourStartingPrice(tour);
+  const addTourToCart = async (/** @type {any} */ tour, /** @type {number=} */ pax) => {
+    const start = tourPriceForPax(tour, pax) ?? tourStartingPrice(tour);
     const disc = activeDiscount(tour);
     const tourCurrency = tour.currency || 'USD';
     const displayCurrency = client?.preferred_currency || 'USD';
@@ -336,6 +423,7 @@ export default function ClientPortal() {
       service_name: tour.name,
       tourMode: tour.mode,
       unit: 'per_person',
+      tour_pax: Number(pax) || 0,
       tour_original_price: converted ? scale(original) : original,
       tour_display_price: converted ? scale(display) : display,
       tour_display_currency: converted ? displayCurrency : tourCurrency,
@@ -645,37 +733,14 @@ export default function ClientPortal() {
           <h2 className="text-xl font-bold text-foreground mb-5">{t('clientPortal.featuredTours')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {featuredTours.map((tour) => (
-              <div key={tour.id} className="border border-border rounded-xl overflow-hidden flex flex-col">
-                {tour.coverImage ? (
-                  <img src={tour.coverImage} alt={tour.name} className="w-full h-48 object-cover" />
-                ) : (
-                  <div className="h-48 bg-primary/10 flex items-center justify-center">
-                    <Compass className="w-10 h-10 text-primary" />
-                  </div>
-                )}
-                <div className="p-5 flex-1 flex flex-col">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-lg text-foreground">{tour.name}</h3>
-                    <Badge variant="secondary">
-                      {tour.mode === 'multiday' ? t('nav.multiDayTours') : t('nav.dailyTours')}
-                    </Badge>
-                  </div>
-                  {tourLocationLabel(tour) && (
-                    <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5" /> {tourLocationLabel(tour)}
-                    </p>
-                  )}
-                  {resolveTourDescription(tour.description, language) && (
-                    <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line line-clamp-3">
-                      {resolveTourDescription(tour.description, language)}
-                    </p>
-                  )}
-                  {renderTourPrice(tour)}
-                  <Button className="mt-4 w-full" variant="outline" onClick={() => addTourToCart(tour)}>
-                    {t('cart.addToCart')}
-                  </Button>
-                </div>
-              </div>
+              <TourCard
+                key={tour.id}
+                tour={tour}
+                language={language}
+                t={t}
+                onAdd={addTourToCart}
+                renderPrice={renderTourPrice}
+              />
             ))}
           </div>
         </Card>
@@ -696,66 +761,14 @@ export default function ClientPortal() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {visibleTours.map((tour) => (
-                <div key={tour.id} className="border border-border rounded-xl overflow-hidden flex flex-col">
-                  {tour.coverImage ? (
-                    <img src={tour.coverImage} alt={tour.name} className="w-full h-48 object-cover" />
-                  ) : (
-                    <div className="h-48 bg-primary/10 flex items-center justify-center">
-                      <Compass className="w-10 h-10 text-primary" />
-                    </div>
-                  )}
-                  <div className="p-5 flex-1 flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-lg text-foreground">{tour.name}</h3>
-                      <Badge variant="secondary">
-                        {tour.mode === 'multiday' ? t('nav.multiDayTours') : t('nav.dailyTours')}
-                      </Badge>
-                    </div>
-                    {tourLocationLabel(tour) && (
-                      <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5" /> {tourLocationLabel(tour)}
-                      </p>
-                    )}
-                    {resolveTourDescription(tour.description, language) && (
-                      <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line">
-                        {resolveTourDescription(tour.description, language)}
-                      </p>
-                    )}
-                    {renderTourPrice(tour)}
-                    <Button className="mt-4 w-full" variant="outline" onClick={() => addTourToCart(tour)}>
-                      {t('cart.addToCart')}
-                    </Button>
-                    {tour.mode === 'multiday' &&
-                      Array.isArray(tour.dayDescriptions) &&
-                      tour.dayDescriptions.length > 0 && (
-                        <div className="space-y-3 mt-auto">
-                          {tour.dayDescriptions.map((day, i) => (
-                            <div key={i} className="flex gap-3">
-                              {day.image ? (
-                                <img
-                                  src={day.image}
-                                  alt=""
-                                  className="w-16 h-16 object-cover rounded-md border shrink-0"
-                                />
-                              ) : (
-                                <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center text-muted-foreground text-[10px] shrink-0">
-                                  Day {i + 1}
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-foreground">
-                                  {t('tours.day')} {i + 1}
-                                </p>
-                                {day.description && (
-                                  <p className="text-xs text-muted-foreground line-clamp-3">{day.description}</p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                  </div>
-                </div>
+                <TourCard
+                  key={tour.id}
+                  tour={tour}
+                  language={language}
+                  t={t}
+                  onAdd={addTourToCart}
+                  renderPrice={renderTourPrice}
+                />
               ))}
             </div>
           )}

@@ -36,7 +36,7 @@ import { useT } from '@/lib/i18n/I18nContext';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import LocationSearch from '@/components/services/LocationSearch';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
-import { tourStartingPrice, activeDiscount } from '@/lib/tourPricing';
+import { tourStartingPrice, activeDiscount, tourPriceForPax } from '@/lib/tourPricing';
 import {
   OCCUPANCY_LABELS,
   locationOf,
@@ -1400,7 +1400,8 @@ export default function ClientQuoteBuilder() {
     // leave the dialog open and clickable, letting a double-click (or a
     // second tour pick) fire a second concurrent add before this one lands.
     setTourPickerOpen(false);
-    const start = tourStartingPrice(tour);
+    const totalPax = rooms.reduce((s, r) => s + (r.passengers?.length || 0), 0);
+    const start = tourPriceForPax(tour, totalPax) ?? tourStartingPrice(tour);
     const disc = activeDiscount(tour);
     const tourCurrency = tour.currency || 'USD';
     let rate = 1;
