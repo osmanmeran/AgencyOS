@@ -14,7 +14,7 @@ A full-stack travel agency operations management platform for tour operators and
 
 - **Dashboard** — Upcoming arrivals/departures, trip calendar, pending tasks, quick actions
 - **Trips / Reservations** — Full CRUD with pagination, search, bulk actions, status workflow
-- **Clients** — Table view + Kanban CRM pipeline (lead → contacted → proposal → negotiation → won/lost)
+- **Clients** — Table view + Kanban CRM pipeline (lead → contacted → proposal → negotiation → won/lost). Each contact is linked to a **Company** via a searchable picker that creates the company inline if it doesn't exist yet; the linked Company scopes what the contact sees in the Client Portal.
 - **Suppliers** — CRUD with categories/subcategories, pricing tiers, ratings
 - **Calendar** — Monthly view of trip arrivals and departures
 
@@ -32,7 +32,6 @@ A full-stack travel agency operations management platform for tour operators and
 - **Tour Contracts** — Recurring serial contracts with pricing tiers, Utravel import
 - **RFP Manager** — Request for Proposal wizard, supplier quoting
 - **Task Board** — Kanban tasks (pending / in progress / done)
-- **Service Library** — Reusable service categories and templates
 - **Import Hub** — Outlook contacts, bulk supplier CSV, AI price analyzer
 
 ### Guided Tours
@@ -71,7 +70,7 @@ A full-stack travel agency operations management platform for tour operators and
 
 ### Portal Access
 
-- **Client Portal** — View proposals, trips, invoices
+- **Client Portal** — Clients log in to view proposals, trips, invoices, and browse the tour catalog. Staff provision access per client directly from the CRM (grant / revoke): granting auto-creates a `client`-tier login with an admin-set temporary password and auto-creates/links the client's **Company**, while revoking disables the account. The portal header is branded with the agency's invoice logo.
 - **Tour Catalog Search** — Clients browse the tour catalog from two pills (**Daily Tours** / **Multi-Day Tours**), filter by travel date and a destination dropdown of all available destinations, and see cover photos, descriptions, and day-by-day itineraries. Featured tours are highlighted in a dedicated section, and active special offers show original/discounted prices with the discount percentage. Tours are readable by all authenticated portal users (writes remain staff-only)
 - **B2B Client Quoting** — Curated e-shop catalog (categories, suppliers, photos) with markup-based pricing; clients submit quote requests, staff review/price/approve, accepted quotes convert into reservations
 - **Supplier Portal** — View bookings, invoices, ratings
