@@ -290,22 +290,171 @@ function buildQueryVariants(name, city) {
   return variants.slice(0, 4);
 }
 
+const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
+
+// OSM tag keys (in priority order) that map onto our supplier contact fields.
+// Nominatim's summary response omits most of these, so we re-fetch the full
+// node/way/relation via Overpass to populate them for the "Apply" autofill.
+const OSM_TAG_MAP = {
+  phone: ['contact:phone', 'phone', 'contact:mobile', 'mobile', 'contact:fax', 'fax'],
+  website: ['contact:website', 'website', 'url', 'contact:facebook', 'facebook', 'contact:link'],
+  email: ['contact:email', 'email', 'contact:instagram', 'instagram'],
+  brand: ['brand', 'operator', 'official_name', 'name:en'],
+  opening_hours: ['opening_hours'],
+};
+
 /**
- * Look up candidate supplier details (address, description) by combining
- * Nominatim (OpenStreetMap) geocoding with a Wikipedia full-text search.
- * Nominatim has no fuzzy matching, so instead of a single exact "name, city"
- * lookup this tries progressively broader query variants (dropping the city,
- * then generic words like "Hotel"/"Ltd") until enough candidates accumulate,
- * and returns them all so the user can pick the right one.
+ * Re-fetch the detailed OSM tags for candidate places (matched by osm_type +
+ * osm_id) via a single Overpass query, filling phone/website/email/brand/
+ * opening_hours that Nominatim leaves blank. Best-effort: logs and skips on
+ * any failure so the rest of the search is unaffected.
+ * @param {object[]} hits Nominatim results (mutated in place).
+ */
+async function enrichOsmContacts(hits) {
+  const needy = hits.filter((h) => h.osm_id && h.osm_type && !(h.phone && h.website && h.email));
+  if (!needy.length) return;
+  const statements = needy.map((h) => `${h.osm_type}(id:${h.osm_id});`).join('\n');
+  const query = `[out:json][timeout:25];\n(\n${statements}\n);\nout tags;`;
+  try {
+    const res = await fetch(OVERPASS_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'MarvelopsTravelPro/1.0',
+      },
+      body: `data=${encodeURIComponent(query)}`,
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const byKey = new Map();
+    for (const el of data.elements || []) byKey.set(`${el.type}:${el.id}`, el.tags || {});
+    for (const h of needy) {
+      const tags = byKey.get(`${h.osm_type}:${h.osm_id}`);
+      if (!tags) continue;
+      for (const [field, keys] of Object.entries(OSM_TAG_MAP)) {
+        if (h[field]) continue;
+        const val = keys.map((k) => tags[k]).find(Boolean);
+        if (val) h[field] = val;
+      }
+      // Build a cleaner structured address from addr:* tags when present.
+      if (!h.address && (tags['addr:street'] || tags['addr:city'])) {
+        h.address = [tags['addr:housenumber'], tags['addr:street'], tags['addr:city'], tags['addr:postcode']]
+          .filter(Boolean)
+          .join(', ');
+      }
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Overpass enrichment failed');
+  }
+}
+
+/**
+ * Wikidata structured-entity search: finds candidate organisations/places by
+ * name (+city) and pulls their official website (P856), phone (P1329) and
+ * email (P968) claims. Catches suppliers Nominatim may miss and supplies the
+ * contact fields OSM summaries lack. Best-effort.
+ * @returns {Promise<object[]>} Candidate suppliers (may be empty).
+ */
+async function searchWikidata(name, city) {
+  const out = [];
+  const searchUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(
+    [name, city].filter(Boolean).join(' '),
+  )}&language=en&format=json&limit=5`;
+  let res;
+  try {
+    res = await fetch(searchUrl, {
+      headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' },
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Wikidata search failed');
+    return out;
+  }
+  if (!res.ok) return out;
+  const data = await res.json();
+  const entities = (data.search || []).slice(0, 3);
+  if (!entities.length) return out;
+
+  const ids = entities.map((e) => e.id).join('|');
+  let detail;
+  try {
+    const detailRes = await fetch(
+      `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids}&props=claims|descriptions&languages=en&format=json`,
+      { headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' }, signal: AbortSignal.timeout(8000) },
+    );
+    if (!detailRes.ok) return out;
+    detail = await detailRes.json();
+  } catch (err) {
+    logger.error({ err: err.message }, 'Wikidata detail fetch failed');
+    return out;
+  }
+
+  const getClaim = (claims, pid) => {
+    const arr = claims[pid];
+    if (!arr || !arr.length) return '';
+    const v = arr[0].mainsnak?.datavalue?.value;
+    if (typeof v === 'string') return v;
+    if (v && typeof v === 'object' && v.id) return `https://www.wikidata.org/wiki/${v.id}`;
+    return '';
+  };
+
+  for (const e of entities) {
+    const ent = detail.entities?.[e.id];
+    if (!ent) continue;
+    const claims = ent.claims || {};
+    const website = getClaim(claims, 'P856');
+    const phone = getClaim(claims, 'P1329');
+    const email = getClaim(claims, 'P968');
+    const description = ent.descriptions?.en?.value || e.description || '';
+    if (!website && !phone && !email && !description) continue;
+    out.push({
+      name: e.label || e.match?.text?.replace(/<[^>]+>/g, '') || '',
+      address: '',
+      phone,
+      website,
+      email,
+      description,
+      rating: 0,
+      source: 'wikidata',
+      brand: '',
+      opening_hours: '',
+    });
+  }
+  return out;
+}
+
+/**
+ * Look up candidate supplier details by combining several open, key-less
+ * data sources so the user gets both more candidates and more fillable
+ * fields:
+ *   1. Nominatim (OpenStreetMap) geocoding — tries progressively broader
+ *      "name, city" → bare name → stripped-name variants.
+ *   2. OSM Overpass — enriches those place hits with structured contact
+ *      tags (phone, website, email, brand, opening hours) that Nominatim's
+ *      summary omits.
+ *   3. Wikipedia full-text search — fuzzy description + Wikipedia link.
+ *   4. Wikidata — structured entity data (official site, phone, email) for
+ *      candidates Nominatim may miss entirely.
+ * Every source is best-effort: a failure in any one is logged and skipped.
  * @returns {Promise<object[]>} Best-effort candidates; empty if all sources fail.
  */
 export async function searchSupplier(name, city) {
   const results = [];
-  const seenOsm = new Set();
-  const MAX_RESULTS = 10;
+  const seen = new Set();
+  const MAX_RESULTS = 12;
+  const pushResult = (r) => {
+    const key = `${r.source}:${r.name}:${r.website || r.address || ''}`.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    results.push(r);
+  };
 
   const variants = buildQueryVariants(name, city);
-  for (let i = 0; i < variants.length && results.length < MAX_RESULTS; i += 1) {
+
+  // 1) Nominatim geocoding.
+  const nominatimHits = [];
+  for (let i = 0; i < variants.length && nominatimHits.length < MAX_RESULTS; i += 1) {
     // Nominatim's usage policy caps clients at 1 request/second.
     if (i > 0) await new Promise((r) => setTimeout(r, 1100));
     try {
@@ -317,11 +466,8 @@ export async function searchSupplier(name, city) {
       if (!Array.isArray(geoData)) continue;
       for (const place of geoData) {
         if (!place.display_name) continue;
-        const osmKey = `${place.osm_type}:${place.osm_id}`;
-        if (seenOsm.has(osmKey)) continue;
-        seenOsm.add(osmKey);
         const addr = place.address || {};
-        results.push({
+        nominatimHits.push({
           name: place.name || place.display_name.split(',')[0],
           address: place.display_name,
           phone: '',
@@ -331,28 +477,31 @@ export async function searchSupplier(name, city) {
             ? `${place.type} in ${addr.city || addr.town || addr.village || ''}, ${addr.country || ''}`.trim()
             : '',
           rating: 0,
-          source: 'nominatim',
+          source: 'openstreetmap',
           matched_query: variants[i],
           osm_id: place.osm_id,
           osm_type: place.osm_type,
           lat: place.lat,
           lon: place.lon,
+          brand: '',
+          opening_hours: '',
         });
-        if (results.length >= MAX_RESULTS) break;
+        if (nominatimHits.length >= MAX_RESULTS) break;
       }
     } catch (err) {
       logger.error({ err: err.message, query: variants[i] }, 'Nominatim search failed');
     }
   }
 
-  // Wikipedia full-text search (fuzzy, unlike the old exact-title summary
-  // lookup) — returns several candidate pages with a snippet each.
+  // 2) Enrich OSM hits with detailed contact tags from Overpass.
+  await enrichOsmContacts(nominatimHits);
+  nominatimHits.forEach(pushResult);
+
+  // 3) Wikipedia full-text search (fuzzy) — returns several candidate pages.
   try {
     const wikiRes = await fetch(
       `https://en.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(name)}&limit=3`,
-      {
-        signal: AbortSignal.timeout(8000),
-      },
+      { signal: AbortSignal.timeout(8000) },
     );
     if (wikiRes.ok) {
       const wiki = await wikiRes.json();
@@ -360,7 +509,7 @@ export async function searchSupplier(name, city) {
         const snippet = (page.excerpt || '').replace(/<[^>]+>/g, '');
         const description = [page.description, snippet].filter(Boolean).join(' — ');
         if (!description) continue;
-        results.push({
+        pushResult({
           name: page.title,
           address: '',
           phone: '',
@@ -369,6 +518,8 @@ export async function searchSupplier(name, city) {
           description,
           rating: 0,
           source: 'wikipedia',
+          brand: '',
+          opening_hours: '',
         });
       }
     }
@@ -376,5 +527,13 @@ export async function searchSupplier(name, city) {
     logger.error({ err: err.message }, 'Wikipedia search failed');
   }
 
-  return results;
+  // 4) Wikidata structured entity search (official site / phone / email).
+  try {
+    const wd = await searchWikidata(name, city);
+    wd.forEach(pushResult);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Wikidata search failed');
+  }
+
+  return results.slice(0, MAX_RESULTS);
 }

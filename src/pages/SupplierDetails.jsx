@@ -30,6 +30,8 @@ import {
   Loader2,
   Store,
   CalendarOff,
+  Tag,
+  Clock,
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -262,6 +264,14 @@ export default function SupplierDetails() {
   };
 
   const applyWebResult = (result) => {
+    const webExtra = [
+      result.opening_hours && `Hours: ${result.opening_hours}`,
+      result.brand && `Brand: ${result.brand}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+    const notesBase = result.description ? `[From web] ${result.description}` : '';
+    const notesBlock = [notesBase, webExtra].filter(Boolean).join('\n\n');
     setEditForm({
       name: result.name || supplier.name || '',
       contact_person: editForm.contact_person || supplier.contact_person || '',
@@ -272,8 +282,8 @@ export default function SupplierDetails() {
       city: editForm.city || supplier.city || '',
       area: editForm.area || supplier.area || '',
       pricing_info: editForm.pricing_info || supplier.pricing_info || '',
-      notes: result.description
-        ? `[From web] ${result.description}\n\n${editForm.notes || supplier.notes || ''}`
+      notes: notesBlock
+        ? `${notesBlock}\n\n${editForm.notes || supplier.notes || ''}`
         : editForm.notes || supplier.notes || '',
       rating: result.rating || editForm.rating || supplier.rating || 5,
       show_in_portal: editForm.show_in_portal ?? !!supplier.show_in_portal,
@@ -877,6 +887,18 @@ export default function SupplierDetails() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                       <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                       {result.email}
+                    </div>
+                  )}
+                  {result.brand && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                      {result.brand}
+                    </div>
+                  )}
+                  {result.opening_hours && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                      {result.opening_hours}
                     </div>
                   )}
                   {result.rating > 0 && (
