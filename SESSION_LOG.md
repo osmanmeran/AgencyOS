@@ -177,3 +177,38 @@ Verified each step with lint (baseline), typecheck (baseline), `vite build`, and
 - Backend: `server/services/{documents,email,auth,audit,integrations,reportScheduler}.js`, `server/routes/{documents,pdf,testing,suggestions,b2b}.js`, `server/lib/ws.js`, `server/server.js`, `server/app.js`, `server/migrations/013_add_entity_query_indexes.cjs`.
 - Frontend: `src/pages/{Dashboard,TestingArea}.jsx`, `src/lib/query-client.js`, `vite.config.js`, `package.json`.
 - Tests: `tests/services/{documents,auth,search}.test.js`, `tests/migrations/013_add_entity_query_indexes.test.js`.
+
+---
+
+# Session log — Currency, client-portal polish & hotel catalog import (2026-07-13)
+
+_Last updated: 2026-07-13. Committed and pushed to `main` (auto-deploys on Railway)._
+
+## What we shipped this session (single commit `da7414a`)
+
+| Area                               | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Multi-currency**                 | Shared `src/lib/currencies.js` (currency list + formatting) used by client + server. Fixed the `ClientDetails` currency dropdown, which previously only offered the app default. `AppSettings` now has an admin-configurable `supported_currencies` list; the client dropdown is driven by it.                                                                                                                                                                                                                                                                   |
+| **Exchange-rate scheduler**        | `server/services/exchangeRates.js` (rate fetch + storage) backed by **migration `018_exchange_rates`** (new `exchange_rates` table + `AppSettings.exchange_rates` snapshot). `server/services/exchangeRateScheduler.js` refreshes rates daily via `setInterval` (started in `server.js`). Routes `GET /api/integrations/exchange-rates` and `POST /api/integrations/exchange-rates/refresh` (admin). Covered by `tests/services/exchangeRates.test.js`.                                                                                                          |
+| **Featured tours carousel**        | `ClientPortal.jsx` now renders featured tours in an embla `Carousel` (reuses `src/components/ui/carousel.jsx`) instead of a static 3-up grid; the section hides while `isTourSearchActive`.                                                                                                                                                                                                                                                                                                                                                                      |
+| **Car rental drop-off surcharge**  | `ClientCarRentalSearch.jsx` lists every car type (removed the per-supplier "cheapest only" collapse). `CarRentalResultCard.jsx` shows the different-dropoff surcharge underlined and folds it into the total when `isDifferentDropoff`.                                                                                                                                                                                                                                                                                                                          |
+| **Hotel catalog import (prod DB)** | Parsed `/Users/osmanmeran/Documenti computer/deneme.xlsx` (420 price rows, 47 hotels) and imported into the production Railway DB via `railway ssh`: created 47 supplier cards + a `Hotels` category/subcategories and **419 approved `SupplierPricing` rows** (so they appear immediately in the B2B catalog / client hotel search). Field mapping: room type → `occupancy`, board → `meal_treatment`, buy price → `base_price`, sell price → `client_price`, season dates → custom season, region code → city. Sale currency carried from the sheet (EUR/USD). |
+| **Star ratings**                   | Set each imported hotel's `rating` (and `star_rating`) from the sheet's **Otel Kategorisi** column (parsed `1*`→1, etc.) so stars render in `SupplierDetails` / `SupplierCategorySummary`.                                                                                                                                                                                                                                                                                                                                                                       |
+
+## How the import was done (reproducible)
+
+- `scripts/gen_hotel_import.py` reads the xlsx and emits a self-contained `set_stars`/`import_hotels` Node script (base64-shipped into the Railway container, run from `/app` so `better-sqlite3` resolves). The import is idempotent (skips existing suppliers/pricings) and wrapped in a single transaction.
+- `scripts/verify_hotels.mjs` + `scripts/set_stars.py` were used to verify counts/linkage and backfill star ratings on the live DB.
+- Verified on prod via `railway ssh`: 88 suppliers (47 new), 10 categories, 126 subcategories, 628 pricing rows (419 new, all `approved` + linked), 363 FTS rows. The legacy `"Hotels "` (trailing space) category was left untouched; new hotels use a clean `"Hotels"` category.
+
+## Key files touched
+
+- Backend: `server/services/exchangeRates.js`, `server/services/exchangeRateScheduler.js`, `server/routes/integrations.js`, `server/services/integrations.js`, `server/server.js`, `server/migrations/018_exchange_rates.js`.
+- Frontend: `src/lib/currencies.js`, `src/pages/{ClientPortal,ClientCarRentalSearch,AppSettings,ClientDetails}.jsx`, `src/components/carRental/CarRentalResultCard.jsx`, `src/pages.config.js`.
+- Tests: `tests/services/exchangeRates.test.js`.
+- Scripts (local, for the prod data import): `scripts/gen_hotel_import.py`, `scripts/verify_hotels.mjs`, `scripts/set_stars.py`.
+
+## Open follow-ups
+
+- Hotel `operator` field from the sheet isn't surfaced anywhere yet — optionally map it onto the supplier or pricing.
+- Same-currency display: client portal hotel prices should already convert via the new exchange-rate layer; confirm a EUR hotel shows correctly for a USD-preference client.

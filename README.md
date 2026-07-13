@@ -227,6 +227,14 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 - **SQL over JS** — `/api/b2b/quotes` scopes by `client_id` in SQL; `/api/suggestions` is bounded with `LIMIT/OFFSET`
 - **Entity indexes (migration 013)** — composite `(type, json_extract(...))` indexes on `status`, `due_date`, `proposal_status`, `client_id`, `approval_status` for the report/reminder/B2B hot paths; the migration guards with a `json_valid` check so it can never crash startup on a malformed row
 
+### Features & UX (2026-07-13)
+
+- **Multi-currency support** — shared currency module (`src/lib/currencies.js`); the `ClientDetails` currency dropdown is fixed and now driven by an admin-configurable `supported_currencies` list in App Settings.
+- **Automatic exchange rates** — a daily scheduler fetches live rates (stored via migration `018_exchange_rates`); rates are viewable/refreshable from Integrations (admin only).
+- **Featured Tours carousel** — the client-portal Featured Tours section is now a swipeable embla carousel and hides while a tour search is active.
+- **Car-rental drop-off surcharge** — the search now lists every car type (not just the cheapest per supplier); an underlined different-dropoff surcharge is shown and folded into the total.
+- **Hotel catalog** — 47 hotels with approved pricing were imported from a supplier rate sheet into production, and star ratings were populated from the sheet.
+
 ## Improvement Roadmap
 
 ### Architecture
