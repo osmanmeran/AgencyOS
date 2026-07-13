@@ -51,6 +51,7 @@ import { setActAsClientId } from '@/lib/actAsClient';
 import { format } from 'date-fns';
 import ClientProfile from '../components/clients/ClientProfile';
 import ClientTasksPanel from '../components/clients/ClientTasksPanel';
+import CompanyPicker from '../components/crm/CompanyPicker';
 import LocationSearch from '@/components/services/LocationSearch';
 import { getCurrencySymbol, mixedCurrencyLabel } from '@/lib/formatters';
 
@@ -264,6 +265,7 @@ export default function ClientDetails() {
       phone_secondary: client.phone_secondary || '',
       age_category: client.age_category || 'adult',
       company: client.company || '',
+      company_id: client.company_id || '',
       address: client.address || '',
       city: client.city || '',
       country: client.country || '',
@@ -792,9 +794,10 @@ export default function ClientDetails() {
               </div>
               <div className="space-y-2">
                 <Label>Company</Label>
-                <Input
-                  value={editForm.company}
-                  onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                <CompanyPicker
+                  value={editForm.company_id}
+                  companyName={editForm.company}
+                  onChange={({ company_id, company }) => setEditForm((prev) => ({ ...prev, company_id, company }))}
                 />
               </div>
               <div className="space-y-2">
