@@ -59,6 +59,7 @@ export default function SupplierDetails() {
   const [webResults, setWebResults] = useState([]);
   const [webSearchLoading, setWebSearchLoading] = useState(false);
   const [webSearchError, setWebSearchError] = useState('');
+  const [webQuery, setWebQuery] = useState('');
   const addLocation = (loc) => {
     if (!loc || (editForm.car_rental_locations || []).includes(loc)) return;
     setEditForm({ ...editForm, car_rental_locations: [...(editForm.car_rental_locations || []), loc] });
@@ -236,13 +237,18 @@ export default function SupplierDetails() {
     setEditModalOpen(true);
   };
 
-  const handleWebSearch = async () => {
+  // `queryOverride` lets the dialog's editable search box re-run the lookup
+  // with user-adjusted terms when the supplier's exact name finds nothing.
+  const handleWebSearch = async (queryOverride) => {
+    const query = (queryOverride ?? supplier.name).trim();
+    if (!query) return;
+    setWebQuery(query);
     setWebSearchLoading(true);
     setWebSearchError('');
     setWebResults([]);
     try {
       const res = await db.integrations.Core.SupplierWebSearch({
-        name: supplier.name,
+        name: query,
         city: supplier.city || '',
       });
       setWebResults(res.results || []);
@@ -797,6 +803,24 @@ export default function SupplierDetails() {
               {t('supplierDetails.webResultsForTitle', { name: supplier.name })}
             </DialogTitle>
           </DialogHeader>
+          <form
+            className="flex gap-2 mt-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleWebSearch(webQuery);
+            }}
+          >
+            <Input
+              value={webQuery}
+              onChange={(e) => setWebQuery(e.target.value)}
+              placeholder={supplier.name}
+              className="flex-1"
+              disabled={webSearchLoading}
+            />
+            <Button type="submit" disabled={webSearchLoading || !webQuery.trim()}>
+              <Search className="w-4 h-4 mr-1" /> {t('supplierDetails.searchWeb')}
+            </Button>
+          </form>
           <div className="mt-4 space-y-4">
             {webSearchLoading && (
               <div className="flex items-center justify-center py-12">

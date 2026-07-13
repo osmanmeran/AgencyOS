@@ -238,24 +238,88 @@ export async function sendOutlookEmail(userId, { to, subject, body, cc, bcc }) {
 
 // ── Supplier Web Search ────────────────────────────────────────────────
 
+// Generic business words that hurt Nominatim matching when the name on file
+// doesn't exactly match the mapped POI ("Grand Yavuz Hotel Ltd" vs the OSM
+// node "Grand Yavuz"). Stripped to build broader query variants.
+const SUPPLIER_NAME_NOISE = new Set([
+  'hotel',
+  'hotels',
+  'otel',
+  'oteli',
+  'the',
+  'co',
+  'ltd',
+  'llc',
+  'inc',
+  'tour',
+  'tours',
+  'travel',
+  'turizm',
+  'tourism',
+  'agency',
+  'group',
+  'company',
+  'suites',
+  'resort',
+  'spa',
+]);
+
 /**
- * Look up candidate supplier details (address, description) by combining a
- * Nominatim (OpenStreetMap) geocode search with a Wikipedia summary lookup.
- * @returns {Promise<object[]>} Best-effort results; empty if both sources fail.
+ * Progressively broader Nominatim queries for a supplier: exact "name, city"
+ * first, then the bare name, then the name stripped of generic business
+ * words, then just its first couple of distinctive words + city.
+ * @returns {string[]} Deduped variants, most-specific first (max 4).
+ */
+function buildQueryVariants(name, city) {
+  const clean = name
+    .replace(/[^\p{L}\p{N}\s&'-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const words = clean.split(' ');
+  const significant = words.filter((w) => !SUPPLIER_NAME_NOISE.has(w.toLowerCase()));
+  const simplified = significant.join(' ');
+
+  const variants = [];
+  const push = (q) => {
+    if (q && q.length >= 3 && !variants.includes(q)) variants.push(q);
+  };
+  push([clean, city].filter(Boolean).join(', '));
+  push(clean);
+  if (simplified && simplified !== clean) push([simplified, city].filter(Boolean).join(', '));
+  if (significant.length > 2) push([significant.slice(0, 2).join(' '), city].filter(Boolean).join(', '));
+  return variants.slice(0, 4);
+}
+
+/**
+ * Look up candidate supplier details (address, description) by combining
+ * Nominatim (OpenStreetMap) geocoding with a Wikipedia full-text search.
+ * Nominatim has no fuzzy matching, so instead of a single exact "name, city"
+ * lookup this tries progressively broader query variants (dropping the city,
+ * then generic words like "Hotel"/"Ltd") until enough candidates accumulate,
+ * and returns them all so the user can pick the right one.
+ * @returns {Promise<object[]>} Best-effort candidates; empty if all sources fail.
  */
 export async function searchSupplier(name, city) {
-  const query = [name, city].filter(Boolean).join(', ');
   const results = [];
+  const seenOsm = new Set();
+  const MAX_RESULTS = 10;
 
-  try {
-    const geoRes = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
-      { headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' }, signal: AbortSignal.timeout(8000) },
-    );
-    const geoData = await geoRes.json();
-    if (Array.isArray(geoData)) {
+  const variants = buildQueryVariants(name, city);
+  for (let i = 0; i < variants.length && results.length < MAX_RESULTS; i += 1) {
+    // Nominatim's usage policy caps clients at 1 request/second.
+    if (i > 0) await new Promise((r) => setTimeout(r, 1100));
+    try {
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(variants[i])}&format=json&limit=10&addressdetails=1`,
+        { headers: { 'User-Agent': 'MarvelopsTravelPro/1.0' }, signal: AbortSignal.timeout(8000) },
+      );
+      const geoData = await geoRes.json();
+      if (!Array.isArray(geoData)) continue;
       for (const place of geoData) {
         if (!place.display_name) continue;
+        const osmKey = `${place.osm_type}:${place.osm_id}`;
+        if (seenOsm.has(osmKey)) continue;
+        seenOsm.add(osmKey);
         const addr = place.address || {};
         results.push({
           name: place.name || place.display_name.split(',')[0],
@@ -268,40 +332,44 @@ export async function searchSupplier(name, city) {
             : '',
           rating: 0,
           source: 'nominatim',
+          matched_query: variants[i],
           osm_id: place.osm_id,
           osm_type: place.osm_type,
           lat: place.lat,
           lon: place.lon,
         });
+        if (results.length >= MAX_RESULTS) break;
       }
+    } catch (err) {
+      logger.error({ err: err.message, query: variants[i] }, 'Nominatim search failed');
     }
-  } catch (err) {
-    logger.error({ err: err.message }, 'Nominatim search failed');
   }
 
+  // Wikipedia full-text search (fuzzy, unlike the old exact-title summary
+  // lookup) — returns several candidate pages with a snippet each.
   try {
     const wikiRes = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}?redirect=true`,
-      { signal: AbortSignal.timeout(8000) },
+      `https://en.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(name)}&limit=3`,
+      {
+        signal: AbortSignal.timeout(8000),
+      },
     );
     if (wikiRes.ok) {
       const wiki = await wikiRes.json();
-      if (wiki.extract && wiki.extract.length > 50) {
-        if (results.length > 0) {
-          results[0].description = wiki.extract;
-          if (wiki.content_urls?.desktop?.page) results[0].website = wiki.content_urls.desktop.page;
-        } else {
-          results.push({
-            name: wiki.title || name,
-            address: '',
-            phone: '',
-            website: wiki.content_urls?.desktop?.page || '',
-            email: '',
-            description: wiki.extract,
-            rating: 0,
-            source: 'wikipedia',
-          });
-        }
+      for (const page of wiki.pages || []) {
+        const snippet = (page.excerpt || '').replace(/<[^>]+>/g, '');
+        const description = [page.description, snippet].filter(Boolean).join(' — ');
+        if (!description) continue;
+        results.push({
+          name: page.title,
+          address: '',
+          phone: '',
+          website: `https://en.wikipedia.org/wiki/${encodeURIComponent(page.key)}`,
+          email: '',
+          description,
+          rating: 0,
+          source: 'wikipedia',
+        });
       }
     }
   } catch (err) {
