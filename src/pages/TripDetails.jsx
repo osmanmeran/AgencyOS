@@ -15,6 +15,7 @@ import Itinerary from '../components/trip-details/Itinerary';
 import TripFinancialReport from '../components/trips/TripFinancialReport';
 import AutoInvoiceGenerator from '../components/invoices/AutoInvoiceGenerator';
 import SaveAsTemplateButton from '../components/trips/SaveAsTemplateButton';
+import ClientTasksPanel from '../components/clients/ClientTasksPanel';
 import { useT } from '@/lib/i18n/I18nContext';
 
 export default function TripDetails() {
@@ -229,6 +230,9 @@ export default function TripDetails() {
           <TabsTrigger value="packing" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             {t('clientTripDetails.packingList')}
           </TabsTrigger>
+          <TabsTrigger value="tasks" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            {t('taskBoard.title')}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="packing" className="space-y-4">
@@ -263,6 +267,9 @@ export default function TripDetails() {
 
         <TabsContent value="financial">
           <TripFinancialReport trip={trip} events={itineraryEvents} invoices={invoices} />
+        </TabsContent>
+        <TabsContent value="tasks">
+          <ClientTasksPanel clientId={trip?.client_id} />
         </TabsContent>
       </Tabs>
     </div>

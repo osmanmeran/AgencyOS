@@ -4,6 +4,7 @@ import { useState, useEffect, Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { useEntitySync } from '@/hooks/useEntitySync';
+import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { useActAsClientId, clearActAsClient } from '@/lib/actAsClient';
 
 import AppBar from '@mui/material/AppBar';
@@ -388,6 +389,7 @@ export default function Layout({ children, currentPageName }) {
   const [actAsClient, setActAsClient] = useState(null);
 
   useEntitySync();
+  useReminderNotifications();
 
   useEffect(() => {
     db.auth

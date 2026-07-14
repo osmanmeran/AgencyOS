@@ -53,7 +53,24 @@ export default function Dashboard() {
     })
   );
 
-  const isLoading = tripsLoading;
+  const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() });
+  const { data: myTasks = /** @type {any} */ ([]), isLoading: tasksLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientTasks'],
+      queryFn: () => db.entities.ClientTask.list(),
+    })
+  );
+
+  const isLoading = tripsLoading || tasksLoading;
+
+  const openMyTasks = /** @type {any} */ (
+    useMemo(() => {
+      if (!me) return [];
+      return myTasks.filter(
+        (task) => task.status !== 'done' && (task.assigned_to === me.email || task.created_by_id === me.id),
+      );
+    }, [myTasks, me])
+  );
 
   const { upcomingArrivals, upcomingDepartures, pendingReservations, departingNext7 } = useMemo(() => {
     const upcomingArrivals = trips
@@ -314,6 +331,86 @@ export default function Dashboard() {
                   </Box>
                 ))}
               </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card sx={{ height: '100%', borderLeft: '4px solid', borderColor: 'info.main' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}
+                >
+                  <AssignmentRounded fontSize="small" sx={{ color: 'info.main' }} />
+                  {t('dashboard.myOpenTasks')}
+                </Typography>
+                <Chip label={openMyTasks.length} size="small" color="info" sx={{ height: 22, fontWeight: 700 }} />
+              </Box>
+              <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+                {openMyTasks.length === 0 ? (
+                  <Box
+                    sx={{
+                      py: 2,
+                      textAlign: 'center',
+                      color: 'success.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 0.5,
+                    }}
+                  >
+                    <CheckCircleRounded fontSize="small" /> {t('dashboard.allCaughtUp')}
+                  </Box>
+                ) : (
+                  openMyTasks.slice(0, 6).map((task) => (
+                    <Box
+                      key={task.id}
+                      component={Link}
+                      to={createPageUrl('TaskBoard')}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        '&:hover': { bgcolor: 'info.light' },
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                          {task.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {t(`clientTasksPanel.filter${task.type?.[0]?.toUpperCase()}${task.type?.slice(1)}`) ||
+                            task.type}
+                        </Typography>
+                      </Box>
+                      <ArrowForwardRounded fontSize="small" sx={{ color: 'text.secondary', ml: 1, flexShrink: 0 }} />
+                    </Box>
+                  ))
+                )}
+              </Box>
+              {openMyTasks.length > 6 && (
+                <Box
+                  component={Link}
+                  to={createPageUrl('TaskBoard')}
+                  sx={{
+                    display: 'block',
+                    mt: 1,
+                    fontSize: '0.75rem',
+                    color: 'info.main',
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  {t('dashboard.moreCount', { count: openMyTasks.length - 6 })}
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
