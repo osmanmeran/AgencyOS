@@ -82,7 +82,7 @@ const detectCategory = (cat) => {
   );
 };
 
-export function ServiceCard({ service, supplierMap = {} }) {
+export function ServiceCard({ service, supplierMap = {}, hiddenSupplierIds = new Set() }) {
   const { t } = useT();
   const cfg = detectCategory(service.category);
   const categoryLabel = cfg.labelKey
@@ -93,6 +93,7 @@ export function ServiceCard({ service, supplierMap = {} }) {
     service.pickup_time || service.transfer_flight_number || (!service._isReturnLeg && service.return_leg?.enabled);
 
   const supplier = service.supplier_id && supplierMap ? supplierMap[service.supplier_id] : null;
+  const supplierHidden = supplier ? hiddenSupplierIds.has(supplier.id) : false;
   const supplierAddress = supplier ? [supplier.address, supplier.city, supplier.area].filter(Boolean).join(', ') : '';
   const mapUrl = supplier ? supplierMapsUrl(supplier) : '';
 
@@ -173,7 +174,7 @@ export function ServiceCard({ service, supplierMap = {} }) {
             <p className="text-muted-foreground text-sm mt-2 leading-relaxed">{service.description}</p>
           )}
 
-          {supplier && (
+          {supplier && !supplierHidden && (
             <div className="mt-3 pt-3 border-t border-border space-y-1">
               <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                 <Building className="w-3.5 h-3.5" />
@@ -218,7 +219,7 @@ export function ServiceCard({ service, supplierMap = {} }) {
   );
 }
 
-export function DaySection({ date, services, dayIndex, supplierMap = {} }) {
+export function DaySection({ date, services, dayIndex, supplierMap = {}, hiddenSupplierIds = new Set() }) {
   const { t } = useT();
   return (
     <div className="mb-8">
@@ -233,7 +234,7 @@ export function DaySection({ date, services, dayIndex, supplierMap = {} }) {
       </div>
       <div className="space-y-3 ml-1">
         {services.map((svc, idx) => (
-          <ServiceCard key={idx} service={svc} supplierMap={supplierMap} />
+          <ServiceCard key={idx} service={svc} supplierMap={supplierMap} hiddenSupplierIds={hiddenSupplierIds} />
         ))}
       </div>
     </div>

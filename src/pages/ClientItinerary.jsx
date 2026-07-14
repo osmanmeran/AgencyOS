@@ -9,6 +9,7 @@ import { groupServicesByDay } from '@/lib/serviceItinerary';
 import { ServiceCard, DaySection } from '@/components/client-trip/ServiceItineraryCards';
 import { useT } from '@/lib/i18n/I18nContext';
 import { assetUrl } from '@/lib/assetUrl';
+import { hiddenSupplierIds } from '@/lib/supplierCategories';
 
 export default function ClientItinerary() {
   const { t } = useT();
@@ -43,6 +44,23 @@ export default function ClientItinerary() {
     })
   );
   const supplierMap = useMemo(() => Object.fromEntries((suppliers || []).map((s) => [s.id, s])), [suppliers]);
+
+  const { data: supplierCategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierCategories'],
+      queryFn: () => db.entities.SupplierCategory.list(),
+    })
+  );
+  const { data: supplierSubcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+  const hiddenSupplierSet = useMemo(
+    () => hiddenSupplierIds(supplierCategories, supplierSubcategories),
+    [supplierCategories, supplierSubcategories],
+  );
 
   if (isLoading) {
     return (
@@ -210,6 +228,7 @@ export default function ClientItinerary() {
                   services={dayServices[date]}
                   dayIndex={idx}
                   supplierMap={supplierMap}
+                  hiddenSupplierIds={hiddenSupplierSet}
                 />
               ))}
             </div>
@@ -224,7 +243,12 @@ export default function ClientItinerary() {
                 <p className="text-sm text-muted-foreground mb-4">{t('clientItinerary.unscheduledHint')}</p>
                 <div className="space-y-3">
                   {unscheduled.map((svc, idx) => (
-                    <ServiceCard key={idx} service={svc} supplierMap={supplierMap} />
+                    <ServiceCard
+                      key={idx}
+                      service={svc}
+                      supplierMap={supplierMap}
+                      hiddenSupplierIds={hiddenSupplierSet}
+                    />
                   ))}
                 </div>
               </div>

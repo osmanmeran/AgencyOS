@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import {
@@ -42,7 +43,12 @@ export default function SupplierCategorySummary() {
   const canManage = hasPermission('manage_categories');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(/** @type {any} */ (null));
-  const [formData, setFormData] = useState({ name: '', description: '', color: '#3B82F6' });
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    color: '#3B82F6',
+    hide_supplier_info: false,
+  });
 
   const { data: categories = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
@@ -140,10 +146,11 @@ export default function SupplierCategorySummary() {
         name: category.name || '',
         description: category.description || '',
         color: category.color || '#3B82F6',
+        hide_supplier_info: !!category.hide_supplier_info,
       });
     } else {
       setEditingCategory(null);
-      setFormData({ name: '', description: '', color: '#3B82F6' });
+      setFormData({ name: '', description: '', color: '#3B82F6', hide_supplier_info: false });
     }
     setModalOpen(true);
   };
@@ -198,6 +205,18 @@ export default function SupplierCategorySummary() {
               />
               <span className="text-sm text-muted-foreground">{formData.color}</span>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="cat-hide-supplier">{t('categories.hideSupplierInfo')}</Label>
+              <p className="text-xs text-muted-foreground">{t('categories.hideSupplierInfoHint')}</p>
+            </div>
+            <Switch
+              id="cat-hide-supplier"
+              checked={!!formData.hide_supplier_info}
+              onCheckedChange={(v) => setFormData({ ...formData, hide_supplier_info: v })}
+            />
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

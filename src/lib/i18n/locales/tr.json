@@ -2183,7 +2183,9 @@
     "updateSuccess": "Kategori güncellendi",
     "updateError": "Kategori güncellenemedi",
     "deleteSuccess": "Kategori silindi",
-    "deleteError": "Kategori silinemedi"
+    "deleteError": "Kategori silinemedi",
+    "hideSupplierInfo": "Hide supplier info (itinerary & invoice)",
+    "hideSupplierInfoHint": "When on, supplier name, address, website and map link are hidden from the client itinerary and invoice for suppliers in this category."
   },
   "calendarView": {
     "title": "Takvim",

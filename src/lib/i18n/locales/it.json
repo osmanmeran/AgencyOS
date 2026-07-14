@@ -2182,7 +2182,9 @@
     "updateSuccess": "Categoria aggiornata",
     "updateError": "Impossibile aggiornare la categoria",
     "deleteSuccess": "Categoria eliminata",
-    "deleteError": "Impossibile eliminare la categoria"
+    "deleteError": "Impossibile eliminare la categoria",
+    "hideSupplierInfo": "Hide supplier info (itinerary & invoice)",
+    "hideSupplierInfoHint": "When on, supplier name, address, website and map link are hidden from the client itinerary and invoice for suppliers in this category."
   },
   "calendarView": {
     "title": "Calendario",

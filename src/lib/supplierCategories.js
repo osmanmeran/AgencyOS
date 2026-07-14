@@ -16,6 +16,18 @@ export function getSupplierCategoryIds(categoryMap, supplierId) {
   return [...(categoryMap.get(supplierId) || [])];
 }
 
+// Suppliers whose info should be hidden on client-facing documents (itinerary
+// + invoice). A category can opt out of showing supplier details via
+// `hide_supplier_info`; any supplier belonging to such a category is hidden.
+export function hiddenSupplierIds(categories, subcategories) {
+  const hiddenCategoryIds = new Set((categories || []).filter((c) => c.hide_supplier_info).map((c) => c.id));
+  const set = new Set();
+  for (const sc of subcategories || []) {
+    if (hiddenCategoryIds.has(sc.category_id)) set.add(sc.supplier_id);
+  }
+  return set;
+}
+
 // Quick "add provider" flows (mid-proposal/reservation) used to set a
 // category directly on the new supplier. Now that category comes from
 // subcategories, creating a supplier "in" a category means seeding it with

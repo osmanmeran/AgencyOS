@@ -20,6 +20,7 @@ import { getCurrencySymbol } from '@/lib/formatters';
 import { useT } from '@/lib/i18n/I18nContext';
 import { supplierMapsUrl } from '@/lib/supplierMap';
 import { assetUrl } from '@/lib/assetUrl';
+import { hiddenSupplierIds } from '@/lib/supplierCategories';
 
 const currSymbol = (cur) => getCurrencySymbol(cur);
 
@@ -97,6 +98,23 @@ export default function InvoiceDetails() {
     })
   );
   const supplierMap = useMemo(() => Object.fromEntries((suppliers || []).map((s) => [s.id, s])), [suppliers]);
+
+  const { data: supplierCategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['supplierCategories'],
+      queryFn: () => db.entities.SupplierCategory.list(),
+    })
+  );
+  const { data: supplierSubcategories = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['allSupplierSubcategories'],
+      queryFn: () => db.entities.SupplierSubcategory.list(),
+    })
+  );
+  const hiddenSupplierSet = useMemo(
+    () => hiddenSupplierIds(supplierCategories, supplierSubcategories),
+    [supplierCategories, supplierSubcategories],
+  );
 
   const invoiceHeader = settings?.invoice_header || {};
   const companyLogoUrl = assetUrl(invoiceHeader.logo_url || settings?.logo_url || '');
@@ -423,6 +441,7 @@ export default function InvoiceDetails() {
               <div className="space-y-4">
                 {trip.services.map((s, i) => {
                   const sup = s.supplier_id ? supplierMap[s.supplier_id] : null;
+                  const supHidden = sup ? hiddenSupplierSet.has(sup.id) : false;
                   const supAddress = sup ? [sup.address, sup.city, sup.area].filter(Boolean).join(', ') : '';
                   const mapUrl = sup ? supplierMapsUrl(sup) : '';
                   return (
@@ -444,7 +463,7 @@ export default function InvoiceDetails() {
                         </p>
                       )}
                       {s.location && <div className="text-sm text-muted-foreground mt-1">{s.location}</div>}
-                      {sup && (
+                      {sup && !supHidden && (
                         <div className="mt-3 pt-3 border-t border-border text-sm text-muted-foreground space-y-1">
                           <div className="font-medium text-foreground">{sup.name}</div>
                           {supAddress && <div>{supAddress}</div>}
