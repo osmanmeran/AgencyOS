@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { Calendar, MapPin, Share2, Check, Zap } from 'lucide-react';
 import { groupServicesByDay } from '@/lib/serviceItinerary';
 import { ServiceCard, DaySection } from '@/components/client-trip/ServiceItineraryCards';
+import TripMap from '@/components/client-trip/TripMap';
 import { useT } from '@/lib/i18n/I18nContext';
 import { assetUrl } from '@/lib/assetUrl';
 import { hiddenSupplierIds } from '@/lib/supplierCategories';
@@ -60,6 +61,20 @@ export default function ClientItinerary() {
   const hiddenSupplierSet = useMemo(
     () => hiddenSupplierIds(supplierCategories, supplierSubcategories),
     [supplierCategories, supplierSubcategories],
+  );
+
+  const mapEvents = useMemo(
+    () =>
+      (trip?.services || [])
+        .filter((s) => s.location)
+        .map((s) => ({
+          id: s._key || s.id,
+          title: s.name,
+          location: s.location,
+          date: s.start_date || s.service_date,
+          time: s.pickup_time,
+        })),
+    [trip?.services],
   );
 
   if (isLoading) {
@@ -251,6 +266,17 @@ export default function ClientItinerary() {
                     />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Map of all service locations */}
+            {mapEvents.length > 0 && (
+              <div className="mt-10">
+                <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-300" />
+                  {t('clientItinerary.mapTitle')}
+                </h2>
+                <TripMap events={mapEvents} />
               </div>
             )}
 

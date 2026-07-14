@@ -1987,7 +1987,8 @@
     "unscheduledHint": "Estos servicios no están vinculados a una fecha específica:",
     "emergencyContact": "Contacto de Emergencia",
     "yourTravelAgent": "Tu Agente de Viajes",
-    "footerGenerated": "Generado automáticamente a partir de los datos de la reserva."
+    "footerGenerated": "Generado automáticamente a partir de los datos de la reserva.",
+    "mapTitle": "Map"
   },
   "clientQuotes": {
     "title": "Mis Solicitudes de Cotización",

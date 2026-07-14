@@ -1987,7 +1987,8 @@
     "unscheduledHint": "Diese Leistungen sind an kein bestimmtes Datum gebunden:",
     "emergencyContact": "Notfallkontakt",
     "yourTravelAgent": "Ihr Reisebüromitarbeiter",
-    "footerGenerated": "Automatisch aus den Reservierungsdaten generiert."
+    "footerGenerated": "Automatisch aus den Reservierungsdaten generiert.",
+    "mapTitle": "Map"
   },
   "clientQuotes": {
     "title": "Meine Angebotsanfragen",

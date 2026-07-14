@@ -1987,7 +1987,8 @@
     "unscheduledHint": "Ces services ne sont liés à aucune date spécifique :",
     "emergencyContact": "Contact d'Urgence",
     "yourTravelAgent": "Votre Agent de Voyage",
-    "footerGenerated": "Généré automatiquement à partir des données de réservation."
+    "footerGenerated": "Généré automatiquement à partir des données de réservation.",
+    "mapTitle": "Map"
   },
   "clientQuotes": {
     "title": "Mes Demandes de Devis",

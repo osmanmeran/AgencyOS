@@ -2170,7 +2170,8 @@
     "unscheduledHint": "These services are not tied to a specific date:",
     "emergencyContact": "Emergency Contact",
     "yourTravelAgent": "Your Travel Agent",
-    "footerGenerated": "Generated automatically from reservation data."
+    "footerGenerated": "Generated automatically from reservation data.",
+    "mapTitle": "Map"
   },
   "clientQuotes": {
     "title": "My Quote Requests",

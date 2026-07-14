@@ -1986,7 +1986,8 @@
     "unscheduledHint": "Questi servizi non sono legati a una data specifica:",
     "emergencyContact": "Contatto d'Emergenza",
     "yourTravelAgent": "Il Tuo Agente di Viaggio",
-    "footerGenerated": "Generato automaticamente dai dati della prenotazione."
+    "footerGenerated": "Generato automaticamente dai dati della prenotazione.",
+    "mapTitle": "Map"
   },
   "clientQuotes": {
     "title": "Le Mie Richieste di Preventivo",

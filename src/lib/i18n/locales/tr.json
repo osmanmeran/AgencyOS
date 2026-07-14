@@ -1987,7 +1987,8 @@
     "unscheduledHint": "Bu hizmetler belirli bir tarihe bağlı değildir:",
     "emergencyContact": "Acil Durum İletişimi",
     "yourTravelAgent": "Seyahat Acenteniz",
-    "footerGenerated": "Rezervasyon verilerinden otomatik olarak oluşturulmuştur."
+    "footerGenerated": "Rezervasyon verilerinden otomatik olarak oluşturulmuştur.",
+    "mapTitle": "Map"
   },
   "clientQuotes": {
     "title": "Teklif Taleplerim",

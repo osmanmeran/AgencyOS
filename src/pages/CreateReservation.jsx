@@ -11,7 +11,6 @@ import { createPageUrl } from '@/utils';
 import ServiceLibraryPanel from '@/components/proposals/ServiceLibraryPanel';
 import { useDirtyState } from '@/hooks/useDirtyState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
-import { applyMarkup } from '@/lib/pricing';
 import { categoryIdsBySupplier, getSupplierCategoryIds, createSupplierWithCategory } from '@/lib/supplierCategories';
 
 import {
@@ -480,7 +479,6 @@ export default function CreateReservation() {
     }
     return qty;
   };
-  const withMarkup = (price) => applyMarkup(price, markupPct);
 
   // Per-currency totals
   const acquiringByCurrency = services.reduce((acc, s) => {
@@ -490,8 +488,7 @@ export default function CreateReservation() {
   }, {});
   const sellingByCurrency = services.reduce((acc, s) => {
     const cur = s.client_currency || 'USD';
-    const basePrice = parseFloat(s.base_selling_price ?? s.selling_price) || 0;
-    acc[cur] = (acc[cur] || 0) + withMarkup(basePrice) * serviceQty(s);
+    acc[cur] = (acc[cur] || 0) + (parseFloat(s.selling_price) || 0) * serviceQty(s);
     return acc;
   }, {});
   const totalSellingAll = Object.values(sellingByCurrency).reduce((s, v) => s + v, 0);
@@ -575,7 +572,7 @@ export default function CreateReservation() {
       quantity: s.quantity || 1,
       acquiring_price: parseFloat(s.acquiring_price) || 0,
       base_selling_price: parseFloat(s.base_selling_price ?? s.selling_price) || 0,
-      selling_price: withMarkup(parseFloat(s.base_selling_price ?? s.selling_price) || 0),
+      selling_price: parseFloat(s.selling_price) || 0,
       supplier_currency: s.supplier_currency || 'USD',
       client_currency: s.client_currency || 'USD',
       hotel_treatment: s.hotel_treatment,
