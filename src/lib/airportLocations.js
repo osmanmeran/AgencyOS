@@ -11,4 +11,9 @@ export const AIRPORT_LOCATIONS = [
   'Antalya (AYT) Airport',
   'Izmir (ADB) Airport',
   'Dalaman (DLM) Airport',
+  'Istanbul Hotel',
+  'Cappadocia Hotel',
+  'Izmir Hotel',
+  'Bodrum Hotel',
+  'Antalya Hotel',
 ];
