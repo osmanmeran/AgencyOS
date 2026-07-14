@@ -75,7 +75,7 @@ export const SERVICE_TYPE_CONFIG = {
   },
 };
 
-export function buildEmailBody(trip, appSettings) {
+export function buildEmailBody(trip, appSettings, suppliers = {}) {
   const sc = currSymbol(trip.selling_currency || 'USD');
   const itineraryUrl = `${window.location.origin}/client-itinerary?id=${trip.id}`;
   const companyName = appSettings?.invoice_header?.company_name || appSettings?.app_name || 'Marvel Tour';
@@ -120,7 +120,10 @@ export function buildEmailBody(trip, appSettings) {
         const de = s.end_date ? fmtDate(s.end_date) : ds;
         addRow('Date(s)', ds && de && ds !== de ? `${ds} – ${de}` : ds || de);
       }
-      if (s.location) addRow('Location', s.location);
+      const sLoc =
+        s.location ||
+        (suppliers[s.supplier_id] ? suppliers[s.supplier_id].city || suppliers[s.supplier_id].area || '' : '');
+      if (sLoc) addRow('Location', sLoc);
       if (s.description) addRow('Details', s.description);
       if (s.pickup_location || s.pickup_time)
         addRow('Pick up', `${s.pickup_location || ''}${s.pickup_time ? ` @ ${s.pickup_time}` : ''}`.trim());
@@ -159,7 +162,7 @@ export function buildEmailBody(trip, appSettings) {
 <div style="max-width:620px;margin:32px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
   <!-- Header -->
-  <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:32px 40px;text-align:center;">
+  <div style="background-color:#1a1a2e;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:32px 40px;text-align:center;">
     ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" style="height:48px;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;">` : ''}
     <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;letter-spacing:-0.3px;">${companyName}</h1>
     ${companyAddress ? `<p style="color:#94a3b8;margin:6px 0 0;font-size:13px;">${companyAddress}</p>` : ''}

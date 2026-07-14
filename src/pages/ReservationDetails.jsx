@@ -156,7 +156,7 @@ export default function ReservationDetails() {
         await db.integrations.Core.SendEmail({
           to: sendEmailTo,
           subject: `Your Travel Reservation: ${trip.name}`,
-          body: buildEmailBody(trip, appSettings),
+          body: buildEmailBody(trip, appSettings, supplierById),
         });
         const history = [...(trip.change_history || []), changeEntry('email_sent', `Proposal sent to ${sendEmailTo}`)];
         return db.entities.Trip.update(tripId, { proposal_status: 'sent', change_history: history });
@@ -364,6 +364,7 @@ export default function ReservationDetails() {
   const StatusIcon = statusConf.icon;
 
   const supplierMap = Object.fromEntries(suppliers.map((s) => [s.id, s.name]));
+  const supplierById = Object.fromEntries(suppliers.map((s) => [s.id, s]));
   const invoiceHeader = appSettings?.invoice_header || {};
   const companyLogoUrl = invoiceHeader.logo_url || appSettings?.logo_url || '';
   const companyName = invoiceHeader.company_name || appSettings?.app_name || '';

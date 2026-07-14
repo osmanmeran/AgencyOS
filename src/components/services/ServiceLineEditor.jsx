@@ -260,7 +260,16 @@ export default function ServiceLineEditor({
               value={formData.supplier_id || ''}
               onValueChange={(v) => {
                 if (v !== formData.supplier_id) {
-                  setFormData((prev) => ({ ...prev, supplier_id: v, pricing_id: '' }));
+                  const picked = suppliers.find((s) => s.id === v);
+                  setFormData((prev) => ({
+                    ...prev,
+                    supplier_id: v,
+                    pricing_id: '',
+                    location:
+                      prev.location && String(prev.location).trim()
+                        ? prev.location
+                        : picked?.city || picked?.area || '',
+                  }));
                 }
               }}
             >
