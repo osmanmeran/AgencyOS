@@ -149,8 +149,6 @@ export default function ClientQuoteBuilder() {
     saveQuoteDraft({ lines, rooms, contactPassenger, contactPhone });
   }, [clientLoaded, lines, rooms, contactPassenger, contactPhone]);
 
-  const currency = client?.preferred_currency || 'USD';
-
   const { data: catalog, isLoading: catLoading } = /** @type {any} */ (
     useQuery({
       queryKey: ['b2bCatalog'],
@@ -158,6 +156,10 @@ export default function ClientQuoteBuilder() {
       enabled: !!client,
     })
   );
+
+  // The catalog's currency is resolved server-side with the linked company's
+  // fallback (see /catalog), so prefer it over the client's raw field.
+  const currency = catalog?.currency || client?.preferred_currency || 'USD';
 
   // All available services, filterable by category/location/supplier in the
   // picker. unit_price already has the client's markup applied and is

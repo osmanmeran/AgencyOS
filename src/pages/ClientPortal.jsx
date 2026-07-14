@@ -428,7 +428,7 @@ export default function ClientPortal() {
     const start = tourPriceForPax(tour, pax) ?? tourStartingPrice(tour);
     const disc = activeDiscount(tour);
     const tourCurrency = tour.currency || 'USD';
-    const displayCurrency = client?.preferred_currency || 'USD';
+    const displayCurrency = catalog?.currency || client?.preferred_currency || 'USD';
     let rate = 1;
     let converted = tourCurrency === displayCurrency;
     if (!converted) {
@@ -514,7 +514,7 @@ export default function ClientPortal() {
     );
   }
 
-  const currencySymbol = sym(client.preferred_currency || 'USD');
+  const currencySymbol = sym(catalog?.currency || client.preferred_currency || 'USD');
   const totalPaid = payments.filter((p) => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
 
   return (

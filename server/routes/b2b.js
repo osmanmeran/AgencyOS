@@ -8,6 +8,7 @@ import { hasPermission } from '../permissions.js';
 import { sendEmail } from '../services/email.js';
 import { getExchangeRate } from '../services/integrations.js';
 import { createNotification } from '../services/notifications.js';
+import { effectiveClientBilling } from '../../shared/clientBilling.js';
 import logger from '../lib/logger.js';
 
 const router = Router();
@@ -133,6 +134,16 @@ async function convertItemsToCurrency(items, displayCurrency) {
 function getEntityById(db, type, id) {
   const row = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
   return row ? { id: row.id, ...JSON.parse(row.data) } : null;
+}
+
+// Resolves a client's effective billing settings (markup, currency, invoice
+// details), inheriting from its linked Company for any field it hasn't set —
+// so a company's defaults apply to all its contacts. Returns the client as-is
+// when it isn't linked to a company.
+function withCompanyBilling(db, client) {
+  if (!client || !client.company_id) return client;
+  const company = getEntityById(db, 'Company', client.company_id);
+  return effectiveClientBilling(client, company);
 }
 
 // Authoritative stop-sale check for the client portal — the catalog only
@@ -297,8 +308,8 @@ function getActiveCatalogItems(db, markupPct) {
 router.get(
   '/catalog',
   catchAsync(async (req, res) => {
-    const client = resolveReadClientContext(req);
     const db = getDb();
+    const client = withCompanyBilling(db, resolveReadClientContext(req));
     const markupPct = client.default_markup || 0;
     const displayCurrency = client.preferred_currency || null;
 
@@ -323,8 +334,8 @@ router.post(
   '/quote',
   validate(schemas.b2bSubmitQuote),
   catchAsync(async (req, res) => {
-    const client = requireClientContext(req.user);
     const db = getDb();
+    const client = withCompanyBilling(db, requireClientContext(req.user));
     const markupPct = client.default_markup || 0;
     const displayCurrency = client.preferred_currency || null;
 
