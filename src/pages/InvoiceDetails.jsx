@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { useT } from '@/lib/i18n/I18nContext';
 import { supplierMapsUrl } from '@/lib/supplierMap';
+import { assetUrl } from '@/lib/assetUrl';
 
 const currSymbol = (cur) => getCurrencySymbol(cur);
 
@@ -98,7 +99,7 @@ export default function InvoiceDetails() {
   const supplierMap = useMemo(() => Object.fromEntries((suppliers || []).map((s) => [s.id, s])), [suppliers]);
 
   const invoiceHeader = settings?.invoice_header || {};
-  const companyLogoUrl = invoiceHeader.logo_url || settings?.logo_url || '';
+  const companyLogoUrl = assetUrl(invoiceHeader.logo_url || settings?.logo_url || '');
 
   const updateStatusMutation = /** @type {any} */ (
     useMutation({

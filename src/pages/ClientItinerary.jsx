@@ -8,6 +8,7 @@ import { Calendar, MapPin, Share2, Check, Zap } from 'lucide-react';
 import { groupServicesByDay } from '@/lib/serviceItinerary';
 import { ServiceCard, DaySection } from '@/components/client-trip/ServiceItineraryCards';
 import { useT } from '@/lib/i18n/I18nContext';
+import { assetUrl } from '@/lib/assetUrl';
 
 export default function ClientItinerary() {
   const { t } = useT();
@@ -32,7 +33,7 @@ export default function ClientItinerary() {
       },
     })
   );
-  const companyLogoUrl = settings?.invoice_header?.logo_url || settings?.logo_url || '';
+  const companyLogoUrl = assetUrl(settings?.invoice_header?.logo_url || settings?.logo_url || '');
   const companyName = settings?.invoice_header?.company_name || settings?.app_name || '';
 
   const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (

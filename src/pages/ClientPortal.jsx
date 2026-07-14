@@ -28,6 +28,7 @@ import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore, differenceInDays } from 'date-fns';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useT } from '@/lib/i18n/I18nContext';
+import { assetUrl } from '@/lib/assetUrl';
 import { sym } from '@/lib/formatters';
 import { getCatalog } from '@/lib/b2bApi';
 import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
@@ -295,7 +296,7 @@ export default function ClientPortal() {
     })
   );
   const invoiceHeader = settings?.invoice_header || {};
-  const companyLogoUrl = invoiceHeader.logo_url || settings?.logo_url || '';
+  const companyLogoUrl = assetUrl(invoiceHeader.logo_url || settings?.logo_url || '');
   const companyName = settings?.app_name || 'Company';
 
   const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (

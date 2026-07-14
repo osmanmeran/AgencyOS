@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { getCurrencySymbol } from '@/lib/formatters';
+import { assetUrl } from '@/lib/assetUrl';
 import {
   Clock,
   Send,
@@ -86,7 +87,7 @@ export function buildEmailBody(trip, appSettings) {
     .filter(Boolean)
     .join(' · ');
   const companyPhone = appSettings?.invoice_header?.phone || '';
-  const logoUrl = appSettings?.logo_url || '';
+  const logoUrl = assetUrl(appSettings?.logo_url || '');
   const footerText = appSettings?.invoice_footer || '';
 
   // Escape free-text fields so client-entered values can't break the HTML.
