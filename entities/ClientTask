@@ -40,9 +40,15 @@
       "type": "string",
       "enum": [
         "pending",
+        "in_progress",
         "done"
       ],
       "default": "pending"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the task was marked done"
     },
     "assigned_to": {
       "type": "string",
