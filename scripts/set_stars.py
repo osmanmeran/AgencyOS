@@ -1,6 +1,6 @@
 import openpyxl, json, re, base64
 
-wb = openpyxl.load_workbook("/Users/osmanmeran/Documenti computer/deneme.xlsx", data_only=True)
+wb = openpyxl.load_workbook("deneme.xlsx", data_only=True)
 ws = wb["deneme"]
 rows = list(ws.iter_rows(values_only=True))[1:]
 
