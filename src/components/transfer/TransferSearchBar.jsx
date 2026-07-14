@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Users, Search } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
-import { AIRPORT_LOCATIONS } from '@/lib/airportLocations';
+import { TRANSFER_LOCATIONS } from '@/lib/transferLocations';
 
 export default function TransferSearchBar({
   fromLocation,
@@ -31,7 +31,7 @@ export default function TransferSearchBar({
             <SelectValue placeholder={t('transferSearch.fromPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
-            {AIRPORT_LOCATIONS.map((loc) => (
+            {TRANSFER_LOCATIONS.map((loc) => (
               <SelectItem key={loc} value={loc}>
                 {loc}
               </SelectItem>
@@ -48,7 +48,7 @@ export default function TransferSearchBar({
             <SelectValue placeholder={t('transferSearch.toPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
-            {AIRPORT_LOCATIONS.map((loc) => (
+            {TRANSFER_LOCATIONS.map((loc) => (
               <SelectItem key={loc} value={loc}>
                 {loc}
               </SelectItem>
