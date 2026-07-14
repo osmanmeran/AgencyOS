@@ -132,6 +132,9 @@ const ENTITY_PERMISSION_MAP = {
     delete: 'create_trips',
   },
   ReportSchedule: { create: 'view_reports', read: 'view_reports', update: 'view_reports', delete: 'view_reports' },
+  // Operational, booking-linked to-do. Gated on the trip workflow: anyone who
+  // can build/manage trips owns the tasks that the trip auto-generates.
+  Task: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },
 };
 
 // Additional permissions that grant agent/accounting staff read access to a

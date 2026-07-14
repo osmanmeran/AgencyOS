@@ -32,6 +32,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Tour Contracts** — Recurring serial contracts with pricing tiers, Utravel import
 - **RFP Manager** — Request for Proposal wizard, supplier quoting
 - **Task Board** — Kanban board for tasks/reminders/notes across clients, with a pending / in-progress / done workflow, drag-and-drop status changes, an edit dialog, an assignee picker (staff users), and a "My tasks" filter. Due **reminders** surface as global toasts (polled every 5 min), and a "My Open Tasks" widget appears on the Dashboard. Each client's tasks are also reachable from the **Tasks** tab on the trip detail page.
+- **Contextual Task Management** — Booking-linked, SLA-aware to-do system (a distinct `Task` entity, separate from the Task Board's lightweight `ClientTask`). Saving a **Trip** auto-generates three operational tasks keyed off its departure date — _Collect Final Balance_ (−30d, High), _Send Rooming List to Hotel_ (−14d, Medium), _Issue Tickets / Final Docs_ (−7d, Critical) — each linked via `booking_id`/`customer_id` and pre-assigned to the booking's creator. Changing a Trip's departure date reschedules the tasks automatically. Tasks carry `priority` (low→critical), user/team assignment, and an SLA `escalation_trigger_time` that drives a live `is_escalated` / `is_due_soon` (within 24h) flag for the booking-detail priority banner. Managed via `POST/GET /api/tasks` and `PUT /api/tasks/:id/complete` (audit-logged). See **FAQ → Contextual Tasks**.
 - **Import Hub** — Outlook contacts, bulk supplier CSV, AI price analyzer
 
 ### Guided Tours
@@ -112,11 +113,11 @@ server/            — Express.js backend
 ├── app.js         — Express app setup
 ├── server.js      — HTTP/HTTPS + WebSocket server
 ├── db.js          — SQLite setup + migrations
-├── routes/        — 13 API route modules
+├── routes/        — 14 API route modules
 ├── services/      — Business logic (auth, entities, email, etc.)
 ├── middleware/     — Auth, permissions, error handling
 ├── lib/           — Logger, WebSocket helpers
-└── migrations/    — 13 migration files
+└── migrations/    — 20 migration files
 
 entities/          — JSON schemas for 25+ entity types
 tests/             — Vitest test suite (server-side only)
@@ -234,6 +235,10 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 - **Featured Tours carousel** — the client-portal Featured Tours section is now a swipeable embla carousel and hides while a tour search is active.
 - **Car-rental drop-off surcharge** — the search now lists every car type (not just the cheapest per supplier); an underlined different-dropoff surcharge is shown and folded into the total.
 - **Hotel catalog** — 47 hotels with approved pricing were imported from a supplier rate sheet into production, and star ratings were populated from the sheet.
+
+### Features & UX (2026-07-14)
+
+- **Contextual Task Management** — new `Task` entity type (migration `020_add_task_entity_indexes.js`) backing a booking-linked, SLA-aware to-do system. Generating/saving a **Trip** auto-creates three operational tasks keyed to its departure date; editing the departure date reschedules them. The engine lives in `server/services/tasks.js` (`generateTasksForBooking`, `rescheduleTasksForBooking`, `completeTask`, `listTasks`) and is wired into Trip create/update in `routes/entities.js` (best-effort, never fails the booking request). `listTasks` returns live `is_overdue` / `is_due_soon` / `is_escalated` flags. Exposed via `POST/GET /api/tasks` and `PUT /api/tasks/:id/complete` (audit-logged). Permissions reuse the trip workflow family (`create_trips` / `view_all_trips` / `modify_trips` / `delete_trips`). See the "Contextual Task Management" bullet under Advanced Tools and **FAQ → Contextual Tasks**.
 
 ## Improvement Roadmap
 

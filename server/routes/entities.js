@@ -13,6 +13,7 @@ import {
   bulkDeleteEntities,
 } from '../services/entities.js';
 import { broadcast } from '../lib/ws.js';
+import { generateTasksForBooking, rescheduleTasksForBooking } from '../services/tasks.js';
 
 const router = Router();
 
@@ -54,6 +55,15 @@ router.post(
       { excludeUserId: req.user.id },
     );
     res.status(201).json(result);
+    // Auto-generate the booking's operational tasks (best-effort: never fail
+    // the booking request itself). Only for Trips with a departure date.
+    if (req.params.type === 'Trip') {
+      try {
+        generateTasksForBooking(result.id, req.user);
+      } catch (err) {
+        console.error('[tasks] generateTasksForBooking failed for', result.id, err);
+      }
+    }
   }),
 );
 
@@ -111,6 +121,15 @@ router.put(
       { excludeUserId: req.user.id },
     );
     res.json(result);
+    // If a Trip's departure date changed, resync its auto-generated tasks'
+    // due dates (best-effort).
+    if (req.params.type === 'Trip' && req.body && 'start_date' in req.body) {
+      try {
+        rescheduleTasksForBooking(req.params.id);
+      } catch (err) {
+        console.error('[tasks] rescheduleTasksForBooking failed for', req.params.id, err);
+      }
+    }
   }),
 );
 

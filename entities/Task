@@ -1,0 +1,103 @@
+{
+  "name": "Task",
+  "type": "object",
+  "description": "Contextual operational to-do used across travel operations. Tasks are polymorphic: they may be linked to a Booking (Trip), a Customer (Client), and/or a Supplier, and can be assigned to a user or a team queue. Auto-generated tasks (final balance, rooming list, issue docs) are tied to a Trip's departure date via `template_key`.",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Short task title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Free-text detail / context"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "completed", "cancelled"],
+      "default": "pending"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "default": "medium"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date (YYYY-MM-DD) the task is due"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the task was marked done"
+    },
+    "completion_note": {
+      "type": "string",
+      "description": "Optional note captured on completion"
+    },
+    "booking_id": {
+      "type": "string",
+      "description": "FK -> Trip.id (nullable). The booking this task is contextual to."
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "FK -> Client.id (nullable)"
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "FK -> Supplier.id (nullable)"
+    },
+    "assigned_to_user_id": {
+      "type": "string",
+      "description": "FK -> users.id (nullable). Direct owner of the task."
+    },
+    "assigned_to_team_id": {
+      "type": "string",
+      "description": "FK -> team id (nullable, forward-compatible; no Team entity yet). Used for group/queue assignment."
+    },
+    "template_key": {
+      "type": "string",
+      "description": "Stable key for auto-generated tasks (e.g. collect_final_balance). Enables idempotent (re)generation."
+    },
+    "escalation_trigger_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp at which the task becomes escalated if still active (SLA window before due_date)."
+    },
+    "is_escalated": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the SLA escalation window has passed and the task is still active."
+    }
+  },
+  "required": ["title"],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "data.user_tier": {
+          "$in": ["admin", "manager", "agent"]
+        }
+      }
+    },
+    "read": {
+      "$or": [
+        { "data.user_tier": { "$in": ["admin", "manager", "agent"] } },
+        { "data.assigned_to_user_id": "{{user.id}}" },
+        { "created_by": "{{user.id}}" }
+      ]
+    },
+    "update": {
+      "$or": [
+        { "data.user_tier": { "$in": ["admin", "manager", "agent"] } },
+        { "data.assigned_to_user_id": "{{user.id}}" },
+        { "created_by": "{{user.id}}" }
+      ]
+    },
+    "delete": {
+      "$or": [
+        { "data.user_tier": { "$in": ["admin", "manager"] } },
+        { "created_by": "{{user.id}}" }
+      ]
+    }
+  }
+}

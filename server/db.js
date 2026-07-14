@@ -49,6 +49,7 @@ const ENTITIES = [
   'SupplierService',
   'SupplierStopSale',
   'SupplierSubcategory',
+  'Task',
   'Trip',
   'TourContract',
   'GuidedTour',

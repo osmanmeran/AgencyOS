@@ -31,6 +31,7 @@ import testingRoutes from './routes/testing.js';
 import suggestionRoutes from './routes/suggestions.js';
 import reportRoutes from './routes/reports.js';
 import adminRoutes from './routes/admin.js';
+import taskRoutes from './routes/tasks.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -135,6 +136,7 @@ app.use('/api/reports', reportRoutes);
 // Admin fix endpoints mutate user tiers and entity data, so they must leave
 // an audit trail like every other mutating route.
 app.use('/api/admin', auditMiddleware, adminRoutes);
+app.use('/api/tasks', auditMiddleware, taskRoutes);
 
 app.get('/api/health', (req, res) => {
   const checks = { database: 'ok', migrations: 'ok', disk: 'ok' };

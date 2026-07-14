@@ -130,6 +130,21 @@ const FAQS = [
     category: 'tasks',
   },
   {
+    q: 'Are tasks created automatically when I create a booking?',
+    a: "Yes. Saving a new Trip auto-generates three operational tasks tied to its departure date: Collect Final Balance (due 30 days before, High priority), Send Rooming List to Hotel (due 14 days before, Medium), and Issue Tickets / Final Docs (due 7 days before, Critical). They are linked to the booking and customer and assigned to the booking's creator. If those tasks already exist they are resynced rather than duplicated.",
+    category: 'tasks',
+  },
+  {
+    q: "What happens to tasks if I change a trip's departure date?",
+    a: 'The tasks auto-generated from that Trip are rescheduled automatically — each due date (and SLA window) is recomputed from the new departure date. Tasks you created manually keep their own dates.',
+    category: 'tasks',
+  },
+  {
+    q: 'What do the SLA / escalation flags mean on tasks?',
+    a: 'Each task has an escalation trigger time based on its priority (Critical 48h, High 24h, Medium 12h, Low 0 before the due date). Once that passes and the task is still open it is flagged "escalated". Separately, a task is "due soon" in the 24 hours before its due date — that drives the priority banner / countdown in the booking view. Both flags are computed live, so no manual action is needed.',
+    category: 'tasks',
+  },
+  {
     q: 'How do I request quotes from multiple suppliers at once?',
     a: 'Go to Suppliers > RFP Manager (or navigate directly to the RFP Manager page). Click "New RFP" and follow the 3-step wizard: (1) enter service details like name, quantity, and deadline, (2) select suppliers individually or filter by category, (3) review and send. Each supplier gets a Booking Request that you can track through pending → quoted → confirmed/rejected.',
     category: 'suppliers',
