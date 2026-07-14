@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { getCurrencySymbol } from '@/lib/formatters';
 import {
   Clock,
@@ -88,15 +89,65 @@ export function buildEmailBody(trip, appSettings) {
   const logoUrl = appSettings?.logo_url || '';
   const footerText = appSettings?.invoice_footer || '';
 
-  const serviceRows = (trip.services || [])
+  // Escape free-text fields so client-entered values can't break the HTML.
+  const esc = (v) => (v == null ? '' : String(v)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const fmtDate = (d) => {
+    try {
+      return format(new Date(d), 'MMM d, yyyy');
+    } catch {
+      return d || '';
+    }
+  };
+
+  // Per-service detail card — client-facing fields only. Supplier identity,
+  // buying cost and markup are deliberately omitted ("everything except
+  // supplier").
+  const serviceCards = (trip.services || [])
     .map((s) => {
       const qty = parseInt(s.quantity) || 1;
       const price = ((parseFloat(s.selling_price) || 0) * qty).toFixed(2);
-      return `<tr>
-      <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#1e293b;">${s.name}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#64748b;text-align:center;">x${qty}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#1e293b;text-align:right;font-weight:600;">${sc}${price}</td>
-    </tr>`;
+      const rows = [];
+      const addRow = (label, value) => {
+        if (value)
+          rows.push(
+            `<tr><td style="padding:5px 0;color:#64748b;font-size:13px;width:130px;vertical-align:top;">${label}</td><td style="padding:5px 0;color:#1e293b;font-size:13px;">${esc(value)}</td></tr>`,
+          );
+      };
+
+      if (s.start_date || s.end_date) {
+        const ds = s.start_date ? fmtDate(s.start_date) : '';
+        const de = s.end_date ? fmtDate(s.end_date) : ds;
+        addRow('Date(s)', ds && de && ds !== de ? `${ds} – ${de}` : ds || de);
+      }
+      if (s.location) addRow('Location', s.location);
+      if (s.description) addRow('Details', s.description);
+      if (s.pickup_location || s.pickup_time)
+        addRow('Pick up', `${s.pickup_location || ''}${s.pickup_time ? ` @ ${s.pickup_time}` : ''}`.trim());
+      if (s.dropoff_location) addRow('Drop off', s.dropoff_location);
+      if (s.transfer_flight_number) addRow('Flight', s.transfer_flight_number);
+      if (s.return_leg && s.return_leg.enabled) {
+        const rl = s.return_leg;
+        const parts = [];
+        if (rl.date) parts.push(fmtDate(rl.date));
+        if (rl.pickup_location)
+          parts.push(`Pick up: ${rl.pickup_location}${rl.pickup_time ? ` @ ${rl.pickup_time}` : ''}`);
+        if (rl.dropoff_location) parts.push(`Drop off: ${rl.dropoff_location}`);
+        if (rl.flight_number) parts.push(`Flight: ${rl.flight_number}`);
+        addRow('Return', parts.join(' · '));
+      }
+      const unitLabel = s.unit ? s.unit.replace(/_/g, ' ') : '';
+      if (qty > 1 || unitLabel) addRow('Quantity', `${qty}${unitLabel ? ` × ${unitLabel}` : ''}`);
+
+      return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:14px;background:#ffffff;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px;">
+          <div>
+            <span style="color:#0f172a;font-size:15px;font-weight:700;">${esc(s.name)}</span>
+            ${s.category ? `<span style="display:inline-block;margin-left:8px;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-radius:9999px;font-size:11px;font-weight:600;vertical-align:middle;">${esc(s.category)}</span>` : ''}
+          </div>
+          <span style="color:#0f172a;font-size:15px;font-weight:700;white-space:nowrap;">${sc}${price}</span>
+        </div>
+        ${rows.length ? `<table style="width:100%;border-collapse:collapse;">${rows.join('')}</table>` : ''}
+      </div>`;
     })
     .join('');
 
@@ -147,26 +198,15 @@ export function buildEmailBody(trip, appSettings) {
     </div>
 
     ${
-      serviceRows
+      serviceCards
         ? `
     <!-- Services -->
     <h3 style="color:#1e293b;font-size:14px;font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.5px;">Services Included</h3>
-    <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:28px;">
-      <thead>
-        <tr style="background:#f8fafc;">
-          <th style="padding:10px 12px;text-align:left;font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;">Service</th>
-          <th style="padding:10px 12px;text-align:center;font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;">Qty</th>
-          <th style="padding:10px 12px;text-align:right;font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;">Price</th>
-        </tr>
-      </thead>
-      <tbody>${serviceRows}</tbody>
-      <tfoot>
-        <tr style="background:#1a1a2e;">
-          <td colspan="2" style="padding:12px;color:#94a3b8;font-size:13px;font-weight:600;">TOTAL</td>
-          <td style="padding:12px;color:#ffffff;font-size:16px;font-weight:700;text-align:right;">${sc}${(trip.total_cost || 0).toFixed(2)}</td>
-        </tr>
-      </tfoot>
-    </table>`
+    <div style="margin-bottom:16px;">${serviceCards}</div>
+    <div style="background:#1a1a2e;border-radius:8px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+      <span style="color:#94a3b8;font-size:13px;font-weight:600;">TOTAL</span>
+      <span style="color:#ffffff;font-size:16px;font-weight:700;">${sc}${(trip.total_cost || 0).toFixed(2)}</span>
+    </div>`
         : ''
     }
 
