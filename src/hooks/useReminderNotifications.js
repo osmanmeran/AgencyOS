@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { db } from '@/lib/db';
-import { useToast } from '@/hooks/useToast';
+import { db } from '@/lib/DbContext';
+import { showInfo } from '@/lib/toast';
 
 const POLL_MS = 5 * 60 * 1000;
 
 export function useReminderNotifications() {
-  const { toast } = useToast();
   const shown = useRef(new Set());
 
   const { data: me } = useQuery({
@@ -33,13 +32,10 @@ export function useReminderNotifications() {
       const due = new Date(task.due_date).getTime();
       if (due <= now && !shown.current.has(task.id)) {
         shown.current.add(task.id);
-        toast({
-          title: task.title || 'Reminder',
-          description: task.due_date,
-        });
+        showInfo(task.title || 'Reminder', task.due_date);
       }
     });
-  }, [tasks, me, toast]);
+  }, [tasks, me]);
 
   useEffect(() => {
     const ids = new Set(tasks.map((t) => t.id));

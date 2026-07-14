@@ -1,27 +1,18 @@
 import { useState, useMemo, useEffect } from 'react';
-import {
-  DndContext,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-  useDraggable,
-  useDroppable,
-} from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, User as UserIcon, Filter, ClipboardList, Bell, StickyNote, Loader2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { db } from '../lib/db';
-import { useToast } from '../hooks/useToast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
-import { Button } from '../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Label } from '../components/ui/label';
-import { Toggle } from '../components/ui/toggle';
-import { Badge } from '../components/ui/badge';
+import { useT } from '@/lib/i18n/I18nContext';
+import { db } from '@/lib/DbContext';
+import { showSuccess, showError } from '@/lib/toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Toggle } from '@/components/ui/toggle';
+import { Badge } from '@/components/ui/badge';
 
 const COLUMNS = [
   { id: 'pending', titleKey: 'common.pending' },
@@ -36,8 +27,7 @@ const TYPE_META = {
 };
 
 export default function TaskBoard() {
-  const { t } = useTranslation();
-  const { toast } = useToast();
+  const { t } = useT();
   const queryClient = useQueryClient();
 
   const [newTaskOpen, setNewTaskOpen] = useState(false);
@@ -54,68 +44,80 @@ export default function TaskBoard() {
     assigned_to: '',
   });
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const { data: clientTasks = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientTasks'],
+      queryFn: () => db.entities.ClientTask.list(),
+    })
+  );
+  const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clients'],
+      queryFn: () => db.entities.Client.list(),
+    })
+  );
+  const { data: currentUser } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['me'],
+      queryFn: () => db.auth.me(),
+    })
+  );
+  const { data: staffUsers = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['staffUsers'],
+      queryFn: async () => {
+        const users = await db.auth.users();
+        return users.filter((u) => u.is_active && ['admin', 'manager', 'agent'].includes(u.user_tier));
+      },
+    })
+  );
 
-  const { data: clientTasks = [] } = useQuery({
-    queryKey: ['clientTasks'],
-    queryFn: () => db.entities.ClientTask.list(),
-  });
-  const { data: clients = [] } = useQuery({
-    queryKey: ['clients'],
-    queryFn: () => db.entities.Client.list(),
-  });
-  const { data: currentUser } = useQuery({
-    queryKey: ['me'],
-    queryFn: () => db.auth.me(),
-  });
-  const { data: staffUsers = [] } = useQuery({
-    queryKey: ['staffUsers'],
-    queryFn: async () => {
-      const users = await db.auth.users();
-      return users.filter((u) => u.is_active && ['admin', 'manager', 'agent'].includes(u.user_tier));
-    },
-  });
+  const createMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: /** @type {any} */ (data) => db.entities.ClientTask.create(data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+        setNewTaskOpen(false);
+        setNewTask({
+          title: '',
+          description: '',
+          type: 'task',
+          client_id: '',
+          due_date: '',
+          priority: 'medium',
+          assigned_to: currentUser?.email || '',
+        });
+        showSuccess(t('taskBoard.createSuccess'));
+      },
+      onError: () => showError(t('taskBoard.createError')),
+    })
+  );
 
-  const createMutation = useMutation({
-    mutationFn: (data) => db.entities.ClientTask.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['clientTasks']);
-      setNewTaskOpen(false);
-      setNewTask({
-        title: '',
-        description: '',
-        type: 'task',
-        client_id: '',
-        due_date: '',
-        priority: 'medium',
-        assigned_to: currentUser?.email || '',
-      });
-      toast({ title: t('taskBoard.createSuccess') });
-    },
-    onError: () => toast({ title: t('taskBoard.createError'), variant: 'destructive' }),
-  });
+  const updateMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ payload) => db.entities.ClientTask.update(payload.id, payload.data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+        setEditOpen(false);
+        setEditingTask(null);
+        showSuccess(t('taskBoard.updateSuccess'));
+      },
+      onError: () => showError(t('taskBoard.updateError')),
+    })
+  );
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.entities.ClientTask.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['clientTasks']);
-      setEditOpen(false);
-      setEditingTask(null);
-      toast({ title: t('taskBoard.updateSuccess') });
-    },
-    onError: () => toast({ title: t('taskBoard.updateError'), variant: 'destructive' }),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => db.entities.ClientTask.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['clientTasks']);
-      setEditOpen(false);
-      setEditingTask(null);
-      toast({ title: t('taskBoard.deleteSuccess') });
-    },
-    onError: () => toast({ title: t('taskBoard.deleteError'), variant: 'destructive' }),
-  });
+  const deleteMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: /** @type {any} */ (id) => db.entities.ClientTask.delete(id),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+        setEditOpen(false);
+        setEditingTask(null);
+        showSuccess(t('taskBoard.deleteSuccess'));
+      },
+      onError: () => showError(t('taskBoard.deleteError')),
+    })
+  );
 
   const assigneeName = useMemo(() => {
     const map = {};
@@ -153,12 +155,12 @@ export default function TaskBoard() {
     setEditOpen(true);
   }
 
-  function handleDragEnd(event) {
-    const { active, over } = event;
-    if (!over) return;
-    const taskId = active.id;
-    const newStatus = over.id;
-    const task = clientTasks.find((tt) => tt.id === taskId);
+  function handleDragEnd(result) {
+    const { draggableId, destination } = result;
+    if (!destination) return;
+    const taskId = draggableId;
+    const newStatus = destination.droppableId;
+    const task = clientTasks.find((tt) => String(tt.id) === String(taskId));
     if (!task || task.status === newStatus) return;
     const data = { ...task, status: newStatus };
     if (newStatus === 'done') data.completed_at = new Date().toISOString();
@@ -193,7 +195,7 @@ export default function TaskBoard() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+      <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {COLUMNS.map((col) => (
             <Column
@@ -210,7 +212,7 @@ export default function TaskBoard() {
             />
           ))}
         </div>
-      </DndContext>
+      </DragDropContext>
 
       <NewTaskDialog
         open={newTaskOpen}
@@ -221,7 +223,7 @@ export default function TaskBoard() {
         staffUsers={staffUsers}
         currentUserEmail={currentUser?.email || ''}
         onCreate={(data) => createMutation.mutate(data)}
-        creating={createMutation.isLoading}
+        creating={createMutation.isPending}
         t={t}
       />
 
@@ -234,8 +236,8 @@ export default function TaskBoard() {
           staffUsers={staffUsers}
           onSave={(data) => updateMutation.mutate({ id: editingTask.id, data })}
           onDelete={() => deleteMutation.mutate(editingTask.id)}
-          saving={updateMutation.isLoading}
-          deleting={deleteMutation.isLoading}
+          saving={updateMutation.isPending}
+          deleting={deleteMutation.isPending}
           t={t}
         />
       )}
@@ -244,111 +246,117 @@ export default function TaskBoard() {
 }
 
 function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, TYPE_META, t }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div
-      ref={setNodeRef}
-      className={`bg-muted/40 rounded-xl p-3 min-h-[200px] transition-colors ${isOver ? 'ring-2 ring-primary/50' : ''}`}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-foreground">{title}</h2>
-        <span className="text-xs text-muted-foreground bg-background rounded-full px-2 py-0.5">{tasks.length}</span>
-      </div>
-      <div className="flex flex-col gap-2">
-        {tasks.map((task) => (
-          <TaskCardView
-            key={task.id}
-            task={task}
-            clientName={clientName}
-            assigneeName={assigneeName}
-            onEdit={() => onEdit(task)}
-            onDelete={() => onDelete(task)}
-            TYPE_META={TYPE_META}
-            t={t}
-          />
-        ))}
-      </div>
-    </div>
+    <Droppable droppableId={id}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={`bg-muted/40 rounded-xl p-3 min-h-[200px] transition-colors ${snapshot.isDraggingOver ? 'ring-2 ring-primary/50' : ''}`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-foreground">{title}</h2>
+            <span className="text-xs text-muted-foreground bg-background rounded-full px-2 py-0.5">{tasks.length}</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {tasks.map((task, index) => (
+              <TaskCardView
+                key={task.id}
+                task={task}
+                index={index}
+                clientName={clientName}
+                assigneeName={assigneeName}
+                onEdit={() => onEdit(task)}
+                onDelete={() => onDelete(task)}
+                TYPE_META={TYPE_META}
+                t={t}
+              />
+            ))}
+            {provided.placeholder}
+          </div>
+        </div>
+      )}
+    </Droppable>
   );
 }
 
-function TaskCardView({ task, clientName, assigneeName, onEdit, onDelete, TYPE_META, t }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task.id,
-  });
+function TaskCardView({ task, index, clientName, assigneeName, onEdit, onDelete, TYPE_META, t }) {
   const meta = TYPE_META[task.type] || TYPE_META.task;
   const TypeIcon = meta.Icon;
-  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`group relative bg-card border border-border rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing ${
-        isDragging ? 'opacity-50' : ''
-      }`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <TypeIcon className="w-3.5 h-3.5" />
-          <span>{t(meta.labelKey)}</span>
-        </div>
-        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="p-1 text-muted-foreground hover:text-foreground"
-            aria-label={t('taskBoard.editTask')}
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="p-1 text-muted-foreground hover:text-destructive"
-            aria-label={t('common.delete')}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
+    <Draggable draggableId={String(task.id)} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          style={/** @type {any} */ (provided.draggableProps.style)}
+          className={`group relative bg-card border border-border rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing ${
+            snapshot.isDragging ? 'opacity-50' : ''
+          }`}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <TypeIcon className="w-3.5 h-3.5" />
+              <span>{t(meta.labelKey)}</span>
+            </div>
+            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="p-1 text-muted-foreground hover:text-foreground"
+                aria-label={t('taskBoard.editTask')}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="p-1 text-muted-foreground hover:text-destructive"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
 
-      <p className="text-sm font-medium text-foreground mt-1 break-words">{task.title}</p>
-      {task.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>}
+          <p className="text-sm font-medium text-foreground mt-1 break-words">{task.title}</p>
+          {task.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>}
 
-      <div className="flex flex-wrap items-center gap-1.5 mt-2">
-        {task.priority && (
-          <Badge variant="outline" className="text-[10px] capitalize">
-            {t(`priority.${task.priority}`)}
-          </Badge>
-        )}
-        {task.due_date && (
-          <Badge variant="outline" className="text-[10px]">
-            {task.due_date}
-          </Badge>
-        )}
-        {clientName[task.client_id] && (
-          <Badge variant="secondary" className="text-[10px]">
-            {clientName[task.client_id]}
-          </Badge>
-        )}
-      </div>
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            {task.priority && (
+              <Badge variant="outline" className="text-[10px] capitalize">
+                {t(`priority.${task.priority}`)}
+              </Badge>
+            )}
+            {task.due_date && (
+              <Badge variant="outline" className="text-[10px]">
+                {task.due_date}
+              </Badge>
+            )}
+            {clientName[task.client_id] && (
+              <Badge variant="secondary" className="text-[10px]">
+                {clientName[task.client_id]}
+              </Badge>
+            )}
+          </div>
 
-      {task.assigned_to && (
-        <div className="flex items-center gap-1 mt-2 text-[11px] text-muted-foreground">
-          <UserIcon className="w-3 h-3" />
-          <span>{assigneeName[task.assigned_to] || task.assigned_to}</span>
+          {task.assigned_to && (
+            <div className="flex items-center gap-1 mt-2 text-[11px] text-muted-foreground">
+              <UserIcon className="w-3 h-3" />
+              <span>{assigneeName[task.assigned_to] || task.assigned_to}</span>
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </Draggable>
   );
 }
 
