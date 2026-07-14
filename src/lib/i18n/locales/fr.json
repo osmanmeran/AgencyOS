@@ -715,7 +715,10 @@
     "dropOff": "Dépose :",
     "flight": "Vol :",
     "returnLeg": "Trajet Retour",
-    "date": "Date :"
+    "date": "Date :",
+    "website": "Website",
+    "mapLocation": "Map",
+    "supplierLabel": "Supplier"
   },
   "tripCard": {
     "editReservation": "Modifier la Réservation",
@@ -1206,7 +1209,10 @@
     "successCancelled": "Facture annulée",
     "errorCancel": "Échec de l'annulation de la facture",
     "successPaymentRecorded": "Paiement enregistré",
-    "errorPaymentRecord": "Échec de l'enregistrement du paiement"
+    "errorPaymentRecord": "Échec de l'enregistrement du paiement",
+    "serviceDetailsTitle": "Service Details",
+    "website": "Website",
+    "mapLocation": "Map location"
   },
   "supplierDetails": {
     "backToSuppliers": "Retour aux Fournisseurs",

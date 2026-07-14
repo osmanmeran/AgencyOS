@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
-import { Calendar, MapPin, Building, ArrowRightLeft, User, Coffee, Plane, Map, Zap, Sun } from 'lucide-react';
+import { Calendar, MapPin, Building, ArrowRightLeft, User, Coffee, Plane, Map, Zap, Sun, Globe } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
+import { supplierMapsUrl } from '@/lib/supplierMap';
 
 const CATEGORY_MAP = {
   lodging: {
@@ -81,7 +82,7 @@ const detectCategory = (cat) => {
   );
 };
 
-export function ServiceCard({ service }) {
+export function ServiceCard({ service, supplierMap = {} }) {
   const { t } = useT();
   const cfg = detectCategory(service.category);
   const categoryLabel = cfg.labelKey
@@ -90,6 +91,10 @@ export function ServiceCard({ service }) {
   const Icon = cfg.icon;
   const hasTimes =
     service.pickup_time || service.transfer_flight_number || (!service._isReturnLeg && service.return_leg?.enabled);
+
+  const supplier = service.supplier_id && supplierMap ? supplierMap[service.supplier_id] : null;
+  const supplierAddress = supplier ? [supplier.address, supplier.city, supplier.area].filter(Boolean).join(', ') : '';
+  const mapUrl = supplier ? supplierMapsUrl(supplier) : '';
 
   return (
     <div className={`rounded-xl border ${cfg.border} ${cfg.bg} p-4 shadow-sm hover:shadow-md transition-shadow`}>
@@ -167,13 +172,53 @@ export function ServiceCard({ service }) {
           {service.description && (
             <p className="text-muted-foreground text-sm mt-2 leading-relaxed">{service.description}</p>
           )}
+
+          {supplier && (
+            <div className="mt-3 pt-3 border-t border-border space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                <Building className="w-3.5 h-3.5" />
+                <span>{t('serviceItineraryCards.supplierLabel')}:</span>
+                <span className="font-semibold">{supplier.name}</span>
+              </div>
+              {supplierAddress && (
+                <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                  <span>{supplierAddress}</span>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 pt-0.5">
+                {supplier.website && (
+                  <a
+                    href={supplier.website.startsWith('http') ? supplier.website : `https://${supplier.website}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-300 underline"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    {t('serviceItineraryCards.website')}
+                  </a>
+                )}
+                {mapUrl && (
+                  <a
+                    href={mapUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-300 underline"
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    {t('serviceItineraryCards.mapLocation')}
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export function DaySection({ date, services, dayIndex }) {
+export function DaySection({ date, services, dayIndex, supplierMap = {} }) {
   const { t } = useT();
   return (
     <div className="mb-8">
@@ -188,7 +233,7 @@ export function DaySection({ date, services, dayIndex }) {
       </div>
       <div className="space-y-3 ml-1">
         {services.map((svc, idx) => (
-          <ServiceCard key={idx} service={svc} />
+          <ServiceCard key={idx} service={svc} supplierMap={supplierMap} />
         ))}
       </div>
     </div>

@@ -715,7 +715,10 @@
     "dropOff": "Bırakış:",
     "flight": "Uçuş:",
     "returnLeg": "Dönüş Yolculuğu",
-    "date": "Tarih:"
+    "date": "Tarih:",
+    "website": "Website",
+    "mapLocation": "Map",
+    "supplierLabel": "Supplier"
   },
   "tripCard": {
     "editReservation": "Rezervasyonu Düzenle",
@@ -1206,7 +1209,10 @@
     "successCancelled": "Fatura iptal edildi",
     "errorCancel": "Fatura iptal edilemedi",
     "successPaymentRecorded": "Ödeme kaydedildi",
-    "errorPaymentRecord": "Ödeme kaydedilemedi"
+    "errorPaymentRecord": "Ödeme kaydedilemedi",
+    "serviceDetailsTitle": "Service Details",
+    "website": "Website",
+    "mapLocation": "Map location"
   },
   "supplierDetails": {
     "backToSuppliers": "Tedarikçilere Dön",

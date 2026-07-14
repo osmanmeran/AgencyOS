@@ -715,7 +715,10 @@
     "dropOff": "Consegna:",
     "flight": "Volo:",
     "returnLeg": "Tratta di Ritorno",
-    "date": "Data:"
+    "date": "Data:",
+    "website": "Website",
+    "mapLocation": "Map",
+    "supplierLabel": "Supplier"
   },
   "tripCard": {
     "editReservation": "Modifica Prenotazione",
@@ -1206,7 +1209,10 @@
     "successCancelled": "Fattura annullata",
     "errorCancel": "Impossibile annullare la fattura",
     "successPaymentRecorded": "Pagamento registrato",
-    "errorPaymentRecord": "Impossibile registrare il pagamento"
+    "errorPaymentRecord": "Impossibile registrare il pagamento",
+    "serviceDetailsTitle": "Service Details",
+    "website": "Website",
+    "mapLocation": "Map location"
   },
   "supplierDetails": {
     "backToSuppliers": "Torna ai Fornitori",

@@ -745,7 +745,10 @@
     "dropOff": "Drop off:",
     "flight": "Flight:",
     "returnLeg": "Return Leg",
-    "date": "Date:"
+    "date": "Date:",
+    "website": "Website",
+    "mapLocation": "Map",
+    "supplierLabel": "Supplier"
   },
   "tripCard": {
     "editReservation": "Edit Reservation",
@@ -1283,7 +1286,10 @@
     "successCancelled": "Invoice cancelled",
     "errorCancel": "Failed to cancel invoice",
     "successPaymentRecorded": "Payment recorded",
-    "errorPaymentRecord": "Failed to record payment"
+    "errorPaymentRecord": "Failed to record payment",
+    "serviceDetailsTitle": "Service Details",
+    "website": "Website",
+    "mapLocation": "Map location"
   },
   "supplierDetails": {
     "backToSuppliers": "Back to Suppliers",

@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -34,6 +34,14 @@ export default function ClientItinerary() {
   );
   const companyLogoUrl = settings?.invoice_header?.logo_url || settings?.logo_url || '';
   const companyName = settings?.invoice_header?.company_name || settings?.app_name || '';
+
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['suppliers'],
+      queryFn: () => db.entities.Supplier.list(),
+    })
+  );
+  const supplierMap = useMemo(() => Object.fromEntries((suppliers || []).map((s) => [s.id, s])), [suppliers]);
 
   if (isLoading) {
     return (
@@ -115,7 +123,9 @@ export default function ClientItinerary() {
           it still appears when this itinerary is printed or saved as PDF. */}
       {(companyLogoUrl || companyName) && (
         <div className="max-w-4xl mx-auto px-4 pt-6 flex items-center gap-3">
-          {companyLogoUrl && <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-20 object-contain" />}
+          {companyLogoUrl && (
+            <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-28 w-auto object-contain" />
+          )}
           {companyName && <span className="font-semibold text-foreground">{companyName}</span>}
         </div>
       )}
@@ -193,7 +203,13 @@ export default function ClientItinerary() {
               </h2>
 
               {sortedDays.map((date, idx) => (
-                <DaySection key={date} date={date} services={dayServices[date]} dayIndex={idx} />
+                <DaySection
+                  key={date}
+                  date={date}
+                  services={dayServices[date]}
+                  dayIndex={idx}
+                  supplierMap={supplierMap}
+                />
               ))}
             </div>
 
@@ -207,7 +223,7 @@ export default function ClientItinerary() {
                 <p className="text-sm text-muted-foreground mb-4">{t('clientItinerary.unscheduledHint')}</p>
                 <div className="space-y-3">
                   {unscheduled.map((svc, idx) => (
-                    <ServiceCard key={idx} service={svc} />
+                    <ServiceCard key={idx} service={svc} supplierMap={supplierMap} />
                   ))}
                 </div>
               </div>

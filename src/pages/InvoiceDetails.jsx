@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { useT } from '@/lib/i18n/I18nContext';
+import { supplierMapsUrl } from '@/lib/supplierMap';
 
 const currSymbol = (cur) => getCurrencySymbol(cur);
 
@@ -87,6 +88,14 @@ export default function InvoiceDetails() {
       enabled: !!invoice?.trip_id,
     })
   );
+
+  const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['suppliers'],
+      queryFn: () => db.entities.Supplier.list(),
+    })
+  );
+  const supplierMap = useMemo(() => Object.fromEntries((suppliers || []).map((s) => [s.id, s])), [suppliers]);
 
   const invoiceHeader = settings?.invoice_header || {};
   const companyLogoUrl = invoiceHeader.logo_url || settings?.logo_url || '';
@@ -233,7 +242,7 @@ export default function InvoiceDetails() {
           {/* Logo Header - full width */}
           {companyLogoUrl && (
             <div className="mb-10 flex justify-center">
-              <img src={companyLogoUrl} alt="Company Logo" className="max-h-[60px] object-contain" />
+              <img src={companyLogoUrl} alt="Company Logo" className="max-h-[120px] w-auto object-contain" />
             </div>
           )}
 
@@ -399,6 +408,75 @@ export default function InvoiceDetails() {
               )}
             </tbody>
           </table>
+
+          {/* Service details — supplier (hotel) info, map link and tour
+              descriptions, sourced from the linked trip's services. */}
+          {trip?.services?.length > 0 && (
+            <div className="mb-10">
+              <h2
+                className="text-sm font-medium text-foreground uppercase tracking-wider mb-4"
+                style={{ fontWeight: 500 }}
+              >
+                {t('invoiceDetails.serviceDetailsTitle')}
+              </h2>
+              <div className="space-y-4">
+                {trip.services.map((s, i) => {
+                  const sup = s.supplier_id ? supplierMap[s.supplier_id] : null;
+                  const supAddress = sup ? [sup.address, sup.city, sup.area].filter(Boolean).join(', ') : '';
+                  const mapUrl = sup ? supplierMapsUrl(sup) : '';
+                  return (
+                    <div key={i} className="border border-border rounded-lg p-4">
+                      <div className="flex justify-between items-start gap-3">
+                        <div>
+                          <div className="font-medium text-foreground">{s.name}</div>
+                          {s.category && <div className="text-xs text-muted-foreground mt-0.5">{s.category}</div>}
+                        </div>
+                        {(s.start_date || s.service_date) && (
+                          <div className="text-sm text-muted-foreground whitespace-nowrap">
+                            {format(new Date(s.service_date || s.start_date), 'MMM d, yyyy')}
+                          </div>
+                        )}
+                      </div>
+                      {s.description && (
+                        <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap leading-relaxed">
+                          {s.description}
+                        </p>
+                      )}
+                      {s.location && <div className="text-sm text-muted-foreground mt-1">{s.location}</div>}
+                      {sup && (
+                        <div className="mt-3 pt-3 border-t border-border text-sm text-muted-foreground space-y-1">
+                          <div className="font-medium text-foreground">{sup.name}</div>
+                          {supAddress && <div>{supAddress}</div>}
+                          <div className="flex flex-wrap gap-x-4 gap-y-1">
+                            {sup.website && (
+                              <a
+                                href={sup.website.startsWith('http') ? sup.website : `https://${sup.website}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600 dark:text-blue-300 underline"
+                              >
+                                {t('invoiceDetails.website')}
+                              </a>
+                            )}
+                            {mapUrl && (
+                              <a
+                                href={mapUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600 dark:text-blue-300 underline"
+                              >
+                                {t('invoiceDetails.mapLocation')}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Totals */}
           <div className="flex justify-end mb-10">
