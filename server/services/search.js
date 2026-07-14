@@ -20,7 +20,7 @@ const SEARCH_CONFIG = [
     type: 'Trip',
     label: 'Trips',
     fields: ['name', 'destination', 'client_name', 'reference', 'status'],
-    url: (id) => `/TripDetails?id=${id}`,
+    url: (id) => `/ReservationDetails?id=${id}`,
     icon: 'Plane',
   },
   {
