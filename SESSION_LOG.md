@@ -1,8 +1,29 @@
 # Session log — Client portal / B2B quoting
 
-_Last updated: 2026-07-07. All work below is committed and pushed to `main` (auto-deploys on Railway). Working tree clean._
+_Last updated: 2026-07-14. All work below is committed and pushed to `main` (auto-deploys on Railway). Working tree clean._
 
 _Branch housekeeping (2026-07-04): analyzed the two stale remote branches and deleted both — `claude/github-connection-b8nlcx` (OAuth/SSO, already a direct ancestor of `main`) and `claude/app-review-suggestions-mh01ks` (reporting/backups/notifications, all features already in `main` via `178c015`). Recorded tips if ever needed: `3e170ba` / `c76b459`. `origin/main` is now the only remote branch._
+
+## What we shipped (2026-07-14) — Task Board + cleanup
+
+The "to do" feature was a non-functional draft (no `in_progress` status, create/delete only, no assignee, no reminders). It is now a working Kanban board, plus earlier in-session bug fixes and repo housekeeping.
+
+| Commit    | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `719d0a3` | **Reservation email fixes.** Dark header now has a solid `background-color` fallback (was white-on-white: gradient-only header over a white body); service lines auto-fill their **location** from the supplier's city/area in `ServiceLineEditor`, and `buildEmailBody` falls back to the supplier city when a line has no explicit location.                                                                                                                                                                                            |
+| `ba9fcf5` | **Global search bug.** Trip results linked to the unreachable staff page `/TripDetails`; they now open `/ReservationDetails?id=` (the page every Trip link uses).                                                                                                                                                                                                                                                                                                                                                                         |
+| `29b3fa7` | **Repo housekeeping.** Neutralized the hardcoded `deneme.xlsx` absolute path in `scripts/gen_hotel_import.py`, `scripts/set_stars.py`, `SESSION_LOG.md` (data now lives in Railway, not a local spreadsheet). Moved/renamed the working copy to `/Users/osmanmeran/MarvelOps` (clean root, no nested wrapper) and removed the stale duplicate.                                                                                                                                                                                            |
+| `704dbe6` | **Task Board — Phase 1 (working board).** `ClientTask.status` enum gained `in_progress` (+ `completed_at`); board drag-and-drop now sets `in_progress`/`done` correctly. Added an **edit dialog** (title, description, type, due date, priority, client, assignee, status, delete), an **assignee picker** backed by `db.auth.users()` (stored as `assigned_to` email to keep RLS intact), and a **"My tasks"** toggle that filters to tasks assigned to or created by the current user. New tasks default their assignee to the creator. |
+| `0147765` | **Task Board — Phase 2 (integrations).** New `useReminderNotifications` hook (mounted in `Layout`) polls due **reminders** every 5 min and shows a toast for any assigned to / created by the current user. Added a **Tasks** tab to `TripDetails` rendering `ClientTasksPanel` for the trip's client. Dashboard gained a **"My Open Tasks"** widget (open tasks assigned to / created by the current user, linking to `/TaskBoard`).                                                                                                     |
+| _(head)_  | **Task Board — Phase 3 (polish + docs).** `ClientTasksPanel` now resolves the assignee email → display name and gained an **In Progress** filter (consistent with the board). README feature blurb expanded; this SESSION_LOG updated; new `FAQ.md` added. All new UI strings added to `en.json` (fall back to English for the other 5 locales).                                                                                                                                                                                          |
+
+Verification: lint + pre-commit hooks green on every commit; `npm run typecheck` has pre-existing loose-jsconfig errors (can't resolve node_modules modules) unrelated to these changes. Not browser-tested by me (Microsoft SSO blocks the preview browser) — Osman to smoke-test in the incognito client account.
+
+### How to test / operate (reminder)
+
+- Prod = Railway, auto-deploys on push to `main`. Real DB reachable via `railway ssh`.
+- Local: `npm run server` (port 3001) + `npm run dev` (5173). Log in via `/mock-login` (email+password) since SSO can't be used locally.
+- Task Board: open `/TaskBoard`. Create a task, drag between columns, edit/assign, toggle "My tasks". Due reminders toast automatically.
 
 ## What we shipped this session (in order)
 

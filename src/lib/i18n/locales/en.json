@@ -1566,6 +1566,7 @@
     "filterReminder": "Reminder",
     "filterNote": "Note",
     "filterDone": "Done",
+    "filterInProgress": "In Progress",
     "addButton": "Add",
     "noItemsFound": "No items found",
     "assignedLabel": "Assigned: {name}",

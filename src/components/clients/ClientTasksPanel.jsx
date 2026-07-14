@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Card } from '@/components/ui/card';
@@ -33,6 +33,7 @@ const FILTER_LABEL_KEYS = {
   reminder: 'clientTasksPanel.filterReminder',
   note: 'clientTasksPanel.filterNote',
   pending: 'common.pending',
+  in_progress: 'clientTasksPanel.filterInProgress',
   done: 'clientTasksPanel.filterDone',
 };
 
@@ -62,6 +63,21 @@ export default function ClientTasksPanel({ clientId }) {
       queryFn: () => db.entities.ClientTask.filter({ client_id: clientId }, '-created_date'),
       enabled: !!clientId,
     })
+  );
+
+  const { data: staffUsers = /** @type {any} */ ([]) } = useQuery({
+    queryKey: ['staffUsers'],
+    queryFn: () => db.auth.users(),
+  });
+
+  const assigneeName = /** @type {any} */ (
+    useMemo(() => {
+      const map = {};
+      staffUsers.forEach((u) => {
+        map[u.email] = u.name || u.email;
+      });
+      return map;
+    }, [staffUsers])
   );
 
   const createMutation = /** @type {any} */ (
@@ -97,6 +113,7 @@ export default function ClientTasksPanel({ clientId }) {
           (t) =>
             t.type === filter ||
             (filter === 'pending' && t.status === 'pending') ||
+            (filter === 'in_progress' && t.status === 'in_progress') ||
             (filter === 'done' && t.status === 'done'),
         );
 
@@ -106,7 +123,7 @@ export default function ClientTasksPanel({ clientId }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex gap-2 flex-wrap">
-          {['all', 'task', 'reminder', 'note', 'pending', 'done'].map((f) => (
+          {['all', 'task', 'reminder', 'note', 'pending', 'in_progress', 'done'].map((f) => (
             <Button
               key={f}
               variant={filter === f ? 'default' : 'outline'}
@@ -173,7 +190,11 @@ export default function ClientTasksPanel({ clientId }) {
                         </span>
                       )}
                       {task.assigned_to && (
-                        <span>{t('clientTasksPanel.assignedLabel', { name: task.assigned_to })}</span>
+                        <span>
+                          {t('clientTasksPanel.assignedLabel', {
+                            name: assigneeName[task.assigned_to] || task.assigned_to,
+                          })}
+                        </span>
                       )}
                       <span>{format(new Date(task.created_date), 'MMM d')}</span>
                     </div>

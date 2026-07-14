@@ -31,7 +31,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Itinerary Builder** — Day-by-day editor with drag-and-drop, category detection
 - **Tour Contracts** — Recurring serial contracts with pricing tiers, Utravel import
 - **RFP Manager** — Request for Proposal wizard, supplier quoting
-- **Task Board** — Kanban tasks (pending / in progress / done)
+- **Task Board** — Kanban board for tasks/reminders/notes across clients, with a pending / in-progress / done workflow, drag-and-drop status changes, an edit dialog, an assignee picker (staff users), and a "My tasks" filter. Due **reminders** surface as global toasts (polled every 5 min), and a "My Open Tasks" widget appears on the Dashboard. Each client's tasks are also reachable from the **Tasks** tab on the trip detail page.
 - **Import Hub** — Outlook contacts, bulk supplier CSV, AI price analyzer
 
 ### Guided Tours
