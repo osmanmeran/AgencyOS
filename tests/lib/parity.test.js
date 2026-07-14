@@ -17,28 +17,24 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * The entity-type allowlists in server/db.js and public/api-client.js are
- * still hand-synced (public/api-client.js is a plain browser <script>, not
- * an importable module, so it can't share a file) — if that check fails,
- * update BOTH sides, not the test. The permission catalogs, by contrast, are
- * no longer hand-synced: server/permissions.js and src/lib/permissions.js
- * both re-export shared/permissions.js, so these checks now mostly guard
- * against someone reintroducing a local fork rather than catching drift
- * between two copies. See ARCHITECTURE.md's "Permission model" section.
+ * The entity-type allowlist is no longer hand-synced: public/api-client.js
+ * builds its `db.entities.<Type>` APIs through a Proxy that lazily creates an
+ * API for any accessed name, so server/db.js's ENTITIES is the single source
+ * of truth (the server rejects unknown types via assertKnownType). This test
+ * now just guards against api-client.js reintroducing a hardcoded list that
+ * could drift. The permission catalogs are likewise no longer hand-synced:
+ * server/permissions.js and src/lib/permissions.js both re-export
+ * shared/permissions.js, so these checks guard against someone reintroducing
+ * a local fork. See ARCHITECTURE.md's "Permission model" section.
  */
 describe('Registry parity', () => {
-  it('server ENTITIES matches the api-client ENTITIES list', () => {
-    // public/api-client.js is a plain browser <script>, not an importable
-    // module — extract its ENTITIES array from the source text.
+  it('api-client.js does not reintroduce a hardcoded ENTITIES list', () => {
+    // The client resolves entity types dynamically via a Proxy; a reappearing
+    // `var ENTITIES = [...]` would mean the hand-synced allowlist is back.
     const source = fs.readFileSync(path.join(__dirname, '../../public/api-client.js'), 'utf8');
-    const match = source.match(/var ENTITIES = \[([^\]]*)\]/);
-    expect(match).toBeTruthy();
-    const clientEntities = match[1]
-      .split(',')
-      .map((s) => s.trim().replace(/^['"]|['"]$/g, ''))
-      .filter(Boolean);
-
-    expect([...clientEntities].sort()).toEqual([...getEntities()].sort());
+    expect(source).not.toMatch(/var ENTITIES = \[/);
+    // Sanity: the server still exposes a non-empty authoritative list.
+    expect(getEntities().length).toBeGreaterThan(0);
   });
 
   it('permission key catalogs are identical on server and frontend', () => {

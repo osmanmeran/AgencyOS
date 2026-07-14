@@ -15,15 +15,17 @@ auth, WebSocket real-time sync. See `README.md` for features/setup and
 ## Things to know before editing
 
 - Almost all business objects live in a **single `entities` table** (`type` + JSON
-  `data` blob). Adding an entity type requires **three registrations**:
-  `ENTITIES` in `server/db.js`, `ENTITIES` in `public/api-client.js` (loaded as a
-  plain `<script>`, not bundled), and `CLIENT_SCOPED_TYPES` in
-  `server/services/entities.js` if client-portal-scoped. `entities/<TypeName>`
-  JSON Schema files are documentation only — not enforced.
+  `data` blob). Adding an entity type requires registering `ENTITIES` in
+  `server/db.js` (the single source of truth — `public/api-client.js` resolves
+  entity types dynamically via a `Proxy`, no client-side list) and adding to
+  `CLIENT_SCOPED_TYPES` in `server/services/entities.js` if client-portal-scoped.
+  `entities/<TypeName>` JSON Schema files are documentation only — not enforced.
 - Permissions have **two parity-kept implementations**: `server/permissions.js`
   and `src/lib/permissions.js`. Change both together.
-- i18n lives entirely in `src/lib/i18n/I18nContext.jsx` (6 locales, ~14k lines).
-  Pages use `useT()`; translation of pages is in progress (~44 of 58 done).
+- i18n: each locale is a JSON file in `src/lib/i18n/locales/` (`en` is eagerly
+  bundled as the fallback; the others are code-split and lazy-loaded on demand
+  via `import.meta.glob` in `src/lib/i18n/I18nContext.jsx`). Pages use `useT()`;
+  translation of pages is in progress (~44 of 58 done).
 
 ---
 
@@ -112,10 +114,16 @@ from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
     override hid the UI but the backend still allowed it. Covered by
     `tests/services/permissions.test.js` and `tests/lib/parity.test.js`.
 
-11. **`I18nContext.jsx` is ~14,100 lines** — six locales inlined in one JSX
-    file that every bundle chunk depends on. Split into per-locale JSON files
-    and lazy-load the non-active locales; this also makes translation diffs
-    reviewable. Finish translating the remaining ~14 pages.
+11. ✅ **FIXED — `I18nContext.jsx` split into per-locale JSON** (2026-07-14) —
+    the six inlined locales are now `src/lib/i18n/locales/*.json`. `en` is
+    eagerly imported (the fallback dictionary); the other five are code-split
+    and lazy-loaded via `import.meta.glob(['./locales/*.json',
+'!./locales/en.json'])`, fetched only when a user selects that language.
+    `t` falls back to English per-key until the active locale's chunk resolves,
+    so no consumer needs a loading state. This moved ~440 KB of translations
+    out of the initial bundle (main `index` chunk 650 KB → 222 KB). Translation
+    diffs are now reviewable per-locale. Still TODO: finish the remaining ~14
+    untranslated pages.
 
 ## 🟢 Code quality & testing
 
@@ -124,10 +132,23 @@ from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
     and the CRUD hooks (`usePaginatedEntities`, `useEntitySync`), then a
     small Playwright E2E for login → create trip → create proposal.
 
-13. **Decompose the largest pages** — `ReservationDetails.jsx` (1,876 lines),
-    `CreateReservation.jsx` (1,552), `UserManagement.jsx` (1,447),
-    `ClientQuoteBuilder.jsx` (1,363) mix data fetching, form state, and layout.
-    Extract per-tab/per-section components before adding features to them.
+13. ✅ **FIXED — largest pages decomposed** (2026-07-14) — the four biggest
+    pages had their self-contained presentational sub-components and shared
+    constants/helpers extracted into co-located folders under
+    `src/components/<page-name>/`, leaving each page as orchestration (state,
+    data fetching, handlers) only:
+    - `ClientQuoteBuilder.jsx` 1,884 → 671 (`components/quote-builder/`:
+      PaxRow, ServicePickerDialog, TourPickerDialog, ServiceLineCard, helpers)
+    - `ReservationDetails.jsx` 1,804 → 849 (`components/reservation-details/`:
+      ServicesSection, ItineraryRecap, HistoryModal, OccupancyValidation,
+      NotesAndTerms, helpers)
+    - `CreateReservation.jsx` 1,495 → 776 (`components/create-reservation/`:
+      13 section/card/dialog components + helpers)
+    - `UserManagement.jsx` 1,447 → 583 (`components/user-management/`:
+      InviteModal, AddUserForm, EditUserModal, UsersTable, PermissionManager,
+      etc. + helpers)
+      Pure structural move — no behavior change; lint/typecheck/test/build all
+      green. Deeply state-entangled sections were intentionally left in the pages.
 
 14. ✅ **FIXED — ESLint is warning-free** (was 9 warnings of unused
     vars/imports). Keep it at zero so warnings stay a meaningful signal.

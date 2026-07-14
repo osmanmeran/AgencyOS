@@ -87,39 +87,6 @@
     return data;
   }
 
-  var ENTITIES = [
-    'AppSettings',
-    'BookingRequest',
-    'BookingTemplate',
-    'Client',
-    'ClientPayment',
-    'ClientTask',
-    'Company',
-    'EmailLog',
-    'Invoice',
-    'ItineraryEvent',
-    'Message',
-    'PackingItem',
-    'Proposal',
-    'ProposalTemplate',
-    'QuoteRequest',
-    'ReferenceCounter',
-    'ReportSchedule',
-    'Supplier',
-    'SupplierBooking',
-    'SupplierCategory',
-    'SupplierInvoice',
-    'SupplierPricing',
-    'SupplierReview',
-    'SupplierService',
-    'SupplierStopSale',
-    'SupplierSubcategory',
-    'TourContract',
-    'GuidedTour',
-    'TourBooking',
-    'Trip',
-  ];
-
   function makeEntityApi(name) {
     return {
       list: function (sort) {
@@ -173,10 +140,19 @@
     };
   }
 
-  var entityApis = {};
-  for (var i = 0; i < ENTITIES.length; i++) {
-    entityApis[ENTITIES[i]] = makeEntityApi(ENTITIES[i]);
-  }
+  // No hardcoded entity allowlist here — the server (server/db.js ENTITIES +
+  // assertKnownType) is the single source of truth. This Proxy lazily builds
+  // an entity API for any accessed name; unknown types get a 400 from the
+  // server. Non-entity properties assigned later (e.g. `.Query`) are stored on
+  // the target and returned as-is.
+  var entityApiCache = {};
+  var entityApis = new Proxy(entityApiCache, {
+    get: function (target, name) {
+      if (typeof name !== 'string' || name === 'then') return target[name];
+      if (!(name in target)) target[name] = makeEntityApi(name);
+      return target[name];
+    },
+  });
 
   var db = {
     auth: {

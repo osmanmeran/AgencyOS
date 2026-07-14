@@ -7,101 +7,19 @@ import { usePermissions } from '@/components/permissions/PermissionContext';
 import { PERMISSION_GROUPS, DEFAULT_TIER_PERMISSIONS } from '@/lib/permissions';
 import { showSuccess, showError } from '@/lib/toast';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import {
-  Shield,
-  Save,
-  RotateCcw,
-  CheckCircle2,
-  Loader2,
-  ChevronDown,
-  ChevronRight,
-  Users,
-  KeyRound,
-  MailPlus,
-} from 'lucide-react';
-import ClientLinkPicker from '@/components/passengers/ClientLinkPicker';
-
-const TIERS = ['admin', 'manager', 'accounting', 'agent', 'client'];
-const TIER_LABELS = {
-  admin: {
-    label: 'Tier 1 - Administrator',
-    color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
-    description: 'Full control: manage users, permissions, app branding, all data',
-  },
-  manager: {
-    label: 'Tier 2 - Manager',
-    color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
-    description: 'Modify/cancel trips & invoices, create suppliers/clients, manage categories',
-  },
-  agent: {
-    label: 'Tier 3 - Agent',
-    color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
-    description: 'Create trips/invoices/proposals, add pricing, modify basic supplier info',
-  },
-  accounting: {
-    label: 'Tier 4 - Accounting',
-    color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
-    description: 'Search by reference, review invoices, view reports',
-  },
-  client: {
-    label: 'Client Portal',
-    color: 'bg-muted text-foreground',
-    description: 'B2B client portal login — no staff access, scoped to one linked Client (CRM) record',
-  },
-};
-
-const PERMISSION_TIERS = [
-  {
-    key: 'admin',
-    label: 'Administrator',
-    color: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
-    desc: 'Full system control',
-  },
-  {
-    key: 'manager',
-    label: 'Manager',
-    color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
-    desc: 'Manage operations',
-  },
-  {
-    key: 'agent',
-    label: 'Agent',
-    color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
-    desc: 'Daily operations',
-  },
-  {
-    key: 'accounting',
-    label: 'Accounting',
-    color: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
-    desc: 'Finance & reports',
-  },
-];
-
-const PASSWORD_HINT = 'At least 8 characters, with an uppercase letter, a lowercase letter, and a number.';
-
-function passwordError(pw) {
-  if (pw.length < 8) return 'Password must be at least 8 characters';
-  if (!/[A-Z]/.test(pw)) return 'Password must contain an uppercase letter';
-  if (!/[a-z]/.test(pw)) return 'Password must contain a lowercase letter';
-  if (!/[0-9]/.test(pw)) return 'Password must contain a number';
-  return null;
-}
-
-const DEPARTMENT_COLORS = [
-  'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300',
-  'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300',
-  'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300',
-  'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300',
-  'bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300',
-  'bg-violet-100 text-violet-800',
-  'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300',
-  'bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300',
-  'bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-300',
-  'bg-lime-100 text-lime-800',
-];
+import { Shield, MailPlus } from 'lucide-react';
+import { PERMISSION_TIERS, passwordError, DEPARTMENT_COLORS } from '@/components/user-management/helpers';
+import Tabs from '@/components/user-management/Tabs';
+import ChangePasswordForm from '@/components/user-management/ChangePasswordForm';
+import InviteModal from '@/components/user-management/InviteModal';
+import AddUserForm from '@/components/user-management/AddUserForm';
+import TierCards from '@/components/user-management/TierCards';
+import PendingUsersTable from '@/components/user-management/PendingUsersTable';
+import UsersTable from '@/components/user-management/UsersTable';
+import EditUserModal from '@/components/user-management/EditUserModal';
+import DeleteConfirmModal from '@/components/user-management/DeleteConfirmModal';
+import ResetPasswordModal from '@/components/user-management/ResetPasswordModal';
+import PermissionManager from '@/components/user-management/PermissionManager';
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -503,31 +421,7 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-8">
-      {/* Tabs */}
-      <div className="flex items-center border-b border-border gap-0">
-        <button
-          onClick={() => setTab('users')}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-            tab === 'users'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-300'
-              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          Users
-        </button>
-        <button
-          onClick={() => setTab('permissions')}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-            tab === 'permissions'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-300'
-              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-          }`}
-        >
-          <KeyRound className="w-4 h-4" />
-          Permissions
-        </button>
-      </div>
+      <Tabs tab={tab} setTab={setTab} />
 
       {tab === 'users' && (
         <>
@@ -572,875 +466,117 @@ export default function UserManagement() {
 
           {/* Change password */}
           {showPassword && (
-            <form onSubmit={handleChangePassword} className="p-5 bg-card border border-border rounded-xl">
-              <h3 className="font-semibold text-foreground mb-3">Change Your Password</h3>
-              <div className="grid grid-cols-3 gap-3">
-                <input
-                  type="password"
-                  placeholder="Current password"
-                  value={passwordForm.current_password}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
-                  required
-                  className="px-3 py-2 border border-border rounded-lg text-sm"
-                />
-                <input
-                  type="password"
-                  placeholder="New password"
-                  value={passwordForm.new_password}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
-                  required
-                  className="px-3 py-2 border border-border rounded-lg text-sm"
-                />
-                <input
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={passwordForm.confirm}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                  required
-                  className="px-3 py-2 border border-border rounded-lg text-sm"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">{PASSWORD_HINT}</p>
-              <button
-                type="submit"
-                className="mt-3 px-4 py-2 bg-foreground text-background text-sm rounded-lg hover:bg-foreground/90"
-              >
-                Update Password
-              </button>
-            </form>
+            <ChangePasswordForm
+              passwordForm={passwordForm}
+              setPasswordForm={setPasswordForm}
+              onSubmit={handleChangePassword}
+            />
           )}
 
           {/* Invite user modal */}
-          {showInvite && (
-            <div
-              className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-              onClick={() => {
-                setShowInvite(false);
-                setInviteResult(null);
-              }}
-            >
-              <div
-                className="bg-card rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 className="text-lg font-bold text-foreground mb-4">Invite User</h3>
-                {inviteResult ? (
-                  <div className="text-center py-4">
-                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg
-                        className="w-6 h-6 text-green-600 dark:text-green-300"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <p className="text-green-700 dark:text-green-300 font-medium">Invitation sent!</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {inviteResult.email} will receive an email to set up their account.
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-3">
-                      Invite link:{' '}
-                      <span className="font-mono text-blue-600 dark:text-blue-300">
-                        {window.location.origin}/accept-invite?token={inviteResult.token}
-                      </span>
-                    </p>
-                    <button
-                      onClick={() => {
-                        setShowInvite(false);
-                        setInviteResult(null);
-                      }}
-                      className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      Close
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleInvite} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">Email *</label>
-                      <input
-                        type="email"
-                        value={inviteForm.email}
-                        onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                        placeholder="colleague@company.com"
-                        required
-                        className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Name{' '}
-                        <span className="text-xs text-muted-foreground font-normal">
-                          (optional — user can set it later)
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        value={inviteForm.name}
-                        onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
-                        placeholder="Jane Smith"
-                        className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">User Tier</label>
-                      <select
-                        value={inviteForm.user_tier}
-                        onChange={(e) =>
-                          setInviteForm({ ...inviteForm, user_tier: e.target.value, client_id: '', client_name: '' })
-                        }
-                        className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                      >
-                        {TIERS.map((t) => (
-                          <option key={t} value={t}>
-                            {TIER_LABELS[t]?.label || t.charAt(0).toUpperCase() + t.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {inviteForm.user_tier === 'client' && (
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Linked Client *</label>
-                        <ClientLinkPicker
-                          clientId={inviteForm.client_id}
-                          clientName={inviteForm.client_name}
-                          onSelect={(c) => setInviteForm({ ...inviteForm, client_id: c.id, client_name: c.name })}
-                          onClear={() => setInviteForm({ ...inviteForm, client_id: '', client_name: '' })}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          The invited user will only see this client's data in the B2B portal.
-                        </p>
-                      </div>
-                    )}
-                    <div className="flex justify-end gap-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowInvite(false);
-                          setInviteResult(null);
-                        }}
-                        className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={inviteLoading}
-                        className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-emerald-400"
-                      >
-                        {inviteLoading ? 'Sending...' : 'Send Invitation'}
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
-            </div>
-          )}
+          <InviteModal
+            showInvite={showInvite}
+            setShowInvite={setShowInvite}
+            inviteForm={inviteForm}
+            setInviteForm={setInviteForm}
+            onSubmit={handleInvite}
+            inviteResult={inviteResult}
+            setInviteResult={setInviteResult}
+            inviteLoading={inviteLoading}
+          />
 
           {/* Add user */}
-          {showAddForm && (
-            <form onSubmit={handleAddUser} className="p-5 bg-card border border-border rounded-xl">
-              <h3 className="font-semibold text-foreground mb-3">Add New User</h3>
-              <div className="grid grid-cols-4 gap-3">
-                <input
-                  type="text"
-                  placeholder="Full name"
-                  value={addForm.name}
-                  onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                  required
-                  className="px-3 py-2 border border-border rounded-lg text-sm"
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={addForm.email}
-                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                  required
-                  className="px-3 py-2 border border-border rounded-lg text-sm"
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={addForm.password}
-                  onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
-                  required
-                  className="px-3 py-2 border border-border rounded-lg text-sm"
-                />
-                <select
-                  value={addForm.user_tier}
-                  onChange={(e) =>
-                    setAddForm({ ...addForm, user_tier: e.target.value, client_id: '', client_name: '' })
-                  }
-                  className="px-3 py-2 border border-border rounded-lg text-sm"
-                >
-                  {TIERS.map((t) => (
-                    <option key={t} value={t}>
-                      {TIER_LABELS[t]?.label || t.charAt(0).toUpperCase() + t.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">Password: {PASSWORD_HINT}</p>
-              {addForm.user_tier === 'client' && (
-                <div className="mt-3 max-w-sm">
-                  <label className="block text-sm font-medium text-foreground mb-1">Linked Client *</label>
-                  <ClientLinkPicker
-                    clientId={addForm.client_id}
-                    clientName={addForm.client_name}
-                    onSelect={(c) => setAddForm({ ...addForm, client_id: c.id, client_name: c.name })}
-                    onClear={() => setAddForm({ ...addForm, client_id: '', client_name: '' })}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This account will only see this client's data in the B2B portal.
-                  </p>
-                </div>
-              )}
-              <div className="mt-3">
-                <p className="text-sm font-medium text-foreground mb-2">
-                  Custom Permissions{' '}
-                  <span className="text-xs text-muted-foreground font-normal">(optional additions)</span>
-                </p>
-                <div className="max-h-48 overflow-y-auto space-y-2">
-                  {PERMISSION_GROUPS.map((group) => (
-                    <div key={group.key}>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{group.label}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {group.permissions.map((p) => (
-                          <label
-                            key={p.key}
-                            className={`flex items-center gap-1 px-2 py-1 rounded border text-xs cursor-pointer select-none ${addPermissions.includes(p.key) ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-muted border-border text-muted-foreground hover:bg-muted'}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={addPermissions.includes(p.key)}
-                              onChange={() => toggleAddPermission(p.key)}
-                              className="sr-only"
-                            />
-                            {p.label}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-3">
-                <p className="text-sm font-medium text-foreground mb-2">Departments</p>
-                <div className="flex flex-wrap gap-2">
-                  {departmentsList.map((d) => (
-                    <label
-                      key={d}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs cursor-pointer select-none ${addDepartments.includes(d) ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-muted border-border text-muted-foreground hover:bg-muted'}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={addDepartments.includes(d)}
-                        onChange={() => toggleAddDepartment(d)}
-                        className="sr-only"
-                      />
-                      {d}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-              >
-                Create User
-              </button>
-            </form>
-          )}
+          <AddUserForm
+            showAddForm={showAddForm}
+            addForm={addForm}
+            setAddForm={setAddForm}
+            onSubmit={handleAddUser}
+            addPermissions={addPermissions}
+            toggleAddPermission={toggleAddPermission}
+            addDepartments={addDepartments}
+            toggleAddDepartment={toggleAddDepartment}
+            departmentsList={departmentsList}
+          />
 
           {/* Tier cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {Object.entries(TIER_LABELS).map(([tier, { label, color, description }]) => (
-              <div key={tier} className="p-4 bg-card rounded-xl border border-border">
-                <div className="flex justify-between items-center mb-2">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>{label}</span>
-                  <span className="text-2xl font-bold">{users.filter((u) => u.user_tier === tier).length}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">{description}</p>
-              </div>
-            ))}
-          </div>
+          <TierCards users={users} />
 
           {/* Pending users */}
-          {users.filter((u) => !u.is_active).length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-amber-200 dark:border-amber-800 flex items-center gap-2">
-                <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
-                <h3 className="font-semibold text-amber-800 dark:text-amber-300 text-sm">Pending Approval</h3>
-                <span className="text-xs text-amber-600 dark:text-amber-300">
-                  ({users.filter((u) => !u.is_active).length} users)
-                </span>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-amber-100/50 dark:bg-amber-900/50">
-                    <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">Name</th>
-                    <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">Email</th>
-                    <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">Signed up</th>
-                    <th className="text-right px-4 py-2 font-medium text-amber-700 dark:text-amber-300">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users
-                    .filter((u) => !u.is_active)
-                    .map((u) => (
-                      <tr
-                        key={u.id}
-                        className="border-b border-amber-100 hover:bg-amber-50/50 dark:hover:bg-amber-950/50"
-                      >
-                        <td className="px-4 py-2.5 font-medium text-amber-900 dark:text-amber-300">{u.name}</td>
-                        <td className="px-4 py-2.5 text-amber-700 dark:text-amber-300">{u.email}</td>
-                        <td className="px-4 py-2.5 text-amber-600 dark:text-amber-300 text-xs">
-                          {u.created_date ? new Date(u.created_date).toLocaleDateString() : '-'}
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          <button
-                            onClick={() => handleApprove(u)}
-                            className="px-3 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 mr-1"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleDeny(u)}
-                            className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                          >
-                            Deny
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <PendingUsersTable users={users} onApprove={handleApprove} onDeny={handleDeny} />
 
           {/* Users table */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted border-b border-border">
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Email</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tier</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Departments</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users
-                  .filter((u) => u.is_active || u.id === currentUser?.id)
-                  .map((u) => (
-                    <tr key={u.id} className="border-b border-border hover:bg-muted">
-                      <td className="px-4 py-3">
-                        <span className="font-medium text-foreground">{u.name}</span>
-                        {u.id === currentUser?.id && (
-                          <span className="ml-2 text-xs text-blue-600 dark:text-blue-300">(you)</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${TIER_LABELS[u.user_tier]?.color || 'bg-muted text-muted-foreground'}`}
-                        >
-                          {u.user_tier}
-                        </span>
-                        {u.user_tier === 'client' && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {allClients.find((c) => c.id === u.client_id)?.name || 'unlinked'}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {(u.departments || []).map((d) => {
-                            return (
-                              <span key={d} className={`text-xs px-1.5 py-0.5 rounded ${deptColor(d)}`}>
-                                {d}
-                              </span>
-                            );
-                          })}
-                          {(!u.departments || u.departments.length === 0) && (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-xs font-medium ${u.is_active ? 'text-green-600 dark:text-green-300' : 'text-red-500 dark:text-red-300'}`}
-                        >
-                          {u.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => openEditModal(u)}
-                          className="px-3 py-1 bg-card border border-border text-muted-foreground text-xs rounded hover:bg-muted mr-1"
-                        >
-                          Edit
-                        </button>
-                        {u.id !== currentUser?.id && u.user_tier !== 'admin' && (
-                          <button
-                            onClick={() => setConfirmDelete(u)}
-                            className="px-3 py-1 bg-card border border-red-200 dark:border-red-800 text-red-500 dark:text-red-300 text-xs rounded hover:bg-red-50 dark:hover:bg-red-950/40"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                {users.filter((u) => u.is_active || u.id === currentUser?.id).length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      No users found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <UsersTable
+            users={users}
+            currentUser={currentUser}
+            allClients={allClients}
+            deptColor={deptColor}
+            onEdit={openEditModal}
+            onDelete={setConfirmDelete}
+          />
 
           {/* Edit modal */}
-          {selectedUser && (
-            <div
-              className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-              onClick={() => setSelectedUser(null)}
-            >
-              <div
-                className="bg-card rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 className="text-lg font-bold text-foreground mb-4">Edit User: {selectedUser.name}</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Name</label>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">User Tier / Role</label>
-                    <select
-                      value={editTier}
-                      onChange={(e) => {
-                        setEditTier(e.target.value);
-                        setEditClientId('');
-                        setEditClientName('');
-                      }}
-                      className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                      disabled={selectedUser.user_tier === 'admin' && selectedUser.id !== currentUser?.id}
-                    >
-                      {TIERS.map((t) => (
-                        <option key={t} value={t}>
-                          {TIER_LABELS[t]?.label || t}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedUser.user_tier === 'admin' && selectedUser.id !== currentUser?.id && (
-                      <p className="text-xs text-amber-600 dark:text-amber-300 mt-1">
-                        Cannot change another admin's tier
-                      </p>
-                    )}
-                  </div>
-                  {editTier === 'client' && (
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">Linked Client *</label>
-                      <ClientLinkPicker
-                        clientId={editClientId}
-                        clientName={editClientName}
-                        onSelect={(c) => {
-                          setEditClientId(c.id);
-                          setEditClientName(c.name);
-                        }}
-                        onClear={() => {
-                          setEditClientId('');
-                          setEditClientName('');
-                        }}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        This account only sees this client's data in the B2B portal.
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={editActive}
-                        onChange={(e) => setEditActive(e.target.checked)}
-                        className="rounded"
-                      />
-                      <span className="text-sm text-foreground">Account active</span>
-                    </label>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground mb-2">
-                      Custom Permissions
-                      <span className="text-xs text-muted-foreground ml-2 font-normal">
-                        (additional capabilities beyond tier defaults)
-                      </span>
-                    </p>
-                    <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                      {PERMISSION_GROUPS.map((group) => (
-                        <div key={group.key}>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{group.label}</p>
-                          <div className="flex flex-wrap gap-1">
-                            {group.permissions.map((p) => (
-                              <label
-                                key={p.key}
-                                className={`flex items-center gap-1 px-2 py-1 rounded border text-xs cursor-pointer select-none ${editPermissions.includes(p.key) ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-muted border-border text-muted-foreground hover:bg-muted'}`}
-                                title={p.description}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={editPermissions.includes(p.key)}
-                                  onChange={() => toggleEditPermission(p.key)}
-                                  className="sr-only"
-                                />
-                                {p.label}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground mb-2">Departments</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {departmentsList.map((d) => (
-                        <label
-                          key={d}
-                          className={`flex items-center gap-1 px-2 py-1 rounded border text-xs cursor-pointer select-none ${editDepartments.includes(d) ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-muted border-border text-muted-foreground hover:bg-muted'}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={editDepartments.includes(d)}
-                            onChange={() => toggleEditDepartment(d)}
-                            className="sr-only"
-                          />
-                          {d}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setResetPwdUser(selectedUser)}
-                      className="px-3 py-2 text-sm border border-orange-300 dark:border-orange-800 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/40 flex items-center gap-1.5"
-                    >
-                      <KeyRound className="w-3.5 h-3.5" />
-                      Reset Password
-                    </button>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setSelectedUser(null)}
-                        className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleSaveUser}
-                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                      >
-                        Save Changes
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <EditUserModal
+            selectedUser={selectedUser}
+            setSelectedUser={setSelectedUser}
+            editName={editName}
+            setEditName={setEditName}
+            editTier={editTier}
+            setEditTier={setEditTier}
+            editClientId={editClientId}
+            setEditClientId={setEditClientId}
+            editClientName={editClientName}
+            setEditClientName={setEditClientName}
+            editActive={editActive}
+            setEditActive={setEditActive}
+            editPermissions={editPermissions}
+            toggleEditPermission={toggleEditPermission}
+            editDepartments={editDepartments}
+            toggleEditDepartment={toggleEditDepartment}
+            onSave={handleSaveUser}
+            onResetPassword={setResetPwdUser}
+            currentUser={currentUser}
+            departmentsList={departmentsList}
+          />
 
           {/* Delete confirmation */}
-          {confirmDelete && (
-            <div
-              className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-              onClick={() => setConfirmDelete(null)}
-            >
-              <div
-                className="bg-card rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 className="text-lg font-bold text-foreground mb-2">Delete User</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Are you sure you want to delete <strong>{confirmDelete.name}</strong> ({confirmDelete.email})? This
-                  cannot be undone.
-                </p>
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => setConfirmDelete(null)}
-                    className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleDelete(confirmDelete.id)}
-                    className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <DeleteConfirmModal
+            confirmDelete={confirmDelete}
+            setConfirmDelete={setConfirmDelete}
+            onDelete={handleDelete}
+          />
 
           {/* Reset Password Dialog */}
-          {resetPwdUser && (
-            <div
-              className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-              onClick={() => {
-                setResetPwdUser(null);
-                setResetPwdResult('');
-              }}
-            >
-              <div
-                className="bg-card rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {resetPwdResult ? (
-                  <>
-                    <h3 className="text-lg font-bold text-foreground mb-2">Password Reset Successfully</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Share this new password with <strong>{resetPwdUser.name}</strong>:
-                    </p>
-                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-center mb-4">
-                      <code className="text-lg font-mono font-bold text-foreground select-all">{resetPwdResult}</code>
-                    </div>
-                    <p className="text-xs text-red-600 dark:text-red-300 mb-4">
-                      Make sure to share this securely — it will not be shown again.
-                    </p>
-                    <Button
-                      onClick={() => {
-                        setResetPwdUser(null);
-                        setResetPwdResult('');
-                        setResetPwdNew('');
-                        setResetPwdConfirm('');
-                      }}
-                      className="w-full"
-                    >
-                      Done
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="text-lg font-bold text-foreground mb-2">Reset Password: {resetPwdUser.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Enter a new password for this user. The password will be shown once after saving.
-                    </p>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">New Password</label>
-                        <input
-                          type="text"
-                          value={resetPwdNew}
-                          onChange={(e) => setResetPwdNew(e.target.value)}
-                          className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                          placeholder="At least 8 chars, uppercase, lowercase, number"
-                          autoFocus
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Confirm Password</label>
-                        <input
-                          type="text"
-                          value={resetPwdConfirm}
-                          onChange={(e) => setResetPwdConfirm(e.target.value)}
-                          className="w-full px-3 py-2 border border-border rounded-lg text-sm"
-                          placeholder="Re-enter the password"
-                        />
-                      </div>
-                      {resetPwdError && <p className="text-xs text-red-600 dark:text-red-300">{resetPwdError}</p>}
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                      <button
-                        onClick={() => {
-                          setResetPwdUser(null);
-                          setResetPwdNew('');
-                          setResetPwdConfirm('');
-                        }}
-                        className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleResetPassword}
-                        disabled={resetPwdSaving}
-                        className="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-                      >
-                        {resetPwdSaving ? 'Saving...' : 'Set New Password'}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+          <ResetPasswordModal
+            resetPwdUser={resetPwdUser}
+            setResetPwdUser={setResetPwdUser}
+            resetPwdResult={resetPwdResult}
+            setResetPwdResult={setResetPwdResult}
+            resetPwdNew={resetPwdNew}
+            setResetPwdNew={setResetPwdNew}
+            resetPwdConfirm={resetPwdConfirm}
+            setResetPwdConfirm={setResetPwdConfirm}
+            resetPwdError={resetPwdError}
+            resetPwdSaving={resetPwdSaving}
+            onSubmit={handleResetPassword}
+          />
         </>
       )}
       {tab === 'permissions' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/20">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Permission Manager</h1>
-                <p className="text-sm text-muted-foreground">Configure what each user tier can do</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={resetToDefaults}>
-                <RotateCcw className="w-4 h-4 mr-1" /> Reset Defaults
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => saveMutation.mutate(tierPerms)}
-                disabled={!dirty || saveMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {saveMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-1" />
-                )}
-                Save Changes
-              </Button>
-            </div>
-          </div>
-
-          {dirty && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-300">
-              <span className="w-2 h-2 bg-amber-500 rounded-full" />
-              Unsaved changes — click "Save Changes" to apply
-            </div>
-          )}
-
-          {/* Tier selector */}
-          <div className="flex gap-2 flex-wrap">
-            {PERMISSION_TIERS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setSelectedTier(t.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  selectedTier === t.key
-                    ? 'bg-foreground text-background shadow-lg shadow-foreground/20'
-                    : 'bg-card text-muted-foreground border border-border hover:bg-muted'
-                }`}
-              >
-                <Shield className="w-4 h-4" />
-                <span>{t.label}</span>
-                <Badge variant="secondary" className="ml-1 text-xs">
-                  {tierPerms[selectedTier]?.length || 0}
-                </Badge>
-              </button>
-            ))}
-          </div>
-
-          {/* Permission groups for selected tier */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-lg font-semibold text-foreground">
-                {PERMISSION_TIERS.find((t) => t.key === selectedTier)?.label || selectedTier}
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-8"
-                  onClick={() => setAllForTier(selectedTier, true)}
-                >
-                  Select All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-8"
-                  onClick={() => setAllForTier(selectedTier, false)}
-                >
-                  Deselect All
-                </Button>
-              </div>
-            </div>
-
-            {PERMISSION_GROUPS.map((group) => {
-              const isExpanded = expandedGroups.has(group.key);
-              const allChecked = hasAllInGroup(selectedTier, group);
-
-              return (
-                <Card key={group.key} className="overflow-hidden">
-                  <button
-                    onClick={() => toggleGroup(group.key)}
-                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      )}
-                      <span className="font-semibold text-foreground text-sm">{group.label}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {
-                          (tierPerms[selectedTier] || []).filter((k) => group.permissions.some((p) => p.key === k))
-                            .length
-                        }
-                        /{group.permissions.length}
-                      </Badge>
-                      {allChecked && <CheckCircle2 className="w-4 h-4 text-green-500 dark:text-green-300" />}
-                    </div>
-                    <Switch
-                      checked={allChecked}
-                      onCheckedChange={() => toggleGroupForTier(selectedTier, group)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </button>
-
-                  {isExpanded && (
-                    <div className="border-t border-border px-5 py-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {group.permissions.map((perm) => {
-                          const checked = (tierPerms[selectedTier] || []).includes(perm.key);
-                          return (
-                            <label
-                              key={perm.key}
-                              className={`flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
-                                checked
-                                  ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800'
-                                  : 'bg-card border-border hover:bg-muted'
-                              }`}
-                            >
-                              <Switch
-                                checked={checked}
-                                onCheckedChange={() => toggleTierPermission(selectedTier, perm.key)}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground">{perm.label}</p>
-                                <p className="text-xs text-muted-foreground truncate">{perm.description}</p>
-                              </div>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-        </div>
+        <PermissionManager
+          resetToDefaults={resetToDefaults}
+          saveMutation={saveMutation}
+          dirty={dirty}
+          permissionTiers={PERMISSION_TIERS}
+          selectedTier={selectedTier}
+          setSelectedTier={setSelectedTier}
+          tierPerms={tierPerms}
+          expandedGroups={expandedGroups}
+          toggleGroup={toggleGroup}
+          hasAllInGroup={hasAllInGroup}
+          toggleGroupForTier={toggleGroupForTier}
+          setAllForTier={setAllForTier}
+          toggleTierPermission={toggleTierPermission}
+        />
       )}
     </div>
   );

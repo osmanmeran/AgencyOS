@@ -34,12 +34,15 @@ doesn't offer.
   that documents intended read/write scoping. These are **not enforced by the
   server** — they exist for human/AI readability. Actual enforcement lives in
   `server/services/entities.js` (see below).
-- **`public/api-client.js`** has its own hardcoded `ENTITIES` array (loaded
-  as a plain `<script>` tag, not part of the Vite bundle) used by the
-  browser-side `db.entities.<Type>.list()/.get()/.create()/...` API. **A new
-  entity type must be added in three places**: `server/db.js`'s `ENTITIES`,
-  `public/api-client.js`'s `ENTITIES`, and (if the type should be
-  client-portal-scoped) `CLIENT_SCOPED_TYPES` in `server/services/entities.js`.
+- **`public/api-client.js`** (loaded as a plain `<script>` tag, not part of
+  the Vite bundle) exposes the browser-side
+  `db.entities.<Type>.list()/.get()/.create()/...` API. It no longer keeps its
+  own entity list: `db.entities` is a `Proxy` that lazily builds an API for any
+  accessed `<Type>`, so `server/db.js`'s `ENTITIES` is the single source of
+  truth (the server rejects unknown types via `assertKnownType`). **A new
+  entity type must be added in `server/db.js`'s `ENTITIES`** and (if the type
+  should be client-portal-scoped) `CLIENT_SCOPED_TYPES` in
+  `server/services/entities.js`.
 - **FTS5 full-text search** — `entities_fts` is a virtual table kept in sync
   by triggers (see `server/services/entities.js`'s `upsertFts`/`deleteFts`);
   `hasFts(db)` (`server/db.js`) checks it exists before every FTS query, since
