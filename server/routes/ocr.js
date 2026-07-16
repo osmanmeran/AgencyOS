@@ -12,7 +12,24 @@ import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const router = Router();
 
+// OCR shells out to a Python script (ocr_parse.py) that depends on python3,
+// pytesseract and pdf2image — none of which exist in a default Node/Railway
+// image. The feature is opt-in so the routes degrade cleanly (instead of
+// returning opaque 500s) wherever those system deps aren't provisioned.
+const OCR_ENABLED = process.env.OCR_ENABLED === 'true';
+
 router.use(authMiddleware);
+
+if (!OCR_ENABLED) {
+  router.use((req, res) => {
+    sendError(
+      res,
+      503,
+      'OCR_DISABLED',
+      'OCR is disabled on this server. Set OCR_ENABLED=true and install python3, pytesseract and pdf2image to use it.',
+    );
+  });
+}
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'ocr_uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -23,7 +40,7 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname).toLowerCase();
     const safeName = sanitizeFilename(path.basename(file.originalname, ext));
     cb(null, Date.now() + '_' + safeName + ext);
-  }
+  },
 });
 
 const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
@@ -41,20 +58,32 @@ function runOcrScript(scriptPath, args, timeout, maxBuffer) {
     let stdout = '';
     let stderr = '';
     let settled = false;
-    const finish = (fn, arg) => { if (!settled) { settled = true; clearTimeout(timer); fn(arg); } };
+    const finish = (fn, arg) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        fn(arg);
+      }
+    };
     const timer = setTimeout(() => {
       proc.kill('SIGTERM');
       finish(reject, new Error('OCR process timed out'));
     }, timeout);
 
-    const overBuffer = () => maxBuffer && (Buffer.byteLength(stdout) + Buffer.byteLength(stderr)) > maxBuffer;
+    const overBuffer = () => maxBuffer && Buffer.byteLength(stdout) + Buffer.byteLength(stderr) > maxBuffer;
     proc.stdout.on('data', (chunk) => {
       stdout += chunk;
-      if (overBuffer()) { proc.kill('SIGTERM'); finish(reject, new Error('OCR process output exceeded maxBuffer')); }
+      if (overBuffer()) {
+        proc.kill('SIGTERM');
+        finish(reject, new Error('OCR process output exceeded maxBuffer'));
+      }
     });
     proc.stderr.on('data', (chunk) => {
       stderr += chunk;
-      if (overBuffer()) { proc.kill('SIGTERM'); finish(reject, new Error('OCR process output exceeded maxBuffer')); }
+      if (overBuffer()) {
+        proc.kill('SIGTERM');
+        finish(reject, new Error('OCR process output exceeded maxBuffer'));
+      }
     });
     proc.on('error', (err) => finish(reject, err));
     proc.on('close', (code) => {
@@ -74,7 +103,7 @@ router.post('/ocr/extract', async (req, res) => {
 
     const resolved = path.resolve(file_path);
     const allowedDirs = [path.resolve(UPLOAD_DIR)];
-    const isAllowed = allowedDirs.some(dir => resolved.startsWith(dir));
+    const isAllowed = allowedDirs.some((dir) => resolved.startsWith(dir));
     if (!isAllowed) {
       return sendError(res, 400, 'INVALID_FILE_PATH', 'Invalid file path');
     }
@@ -100,11 +129,18 @@ router.post('/ocr/extract', async (req, res) => {
     }
 
     const data = JSON.parse(result.stdout);
-    try { fs.unlinkSync(resolved); } catch (e) {}
+    try {
+      fs.unlinkSync(resolved);
+    } catch (e) {}
     res.json(data);
   } catch (e) {
     if (e.message === 'Failed to parse OCR output' || e instanceof SyntaxError) {
-      res.status(500).json({ error: { code: 'PARSE_ERROR', message: 'Failed to parse OCR output' }, raw: e.stdout?.substring(0, 2000) });
+      res
+        .status(500)
+        .json({
+          error: { code: 'PARSE_ERROR', message: 'Failed to parse OCR output' },
+          raw: e.stdout?.substring(0, 2000),
+        });
     } else {
       sendError(res, 500, 'OCR_PROCESS_ERROR', e.message);
     }
@@ -126,7 +162,10 @@ router.post('/ocr/parse-text', async (req, res) => {
       return sendError(res, 500, 'SCRIPT_NOT_FOUND', 'OCR script not found');
     }
 
-    tmpFile = path.join(UPLOAD_DIR, '_parse_text_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.txt');
+    tmpFile = path.join(
+      UPLOAD_DIR,
+      '_parse_text_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.txt',
+    );
     fs.writeFileSync(tmpFile, text);
 
     const parseArgs = {
@@ -145,7 +184,11 @@ router.post('/ocr/parse-text', async (req, res) => {
       sendError(res, 500, 'PARSE_ERROR', e.message);
     }
   } finally {
-    if (tmpFile) { try { fs.unlinkSync(tmpFile); } catch (e) {} }
+    if (tmpFile) {
+      try {
+        fs.unlinkSync(tmpFile);
+      } catch (e) {}
+    }
   }
 });
 
