@@ -13,11 +13,20 @@ if (!JWT_SECRET) {
   process.env.JWT_SECRET = generated;
 }
 
+// Access tokens are short-lived (default 15 minutes); the browser refreshes
+// them transparently via the rotating refresh token (see services/auth.js
+// issueSession / rotateRefreshToken and POST /api/auth/refresh). This caps the
+// blast radius of a leaked access token to a few minutes instead of a day.
+export const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || '15m';
+export const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
+export const REFRESH_TOKEN_TTL_DAYS = Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30);
+export const REFRESH_TOKEN_MAX_AGE_MS = REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000;
+
 export function getJwtSecret() {
   return process.env.JWT_SECRET;
 }
 
-export function generateToken(user) {
+export function generateToken(user, expiresIn = ACCESS_TOKEN_TTL) {
   return jwt.sign(
     {
       id: user.id,
@@ -29,7 +38,7 @@ export function generateToken(user) {
       linked_supplier_id: user.linked_supplier_id || null,
     },
     getJwtSecret(),
-    { expiresIn: '24h' },
+    { expiresIn },
   );
 }
 

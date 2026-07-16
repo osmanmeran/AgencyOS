@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { getDb, uid } from '../db.js';
-import { getJwtSecret } from '../middleware/auth.js';
+import { getJwtSecret, generateToken, ACCESS_TOKEN_MAX_AGE_MS, REFRESH_TOKEN_MAX_AGE_MS } from '../middleware/auth.js';
 import { ForbiddenError, ConflictError, UnauthorizedError, BadRequestError } from '../middleware/errors.js';
 import logger from '../lib/logger.js';
 
@@ -51,23 +51,113 @@ export function safeUser(u) {
 }
 
 /**
- * Set the httpOnly JWT auth cookie plus a companion CSRF cookie, both valid
- * for 24 hours. The CSRF cookie is deliberately not httpOnly — the frontend
- * reads it and echoes it back as the `X-CSRF-Token` header on mutations, and
- * {@link import('../middleware/csrf.js').csrfMiddleware} checks the two
- * match (double-submit pattern). A cross-site attacker can trigger the
- * cookie-bearing request but can't read the cookie value to build the
- * matching header, since the browser enforces same-origin on cookie reads.
+ * Set the three auth cookies in one call:
+ *  - `token` (httpOnly): short-lived access JWT (~15m).
+ *  - `refresh_token` (httpOnly): long-lived rotating refresh token (~30d);
+ *    its raw value is shown to the client exactly once, at issuance.
+ *  - `csrf_token` (not httpOnly): double-submit CSRF token; the frontend
+ *    reads it and echoes it back as the `X-CSRF-Token` header on mutations,
+ *    and {@link import('../middleware/csrf.js').csrfMiddleware} checks the two
+ *    match. A cross-site attacker can trigger the cookie-bearing request but
+ *    can't read the cookie value to build the matching header.
+ *
+ * The CSRF cookie deliberately shares the refresh token's (long) lifetime so
+ * it outlives the short access token and is still present when the browser
+ * needs to refresh.
  */
-export function setTokenCookie(res, token) {
+export function setAuthCookies(res, { accessToken, refreshToken, csrfToken }) {
   const cookieOptions = {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000,
     path: '/',
   };
-  res.cookie('token', token, { ...cookieOptions, httpOnly: true });
-  res.cookie('csrf_token', crypto.randomBytes(32).toString('hex'), { ...cookieOptions, httpOnly: false });
+  res.cookie('token', accessToken, { ...cookieOptions, httpOnly: true, maxAge: ACCESS_TOKEN_MAX_AGE_MS });
+  res.cookie('refresh_token', refreshToken, { ...cookieOptions, httpOnly: true, maxAge: REFRESH_TOKEN_MAX_AGE_MS });
+  res.cookie('csrf_token', csrfToken, { ...cookieOptions, httpOnly: false, maxAge: REFRESH_TOKEN_MAX_AGE_MS });
+}
+
+/** SHA-256 hash of a raw refresh token, for storage/lookup (never store the raw value). */
+function hashRefreshToken(raw) {
+  return crypto.createHash('sha256').update(raw).digest('hex');
+}
+
+/**
+ * Persist a new refresh token for `userId` and return its raw value (shown to
+ * the client exactly once). The DB only stores the hash.
+ * @returns {string} The raw refresh token.
+ */
+export function createRefreshToken(userId, { userAgent, ip } = {}) {
+  const db = getDb();
+  const raw = crypto.randomBytes(40).toString('hex');
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS).toISOString();
+  db.prepare(
+    'INSERT INTO refresh_tokens (id, token_hash, user_id, expires_at, revoked, created_at, user_agent, ip) VALUES (?, ?, ?, ?, 0, ?, ?, ?)',
+  ).run(uid(), hashRefreshToken(raw), userId, expiresAt, now, userAgent || null, ip || null);
+  return raw;
+}
+
+/** @returns {object|null} The refresh-token row (by raw token), or null if missing/revoked/expired. */
+export function findValidRefreshToken(raw) {
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM refresh_tokens WHERE token_hash = ?').get(hashRefreshToken(raw));
+  if (!row) return null;
+  if (row.revoked) return null;
+  if (new Date(row.expires_at) < new Date()) return null;
+  return row;
+}
+
+/** Mark a refresh token (by raw value) as revoked. No-op if it doesn't exist. */
+export function revokeRefreshToken(raw) {
+  const db = getDb();
+  db.prepare('UPDATE refresh_tokens SET revoked = 1 WHERE token_hash = ?').run(hashRefreshToken(raw));
+}
+
+/** Revoke every refresh token a user holds (logout-everywhere / deactivation). */
+export function revokeAllUserRefreshTokens(userId) {
+  const db = getDb();
+  db.prepare('UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?').run(userId);
+}
+
+/**
+ * Validate a presented refresh token, rotate it (revoke the old, issue a new
+ * one), and return fresh access + refresh tokens plus the (re-read) user.
+ * @throws {UnauthorizedError} If the refresh token is missing, revoked, or expired.
+ */
+export function rotateRefreshToken(raw, { userAgent, ip } = {}) {
+  const old = findValidRefreshToken(raw);
+  if (!old) throw new UnauthorizedError('Invalid or expired refresh token');
+
+  const db = getDb();
+  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(old.user_id);
+  if (!userRow || !userRow.is_active) throw new UnauthorizedError('Invalid or expired refresh token');
+
+  // Revoke the presented token first, then mint a new pair. Done in a
+  // transaction so we never end up with two live tokens for the same rotation.
+  const newRaw = db.transaction(() => {
+    db.prepare('UPDATE refresh_tokens SET revoked = 1 WHERE token_hash = ?').run(hashRefreshToken(raw));
+    return createRefreshToken(old.user_id, { userAgent, ip });
+  })();
+
+  const user = safeUser(userRow);
+  const accessToken = generateToken(user);
+  const csrfToken = crypto.randomBytes(32).toString('hex');
+  return { accessToken, refreshToken: newRaw, csrfToken, user };
+}
+
+/**
+ * Establish a new authenticated session: mint a short-lived access token and a
+ * rotating refresh token, set the three auth cookies, and return the tokens +
+ * user for the JSON response. The raw refresh token is returned to the client
+ * exactly once (it becomes the `refresh_token` cookie).
+ * @returns {{accessToken: string, refreshToken: string, csrfToken: string, user: object}}
+ */
+export function issueSession(res, user, { userAgent, ip } = {}) {
+  const accessToken = generateToken(user);
+  const refreshToken = createRefreshToken(user.id, { userAgent, ip });
+  const csrfToken = crypto.randomBytes(32).toString('hex');
+  setAuthCookies(res, { accessToken, refreshToken, csrfToken });
+  return { accessToken, refreshToken, csrfToken, user };
 }
 
 /**

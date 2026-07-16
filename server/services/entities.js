@@ -448,14 +448,21 @@ function buildFilterSql(filter) {
         if (pathParam) params.push(pathParam);
         clauses.push(`${expr} IN (${arr.map(() => '?').join(', ')})`);
         params.push(...arr.map(toSqlParam));
-      } else if ('$gte' in v) {
-        if (pathParam) params.push(pathParam);
-        clauses.push(`${expr} >= ?`);
-        params.push(toSqlParam(v.$gte));
-      } else if ('$lte' in v) {
-        if (pathParam) params.push(pathParam);
-        clauses.push(`${expr} <= ?`);
-        params.push(toSqlParam(v.$lte));
+      } else {
+        // $gte and $lte may be combined into a single range (e.g. { $gte: 100,
+        // $lte: 200 }); apply both rather than silently dropping one.
+        const rangeClauses = [];
+        if ('$gte' in v) {
+          if (pathParam) params.push(pathParam);
+          rangeClauses.push(`${expr} >= ?`);
+          params.push(toSqlParam(v.$gte));
+        }
+        if ('$lte' in v) {
+          if (pathParam) params.push(pathParam);
+          rangeClauses.push(`${expr} <= ?`);
+          params.push(toSqlParam(v.$lte));
+        }
+        if (rangeClauses.length) clauses.push(rangeClauses.join(' AND '));
       }
     } else if (typeof v === 'boolean') {
       if (pathParam) params.push(pathParam);
@@ -547,8 +554,15 @@ export function applyFilter(records, filter, user, type) {
       const val = data[k];
       if (v !== null && typeof v === 'object') {
         if ('$in' in v) return Array.isArray(v.$in) && v.$in.includes(val);
-        if ('$gte' in v) return val >= v.$gte;
-        if ('$lte' in v) return val <= v.$lte;
+        // $gte and $lte may be combined into a single range; apply both.
+        const hasGte = '$gte' in v;
+        const hasLte = '$lte' in v;
+        if (hasGte || hasLte) {
+          let ok = true;
+          if (hasGte) ok = ok && val >= v.$gte;
+          if (hasLte) ok = ok && val <= v.$lte;
+          return ok;
+        }
       }
       return String(val ?? '').toLowerCase() === String(v).toLowerCase();
     });
@@ -661,15 +675,17 @@ export function createEntity(type, body, user) {
   delete data.id;
 
   const db = getDb();
-  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
-    id,
-    type,
-    JSON.stringify(data),
-    now,
-    now,
-  );
-
-  upsertFts(db, id, type, data);
+  const insert = db.transaction(() => {
+    db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+      id,
+      type,
+      JSON.stringify(data),
+      now,
+      now,
+    );
+    upsertFts(db, id, type, data);
+  });
+  insert();
 
   return { id, ...data, created_date: now, updated_date: now };
 }
@@ -695,9 +711,11 @@ export function updateEntity(type, id, body, user) {
   const newData = sanitizeEntityData({ ...existingData, ...body });
   delete newData.id;
 
-  db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(JSON.stringify(newData), now, id);
-
-  upsertFts(db, id, type, newData);
+  const update = db.transaction(() => {
+    db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(JSON.stringify(newData), now, id);
+    upsertFts(db, id, type, newData);
+  });
+  update();
 
   return { id, ...newData, created_date: existing.created_date, updated_date: now };
 }
@@ -719,8 +737,11 @@ export function deleteEntity(type, id, user) {
     throw new ForbiddenError('Access denied');
   }
 
-  db.prepare('DELETE FROM entities WHERE id = ?').run(id);
-  deleteFts(db, id);
+  const del = db.transaction(() => {
+    db.prepare('DELETE FROM entities WHERE id = ?').run(id);
+    deleteFts(db, id);
+  });
+  del();
 
   return { id, ...existingData, created_date: existing.created_date, updated_date: existing.updated_date };
 }

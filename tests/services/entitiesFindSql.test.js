@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getDb, uid } from '../../server/db.js';
-import { findEntities } from '../../server/services/entities.js';
+import { findEntities, applyFilter } from '../../server/services/entities.js';
 
 // findEntities pushes filtering/sort/pagination into SQL (via json_extract)
 // whenever the caller has unconditional read access to the type (admin,
@@ -79,13 +79,28 @@ describe('findEntities SQL fast path', () => {
     expect(titles.sort()).toEqual(['Alpha', 'Delta']);
   });
 
-  it("matches applyFilter's pre-existing behavior of only applying the first operator when a field has both $gte and $lte", () => {
+  it('applies both $gte and $lte when combined into a single range filter', () => {
     const result = findEntities(TYPE, { filter: JSON.stringify({ amount: { $gte: 100, $lte: 200 } }), user: admin });
     const titles = result.filter((r) => ids.includes(r.id)).map((r) => r.title);
-    // $gte is checked before $lte in applyFilter's if-chain, so $lte is
-    // silently ignored here — this mirrors existing behavior, not a bug
-    // introduced by the SQL path.
-    expect(titles.sort()).toEqual(['Alpha', 'Beta', 'Gamma']);
+    // Both bounds apply: amount must be in [100, 200] (Alpha=100, Beta=200;
+    // Gamma=300 and Delta=50 are excluded).
+    expect(titles.sort()).toEqual(['Alpha', 'Beta']);
+  });
+
+  it('applies a combined $gte/$lte range on the JS filter path (applyFilter)', () => {
+    const records = [
+      { title: 'A', amount: 100 },
+      { title: 'B', amount: 200 },
+      { title: 'C', amount: 300 },
+      { title: 'D', amount: 50 },
+    ];
+    const filtered = applyFilter(
+      records.map((r) => ({ data: JSON.stringify(r) })),
+      { amount: { $gte: 100, $lte: 200 } },
+      admin,
+      TYPE,
+    );
+    expect(filtered.map((r) => JSON.parse(r.data).title).sort()).toEqual(['A', 'B']);
   });
 
   it('sorts ascending and descending', () => {

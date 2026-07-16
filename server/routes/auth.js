@@ -2,15 +2,25 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { getDb, uid, hasFts } from '../db.js';
-import { generateToken, authMiddleware } from '../middleware/auth.js';
+import { authMiddleware } from '../middleware/auth.js';
 import { requireTier, requirePermission } from '../middleware/permissions.js';
-import { catchAsync, BadRequestError, NotFoundError, ForbiddenError, ConflictError } from '../middleware/errors.js';
+import {
+  catchAsync,
+  BadRequestError,
+  NotFoundError,
+  ForbiddenError,
+  ConflictError,
+  UnauthorizedError,
+} from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
 import {
   authenticateLocal,
   authenticateMicrosoft,
   safeUser,
-  setTokenCookie,
+  issueSession,
+  rotateRefreshToken,
+  revokeRefreshToken,
+  setAuthCookies,
   getUserById,
   getUserPassword,
   updateUser,
@@ -96,8 +106,7 @@ router.post(
       logAudit({ action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
       throw err;
     }
-    const token = generateToken(user);
-    setTokenCookie(res, token);
+    const token = issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }).accessToken;
     logAudit({
       userId: user.id,
       userName: user.email,
@@ -121,8 +130,7 @@ router.post(
       logAudit({ userName: req.body.email, action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
       throw err;
     }
-    const token = generateToken(user);
-    setTokenCookie(res, token);
+    const token = issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }).accessToken;
     logAudit({
       userId: user.id,
       userName: user.email,
@@ -257,17 +265,50 @@ router.post(
   validate(schemas.acceptInvite),
   catchAsync(async (req, res) => {
     const user = acceptInvite(req.body);
-    const token = generateToken(user);
-    setTokenCookie(res, token);
+    const token = issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }).accessToken;
     res.json({ token, user });
   }),
 );
 
-router.post('/logout', authMiddleware, (req, res) => {
-  res.clearCookie('token', { path: '/' });
-  res.clearCookie('csrf_token', { path: '/' });
-  res.json({ success: true, message: 'Logged out' });
-});
+// Refresh the short-lived access token using the rotating refresh token cookie.
+// Returns a fresh access token (+ re-issued refresh/csrf cookies). On any
+// problem the caller is left logged out (the old refresh token is revoked on
+// rotation, so a replayed/leaked one fails here).
+router.post(
+  '/refresh',
+  catchAsync(async (req, res) => {
+    const raw = req.cookies && req.cookies.refresh_token;
+    if (!raw) throw new UnauthorizedError('No refresh token');
+    const session = rotateRefreshToken(raw, { userAgent: req.get('user-agent'), ip: req.ip });
+    setAuthCookies(res, {
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      csrfToken: session.csrfToken,
+    });
+    res.json({ token: session.accessToken, user: session.user });
+  }),
+);
+
+router.post(
+  '/logout',
+  catchAsync(async (req, res) => {
+    // No authMiddleware: logout must work even when the short-lived access token
+    // has already expired. Revoke the refresh token (if any) so it can't be
+    // replayed, then clear all three auth cookies.
+    const raw = req.cookies && req.cookies.refresh_token;
+    if (raw) {
+      try {
+        revokeRefreshToken(raw);
+      } catch {
+        /* best-effort */
+      }
+    }
+    res.clearCookie('token', { path: '/' });
+    res.clearCookie('refresh_token', { path: '/' });
+    res.clearCookie('csrf_token', { path: '/' });
+    res.json({ success: true, message: 'Logged out' });
+  }),
+);
 
 // --- Client Portal access provisioning -------------------------------------
 // Gated by `grant_client_portal` (not tier), so admins can delegate the
@@ -472,32 +513,35 @@ router.post(
     if (!email) throw new BadRequestError('Supplier must have an email address to grant portal access');
 
     let tempPassword = null;
-    const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
-    if (existing) {
-      if (existing.user_tier !== 'supplier') {
-        throw new ConflictError('This email already belongs to a staff account; use a different contact email');
+    const grant = db.transaction(() => {
+      const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+      if (existing) {
+        if (existing.user_tier !== 'supplier') {
+          throw new ConflictError('This email already belongs to a staff account; use a different contact email');
+        }
+        if (existing.linked_supplier_id && existing.linked_supplier_id !== supplierId) {
+          throw new ConflictError('This email is already linked to a different supplier');
+        }
+        updateUser(existing.id, { is_active: true, linked_supplier_id: supplierId });
+      } else {
+        tempPassword = generateTempPassword();
+        createUser({
+          email,
+          password: tempPassword,
+          name: supplier.data.name || String(email).split('@')[0],
+          user_tier: 'supplier',
+          linked_supplier_id: supplierId,
+        });
       }
-      if (existing.linked_supplier_id && existing.linked_supplier_id !== supplierId) {
-        throw new ConflictError('This email is already linked to a different supplier');
-      }
-      updateUser(existing.id, { is_active: true, linked_supplier_id: supplierId });
-    } else {
-      tempPassword = generateTempPassword();
-      createUser({
-        email,
-        password: tempPassword,
-        name: supplier.data.name || String(email).split('@')[0],
-        user_tier: 'supplier',
-        linked_supplier_id: supplierId,
-      });
-    }
 
-    const newSupplierData = { ...supplier.data, portal_access: true };
-    db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
-      JSON.stringify(newSupplierData),
-      new Date().toISOString(),
-      supplierId,
-    );
+      const newSupplierData = { ...supplier.data, portal_access: true };
+      db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
+        JSON.stringify(newSupplierData),
+        new Date().toISOString(),
+        supplierId,
+      );
+    });
+    grant();
 
     logAudit({
       userId: req.user.id,
@@ -524,19 +568,22 @@ router.post(
     if (!supplier) throw new NotFoundError('Supplier not found');
 
     const email = supplier.data.email;
-    if (email) {
-      const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
-      if (existing && existing.user_tier === 'supplier') {
-        updateUser(existing.id, { is_active: false });
+    const revoke = db.transaction(() => {
+      if (email) {
+        const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+        if (existing && existing.user_tier === 'supplier') {
+          updateUser(existing.id, { is_active: false });
+        }
       }
-    }
 
-    const newSupplierData = { ...supplier.data, portal_access: false };
-    db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
-      JSON.stringify(newSupplierData),
-      new Date().toISOString(),
-      supplierId,
-    );
+      const newSupplierData = { ...supplier.data, portal_access: false };
+      db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
+        JSON.stringify(newSupplierData),
+        new Date().toISOString(),
+        supplierId,
+      );
+    });
+    revoke();
 
     logAudit({
       userId: req.user.id,

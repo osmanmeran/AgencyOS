@@ -38,6 +38,30 @@
     return match ? decodeURIComponent(match[1]) : null;
   }
 
+  // Single in-flight refresh so concurrent 401s share one rotation instead of
+  // each trying (and the second failing because the first already revoked it).
+  var refreshPromise = null;
+  function refreshAuth() {
+    if (refreshPromise) return refreshPromise;
+    refreshPromise = fetch(API_BASE + '/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() || '' },
+      credentials: 'include',
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('refresh failed');
+        return res.json();
+      })
+      .then(function (data) {
+        if (data && data.user) setCurrentUser(data.user);
+        return data;
+      })
+      .finally(function () {
+        refreshPromise = null;
+      });
+    return refreshPromise;
+  }
+
   async function api(path, options) {
     options = options || {};
     var headers = { 'Content-Type': 'application/json' };
@@ -62,6 +86,24 @@
     }
 
     if (!res.ok) {
+      // Access tokens are short-lived (~15m). On expiry, transparently rotate
+      // via the refresh-token cookie and retry the original request once.
+      if (res.status === 401 && !options._isRefresh && path !== '/auth/refresh') {
+        try {
+          await refreshAuth();
+          return api(path, Object.assign({}, options, { _isRefresh: true }));
+        } catch (e) {
+          setCurrentUser(null);
+          if (typeof window !== 'undefined') {
+            window.location.href = '/mock-login?returnUrl=' + encodeURIComponent(window.location.href);
+          }
+          var refreshErr = new Error('Session expired. Please sign in again.');
+          refreshErr.status = 401;
+          refreshErr.code = 'SESSION_EXPIRED';
+          throw refreshErr;
+        }
+      }
+
       // Server errors are shaped { error: { code, message, details? } } (see
       // server/middleware/errors.js sendError/errorHandler and validate.js).
       // Older code here only checked data.message, which is never set on
@@ -194,8 +236,12 @@
         });
       },
       logout: function (redirectUrl) {
-        // Call server to clear httpOnly cookie
-        fetch(API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
+        // Call server to clear httpOnly cookie (CSRF-protected, so echo the token)
+        fetch(API_BASE + '/auth/logout', {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': getCsrfToken() || '' },
+          credentials: 'include',
+        }).catch(function () {});
         setCurrentUser(null);
         if (redirectUrl) {
           // Prevent nested returnUrl loops
