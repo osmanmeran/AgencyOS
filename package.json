@@ -22,6 +22,7 @@
     "seed:tours": "node scripts/seedItalianDailyTours.mjs && node scripts/localizeItalianTours.mjs",
     "db:backup:list": "node scripts/backup-cli.mjs list",
     "db:backup:restore": "node scripts/backup-cli.mjs restore",
+    "openapi": "node scripts/generateOpenApi.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

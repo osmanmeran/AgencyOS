@@ -2,8 +2,8 @@ import { getDb, uid, getEntities, hasFts } from '../db.js';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../middleware/errors.js';
 import { hasPermission } from '../permissions.js';
 
-const USER_SCOPED_TYPES = ['Message', 'ClientTask', 'EmailLog'];
-const CLIENT_SCOPED_TYPES = ['Trip', 'Proposal', 'Invoice', 'ClientPayment', 'QuoteRequest'];
+export const USER_SCOPED_TYPES = ['Message', 'ClientTask', 'EmailLog'];
+export const CLIENT_SCOPED_TYPES = ['Trip', 'Proposal', 'Invoice', 'ClientPayment', 'QuoteRequest'];
 
 const ENTITY_PERMISSION_MAP = {
   Trip: { create: 'create_trips', read: 'view_all_trips', update: 'modify_trips', delete: 'delete_trips' },

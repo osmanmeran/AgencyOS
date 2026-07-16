@@ -27,6 +27,9 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# Generated OpenAPI spec (run `npm run openapi` to regenerate)
+openapi.json
 *.suo
 *.ntvs*
 *.njsproj
