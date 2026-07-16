@@ -127,10 +127,18 @@ from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
 
 ## 🟢 Code quality & testing
 
-12. **Frontend has zero test coverage** — all test files target the
-    backend. Priorities: React Testing Library tests for permission-gated UI
-    and the CRUD hooks (`usePaginatedEntities`, `useEntitySync`), then a
-    small Playwright E2E for login → create trip → create proposal.
+12. **Frontend test coverage (baseline established 2026-07-16)** — until
+    now all test files targeted the backend. A `frontend` Vitest project now
+    runs React Testing Library specs under `tests/frontend/**` (jsdom env,
+    `@testing-library/jest-dom` matchers, `@` alias mirrored from
+    `vite.config.js`, `@vitejs/plugin-react`). Seed specs cover the permission
+    catalog (`tests/frontend/lib/permissions.test.js`), the permission-gated
+    `PermissionGate`/`PermissionProvider` UI
+    (`tests/frontend/components/PermissionGate.test.jsx`), and the two CRUD
+    hooks `usePaginatedEntities` / `useEntitySync`
+    (`tests/frontend/hooks/*.test.jsx`) by mocking `@/lib/DbContext` and
+    `@/lib/realtime`. Still TODO: broaden component coverage and add a small
+    Playwright E2E for login → create trip → create proposal.
 
 13. ✅ **FIXED — largest pages decomposed** (2026-07-14) — the four biggest
     pages had their self-contained presentational sub-components and shared
