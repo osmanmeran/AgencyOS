@@ -94,7 +94,10 @@
           return api(path, Object.assign({}, options, { _isRefresh: true }));
         } catch (e) {
           setCurrentUser(null);
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && window.location.pathname !== '/mock-login') {
+            // Guard against redirecting while already on the login page: an
+            // unauthenticated `me()` there would otherwise loop returnUrl
+            // forever and the form would never render.
             window.location.href = '/mock-login?returnUrl=' + encodeURIComponent(window.location.href);
           }
           var refreshErr = new Error('Session expired. Please sign in again.');

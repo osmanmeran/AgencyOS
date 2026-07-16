@@ -137,8 +137,11 @@ from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
     (`tests/frontend/components/PermissionGate.test.jsx`), and the two CRUD
     hooks `usePaginatedEntities` / `useEntitySync`
     (`tests/frontend/hooks/*.test.jsx`) by mocking `@/lib/DbContext` and
-    `@/lib/realtime`. Still TODO: broaden component coverage and add a small
-    Playwright E2E for login → create trip → create proposal.
+    `@/lib/realtime`. A Playwright E2E (`tests/e2e/flow.spec.js`, run via
+    `npm run test:e2e`) exercises the live login → create trip → create
+    proposal flow against an isolated `data/e2e` SQLite DB seeded by
+    `tests/e2e/globalSetup.js` and started by `scripts/e2eServer.mjs`. Still
+    TODO: broaden component coverage (more RTL specs) and add further E2E flows.
 
 13. ✅ **FIXED — largest pages decomposed** (2026-07-14) — the four biggest
     pages had their self-contained presentational sub-components and shared

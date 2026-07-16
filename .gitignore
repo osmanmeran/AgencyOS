@@ -37,3 +37,10 @@ openapi.json
 *.sw?
 
 .vercel
+
+# Playwright E2E
+data/e2e/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
