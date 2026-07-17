@@ -38,6 +38,13 @@
     return match ? decodeURIComponent(match[1]) : null;
   }
 
+  // Session-establishing endpoints: a 401 here is a genuine auth failure (bad
+  // credentials, invalid token), NOT an expired access token — so it must not
+  // trigger the refresh-on-401 retry below (which would swallow the real error
+  // like "Invalid email or password" behind a generic "Session expired").
+  // Mirrors server/middleware/csrf.js EXEMPT_PATHS (+ /auth/refresh itself).
+  var AUTH_ENTRY_PATHS = ['/auth/login', '/auth/microsoft', '/auth/accept-invite', '/auth/refresh'];
+
   // Single in-flight refresh so concurrent 401s share one rotation instead of
   // each trying (and the second failing because the first already revoked it).
   var refreshPromise = null;
@@ -88,7 +95,7 @@
     if (!res.ok) {
       // Access tokens are short-lived (~15m). On expiry, transparently rotate
       // via the refresh-token cookie and retry the original request once.
-      if (res.status === 401 && !options._isRefresh && path !== '/auth/refresh') {
+      if (res.status === 401 && !options._isRefresh && AUTH_ENTRY_PATHS.indexOf(path) === -1) {
         try {
           await refreshAuth();
           return api(path, Object.assign({}, options, { _isRefresh: true }));
