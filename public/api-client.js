@@ -45,6 +45,20 @@
   // Mirrors server/middleware/csrf.js EXEMPT_PATHS (+ /auth/refresh itself).
   var AUTH_ENTRY_PATHS = ['/auth/login', '/auth/microsoft', '/auth/accept-invite', '/auth/refresh'];
 
+  // Standalone / pre-auth pages that run their own auth handshake (or are
+  // magic-link pages). A failed background `me()` here must NOT hard-redirect
+  // to the login page — doing so on the SSO callback interrupts the in-flight
+  // token exchange and bounces the user back to login (redirect loop).
+  // Mirrors NON_REDIRECT_ROUTES in src/App.jsx.
+  var NO_REDIRECT_PATHS = [
+    '/mock-login',
+    '/auth/microsoft/callback',
+    '/accept-invite',
+    '/auth/outlook-callback',
+    '/client-itinerary',
+    '/request-quote',
+  ];
+
   // Single in-flight refresh so concurrent 401s share one rotation instead of
   // each trying (and the second failing because the first already revoked it).
   var refreshPromise = null;
@@ -101,10 +115,10 @@
           return api(path, Object.assign({}, options, { _isRefresh: true }));
         } catch (e) {
           setCurrentUser(null);
-          if (typeof window !== 'undefined' && window.location.pathname !== '/mock-login') {
-            // Guard against redirecting while already on the login page: an
-            // unauthenticated `me()` there would otherwise loop returnUrl
-            // forever and the form would never render.
+          if (typeof window !== 'undefined' && NO_REDIRECT_PATHS.indexOf(window.location.pathname) === -1) {
+            // Don't redirect on the login page (would loop returnUrl forever)
+            // or on standalone/pre-auth pages like the SSO callback, whose own
+            // handshake would be interrupted by a hard navigation.
             window.location.href = '/mock-login?returnUrl=' + encodeURIComponent(window.location.href);
           }
           var refreshErr = new Error('Session expired. Please sign in again.');
