@@ -6,10 +6,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <title>Marvelops APP</title>
+    <!-- api-client.js sets globalThis.__B44_DB__; load it (deferred) before the
+         app module so the SDK is ready when React mounts. Must stay ahead of the
+         Vite-injected entry module in document order. -->
+    <script defer src="/api-client.js"></script>
   </head>
   <body>
     <div id="root"></div>
-    <script src="/api-client.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
