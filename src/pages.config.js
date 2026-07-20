@@ -51,6 +51,7 @@ const GenerateFromContract = lazy(() => import('./pages/GenerateFromContract'));
 const DailyTours = lazy(() => import('./pages/DailyTours'));
 const MultiDayTours = lazy(() => import('./pages/MultiDayTours'));
 const WorkspaceSettings = lazy(() => import('./pages/WorkspaceSettings'));
+const PlatformAdmin = lazy(() => import('./pages/PlatformAdmin'));
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -105,6 +106,7 @@ export const PAGES = {
   DailyTours: DailyTours,
   MultiDayTours: MultiDayTours,
   WorkspaceSettings: WorkspaceSettings,
+  PlatformAdmin: PlatformAdmin,
 };
 
 export const pagesConfig = {

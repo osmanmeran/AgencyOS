@@ -34,6 +34,7 @@ import reportRoutes from './routes/reports.js';
 import adminRoutes from './routes/admin.js';
 import taskRoutes from './routes/tasks.js';
 import tenantRoutes from './routes/tenants.js';
+import platformRoutes from './routes/platform.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -148,6 +149,10 @@ app.use('/api/tasks', auditMiddleware, taskRoutes);
 // Self-serve workspace provisioning (Phase 3). Public + unauthenticated — it
 // must NOT sit behind authMiddleware (there is no session to scope it to yet).
 app.use('/api/tenants', tenantRoutes);
+
+// Platform (SaaS operator) admin: cross-tenant workspace list + stats. Auth +
+// allow-list gated inside the router.
+app.use('/api/platform', platformRoutes);
 
 app.get('/api/health', (req, res) => {
   const checks = { database: 'ok', migrations: 'ok', disk: 'ok' };

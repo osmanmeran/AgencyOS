@@ -134,17 +134,85 @@ client_id, linked_supplier_id}` (`server/middleware/auth.js:20-34`) — no
 
 ### Explicitly deferred (out of scope for now)
 
-- Stripe billing, plan/usage gating.
-- Cross-tenant platform-admin dashboard — revisit the isolation tradeoff
-  specifically for this; likely needs the denormalized metrics table
-  mentioned above.
+- Stripe billing, plan/usage gating — **owner is researching payment
+  providers; not started.**
 - Multi-tenant membership / org switcher (a user belonging to more than one
   agency) — uncommon for this vertical, skip unless requested.
+
+## Phase 5 — Platform admin dashboard ✅ implemented (2026-07-20)
+
+Cross-tenant visibility for the SaaS operator (deferred in earlier drafts).
+Per-tenant DB isolation means there is no single SQL view, so stats are
+aggregated app-side by opening each tenant DB (acceptable; see the isolation
+tradeoff in the decision above). If cross-tenant reporting gets heavy, revisit
+the denormalized metrics table.
+
+- `server/services/platform.js`:
+  - `isPlatformAdmin(email)` — email allow-list from `PLATFORM_ADMIN_EMAILS`
+    (comma-separated env var). No new DB table / tier needed.
+  - `listWorkspaces()` — every tenant with `userCount` + `entityCount`
+    aggregated from its own DB.
+  - `platformStats()` — totals (workspace count, users, entities) + `byStatus`.
+- `server/routes/platform.js`: `authMiddleware` + `requirePlatformAdmin`
+  gate `GET /api/platform/workspaces` and `GET /api/platform/stats`.
+- `src/pages/PlatformAdmin.jsx` (registered in `pages.config.js`): workspace
+  table + summary cards; shows a not-authorized message for non-admins.
+- Set `PLATFORM_ADMIN_EMAILS` in production to grant access.
+
+## Phase 6 — Ops enablement & launch checklist
+
+### Adopt the existing production DB as tenant zero
+
+`scripts/adopt-tenant-zero.mjs` is the one-off, idempotent step. **Take an
+off-box backup of `data/` first** (the move is permanent, though non-destructive
+— the file is renamed, never deleted).
+
+```
+# 1. Dry run — prints exactly what it would do, changes nothing
+node scripts/adopt-tenant-zero.mjs --slug marveltour --name "Marvel Tour"
+
+# 2. Apply — moves data/marvelops.db -> data/tenants/0/marvelops.db
+#    and inserts the tenant-zero registry row (id '0', status active)
+node scripts/adopt-tenant-zero.mjs --slug marveltour --name "Marvel Tour" --apply
+```
+
+Verified end-to-end (2026-07-20) in a throwaway DATA_DIR: the source file is
+moved to `data/tenants/0/marvelops.db` and the `tenants` row is created. The
+app then serves it via `getDb('0')` with no further code changes.
+
+### DNS + TLS (prerequisite for subdomain routing)
+
+- **Wildcard DNS A/AAAA** record for `*.marvelops.app` → the app host (Railway
+  / load balancer). Single-tenant `marvelops.app` (apex) keeps working too.
+- **Wildcard TLS** certificate covering `*.marvelops.app` (e.g. Let's Encrypt
+  wildcard via DNS-01 challenge, or your platform's wildcard cert). Without
+  this, `https://<slug>.marvelops.app` fails TLS.
+- Set `APP_ROOT_DOMAIN=marvelops.app` in the server env. This is what activates
+  subdomain→tenant resolution (`server/middleware/tenant.js`); leave it unset in
+  dev so localhost keeps working unchanged.
+
+### Runtime env (production)
+
+- `ALLOW_PUBLIC_SIGNUP=true` to open self-serve signup (default `false` —
+  existing single-tenant deployments stay closed by default).
+- `PLATFORM_ADMIN_EMAILS=ops@marvelops.app` — who can see the platform dashboard.
+- `MICROSOFT_CLIENT_ID` — still required for Microsoft SSO (per-workspace
+  `azure_tenant_id` is now configured in-app via the Workspace settings page,
+  and falls back to `MICROSOFT_TENANT_ID` when empty).
+- `CORS_ORIGIN` — set to your production origin in prod (dev defaults to `*`).
+- `JWT_SECRET` — stable secret across restarts (tokens survive reloads).
+- **Off-box backups**: `createBackupSync` snapshots are on the same disk as the
+  DB; add S3/R2 (or similar) copies of `data/` (platform.db + every
+  `tenants/*/marvelops.db`).
 
 ## Open questions before implementation starts
 
 1. WebSocket broadcast scoping (Phase 2 blocker — needs its own investigation).
+   _Resolved in Phase 2: `server/ws.js` scopes broadcasts to the request's
+   tenant via AsyncLocalStorage._
 2. Exact migration path for adopting the current production DB as tenant
    zero — should be scripted and dry-run before touching real data.
+   _Resolved: `scripts/adopt-tenant-zero.mjs`, verified above._
 3. Domain/DNS ownership for `*.marvelops.app` (or whatever the SaaS domain
-   ends up being) — ops prerequisite for Phase 2.
+   ends up being) — ops prerequisite for Phase 2. _Covered by the Phase 6
+   checklist above._
