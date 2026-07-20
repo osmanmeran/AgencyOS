@@ -26,6 +26,7 @@ export const AUDIT_ACTIONS = {
   PORTAL_GRANT: 'portal_grant',
   PORTAL_REVOKE: 'portal_revoke',
   TENANT_CREATE: 'tenant_create',
+  TENANT_UPDATE: 'tenant_update',
 };
 
 /**

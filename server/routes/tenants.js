@@ -1,8 +1,16 @@
 import { Router } from 'express';
-import { getDb, uid, runWithTenant } from '../db.js';
+import { getDb, getTenantId, uid, runWithTenant } from '../db.js';
 import { validate, schemas } from '../middleware/validate.js';
-import { catchAsync, BadRequestError, ConflictError, ForbiddenError } from '../middleware/errors.js';
-import { createTenant, getTenantBySlug, isValidSlug, TENANT_STATUS } from '../services/tenants.js';
+import { catchAsync, BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../middleware/errors.js';
+import { authMiddleware } from '../middleware/auth.js';
+import {
+  createTenant,
+  getTenantById,
+  getTenantBySlug,
+  isValidSlug,
+  updateTenant,
+  TENANT_STATUS,
+} from '../services/tenants.js';
 import { createUser, safeUser, issueSession } from '../services/auth.js';
 import { verifyMicrosoftIdToken } from '../services/microsoft.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
@@ -147,6 +155,61 @@ router.post(
       user: safeUser(user),
       tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name, status: tenant.status },
       workspaceUrl,
+    });
+  }),
+);
+
+// ── Authenticated workspace self-service (Phase 4 — control plane) ──
+// Scoped to the workspace resolved from the Host header (tenantMiddleware).
+// Any authenticated member may read; only an admin may update.
+// On the apex (no subdomain) `req.tenant`/`req.tenantId` are null, so the
+// effective tenant is read from the request scope (AsyncLocalStorage) instead.
+function currentTenantId(req) {
+  return req.tenant?.id ?? req.tenantId ?? getTenantId();
+}
+
+router.get(
+  '/me',
+  authMiddleware,
+  catchAsync(async (req, res) => {
+    const tenant = req.tenant || getTenantById(currentTenantId(req));
+    if (!tenant) throw new NotFoundError('Workspace not found');
+    res.json({
+      id: tenant.id,
+      slug: tenant.slug,
+      name: tenant.name,
+      status: tenant.status,
+      azureTenantId: tenant.azure_tenant_id,
+      createdDate: tenant.created_date,
+    });
+  }),
+);
+
+router.patch(
+  '/me',
+  authMiddleware,
+  validate(schemas.updateTenant),
+  catchAsync(async (req, res) => {
+    if (req.user.user_tier !== 'admin') {
+      throw new ForbiddenError('Only a workspace admin can update workspace settings.', 'ADMIN_REQUIRED');
+    }
+    const updated = updateTenant(currentTenantId(req), req.body);
+    if (!updated) throw new NotFoundError('Workspace not found');
+    logAudit({
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.TENANT_UPDATE,
+      entityType: 'tenant',
+      entityId: updated.id,
+      changes: req.body,
+      ip: req.ip,
+    });
+    res.json({
+      id: updated.id,
+      slug: updated.slug,
+      name: updated.name,
+      status: updated.status,
+      azureTenantId: updated.azure_tenant_id,
+      createdDate: updated.created_date,
     });
   }),
 );

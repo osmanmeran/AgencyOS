@@ -114,6 +114,24 @@ client_id, linked_supplier_id}` (`server/middleware/auth.js:20-34`) — no
   `verifyMicrosoftIdToken` used by both login and SSO signup.
 - Cross-tenant platform-admin dashboard remains deferred (below).
 
+### Phase 4 — Workspace control plane ✅ implemented (2026-07-20)
+
+- `GET /api/tenants/me` returns the current workspace (resolved from the Host
+  header / request scope): `id, slug, name, status, azureTenantId, createdDate`.
+  Any authenticated member may read.
+- `PATCH /api/tenants/me` (admin only) updates `name` and `azureTenantId`.
+  `slug` and `status` are intentionally immutable (`slug` is the workspace
+  address). `azureTenantId` is validated as a UUID and, when set, scopes
+  Microsoft SSO login to that Azure tenant (see Phase 2 `authenticateMicrosoft`).
+  Empty/`null` clears it (falls back to the server `MICROSOFT_TENANT_ID`).
+- `server/services/tenants.js` `updateTenant` performs the mutation; changes are
+  audited (`TENANT_UPDATE`). `shared/schemas.js` `updateTenant` validates input.
+- Frontend `src/pages/WorkspaceSettings.jsx` (registered in `pages.config.js`):
+  workspace name + Azure tenant id editor, admin-gated, read-only for members.
+- Closes the loop so a workspace admin can configure their own SSO without
+  touching server env vars. Billing/plan gating (trial → active) remains
+  deferred — `status` is currently display-only.
+
 ### Explicitly deferred (out of scope for now)
 
 - Stripe billing, plan/usage gating.

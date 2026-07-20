@@ -44,6 +44,19 @@ export const schemas = {
       path: ['adminPassword'],
     }),
 
+  // Self-serve workspace control plane (Phase 4). Only `name` and
+  // `azureTenantId` are editable; `slug`/`status` are immutable. `azureTenantId`
+  // may be set to '' / null to clear (disabling per-workspace Microsoft SSO).
+  updateTenant: z
+    .object({
+      name: z.string().min(1, 'Workspace name is required').max(120).optional(),
+      azureTenantId: z.string().max(36).nullable().optional(),
+    })
+    .refine((d) => Object.keys(d).length > 0, {
+      message: 'Provide at least one field to update',
+      path: ['name'],
+    }),
+
   createUser: z
     .object({
       email: z.string().email('Invalid email format'),

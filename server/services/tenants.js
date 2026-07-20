@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { getPlatformDb } from '../db.js';
+import { BadRequestError } from '../middleware/errors.js';
 
 export const TENANT_STATUS = {
   TRIAL: 'trial',
@@ -50,4 +51,46 @@ export function listTenants() {
   return getPlatformDb()
     .prepare('SELECT id, slug, name, status, azure_tenant_id, created_date FROM tenants ORDER BY created_date ASC')
     .all();
+}
+
+// Azure AD tenant ids are UUIDs (8-4-4-4-12 hex). Validate loosely so a typo
+// doesn't slip into the platform registry and silently break SSO login.
+const AZURE_TENANT_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Update mutable fields of a workspace. Used by the self-service control plane
+ * (Phase 4). `name` and `azureTenantId` are the only editable columns; `slug`
+ * and `status` are intentionally immutable (the slug is the workspace address).
+ * @param {string} id
+ * @param {{name?: string, azureTenantId?: string|null}} changes
+ * @returns {object|null} the updated tenant row, or null if it doesn't exist
+ */
+export function updateTenant(id, { name, azureTenantId } = {}) {
+  const db = getPlatformDb();
+  const existing = getTenantById(id);
+  if (!existing) return null;
+
+  const sets = [];
+  const values = [];
+
+  if (name !== undefined && name !== null) {
+    const trimmed = String(name).trim();
+    if (!trimmed) throw new BadRequestError('Workspace name cannot be empty');
+    sets.push('name = ?');
+    values.push(trimmed.slice(0, 120));
+  }
+
+  if (azureTenantId !== undefined && azureTenantId !== null) {
+    const trimmed = String(azureTenantId).trim();
+    if (trimmed && !AZURE_TENANT_RE.test(trimmed)) {
+      throw new BadRequestError('azureTenantId must be a valid Azure tenant id (UUID)');
+    }
+    sets.push('azure_tenant_id = ?');
+    values.push(trimmed || null);
+  }
+
+  if (sets.length === 0) return existing;
+
+  db.prepare(`UPDATE tenants SET ${sets.join(', ')} WHERE id = ?`).run(...values, id);
+  return getTenantById(id);
 }
