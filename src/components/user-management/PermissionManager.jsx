@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { PERMISSION_GROUPS } from '@/lib/permissions';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function PermissionManager({
   resetToDefaults,
@@ -20,6 +21,7 @@ export default function PermissionManager({
   setAllForTier,
   toggleTierPermission,
 }) {
+  const { t: _t } = useT();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -28,13 +30,13 @@ export default function PermissionManager({
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Permission Manager</h1>
-            <p className="text-sm text-muted-foreground">Configure what each user tier can do</p>
+            <h1 className="text-2xl font-bold text-foreground">{_t('userManagement.permission')}</h1>
+            <p className="text-sm text-muted-foreground">{_t('userManagement.configure')}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={resetToDefaults}>
-            <RotateCcw className="w-4 h-4 mr-1" /> Reset Defaults
+            <RotateCcw className="w-4 h-4 mr-1" /> {_t('userManagement.resetDefaults')}
           </Button>
           <Button
             size="sm"
@@ -47,7 +49,7 @@ export default function PermissionManager({
             ) : (
               <Save className="w-4 h-4 mr-1" />
             )}
-            Save Changes
+            {_t('userManagement.save')}
           </Button>
         </div>
       </div>
@@ -55,7 +57,7 @@ export default function PermissionManager({
       {dirty && (
         <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-300">
           <span className="w-2 h-2 bg-amber-500 rounded-full" />
-          Unsaved changes — click "Save Changes" to apply
+          {_t('userManagement.unsaved')}
         </div>
       )}
 
@@ -88,7 +90,7 @@ export default function PermissionManager({
           </h2>
           <div className="flex flex-wrap gap-2">
             <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setAllForTier(selectedTier, true)}>
-              Select All
+              {_t('userManagement.select')}
             </Button>
             <Button
               variant="ghost"
@@ -96,7 +98,7 @@ export default function PermissionManager({
               className="text-xs h-8"
               onClick={() => setAllForTier(selectedTier, false)}
             >
-              Deselect All
+              {_t('userManagement.deselect')}
             </Button>
           </div>
         </div>

@@ -15,6 +15,7 @@ import {
   SendHorizontal,
   DollarSign,
 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const CATEGORIES = [
   { key: 'general', label: 'General', icon: HelpCircle },
@@ -187,6 +188,7 @@ const FAQS = [
 ];
 
 export default function FAQ() {
+  const { t: _t } = useT();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [openItems, setOpenItems] = useState(new Set());
@@ -210,16 +212,14 @@ export default function FAQ() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Frequently Asked Questions</h1>
-        <p className="text-slate-500 dark:text-slate-400">
-          Find answers to common questions about using Marvelops TravelPro.
-        </p>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">{_t('faq.frequently')}</h1>
+        <p className="text-slate-500 dark:text-slate-400">{_t('faq.find')}</p>
       </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
         <Input
-          placeholder="Search FAQs..."
+          placeholder={_t('faq.search')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10 h-12 text-base"
@@ -235,7 +235,7 @@ export default function FAQ() {
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
           }`}
         >
-          All
+          {_t('faq.all')}
         </button>
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
@@ -260,8 +260,8 @@ export default function FAQ() {
         {filtered.length === 0 ? (
           <Card className="p-12 text-center">
             <HelpCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400">No matching questions</h3>
-            <p className="text-sm text-slate-400 mt-1">Try a different search or category.</p>
+            <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400">{_t('faq.no')}</h3>
+            <p className="text-sm text-slate-400 mt-1">{_t('faq.try')}</p>
           </Card>
         ) : (
           filtered.map((faq, _i) => {
@@ -302,9 +302,7 @@ export default function FAQ() {
       </div>
 
       <div className="text-center py-8">
-        <p className="text-sm text-slate-400 dark:text-slate-500">
-          Still have questions? Contact your system administrator or email osman.meran@gmail.com
-        </p>
+        <p className="text-sm text-slate-400 dark:text-slate-500">{_t('faq.still')}</p>
       </div>
     </div>
   );

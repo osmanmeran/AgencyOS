@@ -2,6 +2,7 @@ import { TIERS, TIER_LABELS } from './helpers';
 import { PERMISSION_GROUPS } from '@/lib/permissions';
 import { KeyRound } from 'lucide-react';
 import ClientLinkPicker from '@/components/passengers/ClientLinkPicker';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function EditUserModal({
   selectedUser,
@@ -25,6 +26,7 @@ export default function EditUserModal({
   currentUser,
   departmentsList,
 }) {
+  const { t: _t } = useT();
   if (!selectedUser) return null;
 
   return (
@@ -33,10 +35,12 @@ export default function EditUserModal({
       onClick={() => setSelectedUser(null)}
     >
       <div className="bg-card rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-lg font-bold text-foreground mb-4">Edit User: {selectedUser.name}</h3>
+        <h3 className="text-lg font-bold text-foreground mb-4">
+          {_t('userManagement.edit_2')} {selectedUser.name}
+        </h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Name</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{_t('userManagement.name')}</label>
             <input
               type="text"
               value={editName}
@@ -45,7 +49,7 @@ export default function EditUserModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">User Tier / Role</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{_t('userManagement.userTier_2')}</label>
             <select
               value={editTier}
               onChange={(e) => {
@@ -63,12 +67,12 @@ export default function EditUserModal({
               ))}
             </select>
             {selectedUser.user_tier === 'admin' && selectedUser.id !== currentUser?.id && (
-              <p className="text-xs text-amber-600 dark:text-amber-300 mt-1">Cannot change another admin's tier</p>
+              <p className="text-xs text-amber-600 dark:text-amber-300 mt-1">{_t('userManagement.cannot')}</p>
             )}
           </div>
           {editTier === 'client' && (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Linked Client *</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{_t('userManagement.linked')}</label>
               <ClientLinkPicker
                 clientId={editClientId}
                 clientName={editClientName}
@@ -81,9 +85,7 @@ export default function EditUserModal({
                   setEditClientName('');
                 }}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                This account only sees this client's data in the B2B portal.
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">{_t('userManagement.thisAccount')}</p>
             </div>
           )}
           <div>
@@ -94,15 +96,13 @@ export default function EditUserModal({
                 onChange={(e) => setEditActive(e.target.checked)}
                 className="rounded"
               />
-              <span className="text-sm text-foreground">Account active</span>
+              <span className="text-sm text-foreground">{_t('userManagement.account')}</span>
             </label>
           </div>
           <div>
             <p className="text-sm font-medium text-foreground mb-2">
-              Custom Permissions
-              <span className="text-xs text-muted-foreground ml-2 font-normal">
-                (additional capabilities beyond tier defaults)
-              </span>
+              {_t('userManagement.custom')}
+              <span className="text-xs text-muted-foreground ml-2 font-normal">{_t('userManagement.additional')}</span>
             </p>
             <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
               {PERMISSION_GROUPS.map((group) => (
@@ -134,7 +134,7 @@ export default function EditUserModal({
             </div>
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground mb-2">Departments</p>
+            <p className="text-sm font-medium text-foreground mb-2">{_t('userManagement.departments')}</p>
             <div className="flex flex-wrap gap-1.5">
               {departmentsList.map((d) => (
                 <label
@@ -163,20 +163,20 @@ export default function EditUserModal({
               className="px-3 py-2 text-sm border border-orange-300 dark:border-orange-800 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/40 flex items-center gap-1.5"
             >
               <KeyRound className="w-3.5 h-3.5" />
-              Reset Password
+              {_t('userManagement.reset')}
             </button>
             <div className="flex gap-3">
               <button
                 onClick={() => setSelectedUser(null)}
                 className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
               >
-                Cancel
+                {_t('userManagement.cancel')}
               </button>
               <button
                 onClick={onSave}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                Save Changes
+                {_t('userManagement.save')}
               </button>
             </div>
           </div>

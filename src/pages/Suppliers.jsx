@@ -59,6 +59,7 @@ import { createPageUrl } from '../utils';
 import { usePermissions } from '../components/permissions/PermissionContext';
 import { showSuccess, showError } from '@/lib/toast';
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const SortHeader = ({ field, label, filter, filterActive, sortField, handleSort }) => (
   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider select-none">
@@ -76,6 +77,7 @@ const SortHeader = ({ field, label, filter, filterActive, sortField, handleSort 
 );
 
 export default function Suppliers() {
+  const { t: _t } = useT();
   const [activeTab, setActiveTab] = useState('list');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
@@ -423,27 +425,27 @@ export default function Suppliers() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Suppliers</h1>
-          <p className="text-muted-foreground">Manage your travel supplier database</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">{_t('suppliers.suppliers')}</h1>
+          <p className="text-muted-foreground">{_t('suppliers.manage')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleExportAll} disabled={isExporting}>
             {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-            Export CSV
+            {_t('suppliers.export_2')}
           </Button>
           {isAdmin && (
             <Button variant="outline" onClick={() => setColumnManagerOpen(true)}>
               <Settings className="w-4 h-4 mr-2" />
-              Columns
+              {_t('suppliers.columns')}
             </Button>
           )}
           <Button variant="outline" onClick={() => setCsvImporterOpen(true)}>
             <Upload className="w-4 h-4 mr-2" />
-            Import CSV
+            {_t('suppliers.import')}
           </Button>
           <Button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 shadow-lg">
             <Plus className="w-5 h-5 mr-2" />
-            New Supplier
+            {_t('suppliers.newSupplier')}
           </Button>
         </div>
       </div>
@@ -451,15 +453,15 @@ export default function Suppliers() {
       {categories.length === 0 && (
         <Card className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
           <p className="text-sm text-amber-800 dark:text-amber-300">
-            No categories set up yet — a supplier's category is now determined by its service lines. Open the{' '}
+            {_t('suppliers.no')}{' '}
             <button
               type="button"
               onClick={() => setActiveTab('summary')}
               className="underline font-medium hover:text-amber-900 dark:hover:text-amber-200"
             >
-              Category Summary
+              {_t('suppliers.category')}
             </button>{' '}
-            tab to create some, then add subcategories under each supplier's Pricing Management tab.
+            {_t('suppliers.tab')}
           </p>
         </Card>
       )}
@@ -467,10 +469,10 @@ export default function Suppliers() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-card border border-border p-1">
           <TabsTrigger value="list" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            All Suppliers
+            {_t('suppliers.all')}
           </TabsTrigger>
           <TabsTrigger value="summary" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            Category Summary
+            {_t('suppliers.category')}
           </TabsTrigger>
         </TabsList>
 
@@ -478,7 +480,7 @@ export default function Suppliers() {
           <BulkActionsBar count={selectedCount} labelSingular="supplier" labelPlural="suppliers" onDeselectAll={clear}>
             <Button variant="outline" size="sm" onClick={handleExportSelected}>
               <Download className="w-4 h-4 mr-2" />
-              Export {selectedCount}
+              {_t('suppliers.export_2')} {selectedCount}
             </Button>
             <Button
               size="sm"
@@ -486,7 +488,7 @@ export default function Suppliers() {
               onClick={() => setBulkDeleteOpen(true)}
             >
               <XCircle className="w-4 h-4 mr-2" />
-              Delete {selectedCount}
+              {_t('suppliers.delete')} {selectedCount}
             </Button>
           </BulkActionsBar>
 
@@ -494,7 +496,7 @@ export default function Suppliers() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
             <Input
-              placeholder="Search by name, city, area or category..."
+              placeholder={_t('suppliers.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-10 bg-card"
@@ -509,10 +511,11 @@ export default function Suppliers() {
             <div className="flex items-center gap-2 px-1">
               <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-full">
                 <Filter className="w-3 h-3" />
-                {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
+                {activeFilterCount} {_t('suppliers.filter')}
+                {activeFilterCount > 1 ? 's' : ''} {_t('suppliers.active')}
               </div>
               <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={clearFilters}>
-                <FilterX className="w-3 h-3 mr-1" /> Clear all
+                <FilterX className="w-3 h-3 mr-1" /> {_t('suppliers.clear')}
               </Button>
             </div>
           )}
@@ -535,7 +538,7 @@ export default function Suppliers() {
                         <SupplierTextFilter
                           value={filters.name}
                           onChange={(v) => setFilters({ ...filters, name: v })}
-                          placeholder="Filter by name..."
+                          placeholder={_t('suppliers.filterBy')}
                         />
                       }
                       filterActive={!!filters.name}
@@ -563,7 +566,7 @@ export default function Suppliers() {
                         <SupplierTextFilter
                           value={filters.city}
                           onChange={(v) => setFilters({ ...filters, city: v })}
-                          placeholder="Filter by city..."
+                          placeholder={_t('suppliers.filterByCity')}
                         />
                       }
                       filterActive={!!filters.city}
@@ -590,7 +593,7 @@ export default function Suppliers() {
                         <SupplierTextFilter
                           value={filters.area}
                           onChange={(v) => setFilters({ ...filters, area: v })}
-                          placeholder="Filter by area..."
+                          placeholder={_t('suppliers.filterByArea')}
                         />
                       }
                       filterActive={!!filters.area}
@@ -604,7 +607,7 @@ export default function Suppliers() {
                       </th>
                     ))}
                     <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Actions
+                      {_t('suppliers.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -712,7 +715,8 @@ export default function Suppliers() {
               </table>
             </div>
             <div className="px-4 py-2 border-t border-border bg-muted text-xs text-muted-foreground">
-              {filtered.length} of {total} supplier{total !== 1 ? 's' : ''}
+              {filtered.length} {_t('suppliers.of')} {total} {_t('suppliers.supplier')}
+              {total !== 1 ? 's' : ''}
             </div>
           </Card>
 
@@ -738,13 +742,11 @@ export default function Suppliers() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Categories</Label>
-              <p className="text-xs text-muted-foreground">
-                Select the categories this supplier operates in. These drive filtering and where the supplier appears.
-              </p>
+              <Label>{_t('suppliers.categories')}</Label>
+              <p className="text-xs text-muted-foreground">{_t('suppliers.select')}</p>
               <div className="flex flex-wrap gap-2">
                 {categories.length === 0 && (
-                  <span className="text-sm text-muted-foreground">No categories configured yet.</span>
+                  <span className="text-sm text-muted-foreground">{_t('suppliers.noCategories')}</span>
                 )}
                 {categories.map((cat) => {
                   const active = selectedCategoryIds.includes(cat.id);
@@ -776,7 +778,7 @@ export default function Suppliers() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Supplier Name *</Label>
+                <Label>{_t('suppliers.supplierName')}</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -784,30 +786,30 @@ export default function Suppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>City</Label>
+                <Label>{_t('suppliers.city')}</Label>
                 <Input
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  placeholder="e.g., Istanbul"
+                  placeholder={_t('suppliers.e')}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Area / Region</Label>
+                <Label>{_t('suppliers.area')}</Label>
                 <Input
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="e.g., Aegean Coast"
+                  placeholder={_t('suppliers.eG')}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Contact Person</Label>
+                <Label>{_t('suppliers.contact')}</Label>
                 <Input
                   value={formData.contact_person}
                   onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Rating</Label>
+                <Label>{_t('suppliers.rating')}</Label>
                 <Select
                   value={formData.rating?.toString()}
                   onValueChange={(v) =>
@@ -830,7 +832,7 @@ export default function Suppliers() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{_t('suppliers.email')}</Label>
                 <Input
                   type="email"
                   value={formData.email}
@@ -838,12 +840,12 @@ export default function Suppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Phone</Label>
+                <Label>{_t('suppliers.phone')}</Label>
                 <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Website</Label>
+              <Label>{_t('suppliers.website')}</Label>
               <Input
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
@@ -851,7 +853,7 @@ export default function Suppliers() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Address</Label>
+              <Label>{_t('suppliers.address')}</Label>
               <LocationSearch
                 value={formData.address}
                 onChange={(v) => setFormData({ ...formData, address: v })}
@@ -862,20 +864,20 @@ export default function Suppliers() {
                     city: prev.city || item.city,
                   }))
                 }
-                placeholder="Search address (OpenStreetMap)..."
+                placeholder={_t('suppliers.searchAddress')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Pricing Information</Label>
+              <Label>{_t('suppliers.pricing')}</Label>
               <Textarea
                 value={formData.pricing_info}
                 onChange={(e) => setFormData({ ...formData, pricing_info: e.target.value })}
                 rows={2}
-                placeholder="Package details, rates..."
+                placeholder={_t('suppliers.package')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>{_t('suppliers.notes')}</Label>
               <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -886,7 +888,7 @@ export default function Suppliers() {
             {/* Extra column fields */}
             {extraColumns.length > 0 && (
               <div className="border-t pt-4 space-y-3">
-                <Label className="text-foreground font-semibold">Custom Fields</Label>
+                <Label className="text-foreground font-semibold">{_t('suppliers.custom')}</Label>
                 {extraColumns.map((col) => (
                   <div key={col.key} className="space-y-1">
                     <Label>{col.label}</Label>
@@ -906,9 +908,11 @@ export default function Suppliers() {
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {_t('suppliers.cancel')}
               </Button>
-              <Button type="submit">{editingSupplier ? 'Update' : 'Add'} Supplier</Button>
+              <Button type="submit">
+                {editingSupplier ? 'Update' : 'Add'} {_t('suppliers.supplier_2')}
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -928,12 +932,10 @@ export default function Suppliers() {
       <Dialog open={columnManagerOpen} onOpenChange={setColumnManagerOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Manage Extra Columns</DialogTitle>
+            <DialogTitle>{_t('suppliers.manageExtra')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <p className="text-sm text-muted-foreground">
-              Default columns: Name, Category, City, Rating, Area. Add custom columns below.
-            </p>
+            <p className="text-sm text-muted-foreground">{_t('suppliers.default')}</p>
             <div className="space-y-2">
               {extraColumns.map((col) => (
                 <div key={col.key} className="flex items-center justify-between p-3 bg-muted rounded-lg">
@@ -946,7 +948,7 @@ export default function Suppliers() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Input
-                placeholder="New column name..."
+                placeholder={_t('suppliers.new')}
                 value={newColumnName}
                 onChange={(e) => setNewColumnName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addExtraColumn())}
@@ -957,7 +959,7 @@ export default function Suppliers() {
             </div>
             <div className="flex justify-end">
               <Button variant="outline" onClick={() => setColumnManagerOpen(false)}>
-                Close
+                {_t('suppliers.close')}
               </Button>
             </div>
           </div>
@@ -968,15 +970,15 @@ export default function Suppliers() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Permanently Delete {selectedCount} Supplier{selectedCount > 1 ? 's' : ''}?
+              {_t('suppliers.permanently')} {selectedCount} {_t('suppliers.supplier_2')}
+              {selectedCount > 1 ? 's' : ''}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This will <strong>permanently delete</strong> all selected suppliers from the database. This action cannot
-              be undone.
+              {_t('suppliers.this')} <strong>{_t('suppliers.permanentlyDelete')}</strong> {_t('suppliers.allSelected')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkDeleting}>Keep Suppliers</AlertDialogCancel>
+            <AlertDialogCancel disabled={isBulkDeleting}>{_t('suppliers.keep')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={isBulkDeleting}

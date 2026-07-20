@@ -1,16 +1,20 @@
 import { Card } from '@/components/ui/card';
 import { Zap } from 'lucide-react';
 import { SERVICE_TYPES, SERVICE_TYPE_ICONS } from './helpers';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ServiceTypesCard({ serviceTypes, setServiceTypes }) {
+  const { t: _t } = useT();
   return (
     <Card className="p-6 bg-card shadow-md">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Zap className="w-4 h-4 text-purple-600 dark:text-purple-300" />
-          Service Types
+          {_t('createReservation.service')}
         </h2>
-        <span className="text-sm text-muted-foreground">{serviceTypes.length} selected</span>
+        <span className="text-sm text-muted-foreground">
+          {serviceTypes.length} {_t('createReservation.selected')}
+        </span>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {SERVICE_TYPES.map((st) => {

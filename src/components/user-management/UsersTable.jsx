@@ -1,6 +1,8 @@
 import { TIER_LABELS } from './helpers';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function UsersTable({ users, currentUser, allClients, deptColor, onEdit, onDelete }) {
+  const { t: _t } = useT();
   const visible = users.filter((u) => u.is_active || u.id === currentUser?.id);
 
   return (
@@ -8,12 +10,14 @@ export default function UsersTable({ users, currentUser, allClients, deptColor, 
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-muted border-b border-border">
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Email</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tier</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Departments</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-            <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
+            <th className="text-left px-4 py-3 font-medium text-muted-foreground">{_t('userManagement.name')}</th>
+            <th className="text-left px-4 py-3 font-medium text-muted-foreground">{_t('userManagement.email')}</th>
+            <th className="text-left px-4 py-3 font-medium text-muted-foreground">{_t('userManagement.tier')}</th>
+            <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+              {_t('userManagement.departments')}
+            </th>
+            <th className="text-left px-4 py-3 font-medium text-muted-foreground">{_t('userManagement.status')}</th>
+            <th className="text-right px-4 py-3 font-medium text-muted-foreground">{_t('userManagement.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -22,7 +26,7 @@ export default function UsersTable({ users, currentUser, allClients, deptColor, 
               <td className="px-4 py-3">
                 <span className="font-medium text-foreground">{u.name}</span>
                 {u.id === currentUser?.id && (
-                  <span className="ml-2 text-xs text-blue-600 dark:text-blue-300">(you)</span>
+                  <span className="ml-2 text-xs text-blue-600 dark:text-blue-300">{_t('userManagement.you_2')}</span>
                 )}
               </td>
               <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
@@ -68,14 +72,14 @@ export default function UsersTable({ users, currentUser, allClients, deptColor, 
                   onClick={() => onEdit(u)}
                   className="px-3 py-1 bg-card border border-border text-muted-foreground text-xs rounded hover:bg-muted mr-1"
                 >
-                  Edit
+                  {_t('userManagement.edit_2')}
                 </button>
                 {u.id !== currentUser?.id && u.user_tier !== 'admin' && (
                   <button
                     onClick={() => onDelete(u)}
                     className="px-3 py-1 bg-card border border-red-200 dark:border-red-800 text-red-500 dark:text-red-300 text-xs rounded hover:bg-red-50 dark:hover:bg-red-950/40"
                   >
-                    Delete
+                    {_t('userManagement.delete_2')}
                   </button>
                 )}
               </td>
@@ -84,7 +88,7 @@ export default function UsersTable({ users, currentUser, allClients, deptColor, 
           {visible.length === 0 && (
             <tr>
               <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                No users found
+                {_t('userManagement.no')}
               </td>
             </tr>
           )}

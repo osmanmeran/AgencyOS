@@ -1,6 +1,7 @@
 import { TIERS, TIER_LABELS, PASSWORD_HINT } from './helpers';
 import { PERMISSION_GROUPS } from '@/lib/permissions';
 import ClientLinkPicker from '@/components/passengers/ClientLinkPicker';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function AddUserForm({
   showAddForm,
@@ -13,15 +14,16 @@ export default function AddUserForm({
   toggleAddDepartment,
   departmentsList,
 }) {
+  const { t: _t } = useT();
   if (!showAddForm) return null;
 
   return (
     <form onSubmit={onSubmit} className="p-5 bg-card border border-border rounded-xl">
-      <h3 className="font-semibold text-foreground mb-3">Add New User</h3>
+      <h3 className="font-semibold text-foreground mb-3">{_t('userManagement.add')}</h3>
       <div className="grid grid-cols-4 gap-3">
         <input
           type="text"
-          placeholder="Full name"
+          placeholder={_t('userManagement.full')}
           value={addForm.name}
           onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
           required
@@ -29,7 +31,7 @@ export default function AddUserForm({
         />
         <input
           type="email"
-          placeholder="Email"
+          placeholder={_t('userManagement.email')}
           value={addForm.email}
           onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
           required
@@ -37,7 +39,7 @@ export default function AddUserForm({
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder={_t('userManagement.password')}
           value={addForm.password}
           onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
           required
@@ -55,24 +57,25 @@ export default function AddUserForm({
           ))}
         </select>
       </div>
-      <p className="text-xs text-muted-foreground mt-1.5">Password: {PASSWORD_HINT}</p>
+      <p className="text-xs text-muted-foreground mt-1.5">
+        {_t('userManagement.password_2')} {PASSWORD_HINT}
+      </p>
       {addForm.user_tier === 'client' && (
         <div className="mt-3 max-w-sm">
-          <label className="block text-sm font-medium text-foreground mb-1">Linked Client *</label>
+          <label className="block text-sm font-medium text-foreground mb-1">{_t('userManagement.linked')}</label>
           <ClientLinkPicker
             clientId={addForm.client_id}
             clientName={addForm.client_name}
             onSelect={(c) => setAddForm({ ...addForm, client_id: c.id, client_name: c.name })}
             onClear={() => setAddForm({ ...addForm, client_id: '', client_name: '' })}
           />
-          <p className="text-xs text-muted-foreground mt-1">
-            This account will only see this client's data in the B2B portal.
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">{_t('userManagement.this')}</p>
         </div>
       )}
       <div className="mt-3">
         <p className="text-sm font-medium text-foreground mb-2">
-          Custom Permissions <span className="text-xs text-muted-foreground font-normal">(optional additions)</span>
+          {_t('userManagement.custom')}{' '}
+          <span className="text-xs text-muted-foreground font-normal">{_t('userManagement.optional')}</span>
         </p>
         <div className="max-h-48 overflow-y-auto space-y-2">
           {PERMISSION_GROUPS.map((group) => (
@@ -103,7 +106,7 @@ export default function AddUserForm({
         </div>
       </div>
       <div className="mt-3">
-        <p className="text-sm font-medium text-foreground mb-2">Departments</p>
+        <p className="text-sm font-medium text-foreground mb-2">{_t('userManagement.departments')}</p>
         <div className="flex flex-wrap gap-2">
           {departmentsList.map((d) => (
             <label
@@ -126,7 +129,7 @@ export default function AddUserForm({
         </div>
       </div>
       <button type="submit" className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-        Create User
+        {_t('userManagement.create')}
       </button>
     </form>
   );

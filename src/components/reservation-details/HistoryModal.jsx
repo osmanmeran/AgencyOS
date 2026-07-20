@@ -2,15 +2,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { History } from 'lucide-react';
 import { format } from 'date-fns';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function HistoryModal({ historyOpen, setHistoryOpen, trip }) {
+  const { t: _t } = useT();
   return (
     <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
       <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
-            Change History
+            {_t('reservationDetails.change')}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3 mt-4">
@@ -22,30 +24,32 @@ export default function HistoryModal({ historyOpen, setHistoryOpen, trip }) {
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   {entry.action === 'created' && (
                     <Badge className="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">
-                      Created
+                      {_t('reservationDetails.created_2')}
                     </Badge>
                   )}
                   {entry.action === 'status_change' && (
-                    <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">Status</Badge>
+                    <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
+                      {_t('reservationDetails.status')}
+                    </Badge>
                   )}
                   {entry.action === 'service_added' && (
                     <Badge className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">
-                      Service Added
+                      {_t('reservationDetails.service')}
                     </Badge>
                   )}
                   {entry.action === 'service_updated' && (
                     <Badge className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
-                      Service Updated
+                      {_t('reservationDetails.serviceUpdated')}
                     </Badge>
                   )}
                   {entry.action === 'email_sent' && (
                     <Badge className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300">
-                      Email Sent
+                      {_t('reservationDetails.emailSent')}
                     </Badge>
                   )}
                   {entry.action === 'invoice_created' && (
                     <Badge className="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">
-                      Invoice Created
+                      {_t('reservationDetails.invoiceCreated')}
                     </Badge>
                   )}
                   {![
@@ -61,7 +65,9 @@ export default function HistoryModal({ historyOpen, setHistoryOpen, trip }) {
                   </span>
                 </div>
                 <p className="text-sm text-foreground">{entry.description}</p>
-                <div className="text-xs text-muted-foreground mt-1">By {entry.changed_by_name || entry.changed_by}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {_t('reservationDetails.by')} {entry.changed_by_name || entry.changed_by}
+                </div>
               </div>
             ))}
         </div>

@@ -6,6 +6,7 @@ import ServiceLineEditor from '@/components/services/ServiceLineEditor';
 import { format } from 'date-fns';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { Plus, Edit, DollarSign } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ServicesSection({
   trip,
@@ -23,14 +24,15 @@ export default function ServicesSection({
   setTargetMarginPct,
   handleApplyTotalMargin,
 }) {
+  const { t: _t } = useT();
   return (
     <Card className="p-8 bg-card shadow-lg print:shadow-none">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-foreground">Services Included</h2>
+        <h2 className="text-xl font-bold text-foreground">{_t('reservationDetails.services')}</h2>
         {trip.proposal_status !== 'confirmed' && (
           <Button size="sm" onClick={() => setAddingNewService(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Service
+            {_t('reservationDetails.addService')}
           </Button>
         )}
       </div>
@@ -49,7 +51,7 @@ export default function ServicesSection({
           />
           <div className="flex justify-end gap-2 mt-3">
             <Button variant="outline" onClick={() => setAddingNewService(false)}>
-              Cancel
+              {_t('reservationDetails.cancel')}
             </Button>
           </div>
         </div>
@@ -116,7 +118,7 @@ export default function ServicesSection({
                     />
                     <div className="flex justify-end gap-2 mt-3">
                       <Button variant="outline" onClick={() => setEditingServiceIdx(null)}>
-                        Cancel
+                        {_t('reservationDetails.cancel')}
                       </Button>
                     </div>
                   </div>
@@ -148,7 +150,7 @@ export default function ServicesSection({
                       className="absolute top-3 right-3 print:hidden"
                     >
                       <Edit className="w-3.5 h-3.5 mr-1" />
-                      Edit
+                      {_t('reservationDetails.edit')}
                     </Button>
                   )}
                   <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -176,43 +178,49 @@ export default function ServicesSection({
                   </div>
                   {service.start_date && service.end_date && (
                     <div className="text-sm text-muted-foreground mb-3">
-                      <span className="font-medium">Dates:</span> {format(new Date(service.start_date), 'MMM d')} –{' '}
+                      <span className="font-medium">{_t('reservationDetails.dates')}</span>{' '}
+                      {format(new Date(service.start_date), 'MMM d')} –{' '}
                       {format(new Date(service.end_date), 'MMM d, yyyy')}
                     </div>
                   )}
                   {service.pickup_location && (
                     <div className="text-sm text-muted-foreground mb-2 space-y-1">
                       <div>
-                        <span className="font-medium">Pick up:</span> {service.pickup_location}
+                        <span className="font-medium">{_t('reservationDetails.pick')}</span> {service.pickup_location}
                         {service.pickup_time ? ` @ ${service.pickup_time}` : ''}
                       </div>
                       <div>
-                        <span className="font-medium">Drop off:</span> {service.dropoff_location || '—'}
+                        <span className="font-medium">{_t('reservationDetails.drop')}</span>{' '}
+                        {service.dropoff_location || '—'}
                       </div>
                       {service.transfer_flight_number && (
                         <div>
-                          <span className="font-medium">Flight:</span> {service.transfer_flight_number}
+                          <span className="font-medium">{_t('reservationDetails.flight')}</span>{' '}
+                          {service.transfer_flight_number}
                         </div>
                       )}
                       {service.return_leg?.enabled && (
                         <div className="mt-2 pt-2 border-t border-orange-200 dark:border-orange-800">
                           <div className="font-medium text-orange-700 dark:text-orange-300 text-xs uppercase tracking-wide mb-1">
-                            Return Leg
+                            {_t('reservationDetails.returnLeg')}
                           </div>
                           <div>
-                            <span className="font-medium">Date:</span>{' '}
+                            <span className="font-medium">{_t('reservationDetails.date')}</span>{' '}
                             {format(new Date(service.return_leg.date), 'MMM d, yyyy')}
                             {service.return_leg.pickup_time ? ` @ ${service.return_leg.pickup_time}` : ''}
                           </div>
                           <div>
-                            <span className="font-medium">Pick up:</span> {service.return_leg.pickup_location}
+                            <span className="font-medium">{_t('reservationDetails.pick')}</span>{' '}
+                            {service.return_leg.pickup_location}
                           </div>
                           <div>
-                            <span className="font-medium">Drop off:</span> {service.return_leg.dropoff_location}
+                            <span className="font-medium">{_t('reservationDetails.drop')}</span>{' '}
+                            {service.return_leg.dropoff_location}
                           </div>
                           {service.return_leg.flight_number && (
                             <div>
-                              <span className="font-medium">Flight:</span> {service.return_leg.flight_number}
+                              <span className="font-medium">{_t('reservationDetails.flight')}</span>{' '}
+                              {service.return_leg.flight_number}
                             </div>
                           )}
                         </div>
@@ -222,42 +230,42 @@ export default function ServicesSection({
                   {service.description && <p className="text-muted-foreground text-sm mb-3">{service.description}</p>}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                     <div className="bg-card p-2 rounded border">
-                      <div className="text-xs text-muted-foreground">Unit Type</div>
+                      <div className="text-xs text-muted-foreground">{_t('reservationDetails.unit')}</div>
                       <div className="font-semibold text-foreground">
                         {service.unit?.replace('_', ' ') || 'per_person'}
                       </div>
                     </div>
                     <div className="bg-card p-2 rounded border">
-                      <div className="text-xs text-muted-foreground">Qty</div>
+                      <div className="text-xs text-muted-foreground">{_t('reservationDetails.qty')}</div>
                       <div className="font-semibold text-foreground">{service.quantity || 1}</div>
                     </div>
                     <div className="bg-amber-50 dark:bg-amber-950/40 p-2 rounded border border-amber-200 dark:border-amber-800">
-                      <div className="text-xs text-muted-foreground">Supplier Cost</div>
+                      <div className="text-xs text-muted-foreground">{_t('reservationDetails.supplier')}</div>
                       <div className="font-semibold text-amber-900 dark:text-amber-300">
                         {scSupplier}
                         {(parseFloat(service.acquiring_price) || 0).toFixed(2)}{' '}
                         <span className="text-xs font-normal text-muted-foreground">× {serviceEffQty(service)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        Total: {scSupplier}
+                        {_t('reservationDetails.total')} {scSupplier}
                         {lineAcq.toFixed(2)}
                       </div>
                     </div>
                     <div className="bg-green-50 dark:bg-green-950/40 p-2 rounded border border-green-200 dark:border-green-800">
-                      <div className="text-xs text-muted-foreground">Client Price</div>
+                      <div className="text-xs text-muted-foreground">{_t('reservationDetails.clientPrice')}</div>
                       <div className="font-semibold text-green-900 dark:text-green-300">
                         {scClient}
                         {(parseFloat(service.selling_price) || 0).toFixed(2)}{' '}
                         <span className="text-xs font-normal text-muted-foreground">× {serviceEffQty(service)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        Total: {scClient}
+                        {_t('reservationDetails.total')} {scClient}
                         {lineSell.toFixed(2)}
                       </div>
                     </div>
                   </div>
                   <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Total (Client)</span>
+                    <span className="text-xs text-muted-foreground">{_t('reservationDetails.totalClient')}</span>
                     <span className="font-bold text-lg text-green-700 dark:text-green-300">
                       {scClient}
                       {lineSell.toFixed(2)}
@@ -287,7 +295,7 @@ export default function ServicesSection({
                     />
                     <div className="flex justify-end gap-2 mt-3">
                       <Button variant="outline" onClick={() => setEditingServiceIdx(null)}>
-                        Cancel
+                        {_t('reservationDetails.cancel')}
                       </Button>
                     </div>
                   </div>
@@ -306,7 +314,7 @@ export default function ServicesSection({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xs text-blue-500 dark:text-blue-300 font-medium uppercase shrink-0">
-                        Continuing
+                        {_t('reservationDetails.continuing')}
                       </span>
                       <span className="font-semibold text-foreground truncate">{service.name}</span>
                       {service.category && (
@@ -341,7 +349,9 @@ export default function ServicesSection({
                             {dayNum}
                           </div>
                           <div>
-                            <div className="font-bold text-lg text-foreground">Day {dayNum}</div>
+                            <div className="font-bold text-lg text-foreground">
+                              {_t('reservationDetails.day')} {dayNum}
+                            </div>
                             <div className="text-sm text-muted-foreground">{format(date, 'EEEE, MMM d, yyyy')}</div>
                           </div>
                         </div>
@@ -360,7 +370,9 @@ export default function ServicesSection({
                       <div className="bg-muted-foreground text-background rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
                         ∞
                       </div>
-                      <div className="font-bold text-lg text-muted-foreground">Unscheduled Services</div>
+                      <div className="font-bold text-lg text-muted-foreground">
+                        {_t('reservationDetails.unscheduled')}
+                      </div>
                     </div>
                     <div className="space-y-4">
                       {unscheduled.map((service) => (
@@ -374,7 +386,7 @@ export default function ServicesSection({
 
                 <div className="pt-6 mt-4 border-t-2 border-border">
                   <div className="flex justify-between items-center flex-wrap gap-2">
-                    <span className="text-2xl font-bold text-foreground">Total</span>
+                    <span className="text-2xl font-bold text-foreground">{_t('reservationDetails.total_2')}</span>
                     <div className="text-4xl font-bold text-green-700 dark:text-green-300">
                       {sc}
                       {(trip.total_cost || 0).toFixed(2)}
@@ -386,7 +398,7 @@ export default function ServicesSection({
                   <div className="mt-4 flex items-center gap-3 flex-wrap bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                     <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1">
                       <DollarSign className="w-3.5 h-3.5" />
-                      Target Margin
+                      {_t('reservationDetails.target')}
                     </span>
                     <div className="flex items-center gap-1.5">
                       <Input
@@ -407,14 +419,14 @@ export default function ServicesSection({
                       disabled={targetMarginPct <= 0 || targetMarginPct >= 100 || updateMutation.isPending}
                       className="text-xs h-7"
                     >
-                      Apply
+                      {_t('reservationDetails.apply')}
                     </Button>
                     <span className="text-xs text-muted-foreground ml-auto">
                       ={' '}
                       {targetMarginPct > 0 && targetMarginPct < 100
                         ? ((targetMarginPct / (100 - targetMarginPct)) * 100).toFixed(1)
                         : '0'}
-                      % markup on cost
+                      {_t('reservationDetails.markup')}
                     </span>
                   </div>
                 )}
@@ -423,7 +435,7 @@ export default function ServicesSection({
           })()}
         </div>
       ) : (
-        <p className="text-muted-foreground">No services added yet.</p>
+        <p className="text-muted-foreground">{_t('reservationDetails.no')}</p>
       )}
     </Card>
   );

@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Plus, TrendingUp } from 'lucide-react';
 import ServiceLineEditor from '@/components/services/ServiceLineEditor';
 import { currSymbol } from './helpers';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ServicesCard({
   services,
@@ -24,19 +25,21 @@ export default function ServicesCard({
   acquiringCurrency,
   sellingCurrency,
 }) {
+  const { t: _t } = useT();
   return (
     <Card className="p-6 bg-card shadow-md">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
         <div>
-          <h2 className="text-lg font-bold text-foreground">Services & Pricing</h2>
+          <h2 className="text-lg font-bold text-foreground">{_t('createReservation.services')}</h2>
           <p className="text-sm text-muted-foreground">
-            Acq. in <strong>{acquiringCurrency}</strong> · Sell in <strong>{sellingCurrency}</strong>
+            {_t('createReservation.acq')} <strong>{acquiringCurrency}</strong> {_t('createReservation.sell')}{' '}
+            <strong>{sellingCurrency}</strong>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={addService} variant="outline">
             <Plus className="w-4 h-4 mr-2" />
-            Add Service
+            {_t('createReservation.addService')}
           </Button>
         </div>
       </div>
@@ -68,7 +71,10 @@ export default function ServicesCard({
             <div className="w-96 space-y-3">
               {Object.entries(acquiringByCurrency).map(([cur, total]) => (
                 <div key={`acq-${cur}`} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Cost ({cur})</span>
+                  <span className="text-muted-foreground">
+                    {_t('createReservation.cost')}
+                    {cur})
+                  </span>
                   <span className="font-semibold text-red-600 dark:text-red-300">
                     {currSymbol(cur)}
                     {total.toFixed(2)}
@@ -77,7 +83,10 @@ export default function ServicesCard({
               ))}
               {Object.entries(sellingByCurrency).map(([cur, total]) => (
                 <div key={`sell-${cur}`} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Selling ({cur})</span>
+                  <span className="text-muted-foreground">
+                    {_t('createReservation.selling_2')}
+                    {cur})
+                  </span>
                   <span className="font-semibold text-green-700 dark:text-green-300">
                     {currSymbol(cur)}
                     {total.toFixed(2)}
@@ -89,7 +98,7 @@ export default function ServicesCard({
                   <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-orange-500 dark:text-orange-300" />
-                      <span className="font-medium">Markup</span>
+                      <span className="font-medium">{_t('createReservation.markup')}</span>
                       <Input
                         type="number"
                         min="0"
@@ -101,11 +110,11 @@ export default function ServicesCard({
                       />
                       <span className="text-muted-foreground text-xs">%</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">Applied to each line</span>
+                    <span className="text-xs text-muted-foreground">{_t('createReservation.applied')}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Gross Margin</span>
+                    <span className="text-muted-foreground">{_t('createReservation.gross')}</span>
                     <span
                       className={`font-semibold ${margin >= 0 ? 'text-blue-600 dark:text-blue-300' : 'text-red-600 dark:text-red-300'}`}
                     >
@@ -115,8 +124,11 @@ export default function ServicesCard({
                   <Separator />
                   <div className="flex justify-between items-center flex-wrap gap-2">
                     <div>
-                      <div className="text-lg font-bold text-foreground">Total</div>
-                      <div className="text-xs text-muted-foreground">Client price ({sellingCurrency})</div>
+                      <div className="text-lg font-bold text-foreground">{_t('createReservation.total')}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {_t('createReservation.clientPrice')}
+                        {sellingCurrency})
+                      </div>
                     </div>
                     <div className="text-3xl font-bold text-green-700 dark:text-green-300">
                       {currSymbol(sellingCurrency)}

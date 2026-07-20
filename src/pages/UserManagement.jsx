@@ -20,8 +20,10 @@ import EditUserModal from '@/components/user-management/EditUserModal';
 import DeleteConfirmModal from '@/components/user-management/DeleteConfirmModal';
 import ResetPasswordModal from '@/components/user-management/ResetPasswordModal';
 import PermissionManager from '@/components/user-management/PermissionManager';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function UserManagement() {
+  const { t: _t } = useT();
   const { user: currentUser } = useAuth();
   const { hasPermission } = usePermissions();
   const [tab, setTab] = useState('users');
@@ -405,8 +407,8 @@ export default function UserManagement() {
     return (
       <Card className="p-12 text-center">
         <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-muted-foreground">Access Denied</h3>
-        <p className="text-sm text-muted-foreground mt-1">You need the Manage Users permission to access this page.</p>
+        <h3 className="text-lg font-semibold text-muted-foreground">{_t('userManagement.access')}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{_t('userManagement.you_2')}</p>
       </Card>
     );
   }
@@ -427,8 +429,8 @@ export default function UserManagement() {
         <>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">User Management</h1>
-              <p className="text-muted-foreground">Manage user roles, permissions, and credentials</p>
+              <h1 className="text-4xl font-bold text-foreground mb-2">{_t('userManagement.user')}</h1>
+              <p className="text-muted-foreground">{_t('userManagement.manage')}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -442,7 +444,7 @@ export default function UserManagement() {
                 className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center gap-1.5 ${showInvite ? 'bg-muted text-muted-foreground border border-border' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
               >
                 <MailPlus className="w-4 h-4" />
-                Invite User
+                {_t('userManagement.invite')}
               </button>
               <button
                 onClick={() => setShowAddForm(!showAddForm)}

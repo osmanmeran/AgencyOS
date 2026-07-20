@@ -1,6 +1,8 @@
 import { Users, KeyRound } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function Tabs({ tab, setTab }) {
+  const { t: _t } = useT();
   return (
     <div className="flex items-center border-b border-border gap-0">
       <button
@@ -12,7 +14,7 @@ export default function Tabs({ tab, setTab }) {
         }`}
       >
         <Users className="w-4 h-4" />
-        Users
+        {_t('userManagement.users_2')}
       </button>
       <button
         onClick={() => setTab('permissions')}
@@ -23,7 +25,7 @@ export default function Tabs({ tab, setTab }) {
         }`}
       >
         <KeyRound className="w-4 h-4" />
-        Permissions
+        {_t('userManagement.permissions')}
       </button>
     </div>
   );

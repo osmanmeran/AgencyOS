@@ -1,7 +1,9 @@
 import { Card } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function OccupancyValidation({ trip }) {
+  const { t: _t } = useT();
   if (!(trip.passengers?.length > 0 && trip.services?.length > 0)) {
     return null;
   }
@@ -33,18 +35,20 @@ export default function OccupancyValidation({ trip }) {
       <div className="flex items-start gap-3">
         <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-300 mt-0.5 flex-shrink-0" />
         <div>
-          <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm">Occupancy Mismatch</p>
+          <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm">
+            {_t('reservationDetails.occupancy')}
+          </p>
           <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-            {paxCount} passenger{paxCount !== 1 ? 's' : ''} assigned, but some lodging services don't have enough room
-            capacity:
+            {paxCount} {_t('reservationDetails.passenger')}
+            {paxCount !== 1 ? 's' : ''} {_t('reservationDetails.assigned')}
           </p>
           <ul className="text-xs text-amber-700 dark:text-amber-300 mt-1 space-y-0.5 list-disc list-inside">
             {issues
               .filter((i) => !i.ok)
               .map((i, idx) => (
                 <li key={idx}>
-                  <strong>{i.name}</strong> — {i.occupancy} × {i.quantity} = {i.totalCap} pax capacity (needs {paxCount}
-                  )
+                  <strong>{i.name}</strong> — {i.occupancy} × {i.quantity} = {i.totalCap} {_t('reservationDetails.pax')}{' '}
+                  {paxCount})
                 </li>
               ))}
           </ul>

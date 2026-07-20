@@ -55,6 +55,7 @@ import CompanyPicker from '../components/crm/CompanyPicker';
 import LocationSearch from '@/components/services/LocationSearch';
 import { getCurrencySymbol, mixedCurrencyLabel } from '@/lib/formatters';
 import { useSupportedCurrencies, getCurrencyName } from '@/lib/currencies';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
@@ -71,6 +72,7 @@ const PAYMENT_STATUS_COLORS = {
 };
 
 export default function ClientDetails() {
+  const { t: _t } = useT();
   const [searchParams] = useSearchParams();
   const clientId = searchParams.get('id');
   const { hasPermission } = usePermissions();
@@ -294,7 +296,7 @@ export default function ClientDetails() {
   }
 
   if (!client) {
-    return <div className="text-center py-20">Client not found</div>;
+    return <div className="text-center py-20">{_t('clientDetails.client')}</div>;
   }
 
   return (
@@ -302,7 +304,7 @@ export default function ClientDetails() {
       <Link to={createPageUrl('ClientCRM')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Clients
+          {_t('clientDetails.back')}
         </Button>
       </Link>
 
@@ -337,12 +339,12 @@ export default function ClientDetails() {
               variant="outline"
               className="border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
             >
-              <Eye className="w-4 h-4 mr-2" /> View portal as client
+              <Eye className="w-4 h-4 mr-2" /> {_t('clientDetails.view')}
             </Button>
             {hasPermission('modify_clients') && (
               <>
                 <Button onClick={openEditModal} variant="outline">
-                  <Edit className="w-4 h-4 mr-2" /> Edit Client
+                  <Edit className="w-4 h-4 mr-2" /> {_t('clientDetails.edit')}
                 </Button>
                 {client.status === 'cancelled' ? (
                   <Button
@@ -350,7 +352,7 @@ export default function ClientDetails() {
                     variant="outline"
                     className="border-green-300 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-950/40"
                   >
-                    <RotateCcw className="w-4 h-4 mr-2" /> Reactivate
+                    <RotateCcw className="w-4 h-4 mr-2" /> {_t('clientDetails.reactivate')}
                   </Button>
                 ) : (
                   <Button
@@ -358,7 +360,7 @@ export default function ClientDetails() {
                     variant="outline"
                     className="border-red-300 dark:border-red-800 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40"
                   >
-                    <XCircle className="w-4 h-4 mr-2" /> Cancel Client
+                    <XCircle className="w-4 h-4 mr-2" /> {_t('clientDetails.cancel_2')}
                   </Button>
                 )}
               </>
@@ -383,7 +385,7 @@ export default function ClientDetails() {
                   <a href={`tel:${client.phone}`} className="hover:text-blue-600 dark:hover:text-blue-300">
                     {client.phone}
                   </a>
-                  <span className="ml-1 text-xs text-muted-foreground">(principale)</span>
+                  <span className="ml-1 text-xs text-muted-foreground">{_t('clientDetails.principale')}</span>
                 </div>
               </div>
             )}
@@ -445,7 +447,7 @@ export default function ClientDetails() {
             {client.passport_number && (
               <div className="flex items-center gap-2 text-foreground">
                 <FileText className="w-4 h-4 text-muted-foreground" />
-                Passport: {client.passport_number}
+                {_t('clientDetails.passport')} {client.passport_number}
               </div>
             )}
           </div>
@@ -456,7 +458,7 @@ export default function ClientDetails() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-90">Total Paid</div>
+            <div className="text-sm opacity-90">{_t('clientDetails.total')}</div>
             <DollarSign className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">
@@ -467,7 +469,7 @@ export default function ClientDetails() {
 
         <Card className="p-6 bg-gradient-to-br from-orange-500 to-orange-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-90">Total Owed</div>
+            <div className="text-sm opacity-90">{_t('clientDetails.totalOwed')}</div>
             <DollarSign className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">
@@ -478,7 +480,7 @@ export default function ClientDetails() {
 
         <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-90">Proposals</div>
+            <div className="text-sm opacity-90">{_t('clientDetails.proposals')}</div>
             <FileText className="w-5 h-5 opacity-80" />
           </div>
           <div className="text-3xl font-bold">{proposals.length}</div>
@@ -489,7 +491,7 @@ export default function ClientDetails() {
         <Card className="p-6 bg-card shadow-md">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <h3 className="text-lg font-semibold text-foreground mb-1">Client Portal Access</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-1">{_t('clientDetails.clientPortal')}</h3>
               <p className="text-sm text-muted-foreground">
                 {portalStatus?.account?.is_active
                   ? `Portal login active for ${client.email}`
@@ -519,21 +521,19 @@ export default function ClientDetails() {
             </div>
           </div>
           {!client.email && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-              Add an email address to this client before granting portal access.
-            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">{_t('clientDetails.add')}</p>
           )}
         </Card>
       )}
 
       <Tabs defaultValue="payments" className="space-y-6">
         <TabsList className="bg-card border border-border p-1 flex-wrap h-auto">
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="invoices">Invoices</TabsTrigger>
-          <TabsTrigger value="proposals">Proposals</TabsTrigger>
-          <TabsTrigger value="trips">Trips</TabsTrigger>
-          <TabsTrigger value="profile">Profile & Business</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks & Reminders</TabsTrigger>
+          <TabsTrigger value="payments">{_t('clientDetails.payments')}</TabsTrigger>
+          <TabsTrigger value="invoices">{_t('clientDetails.invoices')}</TabsTrigger>
+          <TabsTrigger value="proposals">{_t('clientDetails.proposals')}</TabsTrigger>
+          <TabsTrigger value="trips">{_t('clientDetails.trips')}</TabsTrigger>
+          <TabsTrigger value="profile">{_t('clientDetails.profile')}</TabsTrigger>
+          <TabsTrigger value="tasks">{_t('clientDetails.tasks')}</TabsTrigger>
         </TabsList>
 
         {/* Payments Tab */}
@@ -541,13 +541,13 @@ export default function ClientDetails() {
           <div className="flex justify-end">
             <Button onClick={() => setPaymentModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
-              Add Payment
+              {_t('clientDetails.addPayment')}
             </Button>
           </div>
 
           {payments.length === 0 ? (
             <Card className="p-12 text-center bg-card">
-              <p className="text-muted-foreground">No payments recorded</p>
+              <p className="text-muted-foreground">{_t('clientDetails.no')}</p>
             </Card>
           ) : (
             <div className="space-y-4">
@@ -563,9 +563,17 @@ export default function ClientDetails() {
                         <Badge className={PAYMENT_STATUS_COLORS[payment.status]}>{payment.status}</Badge>
                       </div>
                       <div className="text-sm text-muted-foreground space-y-1">
-                        <div>Date: {format(new Date(payment.payment_date), 'MMM d, yyyy')}</div>
-                        <div className="capitalize">Method: {payment.payment_method.replace('_', ' ')}</div>
-                        {payment.transaction_id && <div>Transaction: {payment.transaction_id}</div>}
+                        <div>
+                          {_t('clientDetails.date')} {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                        </div>
+                        <div className="capitalize">
+                          {_t('clientDetails.method')} {payment.payment_method.replace('_', ' ')}
+                        </div>
+                        {payment.transaction_id && (
+                          <div>
+                            {_t('clientDetails.transaction')} {payment.transaction_id}
+                          </div>
+                        )}
                         {payment.notes && <div className="mt-2 text-foreground">{payment.notes}</div>}
                       </div>
                     </div>
@@ -574,7 +582,7 @@ export default function ClientDetails() {
                         <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
                           <Button size="sm" variant="outline">
                             <Download className="w-4 h-4 mr-2" />
-                            Receipt
+                            {_t('clientDetails.receipt')}
                           </Button>
                         </a>
                       ) : (
@@ -609,7 +617,7 @@ export default function ClientDetails() {
         <TabsContent value="invoices">
           {invoices.length === 0 ? (
             <Card className="p-12 text-center bg-card">
-              <p className="text-muted-foreground">No invoices for this client</p>
+              <p className="text-muted-foreground">{_t('clientDetails.noInvoices')}</p>
             </Card>
           ) : (
             <div className="space-y-4">
@@ -620,8 +628,12 @@ export default function ClientDetails() {
                       <div>
                         <h3 className="font-bold text-lg text-foreground mb-1">{invoice.invoice_number}</h3>
                         <div className="text-sm text-muted-foreground">
-                          <div>Issued: {format(new Date(invoice.issue_date), 'MMM d, yyyy')}</div>
-                          <div>Due: {format(new Date(invoice.due_date), 'MMM d, yyyy')}</div>
+                          <div>
+                            {_t('clientDetails.issued')} {format(new Date(invoice.issue_date), 'MMM d, yyyy')}
+                          </div>
+                          <div>
+                            {_t('clientDetails.due')} {format(new Date(invoice.due_date), 'MMM d, yyyy')}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -640,7 +652,7 @@ export default function ClientDetails() {
                         </div>
                         {invoice.amount_due > 0 && (
                           <div className="text-sm text-orange-600 dark:text-orange-300">
-                            Due: {getCurrencySymbol(invoice.currency || 'USD')}
+                            {_t('clientDetails.due')} {getCurrencySymbol(invoice.currency || 'USD')}
                             {invoice.amount_due.toFixed(2)}
                           </div>
                         )}
@@ -657,7 +669,7 @@ export default function ClientDetails() {
         <TabsContent value="proposals">
           {proposals.length === 0 ? (
             <Card className="p-12 text-center bg-card">
-              <p className="text-muted-foreground">No proposals for this client</p>
+              <p className="text-muted-foreground">{_t('clientDetails.noProposals')}</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -666,7 +678,11 @@ export default function ClientDetails() {
                   <Card className="p-6 bg-card hover:shadow-xl transition-shadow cursor-pointer">
                     <h3 className="font-bold text-lg text-foreground mb-2">{proposal.title}</h3>
                     <div className="text-sm text-muted-foreground mb-3">
-                      {proposal.destination && <div>Destination: {proposal.destination}</div>}
+                      {proposal.destination && (
+                        <div>
+                          {_t('clientDetails.destination')} {proposal.destination}
+                        </div>
+                      )}
                     </div>
                     <div className="flex justify-between items-center flex-wrap gap-2">
                       <Badge
@@ -694,7 +710,7 @@ export default function ClientDetails() {
         <TabsContent value="trips">
           {trips.length === 0 ? (
             <Card className="p-12 text-center bg-card">
-              <p className="text-muted-foreground">No trips allocated to this client</p>
+              <p className="text-muted-foreground">{_t('clientDetails.noTrips')}</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -733,7 +749,7 @@ export default function ClientDetails() {
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Client</DialogTitle>
+            <DialogTitle>{_t('clientDetails.edit')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -744,7 +760,7 @@ export default function ClientDetails() {
           >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Name *</Label>
+                <Label>{_t('clientDetails.name')}</Label>
                 <Input
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -752,7 +768,7 @@ export default function ClientDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Age Category</Label>
+                <Label>{_t('clientDetails.age')}</Label>
                 <Select
                   value={editForm.age_category}
                   onValueChange={(v) => setEditForm({ ...editForm, age_category: v })}
@@ -761,14 +777,14 @@ export default function ClientDetails() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="adult">Adult</SelectItem>
-                    <SelectItem value="children">Children (3–11.99 years)</SelectItem>
-                    <SelectItem value="infant">Infant (0–2.99 years)</SelectItem>
+                    <SelectItem value="adult">{_t('clientDetails.adult')}</SelectItem>
+                    <SelectItem value="children">{_t('clientDetails.children')}</SelectItem>
+                    <SelectItem value="infant">{_t('clientDetails.infant')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Primary Contact *</Label>
+                <Label>{_t('clientDetails.primary')}</Label>
                 <Input
                   type="tel"
                   placeholder="+1 555 000 0000"
@@ -778,7 +794,7 @@ export default function ClientDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Secondary Contact</Label>
+                <Label>{_t('clientDetails.secondary')}</Label>
                 <Input
                   type="tel"
                   placeholder="+1 555 000 0000"
@@ -787,7 +803,7 @@ export default function ClientDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{_t('clientDetails.email')}</Label>
                 <Input
                   type="email"
                   value={editForm.email}
@@ -795,7 +811,7 @@ export default function ClientDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Company</Label>
+                <Label>{_t('clientDetails.company')}</Label>
                 <CompanyPicker
                   value={editForm.company_id}
                   companyName={editForm.company}
@@ -803,7 +819,7 @@ export default function ClientDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Address</Label>
+                <Label>{_t('clientDetails.address')}</Label>
                 <LocationSearch
                   value={editForm.address}
                   onChange={(v) => setEditForm({ ...editForm, address: v })}
@@ -815,29 +831,29 @@ export default function ClientDetails() {
                       country: prev.country || item.country,
                     }))
                   }
-                  placeholder="Search address (OpenStreetMap)..."
+                  placeholder={_t('clientDetails.search')}
                 />
               </div>
               <div className="space-y-2">
-                <Label>City</Label>
+                <Label>{_t('clientDetails.city')}</Label>
                 <Input value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Country</Label>
+                <Label>{_t('clientDetails.country')}</Label>
                 <Input
                   value={editForm.country}
                   onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Passport Number</Label>
+                <Label>{_t('clientDetails.passportNumber')}</Label>
                 <Input
                   value={editForm.passport_number}
                   onChange={(e) => setEditForm({ ...editForm, passport_number: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Date of Birth</Label>
+                <Label>{_t('clientDetails.dateOf')}</Label>
                 <Input
                   type="date"
                   value={editForm.date_of_birth}
@@ -845,25 +861,25 @@ export default function ClientDetails() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Tax ID</Label>
+                <Label>{_t('clientDetails.tax')}</Label>
                 <Input value={editForm.tax_id} onChange={(e) => setEditForm({ ...editForm, tax_id: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{_t('clientDetails.status')}</Label>
                 <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="vip">VIP</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="active">{_t('clientDetails.active')}</SelectItem>
+                    <SelectItem value="inactive">{_t('clientDetails.inactive')}</SelectItem>
+                    <SelectItem value="vip">{_t('clientDetails.vip')}</SelectItem>
+                    <SelectItem value="cancelled">{_t('clientDetails.cancelled')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Payment Method</Label>
+                <Label>{_t('clientDetails.payment')}</Label>
                 <Select
                   value={editForm.payment_method}
                   onValueChange={(v) => setEditForm({ ...editForm, payment_method: v })}
@@ -872,17 +888,17 @@ export default function ClientDetails() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="paypal">PayPal</SelectItem>
-                    <SelectItem value="check">Check</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="credit_card">{_t('clientDetails.credit')}</SelectItem>
+                    <SelectItem value="bank_transfer">{_t('clientDetails.bank')}</SelectItem>
+                    <SelectItem value="paypal">{_t('clientDetails.paypal')}</SelectItem>
+                    <SelectItem value="check">{_t('clientDetails.check')}</SelectItem>
+                    <SelectItem value="cash">{_t('clientDetails.cash')}</SelectItem>
+                    <SelectItem value="other">{_t('clientDetails.other')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Portal Currency</Label>
+                <Label>{_t('clientDetails.portal')}</Label>
                 <Select
                   value={editForm.preferred_currency || 'USD'}
                   onValueChange={(v) => setEditForm({ ...editForm, preferred_currency: v })}
@@ -898,12 +914,10 @@ export default function ClientDetails() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Currency the client sees B2B prices in (auto-converted).
-                </p>
+                <p className="text-xs text-muted-foreground">{_t('clientDetails.currency')}</p>
               </div>
               <div className="space-y-2">
-                <Label>Default Markup %</Label>
+                <Label>{_t('clientDetails.default')}</Label>
                 <Input
                   type="number"
                   min="0"
@@ -912,11 +926,11 @@ export default function ClientDetails() {
                   value={editForm.default_markup ?? 0}
                   onChange={(e) => setEditForm({ ...editForm, default_markup: parseFloat(e.target.value) || 0 })}
                 />
-                <p className="text-xs text-muted-foreground">Applied to supplier pricing for this client's quotes.</p>
+                <p className="text-xs text-muted-foreground">{_t('clientDetails.applied')}</p>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Invoice Address</Label>
+              <Label>{_t('clientDetails.invoice')}</Label>
               <Textarea
                 value={editForm.invoice_address}
                 onChange={(e) => setEditForm({ ...editForm, invoice_address: e.target.value })}
@@ -924,7 +938,7 @@ export default function ClientDetails() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>{_t('clientDetails.notes')}</Label>
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
@@ -933,9 +947,9 @@ export default function ClientDetails() {
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>
-                Cancel
+                {_t('clientDetails.cancel_2')}
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit">{_t('clientDetails.save')}</Button>
             </div>
           </form>
         </DialogContent>
@@ -945,7 +959,7 @@ export default function ClientDetails() {
       <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Payment</DialogTitle>
+            <DialogTitle>{_t('clientDetails.addPayment')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -958,7 +972,7 @@ export default function ClientDetails() {
             className="space-y-4 mt-4"
           >
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount *</Label>
+              <Label htmlFor="amount">{_t('clientDetails.amount')}</Label>
               <Input
                 id="amount"
                 type="number"
@@ -970,7 +984,7 @@ export default function ClientDetails() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payment_date">Payment Date *</Label>
+              <Label htmlFor="payment_date">{_t('clientDetails.paymentDate')}</Label>
               <Input
                 id="payment_date"
                 type="date"
@@ -981,7 +995,7 @@ export default function ClientDetails() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payment_method">Payment Method</Label>
+              <Label htmlFor="payment_method">{_t('clientDetails.payment')}</Label>
               <Select
                 value={paymentFormData.payment_method}
                 onValueChange={(v) => setPaymentFormData({ ...paymentFormData, payment_method: v })}
@@ -990,18 +1004,18 @@ export default function ClientDetails() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="credit_card">Credit Card</SelectItem>
-                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="paypal">PayPal</SelectItem>
-                  <SelectItem value="check">Check</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="credit_card">{_t('clientDetails.credit')}</SelectItem>
+                  <SelectItem value="bank_transfer">{_t('clientDetails.bank')}</SelectItem>
+                  <SelectItem value="paypal">{_t('clientDetails.paypal')}</SelectItem>
+                  <SelectItem value="check">{_t('clientDetails.check')}</SelectItem>
+                  <SelectItem value="cash">{_t('clientDetails.cash')}</SelectItem>
+                  <SelectItem value="other">{_t('clientDetails.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="transaction_id">Transaction ID</Label>
+              <Label htmlFor="transaction_id">{_t('clientDetails.transactionId')}</Label>
               <Input
                 id="transaction_id"
                 value={paymentFormData.transaction_id}
@@ -1010,7 +1024,7 @@ export default function ClientDetails() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">{_t('clientDetails.notes')}</Label>
               <Textarea
                 id="notes"
                 value={paymentFormData.notes}
@@ -1021,9 +1035,9 @@ export default function ClientDetails() {
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setPaymentModalOpen(false)}>
-                Cancel
+                {_t('clientDetails.cancel_2')}
               </Button>
-              <Button type="submit">Add Payment</Button>
+              <Button type="submit">{_t('clientDetails.addPayment')}</Button>
             </div>
           </form>
         </DialogContent>
@@ -1032,19 +1046,18 @@ export default function ClientDetails() {
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Client?</AlertDialogTitle>
+            <AlertDialogTitle>{_t('clientDetails.cancelClient')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will mark <strong>{client?.name}</strong> as cancelled. They will no longer appear as active in the
-              system. You can reactivate them at any time.
+              {_t('clientDetails.this')} <strong>{client?.name}</strong> {_t('clientDetails.as')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep Client</AlertDialogCancel>
+            <AlertDialogCancel>{_t('clientDetails.keep')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => cancelClientMutation.mutate()}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              Yes, Cancel Client
+              {_t('clientDetails.yes')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1053,12 +1066,11 @@ export default function ClientDetails() {
       <Dialog open={!!tempPassword} onOpenChange={(/** @type {boolean} */ o) => !o && setTempPassword(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Client Portal login created</DialogTitle>
+            <DialogTitle>{_t('clientDetails.clientPortalLogin')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <p className="text-sm text-muted-foreground">
-              A Client Portal account was created for <strong>{client?.email}</strong>. Share this temporary password
-              with the client — they can change it after logging in.
+              {_t('clientDetails.a')} <strong>{client?.email}</strong>. {_t('clientDetails.share')}
             </p>
             <div className="flex items-center gap-2">
               <Input readOnly value={tempPassword || ''} className="font-mono" />
@@ -1067,7 +1079,7 @@ export default function ClientDetails() {
                 variant="outline"
                 onClick={() => navigator.clipboard?.writeText(tempPassword || '')}
               >
-                Copy
+                {_t('clientDetails.copy')}
               </Button>
             </div>
           </div>

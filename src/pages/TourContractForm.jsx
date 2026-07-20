@@ -16,6 +16,7 @@ import { ArrowLeft, Plus, Trash2, Check, Search, Loader2 } from 'lucide-react';
 import { createPageUrl } from '../utils';
 import { showSuccess, showError } from '@/lib/toast';
 import ContractItineraryRow from '../components/contracts/ContractItineraryRow';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const emptyItem = () => ({
   _key: `line-${Date.now()}-${Math.random()}`,
@@ -67,6 +68,7 @@ const emptyContract = {
 };
 
 export default function TourContractForm() {
+  const { t: _t } = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -219,40 +221,38 @@ export default function TourContractForm() {
       <Link to={createPageUrl('TourContracts')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Tour Contracts
+          {_t('tourContractForm.back')}
         </Button>
       </Link>
 
       <div>
         <h1 className="text-3xl font-bold text-foreground">{isEditing ? 'Edit Tour Contract' : 'New Tour Contract'}</h1>
-        <p className="text-muted-foreground mt-1">
-          Define the fixed itinerary and per-person pricing tiers for a recurring serial tour
-        </p>
+        <p className="text-muted-foreground mt-1">{_t('tourContractForm.define')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-lg font-bold text-foreground mb-4">Contract Details</h2>
+          <h2 className="text-lg font-bold text-foreground mb-4">{_t('tourContractForm.contract')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Contract Name *</Label>
+              <Label>{_t('tourContractForm.contractName')}</Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g., Istanbul Classic 4D/3N"
+                placeholder={_t('tourContractForm.e')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label>Destination</Label>
+              <Label>{_t('tourContractForm.destination')}</Label>
               <Input
                 value={form.destination}
                 onChange={(e) => setForm({ ...form, destination: e.target.value })}
-                placeholder="e.g., Istanbul, Turkey"
+                placeholder={_t('tourContractForm.eG')}
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label>Client *</Label>
+              <Label>{_t('tourContractForm.client')}</Label>
               <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
                 <PopoverTrigger asChild>
                   <button
@@ -263,7 +263,7 @@ export default function TourContractForm() {
                     {form.client_id ? (
                       <span className="font-medium">{form.client_name}</span>
                     ) : (
-                      <span className="text-muted-foreground">Select client...</span>
+                      <span className="text-muted-foreground">{_t('tourContractForm.select')}</span>
                     )}
                     <Search className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
                   </button>
@@ -271,12 +271,12 @@ export default function TourContractForm() {
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                   <Command>
                     <CommandInput
-                      placeholder="Search clients..."
+                      placeholder={_t('tourContractForm.search')}
                       value={clientSearch}
                       onValueChange={setClientSearch}
                     />
                     <CommandList>
-                      <CommandEmpty>No clients found</CommandEmpty>
+                      <CommandEmpty>{_t('tourContractForm.no')}</CommandEmpty>
                       <CommandGroup>
                         {filteredClients.map((c) => (
                           <CommandItem
@@ -302,19 +302,19 @@ export default function TourContractForm() {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label>Tour Type</Label>
+              <Label>{_t('tourContractForm.tour')}</Label>
               <Select value={form.tour_type || 'private'} onValueChange={(v) => setForm({ ...form, tour_type: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="private">Private (price by number of passengers)</SelectItem>
-                  <SelectItem value="group">Group (fixed per-person price)</SelectItem>
+                  <SelectItem value="private">{_t('tourContractForm.private')}</SelectItem>
+                  <SelectItem value="group">{_t('tourContractForm.group')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label>{_t('tourContractForm.status')}</Label>
               <Select
                 value={form.is_active ? 'active' : 'inactive'}
                 onValueChange={(v) => setForm({ ...form, is_active: v === 'active' })}
@@ -323,8 +323,8 @@ export default function TourContractForm() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="active">{_t('tourContractForm.active')}</SelectItem>
+                  <SelectItem value="inactive">{_t('tourContractForm.inactive')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -334,14 +334,12 @@ export default function TourContractForm() {
         <Card className="p-6 bg-card shadow-md">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-lg font-bold text-foreground">Fixed Itinerary</h2>
-              <p className="text-sm text-muted-foreground">
-                The suppliers and services every booking from this contract will include
-              </p>
+              <h2 className="text-lg font-bold text-foreground">{_t('tourContractForm.fixed')}</h2>
+              <p className="text-sm text-muted-foreground">{_t('tourContractForm.the')}</p>
             </div>
             <Button type="button" onClick={addItem} variant="outline">
               <Plus className="w-4 h-4 mr-2" />
-              Add Line
+              {_t('tourContractForm.add')}
             </Button>
           </div>
           <div className="space-y-4">
@@ -361,14 +359,12 @@ export default function TourContractForm() {
         {form.tour_type === 'group' ? (
           <Card className="p-6 bg-card shadow-md">
             <div className="mb-4">
-              <h2 className="text-lg font-bold text-foreground">Group Price</h2>
-              <p className="text-sm text-muted-foreground">
-                Fixed price per person, charged regardless of how many passengers book
-              </p>
+              <h2 className="text-lg font-bold text-foreground">{_t('tourContractForm.groupPrice')}</h2>
+              <p className="text-sm text-muted-foreground">{_t('tourContractForm.fixedPrice')}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md">
               <div className="space-y-2">
-                <Label>Price / Person *</Label>
+                <Label>{_t('tourContractForm.price')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -380,7 +376,7 @@ export default function TourContractForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Currency</Label>
+                <Label>{_t('tourContractForm.currency')}</Label>
                 <Select
                   value={form.group_currency || 'EUR'}
                   onValueChange={(v) => setForm({ ...form, group_currency: v })}
@@ -403,22 +399,20 @@ export default function TourContractForm() {
           <Card className="p-6 bg-card shadow-md">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-lg font-bold text-foreground">Pricing Tiers</h2>
-                <p className="text-sm text-muted-foreground">
-                  Per-person price for a band of passengers. Leave Max blank for unlimited.
-                </p>
+                <h2 className="text-lg font-bold text-foreground">{_t('tourContractForm.pricing')}</h2>
+                <p className="text-sm text-muted-foreground">{_t('tourContractForm.per')}</p>
               </div>
               <Button type="button" onClick={addTier} variant="outline">
                 <Plus className="w-4 h-4 mr-2" />
-                Add Tier
+                {_t('tourContractForm.addTier')}
               </Button>
             </div>
             <div className="space-y-2">
               <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 text-xs font-semibold text-muted-foreground uppercase px-1">
-                <span>Min Pax</span>
-                <span>Max Pax</span>
-                <span>Price / Person</span>
-                <span>Currency</span>
+                <span>{_t('tourContractForm.min')}</span>
+                <span>{_t('tourContractForm.max')}</span>
+                <span>{_t('tourContractForm.pricePerson')}</span>
+                <span>{_t('tourContractForm.currency')}</span>
                 <span></span>
               </div>
               {form.pricing_tiers.map((tier) => (
@@ -428,7 +422,7 @@ export default function TourContractForm() {
                     min="1"
                     value={tier.min_pax}
                     onChange={(e) => updateTier(tier._key, 'min_pax', e.target.value)}
-                    placeholder="e.g., 1"
+                    placeholder={_t('tourContractForm.eG1')}
                     required
                   />
                   <Input
@@ -469,10 +463,10 @@ export default function TourContractForm() {
         )}
 
         <Card className="p-6 bg-card shadow-md">
-          <h2 className="text-lg font-bold text-foreground mb-4">Terms &amp; Notes</h2>
+          <h2 className="text-lg font-bold text-foreground mb-4">{_t('tourContractForm.terms')}</h2>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Terms &amp; Conditions</Label>
+              <Label>{_t('tourContractForm.termsConditions')}</Label>
               <Textarea
                 value={form.terms_and_conditions}
                 onChange={(e) => setForm({ ...form, terms_and_conditions: e.target.value })}
@@ -480,7 +474,7 @@ export default function TourContractForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Internal Notes</Label>
+              <Label>{_t('tourContractForm.internal')}</Label>
               <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
             </div>
           </div>
@@ -489,14 +483,14 @@ export default function TourContractForm() {
         <div className="flex justify-end gap-3 pb-8">
           <Link to={createPageUrl('TourContracts')}>
             <Button type="button" variant="outline">
-              Cancel
+              {_t('tourContractForm.cancel')}
             </Button>
           </Link>
           <Button type="submit" disabled={saving || !form.client_id}>
             {saving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
+                {_t('tourContractForm.saving')}
               </>
             ) : isEditing ? (
               'Save Changes'

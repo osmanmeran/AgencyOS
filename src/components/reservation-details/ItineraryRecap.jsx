@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Map, Check, Share2, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { SERVICE_TYPE_CONFIG } from './helpers';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ItineraryRecap({
   trip,
@@ -13,6 +14,7 @@ export default function ItineraryRecap({
   shareCopied,
   supplierMap,
 }) {
+  const { t: _t } = useT();
   return (
     <Card className="bg-card shadow-lg print:shadow-none overflow-hidden">
       {(companyLogoUrl || companyName) && (
@@ -35,7 +37,7 @@ export default function ItineraryRecap({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <Map className="w-6 h-6 text-white" />
-              <h2 className="text-xl font-bold text-white">Itinerary Recap</h2>
+              <h2 className="text-xl font-bold text-white">{_t('reservationDetails.itinerary')}</h2>
             </div>
             <Button
               variant="outlined"
@@ -127,7 +129,7 @@ export default function ItineraryRecap({
                     {dayNum}
                   </div>
                   <div className="font-bold text-foreground">
-                    Day {dayNum}
+                    {_t('reservationDetails.day')} {dayNum}
                     <span className="font-normal text-muted-foreground ml-2">{format(date, 'EEEE, MMM d, yyyy')}</span>
                   </div>
                   {badge && (
@@ -170,7 +172,7 @@ export default function ItineraryRecap({
                                   {s.name}
                                   {s._isReturnLeg && (
                                     <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300">
-                                      Return
+                                      {_t('reservationDetails.return')}
                                     </span>
                                   )}
                                 </div>
@@ -178,10 +180,14 @@ export default function ItineraryRecap({
                                   <div className="text-xs text-muted-foreground mt-0.5">📍 {s.location}</div>
                                 )}
                                 {s.pickup_location && (
-                                  <div className="text-xs text-muted-foreground mt-1">Pick up: {s.pickup_location}</div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {_t('reservationDetails.pick')} {s.pickup_location}
+                                  </div>
                                 )}
                                 {s.dropoff_location && (
-                                  <div className="text-xs text-muted-foreground">Drop off: {s.dropoff_location}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {_t('reservationDetails.drop')} {s.dropoff_location}
+                                  </div>
                                 )}
                                 {s.transfer_flight_number && (
                                   <div className="text-xs text-muted-foreground">✈ {s.transfer_flight_number}</div>
@@ -192,7 +198,7 @@ export default function ItineraryRecap({
                                 {!s._isReturnLeg && s.return_leg?.enabled && (
                                   <div className="mt-2 pt-2 border-t border-orange-100">
                                     <span className="text-[11px] text-orange-600 dark:text-orange-300 font-semibold uppercase tracking-wide">
-                                      Return Leg
+                                      {_t('reservationDetails.returnLeg')}
                                     </span>
                                     <div className="text-xs text-muted-foreground mt-0.5">
                                       {s.return_leg.date ? format(new Date(s.return_leg.date), 'MMM d, yyyy') : ''}
@@ -206,7 +212,7 @@ export default function ItineraryRecap({
                                 )}
                                 {s.supplier_id && supplierMap[s.supplier_id] && (
                                   <div className="text-[11px] text-muted-foreground mt-1">
-                                    Booked via: {supplierMap[s.supplier_id]}
+                                    {_t('reservationDetails.booked')} {supplierMap[s.supplier_id]}
                                   </div>
                                 )}
                               </div>
@@ -217,7 +223,7 @@ export default function ItineraryRecap({
                     })}
                   </div>
                 ) : (
-                  <div className="text-sm text-muted-foreground italic pl-9">Free day / No scheduled activities</div>
+                  <div className="text-sm text-muted-foreground italic pl-9">{_t('reservationDetails.free')}</div>
                 )}
               </div>
             );
@@ -230,11 +236,11 @@ export default function ItineraryRecap({
         <div className="mt-6 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-800 p-6">
           <h3 className="font-semibold text-red-900 dark:text-red-300 mb-3 flex items-center gap-2">
             <Phone className="w-5 h-5" />
-            Emergency Contact
+            {_t('reservationDetails.emergency')}
           </h3>
           <div className="space-y-1 text-sm text-red-800 dark:text-red-300">
             {trip.created_by_name && <div className="font-semibold">{trip.created_by_name}</div>}
-            {trip.created_by && <div>Your Travel Agent</div>}
+            {trip.created_by && <div>{_t('reservationDetails.your')}</div>}
             {trip.created_by_phone && (
               <div>
                 <a href={`tel:${trip.created_by_phone}`} className="underline">

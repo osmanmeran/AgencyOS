@@ -41,6 +41,7 @@ import {
 import { categoryIdsBySupplier, getSupplierCategoryIds } from '@/lib/supplierCategories';
 import { getBlockingStopSale } from '@/lib/supplierStopSales';
 import { getCurrencySymbol } from '@/lib/formatters';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const CATEGORY_ICONS = {
   flight: {
@@ -95,6 +96,7 @@ const EMPTY_FORM = {
 };
 
 export default function ItineraryBuilder() {
+  const { t: _t } = useT();
   const [selectedTripId, setSelectedTripId] = useState('');
   const [dayOffset, setDayOffset] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
@@ -293,9 +295,9 @@ export default function ItineraryBuilder() {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <CalendarDays className="w-6 h-6 text-blue-600 dark:text-blue-300" />
-              Itinerary Builder
+              {_t('itineraryBuilder.itinerary')}
             </h1>
-            <p className="text-muted-foreground text-sm">Map out daily events linked to your supplier database</p>
+            <p className="text-muted-foreground text-sm">{_t('itineraryBuilder.map')}</p>
           </div>
         </div>
 
@@ -308,7 +310,7 @@ export default function ItineraryBuilder() {
             }}
           >
             <SelectTrigger className="bg-card shadow-sm">
-              <SelectValue placeholder="Select a trip to plan..." />
+              <SelectValue placeholder={_t('itineraryBuilder.select')} />
             </SelectTrigger>
             <SelectContent>
               {trips.map((t) => (
@@ -333,10 +335,8 @@ export default function ItineraryBuilder() {
             <div className="w-20 h-20 bg-blue-50 dark:bg-blue-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
               <CalendarDays className="w-10 h-10 text-blue-400" />
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">Select a trip to get started</h2>
-            <p className="text-muted-foreground max-w-sm text-sm">
-              Choose a trip from the dropdown to start building a day-by-day itinerary with supplier-linked events.
-            </p>
+            <h2 className="text-xl font-bold text-foreground mb-2">{_t('itineraryBuilder.selectA')}</h2>
+            <p className="text-muted-foreground max-w-sm text-sm">{_t('itineraryBuilder.choose')}</p>
           </div>
         </div>
       ) : (
@@ -354,7 +354,8 @@ export default function ItineraryBuilder() {
                   {format(parseISO(selectedTrip.start_date), 'MMM d')} –{' '}
                   {format(parseISO(selectedTrip.end_date), 'MMM d, yyyy')}
                   <span className="text-blue-400">
-                    · {tripDays.length} day{tripDays.length !== 1 ? 's' : ''}
+                    · {tripDays.length} {_t('itineraryBuilder.day')}
+                    {tripDays.length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800">
@@ -362,7 +363,8 @@ export default function ItineraryBuilder() {
                 </Badge>
               </div>
               <div className="text-sm text-blue-600 dark:text-blue-300 font-medium">
-                {events.length} event{events.length !== 1 ? 's' : ''} planned
+                {events.length} {_t('itineraryBuilder.event')}
+                {events.length !== 1 ? 's' : ''} {_t('itineraryBuilder.planned')}
               </div>
             </div>
           </Card>
@@ -391,7 +393,9 @@ export default function ItineraryBuilder() {
                     {/* Day header */}
                     <div className="bg-blue-600 text-white rounded-t-xl px-3 py-2.5 flex items-center justify-between">
                       <div>
-                        <div className="text-xs opacity-75">Day {dayNum}</div>
+                        <div className="text-xs opacity-75">
+                          {_t('itineraryBuilder.day_2')} {dayNum}
+                        </div>
                         <div className="font-bold text-sm">{format(day, 'EEE, MMM d')}</div>
                       </div>
                       <Button
@@ -412,7 +416,7 @@ export default function ItineraryBuilder() {
                           className="w-full h-full min-h-[80px] border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors text-xs"
                         >
                           <Plus className="w-4 h-4" />
-                          Add event
+                          {_t('itineraryBuilder.add_2')}
                         </button>
                       ) : (
                         <>
@@ -472,7 +476,7 @@ export default function ItineraryBuilder() {
                             onClick={() => openAddModal(day)}
                             className="w-full border border-dashed border-border rounded-lg py-1.5 flex items-center justify-center gap-1 text-muted-foreground hover:border-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors text-xs"
                           >
-                            <Plus className="w-3 h-3" /> Add
+                            <Plus className="w-3 h-3" /> {_t('itineraryBuilder.add_2')}
                           </button>
                         </>
                       )}
@@ -510,7 +514,7 @@ export default function ItineraryBuilder() {
             <Card className="p-5">
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <CalendarDays className="w-4 h-4 text-blue-600 dark:text-blue-300" />
-                Full Itinerary Summary
+                {_t('itineraryBuilder.full')}
               </h3>
               <div className="space-y-5">
                 {Object.keys(eventsByDate)
@@ -521,7 +525,7 @@ export default function ItineraryBuilder() {
                       <div key={dateKey}>
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-xs font-semibold text-white bg-blue-600 px-2.5 py-1 rounded-full">
-                            Day {idx + 1} · {format(parseISO(dateKey), 'EEE, MMM d')}
+                            {_t('itineraryBuilder.day_2')} {idx + 1} · {format(parseISO(dateKey), 'EEE, MMM d')}
                           </span>
                           <div className="flex-1 h-px bg-muted" />
                         </div>
@@ -590,7 +594,8 @@ export default function ItineraryBuilder() {
                                     )}
                                     {event.supplier_cost && (
                                       <div className="text-muted-foreground">
-                                        cost: {getCurrencySymbol(selectedTrip?.acquiring_currency || 'USD')}
+                                        {_t('itineraryBuilder.cost')}{' '}
+                                        {getCurrencySymbol(selectedTrip?.acquiring_currency || 'USD')}
                                         {parseFloat(event.supplier_cost).toFixed(0)}
                                       </div>
                                     )}
@@ -628,16 +633,16 @@ export default function ItineraryBuilder() {
             {/* Title + Time */}
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2 space-y-1.5">
-                <Label>Event Title *</Label>
+                <Label>{_t('itineraryBuilder.eventTitle')}</Label>
                 <Input
                   value={formData.title}
                   onChange={(e) => setFormData((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="e.g. Airport Transfer, Guided City Tour..."
+                  placeholder={_t('itineraryBuilder.e')}
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Time</Label>
+                <Label>{_t('itineraryBuilder.time')}</Label>
                 <Input
                   type="time"
                   value={formData.time}
@@ -648,7 +653,7 @@ export default function ItineraryBuilder() {
 
             {/* Date */}
             <div className="space-y-1.5">
-              <Label>Date *</Label>
+              <Label>{_t('itineraryBuilder.date')}</Label>
               <Input
                 type="date"
                 value={formData.date}
@@ -663,7 +668,7 @@ export default function ItineraryBuilder() {
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-blue-500 dark:text-blue-300" />
-                Link Supplier (Optional)
+                {_t('itineraryBuilder.link')}
               </Label>
 
               {selectedSupplier ? (
@@ -715,14 +720,14 @@ export default function ItineraryBuilder() {
                     <Input
                       value={supplierSearch}
                       onChange={(e) => setSupplierSearch(e.target.value)}
-                      placeholder="Search suppliers by name or city..."
+                      placeholder={_t('itineraryBuilder.search')}
                       className="pl-9"
                     />
                   </div>
                   {supplierSearch && (
                     <div className="border border-border rounded-lg max-h-40 overflow-y-auto bg-card shadow-lg">
                       {filteredSuppliers.length === 0 ? (
-                        <div className="p-3 text-center text-sm text-muted-foreground">No suppliers found</div>
+                        <div className="p-3 text-center text-sm text-muted-foreground">{_t('itineraryBuilder.no')}</div>
                       ) : (
                         filteredSuppliers.map((s) => {
                           const cat = categories.find((c) =>
@@ -761,16 +766,16 @@ export default function ItineraryBuilder() {
               <div className="grid grid-cols-2 gap-3">
                 {supplierServices.length > 0 && (
                   <div className="space-y-1.5">
-                    <Label>Service</Label>
+                    <Label>{_t('itineraryBuilder.service')}</Label>
                     <Select
                       value={formData.service_id}
                       onValueChange={(v) => setFormData((f) => ({ ...f, service_id: v }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select service" />
+                        <SelectValue placeholder={_t('itineraryBuilder.selectService')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={null}>None</SelectItem>
+                        <SelectItem value={null}>{_t('itineraryBuilder.none')}</SelectItem>
                         {supplierServices.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
                             {s.service_name}
@@ -782,13 +787,13 @@ export default function ItineraryBuilder() {
                 )}
                 {supplierPricings.length > 0 && (
                   <div className="space-y-1.5">
-                    <Label>Price Tier</Label>
+                    <Label>{_t('itineraryBuilder.price')}</Label>
                     <Select value={formData.pricing_id} onValueChange={handlePricingChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select pricing" />
+                        <SelectValue placeholder={_t('itineraryBuilder.selectPricing')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={null}>None</SelectItem>
+                        <SelectItem value={null}>{_t('itineraryBuilder.none')}</SelectItem>
                         {supplierPricings.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
                             {p.name} — ${p.base_price} {p.unit ? `/ ${p.unit.replace('_', ' ')}` : ''}
@@ -803,21 +808,21 @@ export default function ItineraryBuilder() {
 
             {/* Location */}
             <div className="space-y-1.5">
-              <Label>Location</Label>
+              <Label>{_t('itineraryBuilder.location')}</Label>
               <Input
                 value={formData.location}
                 onChange={(e) => setFormData((f) => ({ ...f, location: e.target.value }))}
-                placeholder="Address or venue"
+                placeholder={_t('itineraryBuilder.address')}
               />
             </div>
 
             {/* Description */}
             <div className="space-y-1.5">
-              <Label>Description</Label>
+              <Label>{_t('itineraryBuilder.description')}</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))}
-                placeholder="Details about this event..."
+                placeholder={_t('itineraryBuilder.details')}
                 rows={3}
               />
             </div>
@@ -825,7 +830,7 @@ export default function ItineraryBuilder() {
             {/* Pricing */}
             <div className="grid grid-cols-3 gap-3 bg-muted p-4 rounded-lg border border-border">
               <div className="space-y-1.5">
-                <Label>Qty / Pax</Label>
+                <Label>{_t('itineraryBuilder.qty')}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -834,7 +839,7 @@ export default function ItineraryBuilder() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-muted-foreground">Supplier Cost</Label>
+                <Label className="text-muted-foreground">{_t('itineraryBuilder.supplier')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -842,10 +847,10 @@ export default function ItineraryBuilder() {
                   onChange={(e) => setFormData((f) => ({ ...f, supplier_cost: e.target.value }))}
                   placeholder="0.00"
                 />
-                <p className="text-xs text-muted-foreground">What you pay</p>
+                <p className="text-xs text-muted-foreground">{_t('itineraryBuilder.what')}</p>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-blue-700 dark:text-blue-300">Client Price</Label>
+                <Label className="text-blue-700 dark:text-blue-300">{_t('itineraryBuilder.client')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -854,20 +859,21 @@ export default function ItineraryBuilder() {
                   placeholder="0.00"
                   className="border-blue-300 dark:border-blue-800"
                 />
-                <p className="text-xs text-muted-foreground">What you charge</p>
+                <p className="text-xs text-muted-foreground">{_t('itineraryBuilder.whatYou')}</p>
               </div>
             </div>
 
             {eventStopSale && (
               <p className="text-xs text-red-600 dark:text-red-300 flex items-center gap-1 font-medium">
                 <CalendarOff className="w-3.5 h-3.5 flex-shrink-0" />
-                {selectedSupplier?.name} is in stop sales {eventStopSale.start_date} – {eventStopSale.end_date}
-                {eventStopSale.reason ? ` (${eventStopSale.reason})` : ''} — pick another date or supplier.
+                {selectedSupplier?.name} {_t('itineraryBuilder.is')} {eventStopSale.start_date} –{' '}
+                {eventStopSale.end_date}
+                {eventStopSale.reason ? ` (${eventStopSale.reason})` : ''} — {_t('itineraryBuilder.pick')}
               </p>
             )}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={closeModal}>
-                Cancel
+                {_t('itineraryBuilder.cancel')}
               </Button>
               <Button type="submit" disabled={!!eventStopSale}>
                 <Check className="w-4 h-4 mr-1" />

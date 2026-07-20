@@ -34,6 +34,7 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import ServiceLibraryPanel from '../components/proposals/ServiceLibraryPanel';
 import { applyMarkup } from '@/lib/pricing';
 import { createSupplierWithCategory } from '@/lib/supplierCategories';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const CURRENCIES = DEFAULT_CURRENCIES;
 
@@ -53,6 +54,7 @@ const emptyService = (supCur = 'USD', cliCur = 'USD') => ({
 });
 
 export default function CreateProposal() {
+  const { t: _t } = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -300,14 +302,14 @@ export default function CreateProposal() {
       <Link to={createPageUrl('Proposals')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Proposals
+          {_t('createProposal.back')}
         </Button>
       </Link>
 
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-1">Create Proposal</h1>
-          <p className="text-muted-foreground">Build a proposal with dual-currency cost breakdown and markup</p>
+          <h1 className="text-4xl font-bold text-foreground mb-1">{_t('createProposal.create')}</h1>
+          <p className="text-muted-foreground">{_t('createProposal.build')}</p>
         </div>
         <Button
           type="button"
@@ -338,19 +340,19 @@ export default function CreateProposal() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* ── Client Info ── */}
             <Card className="p-6 bg-card shadow-md">
-              <h2 className="text-xl font-bold text-foreground mb-4">Client Information</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">{_t('createProposal.client')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Proposal Title *</Label>
+                  <Label>{_t('createProposal.proposal')}</Label>
                   <Input
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Summer Vacation Package"
+                    placeholder={_t('createProposal.summer')}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Select Client (Optional)</Label>
+                  <Label>{_t('createProposal.select')}</Label>
                   <Select
                     value={formData.client_id}
                     onValueChange={(v) => {
@@ -360,10 +362,10 @@ export default function CreateProposal() {
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose from database" />
+                      <SelectValue placeholder={_t('createProposal.choose')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={null}>None (Manual Entry)</SelectItem>
+                      <SelectItem value={null}>{_t('createProposal.none_2')}</SelectItem>
                       {clients.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name} – {c.email}
@@ -373,7 +375,7 @@ export default function CreateProposal() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Client Name *</Label>
+                  <Label>{_t('createProposal.clientName')}</Label>
                   <Input
                     value={formData.client_name}
                     onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
@@ -381,7 +383,7 @@ export default function CreateProposal() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Client Email</Label>
+                  <Label>{_t('createProposal.clientEmail')}</Label>
                   <Input
                     type="email"
                     value={formData.client_email}
@@ -390,7 +392,7 @@ export default function CreateProposal() {
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" /> Number of Travelers
+                    <Users className="w-3.5 h-3.5" /> {_t('createProposal.number')}
                   </Label>
                   <Input
                     type="number"
@@ -404,19 +406,19 @@ export default function CreateProposal() {
 
             {/* ── Trip Details ── */}
             <Card className="p-6 bg-card shadow-md">
-              <h2 className="text-xl font-bold text-foreground mb-4">Trip Details</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">{_t('createProposal.trip')}</h2>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Load from Proposal Template</Label>
+                    <Label>{_t('createProposal.load')}</Label>
                     <Select onValueChange={loadFromTemplate}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Choose a saved template" />
+                        <SelectValue placeholder={_t('createProposal.chooseA')} />
                       </SelectTrigger>
                       <SelectContent>
                         {proposalTemplates.length === 0 && (
                           <SelectItem value="_none" disabled>
-                            No templates saved yet
+                            {_t('createProposal.no')}
                           </SelectItem>
                         )}
                         {proposalTemplates.map((t) => (
@@ -429,10 +431,10 @@ export default function CreateProposal() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Load from Existing Trip (Optional)</Label>
+                    <Label>{_t('createProposal.loadFrom')}</Label>
                     <Select onValueChange={loadFromTrip}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a trip" />
+                        <SelectValue placeholder={_t('createProposal.selectA')} />
                       </SelectTrigger>
                       <SelectContent>
                         {trips.map((t) => (
@@ -446,14 +448,14 @@ export default function CreateProposal() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Destination</Label>
+                    <Label>{_t('createProposal.destination')}</Label>
                     <Input
                       value={formData.destination}
                       onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Start Date</Label>
+                    <Label>{_t('createProposal.start')}</Label>
                     <Input
                       type="date"
                       value={formData.start_date}
@@ -461,7 +463,7 @@ export default function CreateProposal() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>End Date</Label>
+                    <Label>{_t('createProposal.end')}</Label>
                     <Input
                       type="date"
                       value={formData.end_date}
@@ -476,12 +478,13 @@ export default function CreateProposal() {
             <Card className="p-5 bg-card shadow-md border-l-4 border-blue-500">
               <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
                 <ArrowRightLeft className="w-4 h-4 text-blue-600 dark:text-blue-300" />
-                Currency Settings
+                {_t('createProposal.currency')}
               </h2>
               <div className="flex flex-wrap items-end gap-4">
                 <div className="space-y-2">
                   <Label>
-                    Acquiring Currency <span className="text-red-500 dark:text-red-300 text-xs">(what you pay)</span>
+                    {_t('createProposal.acquiring')}{' '}
+                    <span className="text-red-500 dark:text-red-300 text-xs">{_t('createProposal.what')}</span>
                   </Label>
                   <Select
                     value={acquiringCurrency}
@@ -509,8 +512,10 @@ export default function CreateProposal() {
 
                 <div className="space-y-2">
                   <Label>
-                    Selling Currency{' '}
-                    <span className="text-green-600 dark:text-green-300 text-xs">(what client pays)</span>
+                    {_t('createProposal.selling_2')}{' '}
+                    <span className="text-green-600 dark:text-green-300 text-xs">
+                      {_t('createProposal.whatClient')}
+                    </span>
                   </Label>
                   <Select
                     value={sellingCurrency}
@@ -536,7 +541,7 @@ export default function CreateProposal() {
                   <>
                     <div className="space-y-2">
                       <Label>
-                        Exchange Rate{' '}
+                        {_t('createProposal.exchange')}{' '}
                         <span className="text-xs text-muted-foreground">
                           (1 {acquiringCurrency} = ? {sellingCurrency})
                         </span>
@@ -574,24 +579,22 @@ export default function CreateProposal() {
             <Card className="p-6 bg-card shadow-md">
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">Services & Pricing</h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    Per-service currencies — select supplier and client currency for each line
-                  </p>
+                  <h2 className="text-xl font-bold text-foreground">{_t('createProposal.services')}</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">{_t('createProposal.per')}</p>
                 </div>
                 <Button type="button" onClick={addService} variant="outline">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Service
+                  {_t('createProposal.add')}
                 </Button>
               </div>
 
               {/* Column headers */}
               <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
-                <div className="col-span-3">Provider</div>
-                <div className="col-span-2">Service</div>
-                <div className="col-span-1 text-center">Pax</div>
-                <div className="col-span-3 text-right">Acq. / pax</div>
-                <div className="col-span-3 text-right">Sell / pax</div>
+                <div className="col-span-3">{_t('createProposal.provider')}</div>
+                <div className="col-span-2">{_t('createProposal.service')}</div>
+                <div className="col-span-1 text-center">{_t('createProposal.pax')}</div>
+                <div className="col-span-3 text-right">{_t('createProposal.acq')}</div>
+                <div className="col-span-3 text-right">{_t('createProposal.sell')}</div>
               </div>
               <Separator className="mb-4" />
 
@@ -622,10 +625,10 @@ export default function CreateProposal() {
                               onValueChange={(v) => updateService(index, 'supplier_id', v)}
                             >
                               <SelectTrigger className="h-9 text-sm">
-                                <SelectValue placeholder="Provider" />
+                                <SelectValue placeholder={_t('createProposal.provider')} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value={null}>— None —</SelectItem>
+                                <SelectItem value={null}>{_t('createProposal.none_2')}</SelectItem>
                                 {suppliers.map((s) => (
                                   <SelectItem key={s.id} value={s.id}>
                                     {s.name}
@@ -653,7 +656,7 @@ export default function CreateProposal() {
                           <Input
                             value={service.name}
                             onChange={(e) => updateService(index, 'name', e.target.value)}
-                            placeholder="Service name"
+                            placeholder={_t('createProposal.serviceName')}
                             className="h-9 text-sm"
                           />
                         </div>
@@ -742,7 +745,7 @@ export default function CreateProposal() {
                         {/* Remove */}
                         <div className="col-span-3 flex justify-end items-end gap-3">
                           <div className="text-right">
-                            <div className="text-xs text-muted-foreground">Acq. total</div>
+                            <div className="text-xs text-muted-foreground">{_t('createProposal.acqTotal')}</div>
                             <div className="font-semibold text-red-600 dark:text-red-300 text-sm">
                               {currSymbol(sCur)}
                               {lineAcquiring.toFixed(2)}
@@ -750,7 +753,8 @@ export default function CreateProposal() {
                           </div>
                           <div className="text-right">
                             <div className="text-xs text-muted-foreground">
-                              Sell total{markupPct > 0 ? ` (incl. ${markupPct}% markup)` : ''}
+                              {_t('createProposal.sellTotal')}
+                              {markupPct > 0 ? ` (incl. ${markupPct}% markup)` : ''}
                             </div>
                             <div className="font-semibold text-green-700 dark:text-green-300 text-sm">
                               {currSymbol(cCur)}
@@ -759,7 +763,7 @@ export default function CreateProposal() {
                           </div>
                           {lineMargin !== null ? (
                             <div className="text-right">
-                              <div className="text-xs text-muted-foreground">Margin</div>
+                              <div className="text-xs text-muted-foreground">{_t('createProposal.margin')}</div>
                               <div
                                 className={`font-semibold text-sm ${lineMargin >= 0 ? 'text-blue-600 dark:text-blue-300' : 'text-red-600 dark:text-red-300'}`}
                               >
@@ -782,7 +786,7 @@ export default function CreateProposal() {
                       {/* Pax tiers indicator */}
                       {service.pax_tiers?.length > 0 && (
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-muted-foreground">Price tiers:</span>
+                          <span className="text-xs text-muted-foreground">{_t('createProposal.price')}</span>
                           {service.pax_tiers.map((t) => (
                             <Badge
                               key={t.id}
@@ -791,7 +795,7 @@ export default function CreateProposal() {
                               onClick={() => updateService(index, 'acquiring_price', t.base_price)}
                             >
                               {t.min}
-                              {t.max ? `–${t.max}` : '+'} pax · {currSymbol(sCur)}
+                              {t.max ? `–${t.max}` : '+'} {_t('createProposal.pax_2')} {currSymbol(sCur)}
                               {t.base_price}
                             </Badge>
                           ))}
@@ -804,7 +808,7 @@ export default function CreateProposal() {
                           <Textarea
                             value={service.description}
                             onChange={(e) => updateService(index, 'description', e.target.value)}
-                            placeholder="Service description (visible to client)..."
+                            placeholder={_t('createProposal.serviceDescription')}
                             rows={2}
                             className="text-xs resize-none"
                           />
@@ -817,7 +821,7 @@ export default function CreateProposal() {
                           <LocationSearch
                             value={service.location}
                             onChange={(v) => updateService(index, 'location', v)}
-                            placeholder="Search or type service location..."
+                            placeholder={_t('createProposal.search')}
                           />
                         </div>
                       </div>
@@ -834,7 +838,7 @@ export default function CreateProposal() {
                       <div className="flex justify-between items-center text-sm">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-orange-500 dark:text-orange-300" />
-                          <span className="text-foreground font-medium">Markup</span>
+                          <span className="text-foreground font-medium">{_t('createProposal.markup')}</span>
                           <Input
                             type="number"
                             min="0"
@@ -846,14 +850,17 @@ export default function CreateProposal() {
                           />
                           <span className="text-muted-foreground text-xs">%</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">Applied to each line</span>
+                        <span className="text-xs text-muted-foreground">{_t('createProposal.applied')}</span>
                       </div>
 
                       <Separator />
 
                       {Object.entries(acquiringByCurrency).map(([cur, total]) => (
                         <div key={`acq-${cur}`} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Cost ({cur})</span>
+                          <span className="text-muted-foreground">
+                            {_t('createProposal.cost')}
+                            {cur})
+                          </span>
                           <span className="font-semibold text-red-600 dark:text-red-300">
                             {currSymbol(cur)}
                             {total.toFixed(2)}
@@ -862,7 +869,10 @@ export default function CreateProposal() {
                       ))}
                       {Object.entries(sellingByCurrency).map(([cur, total]) => (
                         <div key={`sell-${cur}`} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Selling ({cur})</span>
+                          <span className="text-muted-foreground">
+                            {_t('createProposal.selling_2')}
+                            {cur})
+                          </span>
                           <span className="font-semibold text-green-700 dark:text-green-300">
                             {currSymbol(cur)}
                             {total.toFixed(2)}
@@ -871,7 +881,7 @@ export default function CreateProposal() {
                       ))}
                       {!currenciesMixed && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Gross Margin</span>
+                          <span className="text-muted-foreground">{_t('createProposal.gross')}</span>
                           <span
                             className={`font-semibold ${margin >= 0 ? 'text-blue-600 dark:text-blue-300' : 'text-red-600 dark:text-red-300'}`}
                           >
@@ -884,8 +894,8 @@ export default function CreateProposal() {
 
                       <div className="flex justify-between items-center flex-wrap gap-2">
                         <div>
-                          <div className="text-lg font-bold text-foreground">Final Proposal Total</div>
-                          <div className="text-xs text-muted-foreground">All currencies</div>
+                          <div className="text-lg font-bold text-foreground">{_t('createProposal.final')}</div>
+                          <div className="text-xs text-muted-foreground">{_t('createProposal.all')}</div>
                         </div>
                         <div className="text-right">
                           <div className="text-3xl font-bold text-green-700 dark:text-green-300">
@@ -908,19 +918,19 @@ export default function CreateProposal() {
 
             {/* ── Notes & Terms ── */}
             <Card className="p-6 bg-card shadow-md">
-              <h2 className="text-xl font-bold text-foreground mb-4">Additional Information</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">{_t('createProposal.additional')}</h2>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Proposal Notes</Label>
+                  <Label>{_t('createProposal.proposalNotes')}</Label>
                   <Textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={3}
-                    placeholder="Special notes for the client..."
+                    placeholder={_t('createProposal.special')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Terms & Conditions</Label>
+                  <Label>{_t('createProposal.terms')}</Label>
                   <Textarea
                     value={formData.terms_and_conditions}
                     onChange={(e) => setFormData({ ...formData, terms_and_conditions: e.target.value })}
@@ -933,7 +943,7 @@ export default function CreateProposal() {
             <div className="flex justify-end gap-3 pb-8">
               <Link to={createPageUrl('Proposals')}>
                 <Button type="button" variant="outline">
-                  Cancel
+                  {_t('createProposal.cancel')}
                 </Button>
               </Link>
               <Button
@@ -952,7 +962,7 @@ export default function CreateProposal() {
       <Dialog open={addProviderOpen} onOpenChange={setAddProviderOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Provider</DialogTitle>
+            <DialogTitle>{_t('createProposal.addNew')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -962,25 +972,25 @@ export default function CreateProposal() {
             className="space-y-4 mt-2"
           >
             <div className="space-y-2">
-              <Label>Provider Name *</Label>
+              <Label>{_t('createProposal.providerName')}</Label>
               <Input
                 value={newProvider.name}
                 onChange={(e) => setNewProvider({ ...newProvider, name: e.target.value })}
-                placeholder="e.g. Sunset Tours"
+                placeholder={_t('createProposal.e')}
                 required
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>City</Label>
+                <Label>{_t('createProposal.city')}</Label>
                 <Input
                   value={newProvider.city}
                   onChange={(e) => setNewProvider({ ...newProvider, city: e.target.value })}
-                  placeholder="Istanbul"
+                  placeholder={_t('createProposal.istanbul')}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Phone</Label>
+                <Label>{_t('createProposal.phone')}</Label>
                 <Input
                   value={newProvider.phone}
                   onChange={(e) => setNewProvider({ ...newProvider, phone: e.target.value })}
@@ -988,7 +998,7 @@ export default function CreateProposal() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>{_t('createProposal.email')}</Label>
               <Input
                 type="email"
                 value={newProvider.email}
@@ -997,7 +1007,7 @@ export default function CreateProposal() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setAddProviderOpen(false)}>
-                Cancel
+                {_t('createProposal.cancel')}
               </Button>
               <Button
                 type="submit"

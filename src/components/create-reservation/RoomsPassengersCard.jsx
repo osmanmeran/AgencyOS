@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Users, Trash2, Star } from 'lucide-react';
 import PassengerFieldsRow from '@/components/passengers/PassengerFieldsRow';
 import { autoGenerateRooms, newPassenger } from './helpers';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function RoomsPassengersCard({
   rooms,
@@ -18,16 +19,17 @@ export default function RoomsPassengersCard({
   derivedPax,
   slotsValid,
 }) {
+  const { t: _t } = useT();
   return (
     <Card className="p-6 bg-card shadow-md">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Users className="w-4 h-4 text-blue-600 dark:text-blue-300" />
-          Rooms & Passengers
+          {_t('createReservation.rooms_2')}
         </h2>
         <div className="flex items-center flex-wrap gap-4">
           <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap">Rooms</Label>
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">{_t('createReservation.rooms_2')}</Label>
             <div className="flex items-center gap-1">
               <Button
                 type="button"
@@ -60,7 +62,9 @@ export default function RoomsPassengersCard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap">Passengers</Label>
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">
+              {_t('createReservation.passengers')}
+            </Label>
             <div className="flex items-center gap-1">
               <Button
                 type="button"
@@ -115,7 +119,9 @@ export default function RoomsPassengersCard({
             <div key={room.id} className="border border-border rounded-lg bg-muted overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2 bg-muted border-b border-border">
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold text-foreground text-sm">Room {ri + 1}</span>
+                  <span className="font-semibold text-foreground text-sm">
+                    {_t('createReservation.room')} {ri + 1}
+                  </span>
                   <Select value={String(roomTotalSlots)} onValueChange={(v) => setRoomOccupancy(room.id, parseInt(v))}>
                     <SelectTrigger className="w-36 h-8 text-xs bg-card">
                       <SelectValue />
@@ -123,7 +129,8 @@ export default function RoomsPassengersCard({
                     <SelectContent>
                       {[1, 2, 3, 4].map((n) => (
                         <SelectItem key={n} value={String(n)}>
-                          {n} Person{n > 1 ? 's' : ''}
+                          {n} {_t('createReservation.person')}
+                          {n > 1 ? 's' : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -159,7 +166,8 @@ export default function RoomsPassengersCard({
       {rooms.some((r) => r.passengers.some((p) => p.is_contact)) && (
         <p className="text-xs text-green-600 dark:text-green-300 mt-3 flex items-center gap-1">
           <Star className="w-3 h-3" fill="currentColor" />
-          Contact: <strong>{rooms.flatMap((r) => r.passengers).find((p) => p.is_contact)?.name}</strong>
+          {_t('createReservation.contact')}{' '}
+          <strong>{rooms.flatMap((r) => r.passengers).find((p) => p.is_contact)?.name}</strong>
         </p>
       )}
     </Card>

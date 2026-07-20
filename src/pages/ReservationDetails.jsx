@@ -45,8 +45,10 @@ import OccupancyValidation from '@/components/reservation-details/OccupancyValid
 import ItineraryRecap from '@/components/reservation-details/ItineraryRecap';
 import ServicesSection from '@/components/reservation-details/ServicesSection';
 import NotesAndTerms from '@/components/reservation-details/NotesAndTerms';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ReservationDetails() {
+  const { t: _t } = useT();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');
   const navigate = useNavigate();
@@ -356,8 +358,12 @@ export default function ReservationDetails() {
 
   if (isLoading) return <SkeletonCard />;
   if (tripError)
-    return <div className="text-center py-20 text-red-600 dark:text-red-300">Error: {tripError.message}</div>;
-  if (!trip) return <div className="text-center py-20">Reservation not found</div>;
+    return (
+      <div className="text-center py-20 text-red-600 dark:text-red-300">
+        {_t('reservationDetails.error')} {tripError.message}
+      </div>
+    );
+  if (!trip) return <div className="text-center py-20">{_t('reservationDetails.reservation')}</div>;
 
   const sc = currSymbol(trip.selling_currency || 'USD');
   const statusConf = PROPOSAL_STATUS_CONFIG[trip.proposal_status] || PROPOSAL_STATUS_CONFIG.pending;
@@ -380,7 +386,7 @@ export default function ReservationDetails() {
         <Link to={createPageUrl('Reservations')}>
           <Button variant="ghost" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back
+            {_t('reservationDetails.back')}
           </Button>
         </Link>
         <div className="flex flex-wrap gap-2">
@@ -396,7 +402,7 @@ export default function ReservationDetails() {
               ) : (
                 <CheckCircle className="w-4 h-4 mr-2" />
               )}
-              Confirm
+              {_t('reservationDetails.confirm')}
             </Button>
           )}
           {trip.proposal_status !== 'rejected' && (
@@ -411,7 +417,7 @@ export default function ReservationDetails() {
               ) : (
                 <XCircle className="w-4 h-4 mr-2" />
               )}
-              Reject
+              {_t('reservationDetails.reject')}
             </Button>
           )}
           {trip.proposal_status !== 'pending' && (
@@ -421,7 +427,7 @@ export default function ReservationDetails() {
               ) : (
                 <Clock className="w-4 h-4 mr-2" />
               )}
-              Set Pending
+              {_t('reservationDetails.set')}
             </Button>
           )}
 
@@ -436,12 +442,12 @@ export default function ReservationDetails() {
           <Link to={`/client-itinerary?id=${trip.id}`} target="_blank">
             <Button variant="outline">
               <Map className="w-4 h-4 mr-2" />
-              View Itinerary
+              {_t('reservationDetails.view')}
             </Button>
           </Link>
           <Button onClick={() => setSendEmailOpen(true)} variant="outline" disabled={!trip.client_email}>
             <Send className="w-4 h-4 mr-2" />
-            Send to Client
+            {_t('reservationDetails.send')}
           </Button>
 
           {activeInvoices.length > 0 ? (
@@ -452,7 +458,7 @@ export default function ReservationDetails() {
                   className="border-green-300 dark:border-green-800 text-green-600 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-950/40"
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  Invoice {inv.invoice_number}
+                  {_t('reservationDetails.invoice')} {inv.invoice_number}
                 </Button>
               </Link>
             ))
@@ -463,7 +469,7 @@ export default function ReservationDetails() {
                 className="border-blue-300 dark:border-blue-800 text-blue-600 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
               >
                 <FileText className="w-4 h-4 mr-2" />
-                Invoice
+                {_t('reservationDetails.invoice')}
               </Button>
             </Link>
           )}
@@ -471,18 +477,19 @@ export default function ReservationDetails() {
           {trip.change_history?.length > 0 && (
             <Button onClick={() => setHistoryOpen(true)} variant="outline">
               <History className="w-4 h-4 mr-2" />
-              History ({trip.change_history.length})
+              {_t('reservationDetails.history')}
+              {trip.change_history.length})
             </Button>
           )}
           <Link to={createPageUrl(`CreateReservation?id=${tripId}`)}>
             <Button variant="outline">
               <Edit className="w-4 h-4 mr-2" />
-              Edit
+              {_t('reservationDetails.edit')}
             </Button>
           </Link>
           <Button onClick={() => window.print()} variant="outline">
             <Printer className="w-4 h-4 mr-2" />
-            Print
+            {_t('reservationDetails.print')}
           </Button>
           <Button
             variant="outline"
@@ -521,7 +528,7 @@ export default function ReservationDetails() {
                 className="inline-flex items-center gap-1 mt-1 text-xs text-purple-600 dark:text-purple-300 hover:underline print:hidden"
               >
                 <FileText className="w-3 h-3" />
-                Created from proposal
+                {_t('reservationDetails.created_2')}
               </Link>
             )}
             {trip.service_types?.length > 0 && (
@@ -542,7 +549,8 @@ export default function ReservationDetails() {
             <div className="flex items-center gap-2 mt-3">
               <Users className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-semibold text-foreground">
-                {trip.passengers?.length || 0} passenger{trip.passengers?.length !== 1 ? 's' : ''}
+                {trip.passengers?.length || 0} {_t('reservationDetails.passenger')}
+                {trip.passengers?.length !== 1 ? 's' : ''}
               </span>
               {trip.passengers?.length > 0 &&
                 (() => {
@@ -578,19 +586,19 @@ export default function ReservationDetails() {
           <div>
             <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              Travel Dates
+              {_t('reservationDetails.travel')}
             </div>
             <div className="font-semibold">
               {format(new Date(trip.start_date), 'MMM d')} – {format(new Date(trip.end_date), 'MMM d, yyyy')}
             </div>
           </div>
           <div>
-            <div className="text-sm text-muted-foreground mb-1">Client</div>
+            <div className="text-sm text-muted-foreground mb-1">{_t('reservationDetails.client')}</div>
             <div className="font-semibold">{trip.client_name || '—'}</div>
             {trip.client_email && <div className="text-sm text-muted-foreground">{trip.client_email}</div>}
           </div>
           <div>
-            <div className="text-sm text-muted-foreground mb-1">Author</div>
+            <div className="text-sm text-muted-foreground mb-1">{_t('reservationDetails.author')}</div>
             <div className="font-semibold">{trip.created_by_name || trip.created_by || '—'}</div>
             {trip.created_date && (
               <div className="text-sm text-muted-foreground">
@@ -601,7 +609,7 @@ export default function ReservationDetails() {
           <div>
             <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
               <Users className="w-4 h-4" />
-              Passengers
+              {_t('reservationDetails.passengers')}
             </div>
             <div className="font-semibold">{trip.passengers?.length || 0}</div>
             {trip.passengers?.length > 0 &&
@@ -631,7 +639,8 @@ export default function ReservationDetails() {
         <Card className="p-6 bg-card shadow-lg print:shadow-none">
           <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-            Passengers ({trip.passengers.length})
+            {_t('reservationDetails.passengers_2')}
+            {trip.passengers.length})
           </h2>
           {(() => {
             const rooms = {};
@@ -660,7 +669,9 @@ export default function ReservationDetails() {
                   return (
                     <div key={rid} className="border border-border rounded-lg bg-muted overflow-hidden">
                       <div className="flex items-center justify-between px-4 py-2 bg-muted border-b border-border">
-                        <span className="font-semibold text-foreground text-sm">Room {ri + 1}</span>
+                        <span className="font-semibold text-foreground text-sm">
+                          {_t('reservationDetails.room')} {ri + 1}
+                        </span>
                         <div className="flex items-center gap-2">
                           <Badge className={(roomTypeColors[room.type] || 'bg-muted text-foreground') + ' text-xs'}>
                             {roomTypeLabels[room.type] || room.type}
@@ -682,7 +693,7 @@ export default function ReservationDetails() {
                             {pax.is_contact && (
                               <Badge className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center gap-1 text-xs">
                                 <Star className="w-3 h-3" fill="currentColor" />
-                                Contact
+                                {_t('reservationDetails.contact')}
                               </Badge>
                             )}
                           </div>
@@ -755,17 +766,17 @@ export default function ReservationDetails() {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label>Note (optional)</Label>
+              <Label>{_t('reservationDetails.note')}</Label>
               <Textarea
                 value={statusNote}
                 onChange={(e) => setStatusNote(e.target.value)}
-                placeholder="Add a note about this status change..."
+                placeholder={_t('reservationDetails.add')}
                 rows={3}
               />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setNoteModalOpen(false)}>
-                Cancel
+                {_t('reservationDetails.cancel')}
               </Button>
               <Button
                 onClick={confirmStatusChange}
@@ -796,26 +807,23 @@ export default function ReservationDetails() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Send Reservation to Client</DialogTitle>
+            <DialogTitle>{_t('reservationDetails.sendReservation')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            <p className="text-sm text-muted-foreground">An email with the full reservation details will be sent to:</p>
+            <p className="text-sm text-muted-foreground">{_t('reservationDetails.an')}</p>
             <Input
               type="email"
               value={sendEmailTo}
               onChange={(e) => setSendEmailTo(e.target.value)}
-              placeholder="client@example.com"
+              placeholder={_t('reservationDetails.clientExample')}
               className="text-sm"
             />
             <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">
                 <Send className="w-3.5 h-3.5" />
-                Email includes itinerary link
+                {_t('reservationDetails.email')}
               </div>
-              <p className="text-xs text-muted-foreground">
-                The email will contain a link to a mobile-friendly itinerary page where your client can view all
-                services day by day.
-              </p>
+              <p className="text-xs text-muted-foreground">{_t('reservationDetails.the')}</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button
@@ -825,10 +833,10 @@ export default function ReservationDetails() {
                   setSendEmailOpen(false);
                 }}
               >
-                Copy Link
+                {_t('reservationDetails.copy')}
               </Button>
               <Button variant="outline" onClick={() => setSendEmailOpen(false)}>
-                Cancel
+                {_t('reservationDetails.cancel')}
               </Button>
               <Button
                 onClick={() => sendEmailMutation.mutate()}

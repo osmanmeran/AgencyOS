@@ -38,6 +38,7 @@ import { showSuccess, showError } from '@/lib/toast';
 import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
 import ProposalEditModal from '@/components/proposals/ProposalEditModal';
+import { useT } from '@/lib/i18n/I18nContext';
 
 const STATUS_COLORS = {
   delivered: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
@@ -69,6 +70,7 @@ const BOOKING_STATUS_CONFIG = {
 };
 
 export default function ProposalDetails() {
+  const { t: _t } = useT();
   const [searchParams] = useSearchParams();
   const proposalId = searchParams.get('id');
   const queryClient = useQueryClient();
@@ -218,7 +220,7 @@ export default function ProposalDetails() {
   }
 
   if (!proposal) {
-    return <div className="text-center py-20">Proposal not found</div>;
+    return <div className="text-center py-20">{_t('proposalDetails.proposal')}</div>;
   }
 
   const handlePrint = () => window.print();
@@ -251,7 +253,7 @@ export default function ProposalDetails() {
         <Link to={createPageUrl('Proposals')}>
           <Button variant="ghost" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Proposals
+            {_t('proposalDetails.back')}
           </Button>
         </Link>
         <div className="flex flex-wrap gap-2">
@@ -259,7 +261,7 @@ export default function ProposalDetails() {
             <>
               <Button onClick={() => handleStatusChange('approved')} className="bg-green-600 hover:bg-green-700">
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Approve
+                {_t('proposalDetails.approve')}
               </Button>
               <Button
                 onClick={() => handleStatusChange('changed')}
@@ -267,7 +269,7 @@ export default function ProposalDetails() {
                 className="border-amber-500 text-amber-600 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40"
               >
                 <Edit className="w-4 h-4 mr-2" />
-                Request Changes
+                {_t('proposalDetails.request')}
               </Button>
               <Button
                 onClick={() => handleStatusChange('rejected')}
@@ -275,7 +277,7 @@ export default function ProposalDetails() {
                 className="border-red-500 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40"
               >
                 <XCircle className="w-4 h-4 mr-2" />
-                Reject
+                {_t('proposalDetails.reject')}
               </Button>
             </>
           )}
@@ -283,11 +285,11 @@ export default function ProposalDetails() {
             <>
               <Button onClick={() => handleStatusChange('delivered')} variant="outline">
                 <Send className="w-4 h-4 mr-2" />
-                Re-deliver
+                {_t('proposalDetails.re')}
               </Button>
               <Button onClick={() => handleStatusChange('approved')} className="bg-green-600 hover:bg-green-700">
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Approve
+                {_t('proposalDetails.approve')}
               </Button>
             </>
           )}
@@ -299,7 +301,7 @@ export default function ProposalDetails() {
                   className="border-purple-300 dark:border-purple-800 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
                 >
                   <Calendar className="w-4 h-4 mr-2" />
-                  View Reservation
+                  {_t('proposalDetails.view')}
                 </Button>
               </Link>
             ) : (
@@ -308,7 +310,7 @@ export default function ProposalDetails() {
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 <ArrowRight className="w-4 h-4 mr-2" />
-                Move to Reservation
+                {_t('proposalDetails.move')}
               </Button>
             ))}
           <Button
@@ -317,17 +319,18 @@ export default function ProposalDetails() {
             className="border-blue-300 dark:border-blue-800 text-blue-600 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
           >
             <Pencil className="w-4 h-4 mr-2" />
-            Edit Proposal
+            {_t('proposalDetails.edit_2')}
           </Button>
           {proposal.change_history?.length > 0 && (
             <Button onClick={() => setHistoryModalOpen(true)} variant="outline">
               <History className="w-4 h-4 mr-2" />
-              History ({proposal.change_history.length})
+              {_t('proposalDetails.history')}
+              {proposal.change_history.length})
             </Button>
           )}
           <Button onClick={handlePrint} variant="outline">
             <Download className="w-4 h-4 mr-2" />
-            Print / PDF
+            {_t('proposalDetails.print')}
           </Button>
           <Button
             variant="outline"
@@ -354,7 +357,7 @@ export default function ProposalDetails() {
             {(settings?.invoice_header?.logo_url || settings?.logo_url) && (
               <img
                 src={settings.invoice_header.logo_url || settings.logo_url}
-                alt="Logo"
+                alt={_t('proposalDetails.logo')}
                 className="h-14 object-contain"
               />
             )}
@@ -379,7 +382,7 @@ export default function ProposalDetails() {
             </div>
           </div>
           <div className="text-right text-sm text-muted-foreground">
-            <div className="font-medium text-foreground">Prepared by</div>
+            <div className="font-medium text-foreground">{_t('proposalDetails.prepared')}</div>
             <div>{user?.name || user?.email || '—'}</div>
             {user?.email && <div className="text-xs text-muted-foreground">{user.email}</div>}
             <div className="mt-1 text-xs text-muted-foreground">
@@ -395,7 +398,7 @@ export default function ProposalDetails() {
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">{proposal.title}</h1>
             <p className="text-muted-foreground">
-              Prepared for: <span className="font-semibold">{proposal.client_name}</span>
+              {_t('proposalDetails.preparedFor')} <span className="font-semibold">{proposal.client_name}</span>
             </p>
             {proposal.client_email && <p className="text-muted-foreground">{proposal.client_email}</p>}
           </div>
@@ -409,7 +412,7 @@ export default function ProposalDetails() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-border">
           {proposal.destination && (
             <div>
-              <div className="text-sm text-muted-foreground mb-1">Destination</div>
+              <div className="text-sm text-muted-foreground mb-1">{_t('proposalDetails.destination')}</div>
               <div className="font-semibold text-foreground">{proposal.destination}</div>
             </div>
           )}
@@ -417,7 +420,7 @@ export default function ProposalDetails() {
             <div>
               <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                Travel Dates
+                {_t('proposalDetails.travel')}
               </div>
               <div className="font-semibold text-foreground">
                 {format(new Date(proposal.start_date), 'MMM d')} – {format(new Date(proposal.end_date), 'MMM d, yyyy')}
@@ -428,10 +431,11 @@ export default function ProposalDetails() {
             <div>
               <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
                 <UsersIcon className="w-4 h-4" />
-                Travelers
+                {_t('proposalDetails.travelers')}
               </div>
               <div className="font-semibold text-foreground">
-                {proposal.num_travelers} person{proposal.num_travelers > 1 ? 's' : ''}
+                {proposal.num_travelers} {_t('proposalDetails.person')}
+                {proposal.num_travelers > 1 ? 's' : ''}
               </div>
             </div>
           )}
@@ -440,7 +444,7 @@ export default function ProposalDetails() {
 
       {/* Services */}
       <Card className="p-8 bg-card shadow-lg print:shadow-none print:border-0">
-        <h2 className="text-2xl font-bold text-foreground mb-6">Services Included</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">{_t('proposalDetails.services')}</h2>
         {proposal.services && proposal.services.length > 0 ? (
           <div className="space-y-6">
             {proposal.services.map((service, index) => {
@@ -493,7 +497,7 @@ export default function ProposalDetails() {
                               onClick={() => openBookingModal(index)}
                             >
                               <Send className="w-3.5 h-3.5 mr-1" />
-                              Send Booking Request
+                              {_t('proposalDetails.send')}
                             </Button>
                           )}
                         </div>
@@ -503,9 +507,13 @@ export default function ProposalDetails() {
                       {service.booking_status === 'requested' && service.booking_requested_email && (
                         <div className="text-xs text-muted-foreground flex items-center gap-2">
                           <Mail className="w-3 h-3" />
-                          Sent to {service.booking_requested_email}
+                          {_t('proposalDetails.sent')} {service.booking_requested_email}
                           {service.booking_requested_date && (
-                            <> on {format(new Date(service.booking_requested_date), 'MMM d, yyyy HH:mm')}</>
+                            <>
+                              {' '}
+                              {_t('proposalDetails.on')}{' '}
+                              {format(new Date(service.booking_requested_date), 'MMM d, yyyy HH:mm')}
+                            </>
                           )}
                         </div>
                       )}
@@ -527,7 +535,7 @@ export default function ProposalDetails() {
 
             <div className="pt-6 mt-6 border-t-2 border-border">
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-2xl font-bold text-foreground">Total</span>
+                <span className="text-2xl font-bold text-foreground">{_t('proposalDetails.total')}</span>
                 <div className="text-4xl font-bold text-green-700 dark:text-green-300 flex items-center gap-2">
                   {proposalCurrencySymbol}
                   {(proposal.total_cost || 0).toFixed(2)}
@@ -539,14 +547,14 @@ export default function ProposalDetails() {
             </div>
           </div>
         ) : (
-          <p className="text-muted-foreground">No services added</p>
+          <p className="text-muted-foreground">{_t('proposalDetails.no')}</p>
         )}
       </Card>
 
       {/* Notes */}
       {proposal.notes && (
         <Card className="p-8 bg-card shadow-lg print:shadow-none print:border-0">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Notes</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">{_t('proposalDetails.notes')}</h2>
           <p className="text-foreground whitespace-pre-wrap">{proposal.notes}</p>
         </Card>
       )}
@@ -554,7 +562,7 @@ export default function ProposalDetails() {
       {/* Terms */}
       {proposal.terms_and_conditions && (
         <Card className="p-8 bg-muted print:bg-card print:shadow-none print:border-0">
-          <h2 className="text-xl font-bold text-foreground mb-4">Terms & Conditions</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{_t('proposalDetails.terms')}</h2>
           <p className="text-foreground text-sm whitespace-pre-wrap">{proposal.terms_and_conditions}</p>
         </Card>
       )}
@@ -565,7 +573,7 @@ export default function ProposalDetails() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History className="w-5 h-5" />
-              Change History
+              {_t('proposalDetails.change')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
@@ -586,13 +594,15 @@ export default function ProposalDetails() {
                       {format(new Date(entry.date), 'MMM d, yyyy HH:mm')}
                     </span>
                   </div>
-                  <div className="text-sm text-muted-foreground">Changed by: {entry.changed_by}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {_t('proposalDetails.changed')} {entry.changed_by}
+                  </div>
                   {entry.changes_description && (
                     <div className="mt-2 p-2 bg-card rounded border text-sm">{entry.changes_description}</div>
                   )}
                   {entry.previous_total && (
                     <div className="mt-2 text-sm text-muted-foreground">
-                      Previous total: {proposalCurrencySymbol}
+                      {_t('proposalDetails.previous')} {proposalCurrencySymbol}
                       {entry.previous_total.toFixed(2)}
                     </div>
                   )}
@@ -606,27 +616,27 @@ export default function ProposalDetails() {
       <Dialog open={changeModalOpen} onOpenChange={setChangeModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request Changes</DialogTitle>
+            <DialogTitle>{_t('proposalDetails.request')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Describe the requested changes</Label>
+              <Label>{_t('proposalDetails.describe')}</Label>
               <Textarea
                 value={changeDescription}
                 onChange={(e) => setChangeDescription(e.target.value)}
-                placeholder="Please describe what changes are needed..."
+                placeholder={_t('proposalDetails.please')}
                 rows={4}
               />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setChangeModalOpen(false)}>
-                Cancel
+                {_t('proposalDetails.cancel')}
               </Button>
               <Button
                 onClick={() => updateStatusMutation.mutate({ status: 'changed', description: changeDescription })}
                 className="bg-amber-600 hover:bg-amber-700"
               >
-                Submit Change Request
+                {_t('proposalDetails.submit')}
               </Button>
             </div>
           </div>
@@ -639,17 +649,17 @@ export default function ProposalDetails() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="w-5 h-5" />
-              Send Booking Request
+              {_t('proposalDetails.send')}
             </DialogTitle>
           </DialogHeader>
           {bookingServiceIdx !== null && (
             <div className="space-y-4 mt-4">
               <p className="text-sm text-muted-foreground">
-                Send booking request for <strong>{proposal.services[bookingServiceIdx]?.name}</strong>
+                {_t('proposalDetails.sendBooking')} <strong>{proposal.services[bookingServiceIdx]?.name}</strong>
               </p>
 
               <div className="space-y-2">
-                <Label>Supplier Email</Label>
+                <Label>{_t('proposalDetails.supplier')}</Label>
                 <div className="flex items-center gap-2 mb-2">
                   <input
                     type="radio"
@@ -660,7 +670,7 @@ export default function ProposalDetails() {
                     onChange={() => setSupplierChoice('existing')}
                   />
                   <label htmlFor="be-existing" className="text-sm cursor-pointer">
-                    Existing Supplier
+                    {_t('proposalDetails.existing')}
                   </label>
                 </div>
                 {supplierChoice === 'existing' && (
@@ -674,7 +684,7 @@ export default function ProposalDetails() {
                       }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select supplier" />
+                        <SelectValue placeholder={_t('proposalDetails.select')} />
                       </SelectTrigger>
                       <SelectContent>
                         {suppliers.map((s) => (
@@ -699,13 +709,13 @@ export default function ProposalDetails() {
                     onChange={() => setSupplierChoice('manual')}
                   />
                   <label htmlFor="be-manual" className="text-sm cursor-pointer">
-                    Manual Email
+                    {_t('proposalDetails.manual')}
                   </label>
                 </div>
                 {supplierChoice === 'manual' && (
                   <Input
                     type="email"
-                    placeholder="Supplier email address"
+                    placeholder={_t('proposalDetails.supplierEmail')}
                     value={newSupplierEmail}
                     onChange={(e) => setNewSupplierEmail(e.target.value)}
                   />
@@ -713,11 +723,11 @@ export default function ProposalDetails() {
               </div>
 
               <div className="space-y-2">
-                <Label>Booking Note (optional)</Label>
+                <Label>{_t('proposalDetails.booking')}</Label>
                 <Textarea
                   value={bookingNote}
                   onChange={(e) => setBookingNote(e.target.value)}
-                  placeholder="Add specific requirements or details..."
+                  placeholder={_t('proposalDetails.add')}
                   rows={3}
                 />
               </div>
@@ -736,7 +746,7 @@ export default function ProposalDetails() {
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setBookingModalOpen(false)}>
-                  Cancel
+                  {_t('proposalDetails.cancel')}
                 </Button>
                 <Button
                   className="bg-purple-600 hover:bg-purple-700"
@@ -750,12 +760,12 @@ export default function ProposalDetails() {
                   {sendBookingMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
+                      {_t('proposalDetails.sending')}
                     </>
                   ) : (
                     <>
                       <Send className="w-4 h-4 mr-2" />
-                      Send Booking Request
+                      {_t('proposalDetails.send')}
                     </>
                   )}
                 </Button>
@@ -772,6 +782,7 @@ export default function ProposalDetails() {
 }
 
 function ResponseEditor({ service, _serviceIdx, onSave, loading }) {
+  const { t: _t } = useT();
   const [editing, setEditing] = useState(false);
   const [responseNotes, setResponseNotes] = useState(service.booking_response_notes || '');
   const [responseStatus, setResponseStatus] = useState(service.booking_status || 'requested');
@@ -786,7 +797,7 @@ function ResponseEditor({ service, _serviceIdx, onSave, loading }) {
           className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/40"
         >
           <CheckCircle className="w-3.5 h-3.5 mr-1" />
-          Record Supplier Response
+          {_t('proposalDetails.record')}
         </Button>
       </div>
     );
@@ -815,26 +826,26 @@ function ResponseEditor({ service, _serviceIdx, onSave, loading }) {
             }}
             className="mt-2 text-blue-600 dark:text-blue-300"
           >
-            Edit
+            {_t('proposalDetails.edit_2')}
           </Button>
         </div>
       )}
       {editing && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground">Response Status</Label>
+            <Label className="text-xs text-muted-foreground">{_t('proposalDetails.response')}</Label>
             <Select value={responseStatus} onValueChange={setResponseStatus}>
               <SelectTrigger className="w-40 h-7 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="requested">Requested</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="requested">{_t('proposalDetails.requested')}</SelectItem>
+                <SelectItem value="confirmed">{_t('proposalDetails.confirmed')}</SelectItem>
+                <SelectItem value="rejected">{_t('proposalDetails.rejected')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <Label className="text-xs text-muted-foreground">Supplier Response (markdown supported)</Label>
+          <Label className="text-xs text-muted-foreground">{_t('proposalDetails.supplierResponse')}</Label>
           <Textarea
             value={responseNotes}
             onChange={(e) => setResponseNotes(e.target.value)}
@@ -854,7 +865,7 @@ function ResponseEditor({ service, _serviceIdx, onSave, loading }) {
               {loading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                  Saving...
+                  {_t('proposalDetails.saving')}
                 </>
               ) : (
                 'Save Response'
@@ -862,7 +873,7 @@ function ResponseEditor({ service, _serviceIdx, onSave, loading }) {
             </Button>
             {service.booking_response_notes && (
               <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-                Cancel
+                {_t('proposalDetails.cancel')}
               </Button>
             )}
           </div>

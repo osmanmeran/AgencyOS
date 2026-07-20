@@ -2,14 +2,16 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createPageUrl } from '@/utils';
+import { useT } from '@/lib/i18n/I18nContext';
 
 export default function PageHeader({ isEditing, showLibrary, setShowLibrary }) {
+  const { t: _t } = useT();
   return (
     <>
       <Link to={createPageUrl('Reservations')}>
         <Button variant="ghost" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Back to Reservations
+          {_t('createReservation.back')}
         </Button>
       </Link>
 
