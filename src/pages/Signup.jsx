@@ -14,8 +14,18 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [slugState, setSlugState] = useState({ status: 'idle', message: '' });
   const slugTimer = useRef(null);
+  const [signupEnabled, setSignupEnabled] = useState(true);
 
   const msConfigured = isMicrosoftSsoConfigured();
+
+  useEffect(() => {
+    // Surface the self-serve gate up front so a disabled deployment explains
+    // itself instead of failing on submit.
+    fetch('/api/tenants/signup-status')
+      .then((r) => r.json())
+      .then((d) => setSignupEnabled(d.enabled !== false))
+      .catch(() => setSignupEnabled(true));
+  }, []);
 
   const slugify = (name) =>
     name
@@ -122,6 +132,13 @@ export default function Signup() {
           </div>
         )}
 
+        {!signupEnabled && (
+          <div className="mb-4 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-sm p-3 rounded-lg border border-amber-300 dark:border-amber-800">
+            Self-serve signup is currently disabled. Set <code className="font-mono">ALLOW_PUBLIC_SIGNUP=true</code> in
+            the server environment to enable it.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Agency name</label>
@@ -197,7 +214,7 @@ export default function Signup() {
 
           <button
             type="submit"
-            disabled={loading || slugState.status === 'error'}
+            disabled={loading || slugState.status === 'error' || !signupEnabled}
             className="w-full py-2.5 bg-foreground hover:bg-foreground/90 disabled:bg-muted text-background text-sm font-medium rounded-lg transition-all"
           >
             {loading ? 'Creating workspace…' : 'Create workspace'}
@@ -216,7 +233,7 @@ export default function Signup() {
             </div>
             <button
               onClick={handleMicrosoftSignup}
-              disabled={loading}
+              disabled={loading || !signupEnabled}
               className="w-full flex items-center justify-center gap-3 py-3 border-2 border-border hover:bg-muted disabled:opacity-50 text-foreground font-medium rounded-xl transition-all"
             >
               <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 21 21" fill="none">

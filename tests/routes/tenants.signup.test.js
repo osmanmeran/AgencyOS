@@ -84,6 +84,12 @@ describe('self-serve workspace signup', () => {
     }
   });
 
+  it('exposes signup enabled state via /signup-status', async () => {
+    const res = await fetch(`${baseUrl}/api/tenants/signup-status`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ enabled: true });
+  });
+
   it('creates a workspace, admin user, and session', async () => {
     const slug = uniqueSlug();
     const email = `${slug}@example.com`;

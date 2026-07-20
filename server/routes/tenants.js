@@ -46,6 +46,16 @@ router.get(
   }),
 );
 
+// Public capability check so the signup UI can explain itself when self-serve
+// is disabled. The gate defaults to off so an existing single-tenant deployment
+// is never silently turned into an open registration system.
+router.get(
+  '/signup-status',
+  catchAsync(async (req, res) => {
+    res.json({ enabled: process.env.ALLOW_PUBLIC_SIGNUP === 'true' });
+  }),
+);
+
 router.post(
   '/signup',
   requireSignupEnabled,
