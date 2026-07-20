@@ -182,14 +182,48 @@ app then serves it via `getDb('0')` with no further code changes.
 
 ### DNS + TLS (prerequisite for subdomain routing)
 
-- **Wildcard DNS A/AAAA** record for `*.marvelops.app` → the app host (Railway
-  / load balancer). Single-tenant `marvelops.app` (apex) keeps working too.
-- **Wildcard TLS** certificate covering `*.marvelops.app` (e.g. Let's Encrypt
-  wildcard via DNS-01 challenge, or your platform's wildcard cert). Without
-  this, `https://<slug>.marvelops.app` fails TLS.
-- Set `APP_ROOT_DOMAIN=marvelops.app` in the server env. This is what activates
-  subdomain→tenant resolution (`server/middleware/tenant.js`); leave it unset in
-  dev so localhost keeps working unchanged.
+The app is **already production-ready** for subdomains (verified: known
+subdomain resolves to its tenant, unknown subdomain → 404, `Host` is
+authoritative, cookies carry across apex↔subdomain). The only missing piece is
+infrastructure: a wildcard DNS record + a wildcard TLS cert. Until both exist,
+signup _succeeds_ (tenant row + DB created, `201`) but the post-signup redirect
+to `https://<slug>.marvelops.app` can't resolve — which looks like a failure but
+isn't.
+
+#### Recommended: Cloudflare (free wildcard DNS + auto TLS)
+
+1. Add `marvelops.app` to Cloudflare; point the registrar NS records at it.
+2. **DNS:** add an `A` (or `CNAME`) record `*.marvelops.app` → your host IP /
+   app URL, and `marvelops.app` (apex) → the same. Set proxy status **Proxied**
+   (orange cloud) so Cloudflare terminates TLS and issues a free wildcard cert
+   for `*.marvelops.app` automatically — no cert management needed.
+3. **Origin:** ensure your host forwards the original `Host` header to Node
+   (Railway/Heroku/Fly do this by default; behind nginx/CF Tunnel confirm
+   `proxy_set_header Host $host;`). The app already runs `app.set('trust proxy', 1)`.
+4. Set `APP_ROOT_DOMAIN=marvelops.app` in the server env.
+
+#### Alternatives
+
+- **Let's Encrypt wildcard via DNS-01**: `certbot certonly --dns <provider>
+-d marvelops.app -d '*.marvelops.app'`, then terminate TLS at your proxy/edge
+  with the issued cert + private key.
+- **Platform-native**: some hosts (e.g. Fly, Render) can attach a wildcard cert
+  if you own the domain there; otherwise bring your own cert at the edge.
+
+#### Verify before flipping traffic
+
+```
+# From a machine with DNS propagated:
+curl -sI https://<slug>.marvelops.app/api/health      # expect 200, valid cert
+curl -s  https://<slug>.marvelops.app/api/tenants/check-slug?slug=test
+# Unknown subdomain must 404:
+curl -s  https://does-not-exist.marvelops.app/api/tenants/check-slug?slug=test
+#   -> {"error":{"code":"TENANT_NOT_FOUND",...}}
+```
+
+Set `APP_ROOT_DOMAIN=marvelops.app` in the server env. This is what activates
+subdomain→tenant resolution (`server/middleware/tenant.js`); leave it unset in
+dev so localhost keeps working unchanged.
 
 ### Runtime env (production)
 
