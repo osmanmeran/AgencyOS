@@ -209,12 +209,22 @@ const FAQS = [
   },
   {
     q: 'How is a new workspace created?',
-    a: 'New workspaces are provisioned by the platform administrator. Reach out to your account manager or support to set up an additional agency workspace; once provisioned you get your own subdomain and an isolated database.',
+    a: 'New workspaces are created in two ways. (1) Self-serve: if your instance has open sign-up enabled, go to the sign-up page, choose a unique workspace address (e.g. "acme"), enter your agency name and an admin email/password, and your isolated workspace is provisioned instantly with its own subdomain. (2) Admin-provisioned: otherwise, reach out to your account manager or support and they will set up an additional agency workspace for you.',
     category: 'saas',
   },
   {
     q: 'Can one login belong to more than one workspace?',
     a: "Each login is scoped to a single workspace via its subdomain. To work in a different agency, sign in through that agency's subdomain. A single account spanning multiple workspaces is not enabled in this release.",
+    category: 'saas',
+  },
+  {
+    q: 'Can I create my own workspace?',
+    a: 'Yes — if self-serve sign-up is turned on for your instance. You pick a workspace address, enter your agency name and an admin email/password, and the platform creates your workspace with its own isolated database and subdomain right away. On instances where self-serve is disabled (controlled by the ALLOW_PUBLIC_SIGNUP setting), new workspaces are created by an administrator instead.',
+    category: 'saas',
+  },
+  {
+    q: 'What makes a valid workspace address?',
+    a: 'Your workspace address becomes the subdomain you sign in at (e.g. acme.marvelops.app). It may contain only lowercase letters, numbers, and hyphens, must be 1–63 characters, and cannot be a reserved word like "www", "api", "app", "admin", or "mail". The sign-up form checks availability as you type.',
     category: 'saas',
   },
 ];

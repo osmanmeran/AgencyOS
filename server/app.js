@@ -33,6 +33,7 @@ import suggestionRoutes from './routes/suggestions.js';
 import reportRoutes from './routes/reports.js';
 import adminRoutes from './routes/admin.js';
 import taskRoutes from './routes/tasks.js';
+import tenantRoutes from './routes/tenants.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -119,6 +120,8 @@ const standardLimiter = rateLimit({
 
 app.use('/api/auth/login', strictLimiter);
 app.use('/api/auth/microsoft', strictLimiter);
+// Self-serve workspace signup is abuse-sensitive: keep it on the strict limiter.
+app.use('/api/tenants/signup', strictLimiter);
 app.use('/api/notifications', mutationLimiter);
 app.use('/api/documents', mutationLimiter);
 app.use('/api/pdf', mutationLimiter);
@@ -142,6 +145,9 @@ app.use('/api/reports', reportRoutes);
 // an audit trail like every other mutating route.
 app.use('/api/admin', auditMiddleware, adminRoutes);
 app.use('/api/tasks', auditMiddleware, taskRoutes);
+// Self-serve workspace provisioning (Phase 3). Public + unauthenticated — it
+// must NOT sit behind authMiddleware (there is no session to scope it to yet).
+app.use('/api/tenants', tenantRoutes);
 
 app.get('/api/health', (req, res) => {
   const checks = { database: 'ok', migrations: 'ok', disk: 'ok' };

@@ -90,14 +90,23 @@ client_id, linked_supplier_id}` (`server/middleware/auth.js:20-34`) — no
   WebSocket real-time sync layer is tenant-scoped. A naive broadcast today
   would leak live updates across agencies once there's more than one.
 
-### Phase 3 — Self-serve signup
+### Phase 3 — Self-serve signup ✅ implemented (2026-07-20)
 
-- Public unauthenticated route: agency name + slug + admin email/password
-  (or Microsoft SSO). Slug uniqueness check against `platform.db`, reserved-
-  word list (`www`, `api`, `app`, `admin`, etc).
-- Signup → create tenant row (`status: trial`) → provision DB → create
-  first user as `admin` tier → issue JWT → redirect to
-  `<slug>.marvelops.app`.
+- Public unauthenticated route `POST /api/tenants/signup`: agency name + slug +
+  admin email/password. Slug uniqueness checked against `platform.db`; reserved
+  words (`www`, `api`, `app`, `admin`, …) rejected. `GET /api/tenants/check-slug`
+  gives the signup form live availability feedback.
+- Signup → create tenant row (`status: trial`) → open + migrate the tenant's
+  isolated DB → create first user as `admin` tier → issue JWT + auth cookies →
+  return `workspaceUrl` (`https://<slug>.<APP_ROOT_DOMAIN>` when configured).
+- Gated by `ALLOW_PUBLIC_SIGNUP=true` so an existing single-tenant deployment
+  isn't silently turned into an open registration system.
+- Cookie `domain` is set to the root (`.<APP_ROOT_DOMAIN>`) when configured, so
+  the post-signup redirect to the new subdomain carries the session. Tenant
+  scoping (authMiddleware's `TENANT_MISMATCH` check) still blocks cross-workspace
+  token reuse, so sharing the cookie domain does not weaken isolation.
+- Deferred: Microsoft-SSO-based signup (the email/password path is the primary
+  flow for now). Cross-tenant platform-admin dashboard remains deferred (below).
 
 ### Explicitly deferred (out of scope for now)
 

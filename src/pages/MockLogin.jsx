@@ -113,6 +113,13 @@ export default function MockLogin() {
             {loading ? t('auth.login.signingIn') : t('auth.login.signIn')}
           </button>
         </form>
+
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          Need a workspace?{' '}
+          <a href="/signup" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
+            Create one
+          </a>
+        </p>
       </div>
     </div>
   );

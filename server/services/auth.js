@@ -66,11 +66,19 @@ export function safeUser(u) {
  * needs to refresh.
  */
 export function setAuthCookies(res, { accessToken, refreshToken, csrfToken }) {
+  // When the platform is served from a root domain (APP_ROOT_DOMAIN), set the
+  // auth cookies on that root so a session established on the apex (e.g. during
+  // self-serve signup) is also valid on the user's <slug>.<APP_ROOT_DOMAIN>
+  // workspace. Tenant scoping (authMiddleware's TENANT_MISMATCH check) still
+  // prevents a token from one workspace being used against another, so sharing
+  // the cookie domain does not weaken isolation.
+  const rootDomain = process.env.APP_ROOT_DOMAIN;
   const cookieOptions = {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     path: '/',
   };
+  if (rootDomain) cookieOptions.domain = `.${String(rootDomain).replace(/^\.+/, '')}`;
   res.cookie('token', accessToken, { ...cookieOptions, httpOnly: true, maxAge: ACCESS_TOKEN_MAX_AGE_MS });
   res.cookie('refresh_token', refreshToken, { ...cookieOptions, httpOnly: true, maxAge: REFRESH_TOKEN_MAX_AGE_MS });
   res.cookie('csrf_token', csrfToken, { ...cookieOptions, httpOnly: false, maxAge: REFRESH_TOKEN_MAX_AGE_MS });
