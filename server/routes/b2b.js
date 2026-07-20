@@ -4,6 +4,7 @@ import { catchAsync, BadRequestError, ForbiddenError, NotFoundError } from '../m
 import { validate, schemas } from '../middleware/validate.js';
 import { getDb, uid } from '../db.js';
 import { broadcast } from '../lib/ws.js';
+import { getTenantId } from '../db.js';
 import { hasPermission } from '../permissions.js';
 import { sendEmail } from '../services/email.js';
 import { getExchangeRate } from '../services/integrations.js';
@@ -587,7 +588,7 @@ router.post(
 
     broadcast(
       { type: 'entity_change', action: 'create', entityType: 'QuoteRequest', entityId: id },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     notifyStaffOfNewQuote(db, id, data);
 
@@ -675,7 +676,7 @@ router.put(
 
     broadcast(
       { type: 'entity_change', action: 'update', entityType: 'QuoteRequest', entityId: req.params.id },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
 
     const client = getEntityById(db, 'Client', existing.client_id);

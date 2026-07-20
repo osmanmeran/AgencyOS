@@ -14,6 +14,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { errorHandler, notFoundHandler, sendError } from './middleware/errors.js';
 import { authMiddleware } from './middleware/auth.js';
+import { tenantMiddleware } from './middleware/tenant.js';
 import { csrfMiddleware } from './middleware/csrf.js';
 import { auditMiddleware } from './services/audit.js';
 import logger from './lib/logger.js';
@@ -86,6 +87,10 @@ app.use((req, res, next) => {
   res.setHeader('X-Request-Id', req.id);
   next();
 });
+
+// Resolve the tenant from the Host header (subdomain) before auth runs, and
+// scope the request to that tenant's database. See SAAS_PROJECT.md, Phase 2.
+app.use(tenantMiddleware);
 
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

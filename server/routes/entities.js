@@ -13,6 +13,7 @@ import {
   bulkDeleteEntities,
 } from '../services/entities.js';
 import { broadcast } from '../lib/ws.js';
+import { getTenantId } from '../db.js';
 import { generateTasksForBooking, rescheduleTasksForBooking } from '../services/tasks.js';
 
 const router = Router();
@@ -52,7 +53,7 @@ router.post(
     // permission-checked GET endpoints instead of receiving raw data over the socket.
     broadcast(
       { type: 'entity_change', action: 'create', entityType: req.params.type, entityId: result.id },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.status(201).json(result);
     // Auto-generate the booking's operational tasks (best-effort: never fail
@@ -74,7 +75,7 @@ router.post(
     const results = bulkCreateEntities(req.params.type, req.body.records, req.user);
     broadcast(
       { type: 'entity_change', action: 'bulk', entityType: req.params.type, entityIds: results.map((r) => r.id) },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.status(201).json(results);
   }),
@@ -92,7 +93,7 @@ router.post(
         entityType: req.params.type,
         entityIds: result.updated.map((r) => r.id),
       },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.json(result);
   }),
@@ -105,7 +106,7 @@ router.post(
     const result = bulkDeleteEntities(req.params.type, req.body.ids, req.user);
     broadcast(
       { type: 'entity_change', action: 'bulk', entityType: req.params.type, entityIds: result.deleted },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.json(result);
   }),
@@ -118,7 +119,7 @@ router.put(
     const result = updateEntity(req.params.type, req.params.id, req.body, req.user);
     broadcast(
       { type: 'entity_change', action: 'update', entityType: req.params.type, entityId: req.params.id },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.json(result);
     // If a Trip's departure date changed, resync its auto-generated tasks'
@@ -139,7 +140,7 @@ router.delete(
     const result = deleteEntity(req.params.type, req.params.id, req.user);
     broadcast(
       { type: 'entity_change', action: 'delete', entityType: req.params.type, entityId: req.params.id },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.json(result);
   }),

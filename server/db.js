@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import crypto from 'crypto';
+import { AsyncLocalStorage } from 'async_hooks';
 import { fileURLToPath } from 'url';
 import { migrate, migrationStatus, migratePlatform } from './migrations/runner.js';
 import { createBackupSync } from './services/backup.js';
@@ -78,6 +79,24 @@ const ENTITIES = [
 
 // tenantId -> open Database, in LRU order (most-recently-used at the end).
 const dbCache = new Map();
+
+// Request-scoped tenant context. An incoming request resolves its tenant (from
+// the Host subdomain / JWT claim) and runs the rest of the request inside
+// runWithTenant(), so the ~100 existing call sites that call getDb() with no
+// argument transparently hit the correct tenant's isolated database — no
+// per-call threading of tenantId required. Code that runs outside a request
+// (tests, schedulers, scripts) gets the default/legacy tenant.
+const tenantContext = new AsyncLocalStorage();
+
+/** The tenant id for the current request, or null if none is set. */
+export function getTenantId() {
+  return tenantContext.getStore() ?? null;
+}
+
+/** Run `fn` (optionally with `args`) with `tenantId` as the active tenant context. */
+export function runWithTenant(tenantId, fn, ...args) {
+  return tenantContext.run(String(tenantId), fn, ...args);
+}
 
 function tenantDbPath(tenantId) {
   if (!tenantId || tenantId === DEFAULT_TENANT_ID) {
@@ -158,8 +177,10 @@ logger.info({ path: DB_PATH }, 'Database initialized');
  * @param {string|number} [tenantId] Tenant id; omit for the default/legacy tenant.
  * @returns {import('better-sqlite3').Database}
  */
-export function getDb(tenantId = DEFAULT_TENANT_ID) {
-  const key = String(tenantId);
+export function getDb(tenantId) {
+  // Explicit argument wins; otherwise use the request's tenant context, falling
+  // back to the default/legacy tenant when called outside a request.
+  const key = tenantId !== undefined ? String(tenantId) : (getTenantId() ?? DEFAULT_TENANT_ID);
   const cached = dbCache.get(key);
   if (cached) {
     // Refresh recency so the most-used tenants stay open.

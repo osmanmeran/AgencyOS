@@ -101,7 +101,9 @@ router.post(
   catchAsync(async (req, res) => {
     let user;
     try {
-      user = await authenticateMicrosoft(req.body.idToken);
+      user = await authenticateMicrosoft(req.body.idToken, {
+        azureTenantId: req.tenant?.azure_tenant_id || null,
+      });
     } catch (err) {
       logAudit({ action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
       throw err;

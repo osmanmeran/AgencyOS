@@ -191,20 +191,22 @@ export function authenticateLocal(email, password) {
  * @returns {object} The authenticated user, via {@link safeUser}.
  * @throws {UnauthorizedError|ForbiddenError} On invalid token, wrong tenant, or pending approval.
  */
-export async function authenticateMicrosoft(idToken) {
-  if (!MICROSOFT_CLIENT_ID || !MICROSOFT_TENANT_ID) {
-    throw new UnauthorizedError('Microsoft SSO is not configured on the server.');
+export async function authenticateMicrosoft(idToken, { azureTenantId } = {}) {
+  // A tenant may bring its own Azure AD tenant (tenants.azure_tenant_id); the
+  // legacy single-tenant config still falls back to the global MICROSOFT_TENANT_ID
+  // env var. Without either, SSO can't be verified.
+  const azureTenant = azureTenantId || MICROSOFT_TENANT_ID;
+  if (!MICROSOFT_CLIENT_ID || !azureTenant) {
+    throw new UnauthorizedError('Microsoft SSO is not configured for this workspace.');
   }
 
-  const JWKS = createRemoteJWKSet(
-    new URL(`https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/discovery/v2.0/keys`),
-  );
+  const JWKS = createRemoteJWKSet(new URL(`https://login.microsoftonline.com/${azureTenant}/discovery/v2.0/keys`));
 
   let payload;
   try {
     const result = await jwtVerify(idToken, JWKS, {
       audience: MICROSOFT_CLIENT_ID,
-      issuer: `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/v2.0`,
+      issuer: `https://login.microsoftonline.com/${azureTenant}/v2.0`,
     });
     payload = result.payload;
   } catch (err) {
@@ -213,8 +215,8 @@ export async function authenticateMicrosoft(idToken) {
   }
 
   // Verify the user belongs to the correct company tenant
-  if (payload.tid !== MICROSOFT_TENANT_ID) {
-    logger.warn({ tid: payload.tid, expected: MICROSOFT_TENANT_ID }, 'Access denied: unauthorized tenant');
+  if (payload.tid !== azureTenant) {
+    logger.warn({ tid: payload.tid, expected: azureTenant }, 'Access denied: unauthorized tenant');
     throw new ForbiddenError('Access denied: your account does not belong to the authorized organization.');
   }
 
