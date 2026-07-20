@@ -1,13 +1,12 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { getDb, uid } from '../db.js';
 import { getJwtSecret, generateToken, ACCESS_TOKEN_MAX_AGE_MS, REFRESH_TOKEN_MAX_AGE_MS } from '../middleware/auth.js';
 import { ForbiddenError, ConflictError, UnauthorizedError, BadRequestError } from '../middleware/errors.js';
+import { MICROSOFT_CLIENT_ID, verifyMicrosoftIdToken } from './microsoft.js';
 import logger from '../lib/logger.js';
 
-const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
 const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
 
 export const VALID_TIERS = ['admin', 'manager', 'accounting', 'agent', 'client', 'supplier'];
@@ -208,35 +207,14 @@ export async function authenticateMicrosoft(idToken, { azureTenantId } = {}) {
     throw new UnauthorizedError('Microsoft SSO is not configured for this workspace.');
   }
 
-  const JWKS = createRemoteJWKSet(new URL(`https://login.microsoftonline.com/${azureTenant}/discovery/v2.0/keys`));
-
-  let payload;
-  try {
-    const result = await jwtVerify(idToken, JWKS, {
-      audience: MICROSOFT_CLIENT_ID,
-      issuer: `https://login.microsoftonline.com/${azureTenant}/v2.0`,
-    });
-    payload = result.payload;
-  } catch (err) {
-    logger.error({ err: err.message }, 'Microsoft token verification failed');
-    throw new UnauthorizedError('Microsoft token is invalid or expired.');
-  }
+  // Verify the token (signature/audience/expiry) and unpack the claims.
+  const { microsoftId, email, name, tid } = await verifyMicrosoftIdToken(idToken);
 
   // Verify the user belongs to the correct company tenant
-  if (payload.tid !== azureTenant) {
-    logger.warn({ tid: payload.tid, expected: azureTenant }, 'Access denied: unauthorized tenant');
+  if (tid !== azureTenant) {
+    logger.warn({ tid, expected: azureTenant }, 'Access denied: unauthorized tenant');
     throw new ForbiddenError('Access denied: your account does not belong to the authorized organization.');
   }
-
-  const microsoftId = payload.oid || payload.sub;
-  const rawEmail = payload.preferred_username || payload.email || payload.unique_name;
-
-  if (!rawEmail) {
-    throw new UnauthorizedError('Could not retrieve the email from the Microsoft account.');
-  }
-
-  const email = normalizeEmail(rawEmail);
-  const name = payload.name || email.split('@')[0];
 
   const db = getDb();
   const user = db.transaction(() => {

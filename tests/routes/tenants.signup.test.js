@@ -1,9 +1,21 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import { getDb, getPlatformDb, getDbPath } from '../../server/db.js';
 import { getTenantBySlug } from '../../server/services/tenants.js';
 import app from '../../server/app.js';
+
+// Avoid live Microsoft JWKS calls in the SSO-signup tests: verifyMicrosoftIdToken
+// is replaced with a deterministic claim set. (/api/auth/microsoft is unaffected
+// because mocks are file-scoped.)
+vi.mock('../../server/services/microsoft.js', () => ({
+  verifyMicrosoftIdToken: vi.fn(async () => ({
+    email: 'sso@agency.com',
+    name: 'SSO Admin',
+    microsoftId: 'oid-sso-123',
+    tid: 'tid-sso-123',
+  })),
+}));
 
 // Exercises the real app (csrfMiddleware exemption, tenantMiddleware, rate
 // limit, and the route mount) against the isolated test DATA_DIR.
@@ -201,5 +213,43 @@ describe('self-serve workspace signup', () => {
       if (prev === undefined) delete process.env.APP_ROOT_DOMAIN;
       else process.env.APP_ROOT_DOMAIN = prev;
     }
+  });
+
+  it('provisions a workspace via Microsoft SSO (no password, linked to Azure tenant)', async () => {
+    const slug = uniqueSlug();
+    const res = await fetch(`${baseUrl}/api/tenants/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agencyName: 'SSO Agency',
+        slug,
+        idToken: 'fake-id-token',
+      }),
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    createdTenantIds.push(body.tenant.id);
+    expect(body.user.user_tier).toBe('admin');
+    expect(body.user.email).toBe('sso@agency.com');
+
+    // The workspace is registered with the Azure tenant from the token.
+    const tenantRow = getTenantBySlug(slug);
+    expect(tenantRow.azure_tenant_id).toBe('tid-sso-123');
+
+    // The admin is an SSO account: microsoft_id set, no usable password.
+    const tenantDb = getDb(body.tenant.id);
+    const adminRow = tenantDb.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get('sso@agency.com');
+    expect(adminRow.microsoft_id).toBe('oid-sso-123');
+    expect(adminRow.password).toBe('');
+    expect(adminRow.is_active).toBe(1);
+  });
+
+  it('rejects signup with neither password nor idToken', async () => {
+    const res = await fetch(`${baseUrl}/api/tenants/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agencyName: 'A', slug: uniqueSlug() }),
+    });
+    expect(res.status).toBe(400);
   });
 });

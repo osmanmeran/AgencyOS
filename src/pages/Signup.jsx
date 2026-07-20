@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { isMicrosoftSsoConfigured, signupWithMicrosoft } from '@/lib/microsoft-auth';
 
 // Public, pre-auth workspace self-serve signup (Phase 3). Posts directly to
 // /api/tenants/signup (which is CSRF-exempt, like login) and, on success,
@@ -13,6 +14,8 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [slugState, setSlugState] = useState({ status: 'idle', message: '' });
   const slugTimer = useRef(null);
+
+  const msConfigured = isMicrosoftSsoConfigured();
 
   const slugify = (name) =>
     name
@@ -75,6 +78,23 @@ export default function Signup() {
     } catch (err) {
       setError(err.message || 'Sign-up failed. Please try again.');
       setLoading(false);
+    }
+  };
+
+  const handleMicrosoftSignup = async () => {
+    setError('');
+    if (!agencyName || !slug) {
+      setError('Enter your agency name and workspace address first.');
+      return;
+    }
+    if (slugState.status === 'error') {
+      setError('Choose a valid, available workspace address first.');
+      return;
+    }
+    try {
+      await signupWithMicrosoft(window.location.pathname, { agencyName, slug, adminName });
+    } catch (err) {
+      setError(err.message || 'Could not start Microsoft sign-up.');
     }
   };
 
@@ -183,6 +203,32 @@ export default function Signup() {
             {loading ? 'Creating workspace…' : 'Create workspace'}
           </button>
         </form>
+
+        {msConfigured && (
+          <>
+            <div className="relative mb-6 mt-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-card px-2 text-muted-foreground">or</span>
+              </div>
+            </div>
+            <button
+              onClick={handleMicrosoftSignup}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 py-3 border-2 border-border hover:bg-muted disabled:opacity-50 text-foreground font-medium rounded-xl transition-all"
+            >
+              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 21 21" fill="none">
+                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+              </svg>
+              Sign up with Microsoft
+            </button>
+          </>
+        )}
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have a workspace?{' '}

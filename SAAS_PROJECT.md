@@ -105,8 +105,14 @@ client_id, linked_supplier_id}` (`server/middleware/auth.js:20-34`) — no
   the post-signup redirect to the new subdomain carries the session. Tenant
   scoping (authMiddleware's `TENANT_MISMATCH` check) still blocks cross-workspace
   token reuse, so sharing the cookie domain does not weaken isolation.
-- Deferred: Microsoft-SSO-based signup (the email/password path is the primary
-  flow for now). Cross-tenant platform-admin dashboard remains deferred (below).
+- Microsoft-SSO-based signup is implemented: `POST /api/tenants/signup` also
+  accepts an `idToken` (obtained via the `common` Microsoft authority). The new
+  workspace's Azure tenant is derived from the token (`azure_tenant_id`) and the
+  admin is created as an SSO-linked account (no local password). The signup page
+  offers a "Sign up with Microsoft" button; the callback exchanges the id token
+  for a new workspace. `server/services/microsoft.js` holds the shared
+  `verifyMicrosoftIdToken` used by both login and SSO signup.
+- Cross-tenant platform-admin dashboard remains deferred (below).
 
 ### Explicitly deferred (out of scope for now)
 
