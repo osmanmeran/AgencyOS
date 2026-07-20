@@ -44,3 +44,6 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+
+# Stray temp directory (upload tooling) — not part of the repo
+.tmp.driveupload/
