@@ -1,5 +1,11 @@
-import { getTenantBySlug } from '../services/tenants.js';
+import { getTenantBySlug, isValidSlug } from '../services/tenants.js';
 import { DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
+
+// Name of the cookie that selects the active workspace on the bare/apex domain
+// when wildcard subdomain DNS isn't available (single-domain / cookie mode). Set
+// at signup and login; read by tenantMiddleware as a fallback after the Host
+// subdomain. Not httpOnly so the frontend can reflect the current workspace.
+export const ACTIVE_TENANT_COOKIE = 'active_tenant';
 
 // Hosts that are always the apex/control plane, never a tenant workspace.
 const RESERVED_HOSTS = new Set(['www', 'api', 'app', 'admin', 'platform', 'auth', 'mail', 'ftp', 'status', 'cdn']);
@@ -33,18 +39,33 @@ function slugFromHost(host) {
 export function tenantMiddleware(req, res, next) {
   const slug = slugFromHost(req.headers.host);
 
-  if (!slug) {
-    req.tenant = null;
-    req.tenantId = null;
-    return runWithTenant(DEFAULT_TENANT_ID, () => next());
+  // A subdomain match is authoritative and strict: an unknown subdomain gets a
+  // 404 so a request can never silently land on the wrong tenant's data.
+  if (slug) {
+    const tenant = getTenantBySlug(slug);
+    if (!tenant) {
+      return res.status(404).json({ error: { code: 'TENANT_NOT_FOUND', message: `Unknown workspace: ${slug}` } });
+    }
+    req.tenant = tenant;
+    req.tenantId = tenant.id;
+    return runWithTenant(tenant.id, () => next());
   }
 
-  const tenant = getTenantBySlug(slug);
-  if (!tenant) {
-    return res.status(404).json({ error: { code: 'TENANT_NOT_FOUND', message: `Unknown workspace: ${slug}` } });
+  // Single-domain fallback: an explicit workspace selection stored in a cookie
+  // (set at signup / login) lets the bare/apex domain host any workspace
+  // without requiring wildcard DNS. An unknown/invalid cookie value simply
+  // falls back to the default (legacy) tenant rather than 404-ing the app.
+  const cookieSlug = req.cookies && req.cookies[ACTIVE_TENANT_COOKIE];
+  if (cookieSlug && isValidSlug(cookieSlug)) {
+    const tenant = getTenantBySlug(cookieSlug);
+    if (tenant) {
+      req.tenant = tenant;
+      req.tenantId = tenant.id;
+      return runWithTenant(tenant.id, () => next());
+    }
   }
 
-  req.tenant = tenant;
-  req.tenantId = tenant.id;
-  return runWithTenant(tenant.id, () => next());
+  req.tenant = null;
+  req.tenantId = null;
+  return runWithTenant(DEFAULT_TENANT_ID, () => next());
 }

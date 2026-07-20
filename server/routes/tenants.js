@@ -11,7 +11,7 @@ import {
   updateTenant,
   TENANT_STATUS,
 } from '../services/tenants.js';
-import { createUser, safeUser, issueSession } from '../services/auth.js';
+import { createUser, safeUser, issueSession, setActiveTenantCookie } from '../services/auth.js';
 import { verifyMicrosoftIdToken } from '../services/microsoft.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
 
@@ -48,11 +48,19 @@ router.get(
 
 // Public capability check so the signup UI can explain itself when self-serve
 // is disabled. The gate defaults to off so an existing single-tenant deployment
-// is never silently turned into an open registration system.
+// is never silently turned into an open registration system. Also reports whether
+// subdomain routing is active: when APP_ROOT_DOMAIN is unset (e.g. a default
+// *.up.railway.app host) workspaces are reached via the active_tenant cookie
+// on the bare domain instead of a <slug>.<domain> URL.
 router.get(
   '/signup-status',
   catchAsync(async (req, res) => {
-    res.json({ enabled: process.env.ALLOW_PUBLIC_SIGNUP === 'true' });
+    const rootDomain = process.env.APP_ROOT_DOMAIN || null;
+    res.json({
+      enabled: process.env.ALLOW_PUBLIC_SIGNUP === 'true',
+      subdomainMode: !!rootDomain,
+      rootDomain,
+    });
   }),
 );
 
@@ -156,7 +164,10 @@ router.post(
       accessToken = result.accessToken;
     }
 
-    // 3. Return the session + where to land (the new workspace subdomain).
+    // 3. Return the session + where to land. In subdomain mode that's the
+    //    <slug>.<domain> URL; in single-domain (cookie) mode it's the bare
+    //    domain and the active_tenant cookie selects the new workspace.
+    setActiveTenantCookie(res, tenant.slug);
     const rootDomain = process.env.APP_ROOT_DOMAIN;
     const workspaceUrl = rootDomain ? `https://${tenant.slug}.${rootDomain}` : '/';
 

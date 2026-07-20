@@ -107,7 +107,7 @@ describe('Auth Service', () => {
     it('should authenticate regardless of email casing', () => {
       const base = `Login-${Date.now()}@Test.com`;
       createUser({ email: base, password: 'TestPass1', name: 'Login Test' });
-      expect(authenticateLocal(base.toUpperCase(), 'TestPass1').email).toBe(base.toLowerCase());
+      expect(authenticateLocal(base.toUpperCase(), 'TestPass1').user.email).toBe(base.toLowerCase());
     });
   });
 

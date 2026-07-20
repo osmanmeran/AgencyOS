@@ -87,7 +87,11 @@ describe('self-serve workspace signup', () => {
   it('exposes signup enabled state via /signup-status', async () => {
     const res = await fetch(`${baseUrl}/api/tenants/signup-status`);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ enabled: true });
+    const body = await res.json();
+    expect(body.enabled).toBe(true);
+    // No APP_ROOT_DOMAIN in this suite -> single-domain (cookie) mode.
+    expect(body.subdomainMode).toBe(false);
+    expect(body.rootDomain).toBe(null);
   });
 
   it('creates a workspace, admin user, and session', async () => {

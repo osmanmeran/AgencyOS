@@ -15,6 +15,8 @@ export default function Signup() {
   const [slugState, setSlugState] = useState({ status: 'idle', message: '' });
   const slugTimer = useRef(null);
   const [signupEnabled, setSignupEnabled] = useState(true);
+  const [subdomainMode, setSubdomainMode] = useState(false);
+  const [rootDomain, setRootDomain] = useState('');
 
   const msConfigured = isMicrosoftSsoConfigured();
 
@@ -23,9 +25,18 @@ export default function Signup() {
     // itself instead of failing on submit.
     fetch('/api/tenants/signup-status')
       .then((r) => r.json())
-      .then((d) => setSignupEnabled(d.enabled !== false))
+      .then((d) => {
+        setSignupEnabled(d.enabled !== false);
+        setSubdomainMode(!!d.subdomainMode);
+        setRootDomain(d.rootDomain || '');
+      })
       .catch(() => setSignupEnabled(true));
   }, []);
+
+  // In subdomain mode the workspace lives at <slug>.<domain>; in single-domain
+  // (cookie) mode the same domain hosts every workspace, so there's no subdomain
+  // to show — just the workspace address/slug.
+  const addressSuffix = subdomainMode && rootDomain ? `.${rootDomain}` : '';
 
   const slugify = (name) =>
     name
@@ -164,12 +175,12 @@ export default function Signup() {
                 required
               />
               <span className="flex items-center px-3 bg-muted border border-l-0 border-border rounded-r-lg text-sm text-muted-foreground whitespace-nowrap">
-                .marvelops.app
+                {addressSuffix || ' (your workspace)'}
               </span>
             </div>
             {slug && (
               <p className={`text-xs mt-1 ${slugHintColor}`}>
-                {slugState.status === 'ok' ? `✓ ${slugState.message} — ${slug}.marvelops.app` : slugState.message}
+                {slugState.status === 'ok' ? `✓ ${slugState.message} — ${slug}${addressSuffix}` : slugState.message}
               </p>
             )}
           </div>

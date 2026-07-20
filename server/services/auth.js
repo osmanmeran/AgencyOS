@@ -1,10 +1,12 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { getDb, uid } from '../db.js';
+import { getDb, uid, getTenantId, DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
 import { getJwtSecret, generateToken, ACCESS_TOKEN_MAX_AGE_MS, REFRESH_TOKEN_MAX_AGE_MS } from '../middleware/auth.js';
 import { ForbiddenError, ConflictError, UnauthorizedError, BadRequestError } from '../middleware/errors.js';
 import { MICROSOFT_CLIENT_ID, verifyMicrosoftIdToken } from './microsoft.js';
+import { listTenants, getTenantById } from './tenants.js';
+import { ACTIVE_TENANT_COOKIE } from '../middleware/tenant.js';
 import logger from '../lib/logger.js';
 
 const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
@@ -81,6 +83,77 @@ export function setAuthCookies(res, { accessToken, refreshToken, csrfToken }) {
   res.cookie('token', accessToken, { ...cookieOptions, httpOnly: true, maxAge: ACCESS_TOKEN_MAX_AGE_MS });
   res.cookie('refresh_token', refreshToken, { ...cookieOptions, httpOnly: true, maxAge: REFRESH_TOKEN_MAX_AGE_MS });
   res.cookie('csrf_token', csrfToken, { ...cookieOptions, httpOnly: false, maxAge: REFRESH_TOKEN_MAX_AGE_MS });
+}
+
+/**
+ * Set the `active_tenant` cookie so the bare/apex domain resolves to `slug`
+ * (single-domain / cookie mode, used when wildcard DNS isn't available). The
+ * cookie shares the auth cookies' lifetime/domain so it travels with the session.
+ * The legacy default tenant (id 0) has no slug — callers must skip this for it
+ * (an unset cookie correctly falls back to the default tenant).
+ */
+export function setActiveTenantCookie(res, slug) {
+  if (!slug) return;
+  const rootDomain = process.env.APP_ROOT_DOMAIN;
+  const opts = {
+    httpOnly: false,
+    sameSite: 'strict',
+    path: '/',
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+  };
+  if (process.env.NODE_ENV === 'production') opts.secure = true;
+  if (rootDomain) opts.domain = `.${String(rootDomain).replace(/^\.+/, '')}`;
+  res.cookie(ACTIVE_TENANT_COOKIE, slug, opts);
+}
+
+/** Clear the `active_tenant` cookie (logout / switch to the default tenant). */
+export function clearActiveTenantCookie(res) {
+  const rootDomain = process.env.APP_ROOT_DOMAIN;
+  const opts = { path: '/' };
+  if (rootDomain) opts.domain = `.${String(rootDomain).replace(/^\.+/, '')}`;
+  res.clearCookie(ACTIVE_TENANT_COOKIE, opts);
+}
+
+/**
+ * Locate a user by email across every workspace (including the legacy default
+ * tenant 0), returning the tenant it belongs to. Used for single-domain login
+ * where the Host header doesn't identify the workspace.
+ * @returns {{tenantId: string, db: import('better-sqlite3').Database, user: object}|null}
+ */
+export function locateUserByEmail(email) {
+  const normalized = String(email || '')
+    .trim()
+    .toLowerCase();
+  if (!normalized) return null;
+  const tenantIds = [DEFAULT_TENANT_ID, ...listTenants().map((t) => t.id)];
+  for (const tenantId of tenantIds) {
+    const db = getDb(tenantId);
+    const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalized);
+    if (user) return { tenantId, db, user };
+  }
+  return null;
+}
+
+/** Locate a user by Microsoft identity across all tenants. @returns {{tenantId: string, db, user}|null} */
+export function locateUserByMicrosoft(microsoftId, email) {
+  const normalized = String(email || '')
+    .trim()
+    .toLowerCase();
+  const tenantIds = [DEFAULT_TENANT_ID, ...listTenants().map((t) => t.id)];
+  for (const tenantId of tenantIds) {
+    const db = getDb(tenantId);
+    let user = db.prepare('SELECT * FROM users WHERE microsoft_id = ?').get(microsoftId);
+    if (!user && normalized) user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalized);
+    if (user) return { tenantId, db, user };
+  }
+  return null;
+}
+
+/** Find the workspace whose configured Azure AD tenant matches `tid`. @returns {object|null} */
+export function locateTenantByAzureTid(tid) {
+  if (!tid) return null;
+  const target = String(tid).toLowerCase();
+  return listTenants().find((t) => t.azure_tenant_id && t.azure_tenant_id.toLowerCase() === target) || null;
 }
 
 /** SHA-256 hash of a raw refresh token, for storage/lookup (never store the raw value). */
@@ -173,8 +246,26 @@ export function issueSession(res, user, { userAgent, ip } = {}) {
  * @throws {UnauthorizedError} If the account doesn't exist, is inactive, or the password is wrong.
  */
 export function authenticateLocal(email, password) {
-  const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalizeEmail(email));
+  const normalized = normalizeEmail(email);
+  const currentId = getTenantId() ?? DEFAULT_TENANT_ID;
+
+  // 1. Fast path: the user is in the workspace already selected for this request
+  //    (a subdomain, or a workspace chosen via the active_tenant cookie).
+  let db = getDb(currentId);
+  let user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalized);
+  let tenantId = user ? currentId : null;
+
+  // 2. Fallback (single-domain mode, where the Host header can't tell us the
+  //    workspace): search every workspace, including the legacy default tenant.
+  if (!user) {
+    const located = locateUserByEmail(normalized);
+    if (located) {
+      db = located.db;
+      user = located.user;
+      tenantId = located.tenantId;
+    }
+  }
+
   if (!user || !user.is_active) throw new UnauthorizedError('Invalid email or password');
 
   // SSO-linked accounts have no usable local password (see authenticateMicrosoft);
@@ -187,7 +278,7 @@ export function authenticateLocal(email, password) {
   const valid = bcrypt.compareSync(password, user.password);
   if (!valid) throw new UnauthorizedError('Invalid email or password');
 
-  return safeUser(user);
+  return { user: safeUser(user), tenantId };
 }
 
 /**
@@ -198,58 +289,83 @@ export function authenticateLocal(email, password) {
  * @returns {object} The authenticated user, via {@link safeUser}.
  * @throws {UnauthorizedError|ForbiddenError} On invalid token, wrong tenant, or pending approval.
  */
-export async function authenticateMicrosoft(idToken, { azureTenantId } = {}) {
-  // A tenant may bring its own Azure AD tenant (tenants.azure_tenant_id); the
-  // legacy single-tenant config still falls back to the global MICROSOFT_TENANT_ID
-  // env var. Without either, SSO can't be verified.
-  const azureTenant = azureTenantId || MICROSOFT_TENANT_ID;
+export async function authenticateMicrosoft(idToken) {
+  // Verify the token (signature/audience/expiry) and unpack the claims first;
+  // if the signature is bad we must reject before doing any tenant lookup.
+  const { microsoftId, email, name, tid } = await verifyMicrosoftIdToken(idToken);
+
+  // Resolve which workspace this Microsoft account belongs to.
+  //   - Subdomain mode: the workspace is already scoped by the Host header
+  //     (req.tenantId), so we trust that.
+  //   - Single-domain mode: match the workspace by its Azure AD org (tid),
+  //     falling back to the user's identity across all workspaces.
+  let tenantId = getTenantId() ?? null;
+  if (!tenantId || tenantId === DEFAULT_TENANT_ID) {
+    const byTid = locateTenantByAzureTid(tid);
+    if (byTid) {
+      tenantId = byTid.id;
+    } else {
+      const located = locateUserByMicrosoft(microsoftId, email);
+      if (located) tenantId = located.tenantId;
+    }
+  }
+  if (!tenantId) {
+    throw new ForbiddenError('No workspace is associated with this Microsoft account.', 'NO_WORKSPACE');
+  }
+
+  const tenant = getTenantById(tenantId);
+  if (!tenant) throw new ForbiddenError('Workspace not found.');
+
+  // A workspace may bring its own Azure AD tenant (tenants.azure_tenant_id);
+  // the legacy single-tenant config still falls back to the global
+  // MICROSOFT_TENANT_ID env var. Without either, SSO can't be verified.
+  const azureTenant = tenant.azure_tenant_id || MICROSOFT_TENANT_ID;
   if (!MICROSOFT_CLIENT_ID || !azureTenant) {
     throw new UnauthorizedError('Microsoft SSO is not configured for this workspace.');
   }
 
-  // Verify the token (signature/audience/expiry) and unpack the claims.
-  const { microsoftId, email, name, tid } = await verifyMicrosoftIdToken(idToken);
-
-  // Verify the user belongs to the correct company tenant
+  // Verify the user belongs to the correct company tenant.
   if (tid !== azureTenant) {
     logger.warn({ tid, expected: azureTenant }, 'Access denied: unauthorized tenant');
     throw new ForbiddenError('Access denied: your account does not belong to the authorized organization.');
   }
 
-  const db = getDb();
-  const user = db.transaction(() => {
-    // 1. Try by microsoft_id (fast path, exact match)
-    let u = db.prepare('SELECT * FROM users WHERE microsoft_id = ?').get(microsoftId);
-    if (!u) {
-      // 2. Case-insensitive email fallback (Microsoft may return different casing)
-      u = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
-      if (u) {
-        // Link microsoft_id so future logins hit the fast path
-        db.prepare('UPDATE users SET microsoft_id = ?, updated_date = ? WHERE id = ?').run(
-          microsoftId,
-          new Date().toISOString(),
-          u.id,
-        );
-      } else {
-        // New user — create with agent tier. The password column is left
-        // empty (unusable): SSO accounts must authenticate through Microsoft,
-        // and authenticateLocal rejects any account with a microsoft_id.
-        const now = new Date().toISOString();
-        const id = uid();
-        db.prepare(
-          'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, microsoft_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
-        ).run(id, email, '', name, 'agent', 'agent', 'en', '[]', microsoftId, '[]', now, now);
-        u = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  const rawUser = runWithTenant(tenantId, () => {
+    const db = getDb();
+    return db.transaction(() => {
+      // 1. Try by microsoft_id (fast path, exact match)
+      let u = db.prepare('SELECT * FROM users WHERE microsoft_id = ?').get(microsoftId);
+      if (!u) {
+        // 2. Case-insensitive email fallback (Microsoft may return different casing)
+        u = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
+        if (u) {
+          // Link microsoft_id so future logins hit the fast path
+          db.prepare('UPDATE users SET microsoft_id = ?, updated_date = ? WHERE id = ?').run(
+            microsoftId,
+            new Date().toISOString(),
+            u.id,
+          );
+        } else {
+          // New user — create with agent tier. The password column is left
+          // empty (unusable): SSO accounts must authenticate through Microsoft,
+          // and authenticateLocal rejects any account with a microsoft_id.
+          const now = new Date().toISOString();
+          const id = uid();
+          db.prepare(
+            'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, microsoft_id, departments, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
+          ).run(id, email, '', name, 'agent', 'agent', 'en', '[]', microsoftId, '[]', now, now);
+          u = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+        }
       }
-    }
-    return u;
-  })();
+      return u;
+    })();
+  });
 
-  if (!user.is_active) {
+  if (!rawUser.is_active) {
     throw new ForbiddenError('Account pending approval. Contact an administrator.', 'ACCOUNT_PENDING');
   }
 
-  return safeUser(user);
+  return { user: safeUser(rawUser), tenantId, slug: tenant.slug || null };
 }
 
 /** @returns {object|null} The raw `users` row (not sanitized), or null if not found. */
@@ -393,9 +509,12 @@ export function inviteUser({ email, name, user_tier, custom_permissions, departm
  * @throws {BadRequestError} If the token is invalid or expired.
  */
 export function acceptInvite({ token, name, password }) {
-  const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE invite_token = ?').get(token);
-  if (!user) throw new BadRequestError('Invalid or expired invitation link', 'INVITE_INVALID');
+  // The invite token lives in the workspace DB the invitation was issued from;
+  // search every workspace (incl. the legacy default) for it so the link works
+  // on the bare domain in single-domain mode.
+  const located = locateInvite(token);
+  if (!located) throw new BadRequestError('Invalid or expired invitation link', 'INVITE_INVALID');
+  const { tenantId, db, user } = located;
   if (user.invite_expires && new Date(user.invite_expires) < new Date()) {
     throw new BadRequestError('Invitation link has expired', 'INVITE_EXPIRED');
   }
@@ -406,7 +525,19 @@ export function acceptInvite({ token, name, password }) {
     'UPDATE users SET name = ?, password = ?, is_active = 1, invite_token = NULL, invite_expires = NULL, updated_date = ? WHERE id = ?',
   ).run(name, hashed, now, user.id);
 
-  return safeUser(db.prepare('SELECT * FROM users WHERE id = ?').get(user.id));
+  return { user: safeUser(db.prepare('SELECT * FROM users WHERE id = ?').get(user.id)), tenantId };
+}
+
+/** Locate an invitation by token across all workspaces. @returns {{tenantId, db, user}|null} */
+export function locateInvite(token) {
+  if (!token) return null;
+  const tenantIds = [DEFAULT_TENANT_ID, ...listTenants().map((t) => t.id)];
+  for (const tenantId of tenantIds) {
+    const db = getDb(tenantId);
+    const user = db.prepare('SELECT * FROM users WHERE invite_token = ?').get(token);
+    if (user) return { tenantId, db, user };
+  }
+  return null;
 }
 
 /**
