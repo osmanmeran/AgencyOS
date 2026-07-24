@@ -4,7 +4,8 @@ import { DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
 // Name of the cookie that selects the active workspace on the bare/apex domain
 // when wildcard subdomain DNS isn't available (single-domain / cookie mode). Set
 // at signup and login; read by tenantMiddleware as a fallback after the Host
-// subdomain. Not httpOnly so the frontend can reflect the current workspace.
+// subdomain. httpOnly — the frontend gets workspace info from
+// GET /api/tenants/me, never from this cookie.
 export const ACTIVE_TENANT_COOKIE = 'active_tenant';
 
 // Hosts that are always the apex/control plane, never a tenant workspace.

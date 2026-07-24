@@ -1,6 +1,7 @@
 import crypto from 'crypto';
-import { getPlatformDb } from '../db.js';
+import { getPlatformDb, DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
 import { BadRequestError } from '../middleware/errors.js';
+import logger from '../lib/logger.js';
 
 export const TENANT_STATUS = {
   TRIAL: 'trial',
@@ -51,6 +52,27 @@ export function listTenants() {
   return getPlatformDb()
     .prepare('SELECT id, slug, name, status, azure_tenant_id, created_date FROM tenants ORDER BY created_date ASC')
     .all();
+}
+
+/** @returns {string[]} Every tenant id, the legacy/default tenant first. */
+export function allTenantIds() {
+  return [DEFAULT_TENANT_ID, ...listTenants().map((t) => t.id)];
+}
+
+/**
+ * Run `fn(tenantId)` once per tenant — the legacy/default tenant first — inside
+ * that tenant's DB context, so background jobs (reminders, scheduled reports,
+ * rate refreshes) cover every workspace instead of only the legacy tenant. A
+ * failure in one tenant is logged and does not stop the remaining tenants.
+ */
+export async function forEachTenant(fn, { label = 'per-tenant job' } = {}) {
+  for (const tenantId of allTenantIds()) {
+    try {
+      await runWithTenant(tenantId, fn, tenantId);
+    } catch (err) {
+      logger.error({ err: err.message || err, tenantId, label }, 'Per-tenant job failed');
+    }
+  }
 }
 
 // Azure AD tenant ids are UUIDs (8-4-4-4-12 hex). Validate loosely so a typo

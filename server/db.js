@@ -125,12 +125,27 @@ function openTenantDb(tenantId) {
 // snapshot before applying pending migrations, then run the migration chain.
 function bootstrapDefaultTenant() {
   const database = openTenantDb(DEFAULT_TENANT_ID);
-  if (process.env.NODE_ENV !== 'test' && migrationStatus(database).some((m) => !m.applied)) {
-    try {
-      const dest = createBackupSync(database, DATA_DIR, 'pre-migration');
-      logger.info({ dest }, 'Pre-migration backup created');
-    } catch (err) {
-      logger.warn({ err: err.message }, 'Pre-migration backup failed');
+  if (process.env.NODE_ENV !== 'test') {
+    // One-time safety snapshot the very first time this deployment boots with
+    // the multi-tenant code: no platform.db yet means the legacy database has
+    // never run under multi-tenancy. Taken before the server can accept a
+    // single request, it is the restore point if the SaaS rollout ever needs
+    // to be undone. Never auto-pruned (backup rotation is label-scoped).
+    if (!fs.existsSync(PLATFORM_DB_PATH)) {
+      try {
+        const dest = createBackupSync(database, DATA_DIR, 'pre-saas');
+        logger.info({ dest }, 'Pre-SaaS adoption snapshot of the legacy database created');
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Pre-SaaS adoption snapshot failed');
+      }
+    }
+    if (migrationStatus(database).some((m) => !m.applied)) {
+      try {
+        const dest = createBackupSync(database, DATA_DIR, 'pre-migration');
+        logger.info({ dest }, 'Pre-migration backup created');
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Pre-migration backup failed');
+      }
     }
   }
   return database;
@@ -304,3 +319,11 @@ export function hasFts(dbConn) {
     return false;
   }
 }
+
+// Eagerly provision the platform registry so the pre-SaaS snapshot taken in
+// bootstrapDefaultTenant() stays strictly one-time: its trigger is
+// "platform.db absent at boot", so creating the registry in the same boot
+// guarantees later boots never re-snapshot. Down here (after all declarations)
+// because getPlatformDb() touches the module-level `platformDb` binding.
+// Tests keep the lazy path (each test file gets its own temp data dir).
+if (process.env.NODE_ENV !== 'test') getPlatformDb();

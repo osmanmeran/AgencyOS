@@ -1,20 +1,22 @@
 import { getDb } from '../db.js';
 import logger from '../lib/logger.js';
 import { createNotification } from './notifications.js';
+import { forEachTenant } from './tenants.js';
 
 let intervalHandle = null;
 
-/** Run an immediate reminder check, then repeat it every 60 minutes (due-soon/overdue invoices, trips starting tomorrow). */
+/** Run an immediate reminder check, then repeat it every 60 minutes (due-soon/overdue invoices, trips starting tomorrow). Covers every workspace. */
 export function startReminderService() {
   logger.info('Reminder service started');
 
   const check = () => {
-    try {
-      checkPendingInvoices();
-      checkUpcomingTrips();
-    } catch (err) {
-      logger.error({ err }, 'Reminder check error');
-    }
+    forEachTenant(
+      () => {
+        checkPendingInvoices();
+        checkUpcomingTrips();
+      },
+      { label: 'reminders' },
+    ).catch((err) => logger.error({ err }, 'Reminder check error'));
   };
 
   check();

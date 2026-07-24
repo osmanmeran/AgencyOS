@@ -1,4 +1,4 @@
-import { refreshRates } from './exchangeRates.js';
+import { refreshRatesAllTenants } from './exchangeRates.js';
 import logger from '../lib/logger.js';
 
 let intervalHandle = null;
@@ -22,7 +22,7 @@ export function startExchangeRateScheduler() {
     }
     isRunning = true;
     try {
-      await refreshRates();
+      await refreshRatesAllTenants();
     } catch (err) {
       logger.error({ err: err.message }, 'Exchange rate daily refresh failed');
     } finally {

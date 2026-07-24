@@ -91,12 +91,14 @@ export function setAuthCookies(res, { accessToken, refreshToken, csrfToken }) {
  * cookie shares the auth cookies' lifetime/domain so it travels with the session.
  * The legacy default tenant (id 0) has no slug — callers must skip this for it
  * (an unset cookie correctly falls back to the default tenant).
+ * httpOnly: the frontend never reads it (workspace info comes from
+ * GET /api/tenants/me), so keep it out of reach of page scripts.
  */
 export function setActiveTenantCookie(res, slug) {
   if (!slug) return;
   const rootDomain = process.env.APP_ROOT_DOMAIN;
   const opts = {
-    httpOnly: false,
+    httpOnly: true,
     sameSite: 'strict',
     path: '/',
     maxAge: REFRESH_TOKEN_MAX_AGE_MS,
@@ -115,23 +117,26 @@ export function clearActiveTenantCookie(res) {
 }
 
 /**
- * Locate a user by email across every workspace (including the legacy default
- * tenant 0), returning the tenant it belongs to. Used for single-domain login
- * where the Host header doesn't identify the workspace.
- * @returns {{tenantId: string, db: import('better-sqlite3').Database, user: object}|null}
+ * Locate every account with this email across all workspaces (including the
+ * legacy default tenant 0), each with the tenant it belongs to. Used for
+ * single-domain login where the Host header doesn't identify the workspace —
+ * the caller disambiguates between workspaces by which account the password
+ * actually verifies against.
+ * @returns {Array<{tenantId: string, db: import('better-sqlite3').Database, user: object}>}
  */
-export function locateUserByEmail(email) {
+export function locateUsersByEmail(email) {
   const normalized = String(email || '')
     .trim()
     .toLowerCase();
-  if (!normalized) return null;
+  if (!normalized) return [];
+  const matches = [];
   const tenantIds = [DEFAULT_TENANT_ID, ...listTenants().map((t) => t.id)];
   for (const tenantId of tenantIds) {
     const db = getDb(tenantId);
     const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalized);
-    if (user) return { tenantId, db, user };
+    if (user) matches.push({ tenantId, db, user });
   }
-  return null;
+  return matches;
 }
 
 /** Locate a user by Microsoft identity across all tenants. @returns {{tenantId: string, db, user}|null} */
@@ -249,36 +254,38 @@ export function authenticateLocal(email, password) {
   const normalized = normalizeEmail(email);
   const currentId = getTenantId() ?? DEFAULT_TENANT_ID;
 
-  // 1. Fast path: the user is in the workspace already selected for this request
-  //    (a subdomain, or a workspace chosen via the active_tenant cookie).
-  let db = getDb(currentId);
-  let user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalized);
-  let tenantId = user ? currentId : null;
+  // Candidate accounts, most specific first: the workspace already selected for
+  // this request (a subdomain, or a workspace chosen via the active_tenant
+  // cookie), then — for single-domain mode, where the Host header can't tell us
+  // the workspace — every other workspace with this email. When the same email
+  // exists in several workspaces, the password decides which account (and thus
+  // which workspace) the session belongs to, instead of the first match always
+  // winning.
+  const candidates = [];
+  const current = getDb(currentId).prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalized);
+  if (current) candidates.push({ tenantId: currentId, user: current });
+  for (const located of locateUsersByEmail(normalized)) {
+    if (located.tenantId !== currentId) candidates.push(located);
+  }
 
-  // 2. Fallback (single-domain mode, where the Host header can't tell us the
-  //    workspace): search every workspace, including the legacy default tenant.
-  if (!user) {
-    const located = locateUserByEmail(normalized);
-    if (located) {
-      db = located.db;
-      user = located.user;
-      tenantId = located.tenantId;
+  const active = candidates.filter((c) => c.user.is_active);
+  if (active.length === 0) throw new UnauthorizedError('Invalid email or password');
+
+  for (const { tenantId, user } of active) {
+    // SSO-linked accounts have no usable local password (see
+    // authenticateMicrosoft) and can never win the password check.
+    if (user.microsoft_id || !user.password) continue;
+    if (bcrypt.compareSync(password, user.password)) {
+      return { user: safeUser(user), tenantId };
     }
   }
 
-  if (!user || !user.is_active) throw new UnauthorizedError('Invalid email or password');
-
-  // SSO-linked accounts have no usable local password (see authenticateMicrosoft);
-  // reject up front so a guessed/leaked hash input can never open a second door.
-  if (user.microsoft_id) {
+  // Nothing verified. If every account with this email is SSO-linked, keep the
+  // original guidance toward Microsoft sign-in; otherwise stay generic.
+  if (active.every((c) => c.user.microsoft_id)) {
     throw new UnauthorizedError('This account uses Microsoft sign-in. Please use "Sign in with Microsoft".');
   }
-  if (!user.password) throw new UnauthorizedError('Invalid email or password');
-
-  const valid = bcrypt.compareSync(password, user.password);
-  if (!valid) throw new UnauthorizedError('Invalid email or password');
-
-  return { user: safeUser(user), tenantId };
+  throw new UnauthorizedError('Invalid email or password');
 }
 
 /**

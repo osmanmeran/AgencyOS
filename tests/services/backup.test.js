@@ -3,7 +3,13 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import Database from 'better-sqlite3';
-import { createBackupSync, createBackupAsync, listBackups, pruneBackups, getBackupDir } from '../../server/services/backup.js';
+import {
+  createBackupSync,
+  createBackupAsync,
+  listBackups,
+  pruneBackups,
+  getBackupDir,
+} from '../../server/services/backup.js';
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'marvelops-backup-test-'));
 
@@ -58,7 +64,7 @@ describe('Backup Service', () => {
   it('listBackups lists created backups newest first', async () => {
     const db = freshDb(dataDir);
     const a = createBackupSync(db, dataDir, 'first');
-    await new Promise(r => setTimeout(r, 5));
+    await new Promise((r) => setTimeout(r, 5));
     const b = createBackupSync(db, dataDir, 'second');
     db.close();
 
@@ -78,6 +84,23 @@ describe('Backup Service', () => {
     const removed = pruneBackups(dataDir, 2);
     expect(removed).toHaveLength(3);
     expect(listBackups(dataDir)).toHaveLength(2);
+  });
+
+  it('pruneBackups with a label prunes only that label, leaving safety snapshots alone', async () => {
+    const db = freshDb(dataDir);
+    const preSaas = createBackupSync(db, dataDir, 'pre-saas');
+    for (let i = 0; i < 3; i++) {
+      await new Promise((r) => setTimeout(r, 5));
+      createBackupSync(db, dataDir, 'daily');
+    }
+    db.close();
+
+    const removed = pruneBackups(dataDir, 1, 'daily');
+    expect(removed).toHaveLength(2);
+    const listed = listBackups(dataDir);
+    // The one-off pre-saas snapshot survives daily rotation.
+    expect(listed).toContain(path.basename(preSaas));
+    expect(listed.filter((f) => f.startsWith('marvelops-daily-'))).toHaveLength(1);
   });
 
   it('pruneBackups is a no-op when under the limit', () => {

@@ -1,6 +1,7 @@
 import { getDb } from '../db.js';
 import { BadRequestError } from '../middleware/errors.js';
 import logger from '../lib/logger.js';
+import { forEachTenant } from './tenants.js';
 
 const RATES_API_URL = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
 const RATES_TIMEOUT_MS = 5000;
@@ -63,6 +64,19 @@ export async function refreshRates() {
   const snapshot = await fetchRatesFromApi();
   storeRates(snapshot);
   logger.info({ source: snapshot.source, updated_at: snapshot.fetchedAt }, 'Exchange rates refreshed');
+  return { rates: snapshot.rates, source: snapshot.source, updated_at: snapshot.fetchedAt };
+}
+
+/**
+ * Daily-scheduler variant of {@link refreshRates}: one API fetch, then the
+ * snapshot is persisted into every workspace's database (rates are global, but
+ * each tenant DB carries its own `exchange_rates` snapshot).
+ * @returns {Promise<{rates: object, source: string, updated_at: string}>}
+ */
+export async function refreshRatesAllTenants() {
+  const snapshot = await fetchRatesFromApi();
+  await forEachTenant(() => storeRates(snapshot), { label: 'exchange rates' });
+  logger.info({ source: snapshot.source, updated_at: snapshot.fetchedAt }, 'Exchange rates refreshed (all tenants)');
   return { rates: snapshot.rates, source: snapshot.source, updated_at: snapshot.fetchedAt };
 }
 

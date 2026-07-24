@@ -5,6 +5,8 @@ import {
   getTenantById,
   getTenantBySlug,
   listTenants,
+  allTenantIds,
+  forEachTenant,
   isReservedSlug,
   isValidSlug,
   TENANT_STATUS,
@@ -56,6 +58,34 @@ describe('tenant registry (platform.db)', () => {
     createTenant({ slug: 'a', name: 'A' });
     createTenant({ slug: 'b', name: 'B' });
     expect(listTenants()).toHaveLength(2);
+  });
+
+  it('allTenantIds puts the legacy default tenant first', () => {
+    const t = createTenant({ slug: 'ids-check', name: 'Ids' });
+    expect(allTenantIds()[0]).toBe('0');
+    expect(allTenantIds()).toContain(t.id);
+  });
+
+  it('forEachTenant runs the job inside each tenant DB context', async () => {
+    const t = createTenant({ slug: 'each-ctx', name: 'Each' });
+    const visited = [];
+    await forEachTenant((tenantId) => {
+      // getDb() with no argument must resolve to the tenant being visited.
+      visited.push({ tenantId, dbFile: getDb().name });
+    });
+    expect(visited.map((v) => v.tenantId)).toEqual(['0', t.id]);
+    expect(visited[1].dbFile).toContain(t.id);
+    expect(visited[0].dbFile).not.toBe(visited[1].dbFile);
+  });
+
+  it('forEachTenant keeps going when one tenant job throws', async () => {
+    createTenant({ slug: 'boom', name: 'Boom' });
+    const seen = [];
+    await forEachTenant((tenantId) => {
+      if (tenantId === '0') throw new Error('tenant zero exploded');
+      seen.push(tenantId);
+    });
+    expect(seen).toHaveLength(1);
   });
 });
 
