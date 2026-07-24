@@ -5,6 +5,7 @@ import { BadRequestError } from '../middleware/errors.js';
 import { createEntity, findEntityById } from '../services/entities.js';
 import { listTasks, completeTask } from '../services/tasks.js';
 import { broadcast } from '../lib/ws.js';
+import { getTenantId } from '../db.js';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.post(
     const result = createEntity('Task', req.body, req.user);
     broadcast(
       { type: 'entity_change', action: 'create', entityType: 'Task', entityId: result.id },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.status(201).json(result);
   }),
@@ -59,7 +60,7 @@ router.put(
     const updated = completeTask(req.params.id, req.user, req.body?.note);
     broadcast(
       { type: 'entity_change', action: 'update', entityType: 'Task', entityId: req.params.id },
-      { excludeUserId: req.user.id },
+      { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.json(updated);
   }),

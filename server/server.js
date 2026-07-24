@@ -9,6 +9,7 @@ import app from './app.js';
 import logger from './lib/logger.js';
 import { createWebSocketServer, sendToUser } from './lib/ws.js';
 import { setBroadcastFn } from './services/notifications.js';
+import { getTenantId } from './db.js';
 import { startReminderService } from './services/reminders.js';
 import { startReportScheduler } from './services/reportScheduler.js';
 import { startBackupScheduler } from './services/backupScheduler.js';
@@ -31,7 +32,9 @@ process.on('unhandledRejection', (reason) => {
 });
 
 setBroadcastFn((userId, notification) => {
-  sendToUser(userId, { type: 'notification', notification });
+  // Notifications are created within a request, so the tenant context is set;
+  // scope the live push to that tenant so a user id can't collide across tenants.
+  sendToUser(userId, { type: 'notification', notification }, getTenantId());
 });
 
 const sslKeyPath = process.env.SSL_KEY_PATH;

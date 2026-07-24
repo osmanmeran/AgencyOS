@@ -55,12 +55,15 @@ export function listBackups(dataDir) {
  * Keep the newest `keep` backups, delete the rest.
  * @returns {string[]} Filenames that were removed.
  */
-export function pruneBackups(dataDir, keep = 14) {
+export function pruneBackups(dataDir, keep = 14, label = null) {
   const dir = getBackupDir(dataDir);
   if (!fs.existsSync(dir)) return [];
   const files = fs
     .readdirSync(dir)
-    .filter((f) => f.endsWith('.db'))
+    // With a label, prune only that label's snapshots — so scheduled backups
+    // (e.g. 'daily') can rotate without ever evicting one-off safety snapshots
+    // like 'pre-saas' or another label's rotation sharing the directory.
+    .filter((f) => f.endsWith('.db') && (!label || f.startsWith(`marvelops-${label}-`)))
     .map((f) => ({ name: f, mtime: fs.statSync(path.join(dir, f)).mtimeMs }))
     .sort((a, b) => b.mtime - a.mtime);
 

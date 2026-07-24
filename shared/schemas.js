@@ -17,6 +17,46 @@ export const schemas = {
     idToken: z.string().min(1, 'idToken is required'),
   }),
 
+  // Self-serve workspace signup (Phase 3). The slug is re-validated server-side
+  // against the reserved-word list; this regex is just a fast first pass.
+  // Either an admin password OR a Microsoft id token provisions the first admin.
+  signup: z
+    .object({
+      agencyName: z.string().min(1, 'Agency name is required').max(120, 'Agency name is too long'),
+      slug: z
+        .string()
+        .min(1, 'Workspace address is required')
+        .max(63, 'Workspace address is too long')
+        .regex(/^[a-z0-9-]+$/, 'Workspace address may only contain lowercase letters, numbers, and hyphens'),
+      adminEmail: z.string().email('Invalid email format').optional(),
+      adminPassword: z
+        .string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+        .regex(/[a-z]/, 'Password must contain a lowercase letter')
+        .regex(/[0-9]/, 'Password must contain a number')
+        .optional(),
+      adminName: z.string().max(120).optional(),
+      idToken: z.string().min(1, 'idToken is required').optional(),
+    })
+    .refine((d) => !!d.idToken || (!!d.adminEmail && !!d.adminPassword), {
+      message: 'Provide adminEmail + adminPassword, or a Microsoft idToken',
+      path: ['adminPassword'],
+    }),
+
+  // Self-serve workspace control plane (Phase 4). Only `name` and
+  // `azureTenantId` are editable; `slug`/`status` are immutable. `azureTenantId`
+  // may be set to '' / null to clear (disabling per-workspace Microsoft SSO).
+  updateTenant: z
+    .object({
+      name: z.string().min(1, 'Workspace name is required').max(120).optional(),
+      azureTenantId: z.string().max(36).nullable().optional(),
+    })
+    .refine((d) => Object.keys(d).length > 0, {
+      message: 'Provide at least one field to update',
+      path: ['name'],
+    }),
+
   createUser: z
     .object({
       email: z.string().email('Invalid email format'),

@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import logger from '../lib/logger.js';
 import { sendError } from './errors.js';
-import { getDb } from '../db.js';
+import { getDb, getTenantId, DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -36,6 +36,11 @@ export function generateToken(user, expiresIn = ACCESS_TOKEN_TTL) {
       custom_permissions: user.custom_permissions || [],
       client_id: user.client_id || null,
       linked_supplier_id: user.linked_supplier_id || null,
+      // Tenant the session belongs to. The request's tenant context (from the
+      // Host subdomain) is authoritative at issuance; outside a request we fall
+      // back to the default/legacy tenant. authMiddleware re-checks this against
+      // the subdomain on every request.
+      tenant_id: getTenantId() ?? DEFAULT_TENANT_ID,
     },
     getJwtSecret(),
     { expiresIn },
@@ -71,30 +76,44 @@ export function authMiddleware(req, res, next) {
   // re-read from the DB on every request (a single PK lookup) so permission
   // changes and deactivations apply immediately instead of after the token's
   // 24h lifetime.
-  const row = getDb()
-    .prepare(
-      'SELECT id, email, name, user_tier, role, custom_permissions, client_id, linked_supplier_id, is_active FROM users WHERE id = ?',
-    )
-    .get(decoded.id);
-  if (!row || !row.is_active) {
-    return sendError(res, 401, 'INVALID_TOKEN', 'Invalid or expired token');
+
+  // Tenant scoping: the Host subdomain (req.tenantId, set by tenantMiddleware)
+  // is authoritative. If the request arrived on a specific workspace subdomain,
+  // the token must belong to that tenant — otherwise a user could present their
+  // token against another agency's subdomain. If there's no subdomain (apex /
+  // localhost), trust the token's own tenant claim.
+  const tokenTenant = decoded.tenant_id || DEFAULT_TENANT_ID;
+  if (req.tenantId && req.tenantId !== tokenTenant) {
+    return sendError(res, 403, 'TENANT_MISMATCH', 'Token is not valid for this workspace');
   }
+  const requestTenant = req.tenantId || tokenTenant;
 
-  let customPermissions = [];
-  try {
-    const parsed = JSON.parse(row.custom_permissions || '[]');
-    if (Array.isArray(parsed)) customPermissions = parsed;
-  } catch {}
+  return runWithTenant(requestTenant, () => {
+    const row = getDb()
+      .prepare(
+        'SELECT id, email, name, user_tier, role, custom_permissions, client_id, linked_supplier_id, is_active FROM users WHERE id = ?',
+      )
+      .get(decoded.id);
+    if (!row || !row.is_active) {
+      return sendError(res, 401, 'INVALID_TOKEN', 'Invalid or expired token');
+    }
 
-  req.user = {
-    id: row.id,
-    email: row.email,
-    name: row.name,
-    user_tier: row.user_tier,
-    role: row.role,
-    custom_permissions: customPermissions,
-    client_id: row.client_id || null,
-    linked_supplier_id: row.linked_supplier_id || null,
-  };
-  next();
+    let customPermissions = [];
+    try {
+      const parsed = JSON.parse(row.custom_permissions || '[]');
+      if (Array.isArray(parsed)) customPermissions = parsed;
+    } catch {}
+
+    req.user = {
+      id: row.id,
+      email: row.email,
+      name: row.name,
+      user_tier: row.user_tier,
+      role: row.role,
+      custom_permissions: customPermissions,
+      client_id: row.client_id || null,
+      linked_supplier_id: row.linked_supplier_id || null,
+    };
+    next();
+  });
 }

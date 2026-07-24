@@ -15,6 +15,45 @@ export default function MicrosoftCallback() {
         const { idToken, returnUrl } = await handleMicrosoftCallback();
         if (cancelled) return;
 
+        // Self-serve signup flow: exchange the id token for a new workspace
+        // instead of logging in to an existing one.
+        const mode = sessionStorage.getItem('ms_mode') || localStorage.getItem('ms_mode');
+        if (mode === 'signup') {
+          const raw = sessionStorage.getItem('ms_signup') || localStorage.getItem('ms_signup');
+          for (const k of ['ms_mode', 'ms_signup']) {
+            try {
+              sessionStorage.removeItem(k);
+            } catch {}
+            try {
+              localStorage.removeItem(k);
+            } catch {}
+          }
+          let signupData = {};
+          try {
+            signupData = raw ? JSON.parse(raw) : {};
+          } catch {}
+
+          setStep(t('auth.microsoftCallback.authenticatingServer'));
+          const res = await fetch('/api/tenants/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              agencyName: signupData.agencyName,
+              slug: signupData.slug,
+              adminName: signupData.adminName,
+              idToken,
+            }),
+            credentials: 'include',
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.error?.message || 'Workspace creation failed.');
+          if (cancelled) return;
+
+          setStep(t('auth.microsoftCallback.loginComplete'));
+          window.location.href = data.workspaceUrl || '/';
+          return;
+        }
+
         setStep(t('auth.microsoftCallback.authenticatingServer'));
         await exchangeIdTokenWithServer(idToken);
         if (cancelled) return;

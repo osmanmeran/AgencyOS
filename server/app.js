@@ -14,6 +14,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { errorHandler, notFoundHandler, sendError } from './middleware/errors.js';
 import { authMiddleware } from './middleware/auth.js';
+import { tenantMiddleware } from './middleware/tenant.js';
 import { csrfMiddleware } from './middleware/csrf.js';
 import { auditMiddleware } from './services/audit.js';
 import logger from './lib/logger.js';
@@ -32,6 +33,8 @@ import suggestionRoutes from './routes/suggestions.js';
 import reportRoutes from './routes/reports.js';
 import adminRoutes from './routes/admin.js';
 import taskRoutes from './routes/tasks.js';
+import tenantRoutes from './routes/tenants.js';
+import platformRoutes from './routes/platform.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -87,6 +90,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Resolve the tenant from the Host header (subdomain) before auth runs, and
+// scope the request to that tenant's database. See SAAS_PROJECT.md, Phase 2.
+app.use(tenantMiddleware);
+
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -114,6 +121,8 @@ const standardLimiter = rateLimit({
 
 app.use('/api/auth/login', strictLimiter);
 app.use('/api/auth/microsoft', strictLimiter);
+// Self-serve workspace signup is abuse-sensitive: keep it on the strict limiter.
+app.use('/api/tenants/signup', strictLimiter);
 app.use('/api/notifications', mutationLimiter);
 app.use('/api/documents', mutationLimiter);
 app.use('/api/pdf', mutationLimiter);
@@ -137,6 +146,13 @@ app.use('/api/reports', reportRoutes);
 // an audit trail like every other mutating route.
 app.use('/api/admin', auditMiddleware, adminRoutes);
 app.use('/api/tasks', auditMiddleware, taskRoutes);
+// Self-serve workspace provisioning (Phase 3). Public + unauthenticated — it
+// must NOT sit behind authMiddleware (there is no session to scope it to yet).
+app.use('/api/tenants', tenantRoutes);
+
+// Platform (SaaS operator) admin: cross-tenant workspace list + stats. Auth +
+// allow-list gated inside the router.
+app.use('/api/platform', platformRoutes);
 
 app.get('/api/health', (req, res) => {
   const checks = { database: 'ok', migrations: 'ok', disk: 'ok' };

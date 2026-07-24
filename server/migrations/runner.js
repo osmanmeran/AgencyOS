@@ -8,6 +8,11 @@ const require = createRequire(import.meta.url);
 
 const MIGRATIONS_TABLE = '_migrations';
 
+// Business migrations live alongside this file. Platform-level migrations
+// (the central `platform.db` — tenants table, etc.) live in a sub-directory so
+// they never get applied to a tenant database and vice-versa.
+export const PLATFORM_MIGRATIONS_DIR = path.join(__dirname, 'platform');
+
 function ensureMetaTable(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ${MIGRATIONS_TABLE} (
@@ -25,9 +30,9 @@ function getAppliedMigrations(db) {
     .map((r) => r.name);
 }
 
-function getMigrationFiles() {
+function getMigrationFiles(dir = __dirname) {
   return fs
-    .readdirSync(__dirname)
+    .readdirSync(dir)
     .filter((f) => /^\d+_.+\.(cjs|js)$/.test(f))
     .sort();
 }
@@ -41,28 +46,57 @@ function normalizeName(name) {
   return name.replace(/\.(cjs|mjs|js)$/, '');
 }
 
-function getPendingMigrations(db) {
+function getPendingMigrations(db, dir = __dirname) {
   const applied = new Set(getAppliedMigrations(db).map(normalizeName));
-  return getMigrationFiles().filter((f) => !applied.has(normalizeName(f)));
+  return getMigrationFiles(dir).filter((f) => !applied.has(normalizeName(f)));
 }
 
 // Resolves a name recorded in `_migrations` (possibly with a since-renamed
 // extension) back to the file that currently exists on disk for it.
-function resolveFile(appliedName) {
+function resolveFile(appliedName, dir = __dirname) {
   const target = normalizeName(appliedName);
-  return getMigrationFiles().find((f) => normalizeName(f) === target);
+  return getMigrationFiles(dir).find((f) => normalizeName(f) === target);
 }
 
-async function loadMigration(file) {
-  if (file.endsWith('.cjs')) return require(path.join(__dirname, file));
-  return import(pathToFileURL(path.join(__dirname, file)).href);
+async function loadMigration(file, dir = __dirname) {
+  const full = path.join(dir, file);
+  if (file.endsWith('.cjs')) return require(full);
+  return import(pathToFileURL(full).href);
 }
 
-export async function migrate(db, { direction = 'up', quiet = false } = {}) {
+// Migration modules are loaded once at startup and cached, so migrate() can run
+// fully synchronously. Callers like getDb()/getPlatformDb() are synchronous and
+// must apply pending migrations before returning the connection — a fire-and-
+// forget async import would race with connection teardown and throw "connection
+// not open". Keyed by `dir::normalizedName` so business and platform migrations
+// never collide even if they share a numeric prefix.
+const migrationModules = new Map();
+
+function moduleKey(dir, file) {
+  return `${dir}::${normalizeName(file)}`;
+}
+
+async function preload(dir) {
+  for (const file of getMigrationFiles(dir)) {
+    migrationModules.set(moduleKey(dir, file), await loadMigration(file, dir));
+  }
+}
+
+function getMigrationModule(file, dir = __dirname) {
+  const mod = migrationModules.get(moduleKey(dir, file));
+  if (!mod) throw new Error(`Migration module not loaded: ${file}`);
+  return mod;
+}
+
+// Preload both business and platform migrations before any migrate() call.
+await preload(__dirname);
+await preload(PLATFORM_MIGRATIONS_DIR);
+
+export function migrate(db, { direction = 'up', quiet = false, dir = __dirname } = {}) {
   ensureMetaTable(db);
 
   if (direction === 'up') {
-    const pending = getPendingMigrations(db);
+    const pending = getPendingMigrations(db, dir);
     if (pending.length === 0) {
       if (!quiet) console.log('[Migrations] All migrations already applied.');
       return [];
@@ -70,7 +104,7 @@ export async function migrate(db, { direction = 'up', quiet = false } = {}) {
 
     const applied = [];
     for (const file of pending) {
-      const migration = await loadMigration(file);
+      const migration = getMigrationModule(file, dir);
       if (!quiet) console.log(`[Migrations] Applying: ${file}`);
       db.transaction(() => {
         migration.up(db);
@@ -90,11 +124,11 @@ export async function migrate(db, { direction = 'up', quiet = false } = {}) {
     }
 
     const lastName = appliedNames[appliedNames.length - 1];
-    const lastFile = resolveFile(lastName);
+    const lastFile = resolveFile(lastName, dir);
     if (!lastFile) {
       throw new Error(`Cannot roll back "${lastName}": no matching migration file found on disk.`);
     }
-    const migration = await loadMigration(lastFile);
+    const migration = getMigrationModule(lastFile, dir);
     if (!quiet) console.log(`[Migrations] Rolling back: ${lastName}`);
 
     db.transaction(() => {
@@ -109,11 +143,21 @@ export async function migrate(db, { direction = 'up', quiet = false } = {}) {
   throw new Error(`Unknown migration direction: ${direction}`);
 }
 
-export function migrationStatus(db) {
+export function migrationStatus(db, dir = __dirname) {
   ensureMetaTable(db);
   const applied = new Set(getAppliedMigrations(db).map(normalizeName));
-  return getMigrationFiles().map((f) => ({
+  return getMigrationFiles(dir).map((f) => ({
     name: f,
     applied: applied.has(normalizeName(f)),
   }));
+}
+
+// --- Platform (`platform.db`) migrations ---
+
+export function migratePlatform(db, opts = {}) {
+  return migrate(db, { ...opts, dir: PLATFORM_MIGRATIONS_DIR });
+}
+
+export function platformMigrationStatus(db) {
+  return migrationStatus(db, PLATFORM_MIGRATIONS_DIR);
 }

@@ -5,7 +5,15 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 // Session-establishing endpoints: no csrf_token cookie exists yet at the
 // point these run, so there's nothing to double-submit against.
-const EXEMPT_PATHS = new Set(['/api/auth/login', '/api/auth/microsoft', '/api/auth/accept-invite']);
+const EXEMPT_PATHS = new Set([
+  '/api/auth/login',
+  '/api/auth/microsoft',
+  '/api/auth/accept-invite',
+  // Session-establishing endpoint for self-serve signup (Phase 3): no CSRF
+  // cookie exists yet at the point this runs, so there's nothing to
+  // double-submit against.
+  '/api/tenants/signup',
+]);
 
 /**
  * Double-submit CSRF check for cookie-authenticated requests. The frontend

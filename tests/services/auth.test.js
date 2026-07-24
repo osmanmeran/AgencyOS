@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import bcrypt from 'bcryptjs';
-import { getDb } from '../../server/db.js';
+import { getDb, runWithTenant } from '../../server/db.js';
+import { createTenant } from '../../server/services/tenants.js';
 import {
   authenticateLocal,
   safeUser,
@@ -72,6 +73,29 @@ describe('Auth Service', () => {
       expect(() => authenticateLocal('nopw-test@test.com', '')).toThrow('Invalid email or password');
       db.prepare('DELETE FROM users WHERE id = ?').run('nopw-user-1');
     });
+
+    it('disambiguates the same email across workspaces by which password verifies', () => {
+      const email = 'shared-email@test.com';
+      const tenant = createTenant({ slug: 'dup-email-ws', name: 'Dup Email WS' });
+
+      createUser({ email, password: 'DefaultTenantPw1', name: 'Tenant Zero' });
+      runWithTenant(tenant.id, () => {
+        createUser({ email, password: 'OtherTenantPw1', name: 'Other Tenant' });
+      });
+
+      // With no workspace context, the password decides which workspace the
+      // session lands in — the first-registered match must not always win.
+      const zero = authenticateLocal(email, 'DefaultTenantPw1');
+      expect(zero.tenantId).toBe('0');
+      const other = authenticateLocal(email, 'OtherTenantPw1');
+      expect(other.tenantId).toBe(tenant.id);
+      expect(() => authenticateLocal(email, 'NeitherPw1')).toThrow('Invalid email or password');
+
+      getDb().prepare('DELETE FROM users WHERE email = ?').run(email);
+      runWithTenant(tenant.id, () => {
+        getDb().prepare('DELETE FROM users WHERE email = ?').run(email);
+      });
+    });
   });
 
   describe('createUser', () => {
@@ -107,7 +131,7 @@ describe('Auth Service', () => {
     it('should authenticate regardless of email casing', () => {
       const base = `Login-${Date.now()}@Test.com`;
       createUser({ email: base, password: 'TestPass1', name: 'Login Test' });
-      expect(authenticateLocal(base.toUpperCase(), 'TestPass1').email).toBe(base.toLowerCase());
+      expect(authenticateLocal(base.toUpperCase(), 'TestPass1').user.email).toBe(base.toLowerCase());
     });
   });
 

@@ -90,28 +90,163 @@ client_id, linked_supplier_id}` (`server/middleware/auth.js:20-34`) — no
   WebSocket real-time sync layer is tenant-scoped. A naive broadcast today
   would leak live updates across agencies once there's more than one.
 
-### Phase 3 — Self-serve signup
+### Phase 3 — Self-serve signup ✅ implemented (2026-07-20)
 
-- Public unauthenticated route: agency name + slug + admin email/password
-  (or Microsoft SSO). Slug uniqueness check against `platform.db`, reserved-
-  word list (`www`, `api`, `app`, `admin`, etc).
-- Signup → create tenant row (`status: trial`) → provision DB → create
-  first user as `admin` tier → issue JWT → redirect to
-  `<slug>.marvelops.app`.
+- Public unauthenticated route `POST /api/tenants/signup`: agency name + slug +
+  admin email/password. Slug uniqueness checked against `platform.db`; reserved
+  words (`www`, `api`, `app`, `admin`, …) rejected. `GET /api/tenants/check-slug`
+  gives the signup form live availability feedback.
+- Signup → create tenant row (`status: trial`) → open + migrate the tenant's
+  isolated DB → create first user as `admin` tier → issue JWT + auth cookies →
+  return `workspaceUrl` (`https://<slug>.<APP_ROOT_DOMAIN>` when configured).
+- Gated by `ALLOW_PUBLIC_SIGNUP=true` so an existing single-tenant deployment
+  isn't silently turned into an open registration system.
+- Cookie `domain` is set to the root (`.<APP_ROOT_DOMAIN>`) when configured, so
+  the post-signup redirect to the new subdomain carries the session. Tenant
+  scoping (authMiddleware's `TENANT_MISMATCH` check) still blocks cross-workspace
+  token reuse, so sharing the cookie domain does not weaken isolation.
+- Microsoft-SSO-based signup is implemented: `POST /api/tenants/signup` also
+  accepts an `idToken` (obtained via the `common` Microsoft authority). The new
+  workspace's Azure tenant is derived from the token (`azure_tenant_id`) and the
+  admin is created as an SSO-linked account (no local password). The signup page
+  offers a "Sign up with Microsoft" button; the callback exchanges the id token
+  for a new workspace. `server/services/microsoft.js` holds the shared
+  `verifyMicrosoftIdToken` used by both login and SSO signup.
+- Cross-tenant platform-admin dashboard remains deferred (below).
+
+### Phase 4 — Workspace control plane ✅ implemented (2026-07-20)
+
+- `GET /api/tenants/me` returns the current workspace (resolved from the Host
+  header / request scope): `id, slug, name, status, azureTenantId, createdDate`.
+  Any authenticated member may read.
+- `PATCH /api/tenants/me` (admin only) updates `name` and `azureTenantId`.
+  `slug` and `status` are intentionally immutable (`slug` is the workspace
+  address). `azureTenantId` is validated as a UUID and, when set, scopes
+  Microsoft SSO login to that Azure tenant (see Phase 2 `authenticateMicrosoft`).
+  Empty/`null` clears it (falls back to the server `MICROSOFT_TENANT_ID`).
+- `server/services/tenants.js` `updateTenant` performs the mutation; changes are
+  audited (`TENANT_UPDATE`). `shared/schemas.js` `updateTenant` validates input.
+- Frontend `src/pages/WorkspaceSettings.jsx` (registered in `pages.config.js`):
+  workspace name + Azure tenant id editor, admin-gated, read-only for members.
+- Closes the loop so a workspace admin can configure their own SSO without
+  touching server env vars. Billing/plan gating (trial → active) remains
+  deferred — `status` is currently display-only.
 
 ### Explicitly deferred (out of scope for now)
 
-- Stripe billing, plan/usage gating.
-- Cross-tenant platform-admin dashboard — revisit the isolation tradeoff
-  specifically for this; likely needs the denormalized metrics table
-  mentioned above.
+- Stripe billing, plan/usage gating — **owner is researching payment
+  providers; not started.**
 - Multi-tenant membership / org switcher (a user belonging to more than one
   agency) — uncommon for this vertical, skip unless requested.
+
+## Phase 5 — Platform admin dashboard ✅ implemented (2026-07-20)
+
+Cross-tenant visibility for the SaaS operator (deferred in earlier drafts).
+Per-tenant DB isolation means there is no single SQL view, so stats are
+aggregated app-side by opening each tenant DB (acceptable; see the isolation
+tradeoff in the decision above). If cross-tenant reporting gets heavy, revisit
+the denormalized metrics table.
+
+- `server/services/platform.js`:
+  - `isPlatformAdmin(email)` — email allow-list from `PLATFORM_ADMIN_EMAILS`
+    (comma-separated env var). No new DB table / tier needed.
+  - `listWorkspaces()` — every tenant with `userCount` + `entityCount`
+    aggregated from its own DB.
+  - `platformStats()` — totals (workspace count, users, entities) + `byStatus`.
+- `server/routes/platform.js`: `authMiddleware` + `requirePlatformAdmin`
+  gate `GET /api/platform/workspaces` and `GET /api/platform/stats`.
+- `src/pages/PlatformAdmin.jsx` (registered in `pages.config.js`): workspace
+  table + summary cards; shows a not-authorized message for non-admins.
+- Set `PLATFORM_ADMIN_EMAILS` in production to grant access.
+
+## Phase 6 — Ops enablement & launch checklist
+
+### Adopt the existing production DB as tenant zero
+
+`scripts/adopt-tenant-zero.mjs` is the one-off, idempotent step. **Take an
+off-box backup of `data/` first** (the move is permanent, though non-destructive
+— the file is renamed, never deleted).
+
+```
+# 1. Dry run — prints exactly what it would do, changes nothing
+node scripts/adopt-tenant-zero.mjs --slug marveltour --name "Marvel Tour"
+
+# 2. Apply — moves data/marvelops.db -> data/tenants/0/marvelops.db
+#    and inserts the tenant-zero registry row (id '0', status active)
+node scripts/adopt-tenant-zero.mjs --slug marveltour --name "Marvel Tour" --apply
+```
+
+Verified end-to-end (2026-07-20) in a throwaway DATA_DIR: the source file is
+moved to `data/tenants/0/marvelops.db` and the `tenants` row is created. The
+app then serves it via `getDb('0')` with no further code changes.
+
+### DNS + TLS (prerequisite for subdomain routing)
+
+The app is **already production-ready** for subdomains (verified: known
+subdomain resolves to its tenant, unknown subdomain → 404, `Host` is
+authoritative, cookies carry across apex↔subdomain). The only missing piece is
+infrastructure: a wildcard DNS record + a wildcard TLS cert. Until both exist,
+signup _succeeds_ (tenant row + DB created, `201`) but the post-signup redirect
+to `https://<slug>.marvelops.app` can't resolve — which looks like a failure but
+isn't.
+
+#### Recommended: Cloudflare (free wildcard DNS + auto TLS)
+
+1. Add `marvelops.app` to Cloudflare; point the registrar NS records at it.
+2. **DNS:** add an `A` (or `CNAME`) record `*.marvelops.app` → your host IP /
+   app URL, and `marvelops.app` (apex) → the same. Set proxy status **Proxied**
+   (orange cloud) so Cloudflare terminates TLS and issues a free wildcard cert
+   for `*.marvelops.app` automatically — no cert management needed.
+3. **Origin:** ensure your host forwards the original `Host` header to Node
+   (Railway/Heroku/Fly do this by default; behind nginx/CF Tunnel confirm
+   `proxy_set_header Host $host;`). The app already runs `app.set('trust proxy', 1)`.
+4. Set `APP_ROOT_DOMAIN=marvelops.app` in the server env.
+
+#### Alternatives
+
+- **Let's Encrypt wildcard via DNS-01**: `certbot certonly --dns <provider>
+-d marvelops.app -d '*.marvelops.app'`, then terminate TLS at your proxy/edge
+  with the issued cert + private key.
+- **Platform-native**: some hosts (e.g. Fly, Render) can attach a wildcard cert
+  if you own the domain there; otherwise bring your own cert at the edge.
+
+#### Verify before flipping traffic
+
+```
+# From a machine with DNS propagated:
+curl -sI https://<slug>.marvelops.app/api/health      # expect 200, valid cert
+curl -s  https://<slug>.marvelops.app/api/tenants/check-slug?slug=test
+# Unknown subdomain must 404:
+curl -s  https://does-not-exist.marvelops.app/api/tenants/check-slug?slug=test
+#   -> {"error":{"code":"TENANT_NOT_FOUND",...}}
+```
+
+Set `APP_ROOT_DOMAIN=marvelops.app` in the server env. This is what activates
+subdomain→tenant resolution (`server/middleware/tenant.js`); leave it unset in
+dev so localhost keeps working unchanged.
+
+### Runtime env (production)
+
+- `ALLOW_PUBLIC_SIGNUP=true` to open self-serve signup (default `false` —
+  existing single-tenant deployments stay closed by default).
+- `PLATFORM_ADMIN_EMAILS=ops@marvelops.app` — who can see the platform dashboard.
+- `MICROSOFT_CLIENT_ID` — still required for Microsoft SSO (per-workspace
+  `azure_tenant_id` is now configured in-app via the Workspace settings page,
+  and falls back to `MICROSOFT_TENANT_ID` when empty).
+- `CORS_ORIGIN` — set to your production origin in prod (dev defaults to `*`).
+- `JWT_SECRET` — stable secret across restarts (tokens survive reloads).
+- **Off-box backups**: `createBackupSync` snapshots are on the same disk as the
+  DB; add S3/R2 (or similar) copies of `data/` (platform.db + every
+  `tenants/*/marvelops.db`).
 
 ## Open questions before implementation starts
 
 1. WebSocket broadcast scoping (Phase 2 blocker — needs its own investigation).
+   _Resolved in Phase 2: `server/ws.js` scopes broadcasts to the request's
+   tenant via AsyncLocalStorage._
 2. Exact migration path for adopting the current production DB as tenant
    zero — should be scripted and dry-run before touching real data.
+   _Resolved: `scripts/adopt-tenant-zero.mjs`, verified above._
 3. Domain/DNS ownership for `*.marvelops.app` (or whatever the SaaS domain
-   ends up being) — ops prerequisite for Phase 2.
+   ends up being) — ops prerequisite for Phase 2. _Covered by the Phase 6
+   checklist above._

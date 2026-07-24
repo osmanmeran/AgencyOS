@@ -3,8 +3,9 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import crypto from 'crypto';
+import { AsyncLocalStorage } from 'async_hooks';
 import { fileURLToPath } from 'url';
-import { migrate, migrationStatus } from './migrations/runner.js';
+import { migrate, migrationStatus, migratePlatform } from './migrations/runner.js';
 import { createBackupSync } from './services/backup.js';
 import logger from './lib/logger.js';
 
@@ -22,6 +23,20 @@ const DATA_DIR =
     ? fs.mkdtempSync(path.join(os.tmpdir(), 'marvelops-test-'))
     : process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const DB_PATH = path.join(DATA_DIR, 'marvelops.db');
+const PLATFORM_DB_PATH = path.join(DATA_DIR, 'platform.db');
+const TENANTS_DIR = path.join(DATA_DIR, 'tenants');
+
+// Tenant "zero" is the legacy single-tenant database that existed before
+// multi-tenancy. It keeps its original on-disk path so the existing production
+// data is adopted in place (see SAAS_PROJECT.md, Phase 1 — the critical
+// one-off tenant-zero adoption) rather than copied. Every other tenant lives
+// under data/tenants/<tenantId>/.
+export const DEFAULT_TENANT_ID = '0';
+
+// Cap on simultaneously-open tenant DB file descriptors. Each tenant is a live
+// SQLite file handle, so we LRU-evict the least-recently-used one (never the
+// default/legacy tenant).
+const MAX_OPEN_DBS = 50;
 
 const ENTITIES = [
   'AppSettings',
@@ -62,59 +77,229 @@ const ENTITIES = [
 // generic /api/entities routes would let any staff user read other users'
 // tokens.
 
-let db;
+// tenantId -> open Database, in LRU order (most-recently-used at the end).
+const dbCache = new Map();
 
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+// Request-scoped tenant context. An incoming request resolves its tenant (from
+// the Host subdomain / JWT claim) and runs the rest of the request inside
+// runWithTenant(), so the ~100 existing call sites that call getDb() with no
+// argument transparently hit the correct tenant's isolated database — no
+// per-call threading of tenantId required. Code that runs outside a request
+// (tests, schedulers, scripts) gets the default/legacy tenant.
+const tenantContext = new AsyncLocalStorage();
 
-db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
+/** The tenant id for the current request, or null if none is set. */
+export function getTenantId() {
+  return tenantContext.getStore() ?? null;
+}
 
-// Snapshot the DB before applying any pending migration, so a bad migration
-// (or a bad deploy in general) can be undone by restoring this file instead
-// of just reverting the code — see scripts/backup-cli.mjs.
-// Skipped in test env: every test run starts from a fresh, empty temp DB,
-// so there's nothing worth snapshotting and it would just add file I/O.
-if (process.env.NODE_ENV !== 'test' && migrationStatus(db).some((m) => !m.applied)) {
-  try {
-    const dest = createBackupSync(db, DATA_DIR, 'pre-migration');
-    logger.info({ dest }, 'Pre-migration backup created');
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Pre-migration backup failed');
+/** Run `fn` (optionally with `args`) with `tenantId` as the active tenant context. */
+export function runWithTenant(tenantId, fn, ...args) {
+  return tenantContext.run(String(tenantId), fn, ...args);
+}
+
+function tenantDbPath(tenantId) {
+  if (!tenantId || tenantId === DEFAULT_TENANT_ID) {
+    // Tenant zero's DB is adopted in place. Once the adoption script has run,
+    // it lives at data/tenants/0/marvelops.db; until then (and in every existing
+    // deployment that hasn't adopted yet) it stays at the legacy
+    // data/marvelops.db. Preferring the adopted path keeps the app working in
+    // both states without wiping or duplicating production data.
+    const adopted = path.join(TENANTS_DIR, String(DEFAULT_TENANT_ID), 'marvelops.db');
+    if (fs.existsSync(adopted)) return adopted;
+    return DB_PATH;
+  }
+  return path.join(TENANTS_DIR, String(tenantId), 'marvelops.db');
+}
+
+function openTenantDb(tenantId) {
+  const dbPath = tenantDbPath(tenantId);
+  const dir = path.dirname(dbPath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const database = new Database(dbPath);
+  database.pragma('journal_mode = WAL');
+  return database;
+}
+
+// Boot the legacy/default tenant exactly as the pre-multi-tenant code did:
+// snapshot before applying pending migrations, then run the migration chain.
+function bootstrapDefaultTenant() {
+  const database = openTenantDb(DEFAULT_TENANT_ID);
+  if (process.env.NODE_ENV !== 'test') {
+    // One-time safety snapshot the very first time this deployment boots with
+    // the multi-tenant code: no platform.db yet means the legacy database has
+    // never run under multi-tenancy. Taken before the server can accept a
+    // single request, it is the restore point if the SaaS rollout ever needs
+    // to be undone. Never auto-pruned (backup rotation is label-scoped).
+    if (!fs.existsSync(PLATFORM_DB_PATH)) {
+      try {
+        const dest = createBackupSync(database, DATA_DIR, 'pre-saas');
+        logger.info({ dest }, 'Pre-SaaS adoption snapshot of the legacy database created');
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Pre-SaaS adoption snapshot failed');
+      }
+    }
+    if (migrationStatus(database).some((m) => !m.applied)) {
+      try {
+        const dest = createBackupSync(database, DATA_DIR, 'pre-migration');
+        logger.info({ dest }, 'Pre-migration backup created');
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Pre-migration backup failed');
+      }
+    }
+  }
+  return database;
+}
+
+function evictLruTenant() {
+  while (dbCache.size > MAX_OPEN_DBS) {
+    // Never evict the default/legacy tenant — keep it pinned open.
+    let victim = null;
+    for (const key of dbCache.keys()) {
+      if (key !== DEFAULT_TENANT_ID) {
+        victim = key;
+        break;
+      }
+    }
+    if (victim === null) break; // only the default tenant remains open
+    const database = dbCache.get(victim);
+    dbCache.delete(victim);
+    try {
+      database.pragma('wal_checkpoint(TRUNCATE)');
+      database.close();
+    } catch {
+      // ignore close errors on eviction
+    }
   }
 }
 
-await migrate(db, { quiet: false });
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+const defaultDb = bootstrapDefaultTenant();
+dbCache.set(DEFAULT_TENANT_ID, defaultDb);
+await migrate(defaultDb, { quiet: false });
 
 logger.info({ path: DB_PATH }, 'Database initialized');
 
 // --- Exports ---
 
-export function getDb() {
-  return db;
+/**
+ * Get (or open + migrate) the SQLite connection for a tenant.
+ *
+ * In Phase 1 the tenant id defaults to the legacy single-tenant database so the
+ * app keeps working unchanged; Phase 2 will thread `req.tenant_id` through every
+ * call. Each tenant DB is an isolated file descriptor, cached and LRU-bounded.
+ * @param {string|number} [tenantId] Tenant id; omit for the default/legacy tenant.
+ * @returns {import('better-sqlite3').Database}
+ */
+export function getDb(tenantId) {
+  // Explicit argument wins; otherwise use the request's tenant context, falling
+  // back to the default/legacy tenant when called outside a request.
+  const key = tenantId !== undefined ? String(tenantId) : (getTenantId() ?? DEFAULT_TENANT_ID);
+  const cached = dbCache.get(key);
+  if (cached) {
+    // Refresh recency so the most-used tenants stay open.
+    dbCache.delete(key);
+    dbCache.set(key, cached);
+    return cached;
+  }
+
+  const database = openTenantDb(key);
+  // Migrations are idempotent (tracked in each DB's `_migrations` table), so
+  // re-running on an already-migrated tenant is a cheap no-op.
+  migrate(database, { quiet: true });
+
+  dbCache.set(key, database);
+  evictLruTenant();
+  return database;
+}
+
+// Lazily-opened platform DB singleton (central `platform.db`).
+let platformDb;
+
+/**
+ * Get the central platform database (the tenant registry). Created and migrated
+ * on first use. Returns `null` only if the environment can't provision it.
+ * @returns {import('better-sqlite3').Database}
+ */
+export function getPlatformDb() {
+  if (platformDb) return platformDb;
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  platformDb = new Database(PLATFORM_DB_PATH);
+  platformDb.pragma('journal_mode = WAL');
+  // Run platform migrations (tenants table, etc.) on first open.
+  migratePlatform(platformDb, { quiet: false });
+  return platformDb;
+}
+
+/**
+ * Re-run the full business migration chain against every tenant database found
+ * under data/tenants/. Used by the `db:migrate bootstrap` command. The default
+ * (legacy) tenant is already migrated at startup and is not part of this loop.
+ * @returns {Array<{tenantId: string, applied: number}>}
+ */
+export function migrateAllTenants({ quiet = false } = {}) {
+  if (!fs.existsSync(TENANTS_DIR)) return [];
+  const results = [];
+  for (const entry of fs.readdirSync(TENANTS_DIR)) {
+    const dir = path.join(TENANTS_DIR, entry);
+    if (!fs.statSync(dir).isDirectory()) continue;
+    const dbPath = path.join(dir, 'marvelops.db');
+    if (!fs.existsSync(dbPath)) continue;
+    const database = new Database(dbPath);
+    database.pragma('journal_mode = WAL');
+    const applied = migrate(database, { quiet });
+    database.pragma('wal_checkpoint(TRUNCATE)');
+    database.close();
+    results.push({ tenantId: entry, applied: applied.length });
+  }
+  return results;
 }
 
 export function closeDb() {
-  if (db) {
+  for (const [key, database] of dbCache) {
     try {
-      db.pragma('wal_checkpoint(TRUNCATE)');
-    } catch (e) {}
-    db.close();
-    db = null;
+      database.pragma('wal_checkpoint(TRUNCATE)');
+    } catch {
+      // ignore
+    }
+    database.close();
+  }
+  dbCache.clear();
+  if (platformDb) {
+    try {
+      platformDb.pragma('wal_checkpoint(TRUNCATE)');
+    } catch {
+      // ignore
+    }
+    platformDb.close();
+    platformDb = null;
   }
 }
 
 export async function reopenDb() {
-  db = new Database(DB_PATH);
-  db.pragma('journal_mode = WAL');
-  await migrate(db, { quiet: false });
+  closeDb();
+  const database = openTenantDb(DEFAULT_TENANT_ID);
+  database.pragma('journal_mode = WAL');
+  await migrate(database, { quiet: false });
+  dbCache.set(DEFAULT_TENANT_ID, database);
+  return database;
 }
 
-export function getDbPath() {
-  return DB_PATH;
+export function getDbPath(tenantId = DEFAULT_TENANT_ID) {
+  return tenantDbPath(tenantId);
+}
+
+export function getPlatformDbPath() {
+  return PLATFORM_DB_PATH;
 }
 
 export function getDataDir() {
   return DATA_DIR;
+}
+
+export function getTenantsDir() {
+  return TENANTS_DIR;
 }
 
 export function getEntities() {
@@ -134,3 +319,11 @@ export function hasFts(dbConn) {
     return false;
   }
 }
+
+// Eagerly provision the platform registry so the pre-SaaS snapshot taken in
+// bootstrapDefaultTenant() stays strictly one-time: its trigger is
+// "platform.db absent at boot", so creating the registry in the same boot
+// guarantees later boots never re-snapshot. Down here (after all declarations)
+// because getPlatformDb() touches the module-level `platformDb` binding.
+// Tests keep the lazy path (each test file gets its own temp data dir).
+if (process.env.NODE_ENV !== 'test') getPlatformDb();

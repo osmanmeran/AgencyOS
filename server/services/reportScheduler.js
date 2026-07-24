@@ -2,11 +2,12 @@ import { getDb } from '../db.js';
 import logger from '../lib/logger.js';
 import { getRevenueOverview, getCommissionReport } from './reports.js';
 import { sendEmail } from './email.js';
+import { forEachTenant } from './tenants.js';
 
 let intervalHandle = null;
 let isRunning = false;
 
-/** Run an immediate pass over due report schedules, then repeat it every 60 minutes. */
+/** Run an immediate pass over due report schedules in every workspace, then repeat it every 60 minutes. */
 export function startReportScheduler() {
   logger.info('Report scheduler started');
 
@@ -18,7 +19,7 @@ export function startReportScheduler() {
       return;
     }
     isRunning = true;
-    runDueSchedules()
+    forEachTenant(() => runDueSchedules(), { label: 'report schedules' })
       .catch((err) => logger.error({ err }, 'Report scheduler check error'))
       .finally(() => {
         isRunning = false;

@@ -14,6 +14,7 @@ import {
   Calendar,
   SendHorizontal,
   DollarSign,
+  Building2,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 
@@ -27,6 +28,7 @@ const CATEGORIES = [
   { key: 'permissions', label: 'Roles & Permissions', icon: Shield },
   { key: 'documents', label: 'Documents & PDFs', icon: FileDown },
   { key: 'finance', label: 'Finance & Reports', icon: DollarSign },
+  { key: 'saas', label: 'Workspaces & Tenants', icon: Building2 },
 ];
 
 const FAQS = [
@@ -184,6 +186,46 @@ const FAQS = [
     q: 'How does the supplier "Search Web" feature work?',
     a: 'Open a supplier and click "Search Web". The app queries several sources to find matching businesses and returns a list of candidates you can pick from: OpenStreetMap via Nominatim and Photon (both enriched through Overpass for phone, website, email, brand, and opening hours — Photon adds better fuzzy matching), Wikipedia, Wikidata (official site / phone / email), and optionally Yelp Fusion (phone, rating, reviews, categories) when a YELP_API_KEY is configured. Pick one and click "Apply Data" to autofill the supplier\'s name, address, phone, website, email, rating, and notes (including brand and opening hours) into the edit form. Queries broaden automatically (name + city → bare name → stripped of generic words) so it still finds suppliers whose listed name differs from the official one.',
     category: 'suppliers',
+  },
+  {
+    q: 'What is a workspace?',
+    a: "Marvelops is multi-tenant: every travel agency runs inside its own isolated workspace (tenant). Each workspace has its own database, users, clients, suppliers, and bookings — your agency's data is completely separate from every other agency on the platform, with no shared records across workspaces.",
+    category: 'saas',
+  },
+  {
+    q: "How do I open my agency's workspace?",
+    a: "Each workspace has its own subdomain. Visit <your-agency>.marvelops.app (for example acme.marvelops.app) to land directly in your agency's workspace. Bookmarks and shared links should use your subdomain so you always return to the right workspace.",
+    category: 'saas',
+  },
+  {
+    q: "Is my agency's data kept separate from other agencies?",
+    a: "Yes. Workspaces are isolated at the database level — each agency's data lives in its own dedicated database file. There is no shared table across agencies, so a user in one workspace can never see or modify another agency's records, even through real-time notifications or live updates.",
+    category: 'saas',
+  },
+  {
+    q: 'Can our agency sign in with our own Microsoft / Office 365 accounts?',
+    a: "Yes. Each workspace can connect its own Azure AD tenant for Microsoft single sign-on, so your team logs in with your organization's Microsoft accounts rather than a shared one. Your administrator sets the workspace's Microsoft tenant; if none is configured, the platform falls back to the default Microsoft app.",
+    category: 'saas',
+  },
+  {
+    q: 'How is a new workspace created?',
+    a: 'New workspaces are created in two ways. (1) Self-serve: if your instance has open sign-up enabled, go to the sign-up page, choose a unique workspace address (e.g. "acme"), enter your agency name and an admin email/password, and your isolated workspace is provisioned instantly with its own subdomain. (2) Admin-provisioned: otherwise, reach out to your account manager or support and they will set up an additional agency workspace for you.',
+    category: 'saas',
+  },
+  {
+    q: 'Can one login belong to more than one workspace?',
+    a: "Each login is scoped to a single workspace via its subdomain. To work in a different agency, sign in through that agency's subdomain. A single account spanning multiple workspaces is not enabled in this release.",
+    category: 'saas',
+  },
+  {
+    q: 'Can I create my own workspace?',
+    a: 'Yes — if self-serve sign-up is turned on for your instance. You pick a workspace address, enter your agency name and an admin email/password, and the platform creates your workspace with its own isolated database and subdomain right away. On instances where self-serve is disabled (controlled by the ALLOW_PUBLIC_SIGNUP setting), new workspaces are created by an administrator instead.',
+    category: 'saas',
+  },
+  {
+    q: 'What makes a valid workspace address?',
+    a: 'Your workspace address becomes the subdomain you sign in at (e.g. acme.marvelops.app). It may contain only lowercase letters, numbers, and hyphens, must be 1–63 characters, and cannot be a reserved word like "www", "api", "app", "admin", or "mail". The sign-up form checks availability as you type.',
+    category: 'saas',
   },
 ];
 

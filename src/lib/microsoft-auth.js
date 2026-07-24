@@ -68,6 +68,58 @@ export async function loginWithMicrosoft(returnUrl) {
 }
 
 /**
+ * Starts the Microsoft OAuth2 PKCE flow for self-serve workspace **signup**
+ * (not an immediate login). The resulting id token is exchanged server-side for
+ * a brand-new workspace whose Azure tenant is derived from the token. Uses the
+ * `common` authority so any Microsoft org can create a workspace.
+ * @param {string} returnUrl - Where to send the user after the workspace is created.
+ * @param {{agencyName: string, slug: string, adminName?: string}} signupData
+ */
+export async function signupWithMicrosoft(returnUrl, signupData) {
+  const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+  if (!clientId) {
+    throw new Error('Microsoft SSO is not configured.');
+  }
+
+  const state = generateRandomString(32);
+  const codeVerifier = generateRandomString(64);
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+  const msStore = {
+    ms_state: state,
+    ms_code_verifier: codeVerifier,
+    ms_return_url: returnUrl || '/',
+    ms_mode: 'signup',
+    ms_signup: JSON.stringify({
+      agencyName: signupData.agencyName || '',
+      slug: signupData.slug || '',
+      adminName: signupData.adminName || '',
+    }),
+  };
+  for (const [k, v] of Object.entries(msStore)) {
+    try {
+      sessionStorage.setItem(k, v);
+    } catch (e) {}
+    try {
+      localStorage.setItem(k, v);
+    } catch (e) {}
+  }
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: 'code',
+    redirect_uri: getRedirectUri(),
+    scope: 'openid profile email',
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
+    response_mode: 'query',
+  });
+
+  window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}`;
+}
+
+/**
  * Handles the redirect back from Microsoft: validates the `state` param
  * against what was stored before redirecting, then exchanges the
  * authorization code for an id token.

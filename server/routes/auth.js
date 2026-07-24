@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { getDb, uid, hasFts } from '../db.js';
+import { getDb, uid, hasFts, runWithTenant } from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { requireTier, requirePermission } from '../middleware/permissions.js';
 import {
@@ -21,6 +21,8 @@ import {
   rotateRefreshToken,
   revokeRefreshToken,
   setAuthCookies,
+  setActiveTenantCookie,
+  clearActiveTenantCookie,
   getUserById,
   getUserPassword,
   updateUser,
@@ -30,6 +32,7 @@ import {
   inviteUser,
   acceptInvite,
 } from '../services/auth.js';
+import { getTenantById } from '../services/tenants.js';
 import { sendEmail } from '../services/email.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
 import logger from '../lib/logger.js';
@@ -99,14 +102,19 @@ router.post(
   '/microsoft',
   validate(schemas.microsoftAuth),
   catchAsync(async (req, res) => {
-    let user;
+    let result;
     try {
-      user = await authenticateMicrosoft(req.body.idToken);
+      result = await authenticateMicrosoft(req.body.idToken);
     } catch (err) {
       logAudit({ action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
       throw err;
     }
-    const token = issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }).accessToken;
+    const { user, tenantId, slug } = result;
+    const token = runWithTenant(tenantId, () =>
+      issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }),
+    ).accessToken;
+    if (slug) setActiveTenantCookie(res, slug);
+    else clearActiveTenantCookie(res);
     logAudit({
       userId: user.id,
       userName: user.email,
@@ -123,14 +131,23 @@ router.post(
   '/login',
   validate(schemas.login),
   catchAsync(async (req, res) => {
-    let user;
+    let result;
     try {
-      user = authenticateLocal(req.body.email, req.body.password);
+      result = authenticateLocal(req.body.email, req.body.password);
     } catch (err) {
       logAudit({ userName: req.body.email, action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
       throw err;
     }
-    const token = issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }).accessToken;
+    const { user, tenantId } = result;
+    const token = runWithTenant(tenantId, () =>
+      issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }),
+    ).accessToken;
+    const tenant = getTenantById(tenantId);
+    // A workspace with a slug selects it; the legacy default tenant (no slug)
+    // must clear any stale selection so the user lands on tenant 0, not a
+    // previously-visited workspace.
+    if (tenant?.slug) setActiveTenantCookie(res, tenant.slug);
+    else clearActiveTenantCookie(res);
     logAudit({
       userId: user.id,
       userName: user.email,
@@ -264,8 +281,13 @@ router.post(
   '/accept-invite',
   validate(schemas.acceptInvite),
   catchAsync(async (req, res) => {
-    const user = acceptInvite(req.body);
-    const token = issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }).accessToken;
+    const { user, tenantId } = acceptInvite(req.body);
+    const token = runWithTenant(tenantId, () =>
+      issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }),
+    ).accessToken;
+    const tenant = getTenantById(tenantId);
+    if (tenant?.slug) setActiveTenantCookie(res, tenant.slug);
+    else clearActiveTenantCookie(res);
     res.json({ token, user });
   }),
 );
@@ -294,7 +316,7 @@ router.post(
   catchAsync(async (req, res) => {
     // No authMiddleware: logout must work even when the short-lived access token
     // has already expired. Revoke the refresh token (if any) so it can't be
-    // replayed, then clear all three auth cookies.
+    // replayed, then clear all three auth cookies plus the workspace selector.
     const raw = req.cookies && req.cookies.refresh_token;
     if (raw) {
       try {
@@ -306,6 +328,7 @@ router.post(
     res.clearCookie('token', { path: '/' });
     res.clearCookie('refresh_token', { path: '/' });
     res.clearCookie('csrf_token', { path: '/' });
+    clearActiveTenantCookie(res);
     res.json({ success: true, message: 'Logged out' });
   }),
 );
