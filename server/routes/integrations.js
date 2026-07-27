@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import { getUploadDir } from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { catchAsync, sendError } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
@@ -21,15 +20,10 @@ import { sendEmail, isSmtpConfigured, renderTemplate } from '../services/email.j
 import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 import { ALLOWED_MIME_TYPES } from '../lib/mimeTypes.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// On Railway, /app/data is the persistent volume (same as the DB).
-const uploadDir = process.env.DATA_DIR
-  ? path.join(process.env.DATA_DIR, 'uploads')
-  : path.join(__dirname, '..', '..', 'data', 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
+// On Railway, /app/data is the persistent volume (same as the DB). Resolved per
+// request so each tenant writes into its own uploads directory.
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
+  destination: (req, file, cb) => cb(null, getUploadDir()),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const safeName = sanitizeFilename(path.basename(file.originalname, ext));

@@ -28,6 +28,8 @@ export const AUDIT_ACTIONS = {
   TENANT_CREATE: 'tenant_create',
   TENANT_UPDATE: 'tenant_update',
   PLATFORM_LIST_WORKSPACES: 'platform_list_workspaces',
+  PLATFORM_SET_STATUS: 'platform_set_workspace_status',
+  PLATFORM_EXTEND_TRIAL: 'platform_extend_trial',
 };
 
 /**

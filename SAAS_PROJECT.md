@@ -159,6 +159,65 @@ the denormalized metrics table.
   table + summary cards; shows a not-authorized message for non-admins.
 - Set `PLATFORM_ADMIN_EMAILS` in production to grant access.
 
+## Phase 7 — File isolation & workspace lifecycle ✅ implemented (2026-07-27)
+
+Two gaps found by auditing the merged Phase 1–6 code against what a second
+paying agency actually requires.
+
+### File storage is now per-tenant and access-controlled
+
+Phase 1 isolated the _database_ per tenant but every workspace still shared one
+`data/uploads` directory, served by `app.use('/uploads', express.static(...))` —
+no session, no tenant check, no permission check. Stored names embed the
+original filename, so a URL was guessable as well as unauthenticated.
+
+- `server/db.js` gained `getTenantDataDir()` / `getUploadDir()` / `getPdfDir()`,
+  resolved from the request's tenant context. The legacy tenant keeps the
+  original top-level `data/uploads` + `data/pdfs` paths, so every pre-existing
+  file resolves unchanged (adopt-tenant-zero moves only the .db file); every
+  other workspace gets `data/tenants/<id>/{uploads,pdfs,ocr_uploads}/`.
+- `/uploads/:filename` is now `server/routes/uploads.js`: authenticated,
+  resolved inside the caller's own uploads dir, and permission-checked with
+  `userCanAccessDocument` when the file has a `documents` row. Files without one
+  (e.g. the workspace logo) stay readable by any member of that workspace.
+- The same per-tenant resolution was applied to the paths that bypassed the
+  static mount: `/api/documents/:id/download`, `/api/pdf/download/:filename`
+  (filenames there are `booking_<reference>_<ts>.pdf` — very guessable), and the
+  OCR scratch directory (`/ocr/extract` takes a caller-supplied path).
+- Frontend: `assetImgProps()` in `src/lib/assetUrl.js` adds
+  `crossorigin="use-credentials"` when a split-host deploy is configured, so
+  authenticated `<img>` loads still carry the session cookie. No-op same-origin.
+
+### Workspace status is now enforced
+
+`TENANT_STATUS.SUSPENDED` existed in the registry but nothing read it, and
+`trial` had no deadline — a suspended workspace kept working and a trial never
+ended.
+
+- Platform migration `002_tenant_trial.js` adds `trial_ends_at` (nullable).
+  NULL means "no deadline", so every workspace created before this migration
+  keeps working until an operator sets one — the deploy locks nobody out.
+- `tenantAccessState()` (`server/services/tenants.js`) is the single rule:
+  suspended → blocked; `trial` past `trial_ends_at` → blocked; unparseable
+  deadline → allowed (never lock out on bad data); no registry row (the legacy
+  tenant) → always allowed.
+- `server/middleware/tenantStatus.js` applies it to `/api`, allowlisting
+  `/health`, `/auth/*`, `/tenants/*` and `/platform/*` so a blocked workspace
+  can still sign in, read its own status, and be reinstated. Error codes:
+  `WORKSPACE_SUSPENDED`, `TRIAL_EXPIRED`.
+- Self-serve signup sets a deadline of `TRIAL_DAYS` (default 14).
+- Operator controls: `PATCH /api/platform/workspaces/:id/status` and
+  `POST /api/platform/workspaces/:id/extend-trial`, both audited, wired into
+  `PlatformAdmin.jsx` (Suspend / Reactivate / Mark paid / Extend trial, plus a
+  trial-countdown column). Activating a workspace clears its deadline.
+- Users see `WorkspaceStatusBanner` (suspended, trial expired, or ≤7 days left)
+  instead of unexplained failures; `WorkspaceSettings` shows the trial end date.
+
+Covered by `tests/routes/uploads.test.js` and `tests/routes/tenantStatus.test.js`.
+Upgrade path verified against a seeded pre-upgrade `platform.db`: the migration
+adds the column without touching existing rows, legacy tenant-zero uploads still
+resolve, and new tenants get isolated directories.
+
 ## Phase 6 — Ops enablement & launch checklist
 
 ### Adopt the existing production DB as tenant zero
@@ -229,7 +288,9 @@ dev so localhost keeps working unchanged.
 
 - `ALLOW_PUBLIC_SIGNUP=true` to open self-serve signup (default `false` —
   existing single-tenant deployments stay closed by default).
-- `PLATFORM_ADMIN_EMAILS=ops@marvelops.app` — who can see the platform dashboard.
+- `PLATFORM_ADMIN_EMAILS=ops@marvelops.app` — who can see the platform dashboard
+  and suspend/reactivate workspaces.
+- `TRIAL_DAYS` — trial length for new self-serve workspaces (default 14).
 - `MICROSOFT_CLIENT_ID` — still required for Microsoft SSO (per-workspace
   `azure_tenant_id` is now configured in-app via the Workspace settings page,
   and falls back to `MICROSOFT_TENANT_ID` when empty).
@@ -237,7 +298,21 @@ dev so localhost keeps working unchanged.
 - `JWT_SECRET` — stable secret across restarts (tokens survive reloads).
 - **Off-box backups**: `createBackupSync` snapshots are on the same disk as the
   DB; add S3/R2 (or similar) copies of `data/` (platform.db + every
-  `tenants/*/marvelops.db`).
+  `tenants/*/marvelops.db`, plus the per-tenant `uploads/` and `pdfs/` dirs).
+  Still unstarted — the largest remaining ops risk.
+
+## Still missing (audited 2026-07-27)
+
+- **Off-box backups** (above) — N tenant DBs on one disk.
+- **Billing** — no Stripe/plan scaffolding; `status` is set by an operator by
+  hand. `trial`/`active`/`suspended` is the hook a billing webhook would drive.
+- **Email verification on signup** — anyone can claim a workspace with an
+  address they don't own.
+- **Workspace offboarding** — no self-serve deletion or data export.
+- **Invite links are tenant-fragile**: `server/routes/auth.js` prefers
+  `APP_URL` over the request `Host`, so with `APP_URL` set an invite from
+  workspace X points at the apex and the token won't resolve. Leave `APP_URL`
+  unset (the `Host` fallback is correct) until this is fixed properly.
 
 ## Open questions before implementation starts
 

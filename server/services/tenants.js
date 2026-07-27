@@ -22,6 +22,16 @@ export function isValidSlug(slug) {
   return SLUG_RE.test(String(slug).toLowerCase()) && !isReservedSlug(slug);
 }
 
+/** Trial length for a self-serve workspace, in days (`TRIAL_DAYS`, default 14). */
+export function trialDays() {
+  const parsed = parseInt(process.env.TRIAL_DAYS || '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 14;
+}
+
+function trialDeadline(days = trialDays()) {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export function createTenant({ slug, name, status = TENANT_STATUS.TRIAL, azureTenantId = null }) {
   const db = getPlatformDb();
   const normalized = String(slug).toLowerCase();
@@ -33,10 +43,13 @@ export function createTenant({ slug, name, status = TENANT_STATUS.TRIAL, azureTe
     throw new Error(`Tenant slug "${slug}" is already taken`);
   }
   const id = crypto.randomBytes(8).toString('hex');
+  // Only a trial workspace gets a deadline; an operator-created 'active' one
+  // has none (NULL = no expiry).
+  const trialEndsAt = status === TENANT_STATUS.TRIAL ? trialDeadline() : null;
   db.prepare(
-    `INSERT INTO tenants (id, slug, name, status, azure_tenant_id, created_date)
-     VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-  ).run(id, normalized, name, status, azureTenantId);
+    `INSERT INTO tenants (id, slug, name, status, azure_tenant_id, trial_ends_at, created_date)
+     VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).run(id, normalized, name, status, azureTenantId, trialEndsAt);
   return getTenantById(id);
 }
 
@@ -50,8 +63,83 @@ export function getTenantBySlug(slug) {
 
 export function listTenants() {
   return getPlatformDb()
-    .prepare('SELECT id, slug, name, status, azure_tenant_id, created_date FROM tenants ORDER BY created_date ASC')
+    .prepare(
+      'SELECT id, slug, name, status, azure_tenant_id, trial_ends_at, created_date FROM tenants ORDER BY created_date ASC',
+    )
     .all();
+}
+
+/**
+ * Whether a workspace may currently be used, and why not if it can't.
+ *
+ * The legacy/default tenant has no registry row and is always allowed — an
+ * existing single-tenant deployment must never be locked out by this check.
+ * @param {object|null} tenant Registry row, or null/undefined for the default tenant.
+ * @returns {{allowed: boolean, code?: string, message?: string}}
+ */
+export function tenantAccessState(tenant) {
+  if (!tenant) return { allowed: true };
+
+  if (tenant.status === TENANT_STATUS.SUSPENDED) {
+    return {
+      allowed: false,
+      code: 'WORKSPACE_SUSPENDED',
+      message: 'This workspace is suspended. Please contact support.',
+    };
+  }
+
+  if (tenant.status === TENANT_STATUS.TRIAL && tenant.trial_ends_at) {
+    const endsAt = Date.parse(tenant.trial_ends_at);
+    // An unparseable deadline must not lock a workspace out — treat it as unset.
+    if (Number.isFinite(endsAt) && endsAt <= Date.now()) {
+      return {
+        allowed: false,
+        code: 'TRIAL_EXPIRED',
+        message: 'This workspace’s trial has ended. Please upgrade to continue.',
+      };
+    }
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Set a workspace's lifecycle status (platform-operator action).
+ * @returns {object|null} The updated row, or null if the workspace doesn't exist.
+ */
+export function setTenantStatus(id, status) {
+  if (!Object.values(TENANT_STATUS).includes(status)) {
+    throw new BadRequestError(`Invalid workspace status: "${status}"`);
+  }
+  const db = getPlatformDb();
+  if (!getTenantById(id)) return null;
+  // Activating clears the trial deadline — a paying workspace has no expiry.
+  if (status === TENANT_STATUS.ACTIVE) {
+    db.prepare('UPDATE tenants SET status = ?, trial_ends_at = NULL WHERE id = ?').run(status, id);
+  } else {
+    db.prepare('UPDATE tenants SET status = ? WHERE id = ?').run(status, id);
+  }
+  return getTenantById(id);
+}
+
+/**
+ * Push a workspace's trial deadline out by `days` from now, returning it to
+ * `trial` status if it had already lapsed into suspension.
+ * @returns {object|null} The updated row, or null if the workspace doesn't exist.
+ */
+export function extendTrial(id, days = trialDays()) {
+  const parsed = Number(days);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new BadRequestError('days must be a positive number');
+  }
+  const db = getPlatformDb();
+  if (!getTenantById(id)) return null;
+  db.prepare('UPDATE tenants SET status = ?, trial_ends_at = ? WHERE id = ?').run(
+    TENANT_STATUS.TRIAL,
+    trialDeadline(parsed),
+    id,
+  );
+  return getTenantById(id);
 }
 
 /** @returns {string[]} Every tenant id, the legacy/default tenant first. */

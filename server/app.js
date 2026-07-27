@@ -15,6 +15,7 @@ import crypto from 'crypto';
 import { errorHandler, notFoundHandler, sendError } from './middleware/errors.js';
 import { authMiddleware } from './middleware/auth.js';
 import { tenantMiddleware } from './middleware/tenant.js';
+import { tenantStatusMiddleware } from './middleware/tenantStatus.js';
 import { csrfMiddleware } from './middleware/csrf.js';
 import { auditMiddleware } from './services/audit.js';
 import logger from './lib/logger.js';
@@ -26,6 +27,7 @@ import ocrRoutes from './routes/ocr.js';
 import searchRoutes from './routes/search.js';
 import notificationRoutes from './routes/notifications.js';
 import documentRoutes from './routes/documents.js';
+import uploadRoutes from './routes/uploads.js';
 import pdfRoutes from './routes/pdf.js';
 import auditRoutes from './routes/audit.js';
 import testingRoutes from './routes/testing.js';
@@ -128,6 +130,10 @@ app.use('/api/documents', mutationLimiter);
 app.use('/api/pdf', mutationLimiter);
 app.use('/api/testing', mutationLimiter);
 app.use('/api', standardLimiter);
+
+// Lifecycle gate: a suspended workspace (or one whose trial has lapsed) can
+// still authenticate and read its own status, but nothing else.
+app.use('/api', tenantStatusMiddleware);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/entities', auditMiddleware, entityRoutes);
@@ -257,10 +263,9 @@ app.post('/api/app-logs', authMiddleware, (req, res) => {
 const distPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(distPath));
 
-const uploadsPath = process.env.DATA_DIR
-  ? path.join(process.env.DATA_DIR, 'uploads')
-  : path.join(__dirname, '..', 'data', 'uploads');
-app.use('/uploads', express.static(uploadsPath));
+// Uploaded files are NOT static-served: /uploads goes through an authenticated,
+// tenant-scoped, permission-checked route (server/routes/uploads.js).
+app.use('/uploads', uploadRoutes);
 
 if (isProduction) {
   app.get('*', (req, res, next) => {

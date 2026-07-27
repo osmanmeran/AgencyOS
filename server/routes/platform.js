@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
-import { catchAsync, ForbiddenError } from '../middleware/errors.js';
+import { catchAsync, ForbiddenError, NotFoundError } from '../middleware/errors.js';
+import { validate, schemas } from '../middleware/validate.js';
 import { isPlatformAdmin, listWorkspaces, platformStats } from '../services/platform.js';
+import { setTenantStatus, extendTrial, trialDays } from '../services/tenants.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
 
 const router = Router();
@@ -36,5 +38,56 @@ router.get(
     res.json(platformStats());
   }),
 );
+
+// Workspace lifecycle. Without these the status column would be enforced but
+// unsettable — suspending or reinstating an agency would mean hand-editing
+// platform.db on the server.
+router.patch(
+  '/workspaces/:id/status',
+  validate(schemas.setWorkspaceStatus),
+  catchAsync(async (req, res) => {
+    const updated = setTenantStatus(req.params.id, req.body.status);
+    if (!updated) throw new NotFoundError('Workspace not found');
+    logAudit({
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.PLATFORM_SET_STATUS,
+      entityType: 'platform',
+      entityId: updated.id,
+      changes: { slug: updated.slug, status: updated.status },
+      ip: req.ip,
+    });
+    res.json({ workspace: serializeWorkspace(updated) });
+  }),
+);
+
+router.post(
+  '/workspaces/:id/extend-trial',
+  validate(schemas.extendTrial),
+  catchAsync(async (req, res) => {
+    const days = req.body.days ?? trialDays();
+    const updated = extendTrial(req.params.id, days);
+    if (!updated) throw new NotFoundError('Workspace not found');
+    logAudit({
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.PLATFORM_EXTEND_TRIAL,
+      entityType: 'platform',
+      entityId: updated.id,
+      changes: { slug: updated.slug, days, trialEndsAt: updated.trial_ends_at },
+      ip: req.ip,
+    });
+    res.json({ workspace: serializeWorkspace(updated) });
+  }),
+);
+
+function serializeWorkspace(t) {
+  return {
+    id: t.id,
+    slug: t.slug,
+    name: t.name,
+    status: t.status,
+    trialEndsAt: t.trial_ends_at || null,
+    createdDate: t.created_date,
+  };
+}
 
 export default router;

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { getPdfDir } from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { catchAsync, sendError } from '../middleware/errors.js';
 import { generateBookingConfirmation, generateProposal, generateInvoice } from '../services/pdf.js';
@@ -109,8 +109,10 @@ router.post(
 );
 
 router.get('/download/:filename', (req, res) => {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const pdfDir = path.join(__dirname, '..', '..', 'data', 'pdfs');
+  // The tenant's own PDF directory — generated filenames are guessable
+  // (`booking_<reference>_<ts>.pdf`), so resolving per tenant is what stops a
+  // user of one workspace from fetching another workspace's documents.
+  const pdfDir = getPdfDir();
   const filename = path.basename(req.params.filename);
   const filePath = path.join(pdfDir, filename);
   if (!filePath.startsWith(pdfDir + path.sep)) return sendError(res, 400, 'INVALID_FILENAME', 'Invalid filename');

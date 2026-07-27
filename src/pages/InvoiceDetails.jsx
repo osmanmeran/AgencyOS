@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { useT } from '@/lib/i18n/I18nContext';
 import { supplierMapsUrl } from '@/lib/supplierMap';
-import { assetUrl } from '@/lib/assetUrl';
+import { assetImgProps } from '@/lib/assetUrl';
 import { hiddenSupplierIds } from '@/lib/supplierCategories';
 
 const currSymbol = (cur) => getCurrencySymbol(cur);
@@ -117,7 +117,8 @@ export default function InvoiceDetails() {
   );
 
   const invoiceHeader = settings?.invoice_header || {};
-  const companyLogoUrl = assetUrl(invoiceHeader.logo_url || settings?.logo_url || '');
+  const companyLogoImg = assetImgProps(invoiceHeader.logo_url || settings?.logo_url || '');
+  const companyLogoUrl = companyLogoImg.src;
 
   const updateStatusMutation = /** @type {any} */ (
     useMutation({
@@ -261,7 +262,7 @@ export default function InvoiceDetails() {
           {/* Logo Header - full width */}
           {companyLogoUrl && (
             <div className="mb-10 flex justify-center">
-              <img src={companyLogoUrl} alt="Company Logo" className="max-h-[120px] w-auto object-contain" />
+              <img {...companyLogoImg} alt="Company Logo" className="max-h-[120px] w-auto object-contain" />
             </div>
           )}
 

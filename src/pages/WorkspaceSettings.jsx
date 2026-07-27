@@ -105,6 +105,11 @@ export default function WorkspaceSettings() {
           >
             {state?.status}
           </span>
+          {state?.status === 'trial' && state?.trialEndsAt && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Trial ends {new Date(state.trialEndsAt).toLocaleDateString()}.
+            </p>
+          )}
         </div>
 
         <div>

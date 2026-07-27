@@ -57,6 +57,15 @@ export const schemas = {
       path: ['name'],
     }),
 
+  // Platform-operator workspace lifecycle actions (server/routes/platform.js).
+  setWorkspaceStatus: z.object({
+    status: z.enum(['trial', 'active', 'suspended']),
+  }),
+
+  extendTrial: z.object({
+    days: z.coerce.number().int().positive().max(365).optional(),
+  }),
+
   createUser: z
     .object({
       email: z.string().email('Invalid email format'),

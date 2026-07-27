@@ -28,7 +28,7 @@ import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore, differenceInDays } from 'date-fns';
 import { getActAsClientId, useActAsClientId } from '@/lib/actAsClient';
 import { useT } from '@/lib/i18n/I18nContext';
-import { assetUrl } from '@/lib/assetUrl';
+import { assetImgProps } from '@/lib/assetUrl';
 import { sym } from '@/lib/formatters';
 import { getCatalog } from '@/lib/b2bApi';
 import { isLodgingCategory, locationOf } from '@/lib/hotelPricing';
@@ -296,7 +296,8 @@ export default function ClientPortal() {
     })
   );
   const invoiceHeader = settings?.invoice_header || {};
-  const companyLogoUrl = assetUrl(invoiceHeader.logo_url || settings?.logo_url || '');
+  const companyLogoImg = assetImgProps(invoiceHeader.logo_url || settings?.logo_url || '');
+  const companyLogoUrl = companyLogoImg.src;
   const companyName = settings?.app_name || 'Company';
 
   const { data: payments = /** @type {any} */ ([]) } = /** @type {any} */ (
@@ -524,7 +525,7 @@ export default function ClientPortal() {
         <div className="flex justify-center">
           <div className="flex items-center justify-center min-w-0">
             {companyLogoUrl ? (
-              <img src={companyLogoUrl} alt={companyName} className="h-32 md:h-48 w-auto max-w-full object-contain" />
+              <img {...companyLogoImg} alt={companyName} className="h-32 md:h-48 w-auto max-w-full object-contain" />
             ) : (
               <span className="text-2xl font-bold text-primary truncate">{companyName}</span>
             )}

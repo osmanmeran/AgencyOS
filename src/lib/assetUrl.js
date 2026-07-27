@@ -13,3 +13,17 @@ export function assetUrl(url) {
   const base = BACKEND_URL ? BACKEND_URL.replace(/\/+$/, '') : window.location.origin;
   return base + url;
 }
+
+/**
+ * Props for an <img> whose src is a stored asset. /uploads is authenticated
+ * (session cookie) since it may serve one workspace's private documents, so on
+ * a split-host deploy the image request has to carry credentials — that needs
+ * `crossorigin="use-credentials"`. Harmless same-origin, where the attribute
+ * has no effect on whether the cookie is sent.
+ */
+export function assetImgProps(url) {
+  const src = assetUrl(url);
+  return BACKEND_URL && typeof src === 'string' && src.startsWith(BACKEND_URL.replace(/\/+$/, ''))
+    ? { src, crossOrigin: /** @type {const} */ ('use-credentials') }
+    : { src };
+}

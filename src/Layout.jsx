@@ -57,6 +57,7 @@ import UserMenu from './components/layout/UserMenu';
 import GlobalSearch from './components/layout/GlobalSearch';
 import NotificationBell from './components/layout/NotificationBell';
 import ThemeToggle from './components/layout/ThemeToggle';
+import WorkspaceStatusBanner from './components/layout/WorkspaceStatusBanner';
 import { useT } from '@/lib/i18n/I18nContext';
 
 const DRAWER_WIDTH = 260;
@@ -484,6 +485,7 @@ export default function Layout({ children, currentPageName }) {
             </Toolbar>
           </AppBar>
           <Box component="main" sx={{ maxWidth: 1200, mx: 'auto', px: 3, py: 4 }}>
+            <WorkspaceStatusBanner />
             {children}
           </Box>
         </Box>
@@ -659,6 +661,7 @@ export default function Layout({ children, currentPageName }) {
             component="main"
             sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, py: 3, maxWidth: 1400, width: '100%', mx: 'auto' }}
           >
+            <WorkspaceStatusBanner />
             {children}
           </Box>
         </Box>

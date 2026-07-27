@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
+import { getTenantDataDir } from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { sendError } from '../middleware/errors.js';
 import logger from '../lib/logger.js';
@@ -31,11 +32,17 @@ if (!OCR_ENABLED) {
   });
 }
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'ocr_uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Scratch space for files awaiting OCR, per tenant: /ocr/extract takes a
+// caller-supplied path, so a shared directory would let one workspace name
+// (and consume) another's pending upload in the window before it's parsed.
+function ocrUploadDir() {
+  const dir = path.join(getTenantDataDir(), 'ocr_uploads');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  destination: (req, file, cb) => cb(null, ocrUploadDir()),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const safeName = sanitizeFilename(path.basename(file.originalname, ext));
@@ -102,7 +109,7 @@ router.post('/ocr/extract', async (req, res) => {
     if (!file_path) return sendError(res, 400, 'NO_FILE_PATH', 'No file_path provided');
 
     const resolved = path.resolve(file_path);
-    const allowedDirs = [path.resolve(UPLOAD_DIR)];
+    const allowedDirs = [path.resolve(ocrUploadDir())];
     const isAllowed = allowedDirs.some((dir) => resolved.startsWith(dir));
     if (!isAllowed) {
       return sendError(res, 400, 'INVALID_FILE_PATH', 'Invalid file path');
@@ -135,12 +142,10 @@ router.post('/ocr/extract', async (req, res) => {
     res.json(data);
   } catch (e) {
     if (e.message === 'Failed to parse OCR output' || e instanceof SyntaxError) {
-      res
-        .status(500)
-        .json({
-          error: { code: 'PARSE_ERROR', message: 'Failed to parse OCR output' },
-          raw: e.stdout?.substring(0, 2000),
-        });
+      res.status(500).json({
+        error: { code: 'PARSE_ERROR', message: 'Failed to parse OCR output' },
+        raw: e.stdout?.substring(0, 2000),
+      });
     } else {
       sendError(res, 500, 'OCR_PROCESS_ERROR', e.message);
     }
@@ -163,7 +168,7 @@ router.post('/ocr/parse-text', async (req, res) => {
     }
 
     tmpFile = path.join(
-      UPLOAD_DIR,
+      ocrUploadDir(),
       '_parse_text_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.txt',
     );
     fs.writeFileSync(tmpFile, text);

@@ -9,7 +9,7 @@ import { groupServicesByDay } from '@/lib/serviceItinerary';
 import { ServiceCard, DaySection } from '@/components/client-trip/ServiceItineraryCards';
 import TripMap from '@/components/client-trip/TripMap';
 import { useT } from '@/lib/i18n/I18nContext';
-import { assetUrl } from '@/lib/assetUrl';
+import { assetImgProps } from '@/lib/assetUrl';
 import { hiddenSupplierIds } from '@/lib/supplierCategories';
 
 export default function ClientItinerary() {
@@ -35,7 +35,8 @@ export default function ClientItinerary() {
       },
     })
   );
-  const companyLogoUrl = assetUrl(settings?.invoice_header?.logo_url || settings?.logo_url || '');
+  const companyLogoImg = assetImgProps(settings?.invoice_header?.logo_url || settings?.logo_url || '');
+  const companyLogoUrl = companyLogoImg.src;
   const companyName = settings?.invoice_header?.company_name || settings?.app_name || '';
 
   const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
@@ -158,7 +159,7 @@ export default function ClientItinerary() {
       {(companyLogoUrl || companyName) && (
         <div className="max-w-4xl mx-auto px-4 pt-6 flex items-center gap-3">
           {companyLogoUrl && (
-            <img src={companyLogoUrl} alt={companyName || 'Logo'} className="h-28 w-auto object-contain" />
+            <img {...companyLogoImg} alt={companyName || 'Logo'} className="h-28 w-auto object-contain" />
           )}
           {companyName && <span className="font-semibold text-foreground">{companyName}</span>}
         </div>

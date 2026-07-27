@@ -1,14 +1,8 @@
 import PDFDocument from 'pdfkit';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { getDb } from '../db.js';
+import { getDb, getPdfDir } from '../db.js';
 import logger from '../lib/logger.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PDF_DIR = path.join(__dirname, '..', '..', 'data', 'pdfs');
-
-if (!fs.existsSync(PDF_DIR)) fs.mkdirSync(PDF_DIR, { recursive: true });
 
 function getAppSettings() {
   try {
@@ -20,7 +14,10 @@ function getAppSettings() {
 }
 
 function createDoc(filename) {
-  const filePath = path.join(PDF_DIR, filename);
+  // Per-tenant PDF directory, resolved at generation time from the request's
+  // tenant context — generated documents contain client/pricing data and must
+  // not share a directory across agencies.
+  const filePath = path.join(getPdfDir(), filename);
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
   const stream = fs.createWriteStream(filePath);
   doc.pipe(stream);
