@@ -30,6 +30,7 @@ export const AUDIT_ACTIONS = {
   PLATFORM_LIST_WORKSPACES: 'platform_list_workspaces',
   PLATFORM_SET_STATUS: 'platform_set_workspace_status',
   PLATFORM_EXTEND_TRIAL: 'platform_extend_trial',
+  PLATFORM_DELETE_WORKSPACE: 'platform_delete_workspace',
 };
 
 /**

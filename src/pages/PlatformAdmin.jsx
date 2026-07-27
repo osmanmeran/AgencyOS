@@ -13,6 +13,7 @@ export default function PlatformAdmin() {
   // Workspace id currently mid-action, so its buttons can be disabled.
   const [busyId, setBusyId] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -41,6 +42,48 @@ export default function PlatformAdmin() {
       setWorkspaces((prev) => prev.map((w) => (w.id === id ? { ...w, ...res.workspace } : w)));
     } catch (err) {
       setActionError(err.message || 'Action failed');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function rename(workspace) {
+    const name = window.prompt('New workspace name', workspace.name);
+    if (!name || name === workspace.name) return;
+    setBusyId(workspace.id);
+    setActionError('');
+    try {
+      const res = await request(`/api/platform/workspaces/${workspace.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      });
+      setWorkspaces((prev) => prev.map((w) => (w.id === workspace.id ? { ...w, ...res.workspace } : w)));
+    } catch (err) {
+      setActionError(err.message || 'Rename failed');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Irreversible, so the UI asks for the same confirmation the API enforces:
+  // the workspace must already be suspended, and the operator types its address.
+  async function destroy(workspace) {
+    const typed = window.prompt(
+      `Permanently delete "${workspace.name}" and all of its data?\n\n` +
+        `A final snapshot is taken first. Type the workspace address (${workspace.slug}) to confirm.`,
+    );
+    if (typed === null) return;
+    setBusyId(workspace.id);
+    setActionError('');
+    try {
+      const res = await request(`/api/platform/workspaces/${workspace.id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ confirmSlug: typed.trim() }),
+      });
+      setWorkspaces((prev) => prev.filter((w) => w.id !== workspace.id));
+      setNotice(`Deleted "${res.deleted.name}". Snapshot kept at ${res.snapshot}`);
+    } catch (err) {
+      setActionError(err.message || 'Delete failed');
     } finally {
       setBusyId(null);
     }
@@ -91,6 +134,12 @@ export default function PlatformAdmin() {
         </div>
       )}
 
+      {notice && (
+        <div className="mt-6 break-all rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+          {notice}
+        </div>
+      )}
+
       <div className="mt-8 overflow-hidden rounded-xl border border-border bg-card">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border bg-muted/40 text-muted-foreground">
@@ -136,13 +185,21 @@ export default function PlatformAdmin() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
+                    <ActionButton disabled={busyId === w.id} onClick={() => rename(w)}>
+                      Rename
+                    </ActionButton>
                     {w.status === 'suspended' ? (
-                      <ActionButton
-                        disabled={busyId === w.id}
-                        onClick={() => runAction(w.id, '/status', { status: 'active' })}
-                      >
-                        Reactivate
-                      </ActionButton>
+                      <>
+                        <ActionButton
+                          disabled={busyId === w.id}
+                          onClick={() => runAction(w.id, '/status', { status: 'active' })}
+                        >
+                          Reactivate
+                        </ActionButton>
+                        <ActionButton disabled={busyId === w.id} variant="danger" onClick={() => destroy(w)}>
+                          Delete
+                        </ActionButton>
+                      </>
                     ) : (
                       <>
                         {w.status === 'trial' && (

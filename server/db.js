@@ -256,6 +256,30 @@ export function migrateAllTenants({ quiet = false } = {}) {
   return results;
 }
 
+/**
+ * Close and forget one tenant's connection. Required before removing a
+ * workspace's files: an open handle left in the cache would be handed to a
+ * later request for a tenant whose database no longer exists.
+ * @returns {boolean} Whether a cached connection was closed.
+ */
+export function closeTenantDb(tenantId) {
+  const key = String(tenantId);
+  const database = dbCache.get(key);
+  if (!database) return false;
+  try {
+    database.pragma('wal_checkpoint(TRUNCATE)');
+  } catch {
+    // ignore — we're discarding this database anyway
+  }
+  try {
+    database.close();
+  } catch {
+    // ignore
+  }
+  dbCache.delete(key);
+  return true;
+}
+
 export function closeDb() {
   for (const [key, database] of dbCache) {
     try {

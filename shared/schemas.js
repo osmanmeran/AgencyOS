@@ -66,6 +66,11 @@ export const schemas = {
     days: z.coerce.number().int().positive().max(365).optional(),
   }),
 
+  // Deleting a workspace is irreversible: the caller must echo back its slug.
+  deleteWorkspace: z.object({
+    confirmSlug: z.string().min(1, 'Type the workspace address to confirm'),
+  }),
+
   createUser: z
     .object({
       email: z.string().email('Invalid email format'),

@@ -218,6 +218,59 @@ Upgrade path verified against a seeded pre-upgrade `platform.db`: the migration
 adds the column without touching existing rows, legacy tenant-zero uploads still
 resolve, and new tenants get isolated directories.
 
+## Phase 8 — Off-box backups & workspace administration ✅ implemented (2026-07-27)
+
+### Off-box backups (S3/R2)
+
+Local snapshots live on the same Railway volume as the databases they protect,
+so a volume loss took the backups with it. `server/services/offsiteBackup.js`
+copies them to S3-compatible storage (AWS S3, Cloudflare R2, MinIO).
+
+- Entirely opt-in: with `BACKUP_S3_BUCKET` unset every entry point is a no-op,
+  so an existing deployment is unchanged.
+- The nightly scheduler now pushes each snapshot — the legacy tenant, the
+  platform registry, and every workspace — to `db/<scope>/<filename>`, then
+  prunes to `BACKUP_S3_KEEP` (default 30) remotely.
+- Uploaded files and generated PDFs are mirrored to `files/<scope>/…`.
+  Stored uploads are immutable, so the sync skips anything already present
+  (one HEAD per file) rather than re-uploading nightly. Synced files are never
+  pruned — they're the off-box copy of live data, not a rotation.
+- Uploads send `ContentMD5` so a truncated transfer is rejected rather than
+  silently stored as a corrupt "backup".
+- Off-box failure never fails the local backup; it's logged and the local
+  snapshot still succeeds.
+- `npm run backup:offsite verify|list|push` — `verify` round-trips a probe
+  object so misconfiguration surfaces on demand instead of the night you need
+  a restore.
+
+Config: `BACKUP_S3_BUCKET`, `BACKUP_S3_ACCESS_KEY_ID`,
+`BACKUP_S3_SECRET_ACCESS_KEY`, plus `BACKUP_S3_REGION` (default `auto`),
+`BACKUP_S3_ENDPOINT` (required for R2/MinIO), `BACKUP_S3_PREFIX`,
+`BACKUP_S3_KEEP`.
+
+### Workspace rename & deletion
+
+Completes the platform console — previously read-only plus the Phase 7
+lifecycle actions, so renaming or removing an agency meant hand-editing
+`platform.db`.
+
+- `PATCH /api/platform/workspaces/:id` renames a workspace.
+- `DELETE /api/platform/workspaces/:id` removes the registry row and the whole
+  tenant directory. Guardrails, all enforced server-side and mirrored in the UI:
+  the primary/legacy workspace can never be deleted; the workspace must already
+  be **suspended** (deletion takes two deliberate steps); `confirmSlug` must
+  match exactly; and a final snapshot is written to the **top-level** backups
+  directory — outside the directory being removed — and pushed off-box when
+  configured. Audited as `platform_delete_workspace`.
+- Found while testing: a token for a deleted workspace used to **recreate** its
+  directory, because `getDb()` creates and migrates on demand. `authMiddleware`
+  now verifies the token's tenant still exists in the registry before opening
+  it (the legacy tenant, which has no row by design, is exempt).
+
+Covered by `tests/services/offsiteBackup.test.js` (S3 client mocked) and the
+deletion suite in `tests/routes/tenantStatus.test.js`. The delete guardrails and
+snapshot restorability were also verified end-to-end against a scratch DATA_DIR.
+
 ## Phase 6 — Ops enablement & launch checklist
 
 ### Adopt the existing production DB as tenant zero
@@ -296,19 +349,19 @@ dev so localhost keeps working unchanged.
   and falls back to `MICROSOFT_TENANT_ID` when empty).
 - `CORS_ORIGIN` — set to your production origin in prod (dev defaults to `*`).
 - `JWT_SECRET` — stable secret across restarts (tokens survive reloads).
-- **Off-box backups**: `createBackupSync` snapshots are on the same disk as the
-  DB; add S3/R2 (or similar) copies of `data/` (platform.db + every
-  `tenants/*/marvelops.db`, plus the per-tenant `uploads/` and `pdfs/` dirs).
-  Still unstarted — the largest remaining ops risk.
+- **Off-box backups**: ✅ done (Phase 8) — set `BACKUP_S3_*` and verify with
+  `npm run backup:offsite verify`. Without it, snapshots stay on the same disk
+  as the databases they protect.
 
 ## Still missing (audited 2026-07-27)
 
-- **Off-box backups** (above) — N tenant DBs on one disk.
 - **Billing** — no Stripe/plan scaffolding; `status` is set by an operator by
   hand. `trial`/`active`/`suspended` is the hook a billing webhook would drive.
 - **Email verification on signup** — anyone can claim a workspace with an
   address they don't own.
-- **Workspace offboarding** — no self-serve deletion or data export.
+- **Self-serve offboarding** — an operator can now delete a workspace
+  (Phase 8), but a workspace admin can't export their own data or close their
+  own account.
 - **Invite links are tenant-fragile**: `server/routes/auth.js` prefers
   `APP_URL` over the request `Host`, so with `APP_URL` set an invite from
   workspace X points at the apex and the token won't resolve. Leave `APP_URL`

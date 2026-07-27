@@ -1,8 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'path';
 import fs from 'fs';
+import Database from 'better-sqlite3';
 import { getPlatformDb, getDbPath } from '../../server/db.js';
-import { setTenantStatus, extendTrial, TENANT_STATUS, tenantAccessState } from '../../server/services/tenants.js';
+import {
+  setTenantStatus,
+  extendTrial,
+  getTenantById,
+  TENANT_STATUS,
+  tenantAccessState,
+} from '../../server/services/tenants.js';
 import app from '../../server/app.js';
 
 // Workspace lifecycle enforcement: a suspended workspace (or one whose trial
@@ -217,6 +224,24 @@ describe('platform admin lifecycle endpoints', () => {
     }
   });
 
+  it('renames a workspace', async () => {
+    const target = await signup();
+    const operator = await signup();
+    process.env.PLATFORM_ADMIN_EMAILS = operator.email;
+    try {
+      const res = await fetch(`${baseUrl}/api/platform/workspaces/${target.tenant.id}`, {
+        method: 'PATCH',
+        headers: writeHeaders(operator.cookies),
+        body: JSON.stringify({ name: 'Renamed Agency' }),
+      });
+      expect(res.status).toBe(200);
+      expect((await res.json()).workspace.name).toBe('Renamed Agency');
+      expect(getTenantById(target.tenant.id).name).toBe('Renamed Agency');
+    } finally {
+      delete process.env.PLATFORM_ADMIN_EMAILS;
+    }
+  });
+
   it('extends a trial and 404s an unknown workspace', async () => {
     const operator = await signup();
     process.env.PLATFORM_ADMIN_EMAILS = operator.email;
@@ -236,6 +261,96 @@ describe('platform admin lifecycle endpoints', () => {
         body: JSON.stringify({ days: 30 }),
       });
       expect(missing.status).toBe(404);
+    } finally {
+      delete process.env.PLATFORM_ADMIN_EMAILS;
+    }
+  });
+});
+
+describe('workspace deletion', () => {
+  /** Suspend `id` and delete it as `operator`, returning the raw response. */
+  async function deleteAs(operator, id, confirmSlug) {
+    return fetch(`${baseUrl}/api/platform/workspaces/${id}`, {
+      method: 'DELETE',
+      headers: writeHeaders(operator.cookies),
+      body: JSON.stringify({ confirmSlug }),
+    });
+  }
+
+  it('refuses to delete a workspace that is not suspended', async () => {
+    const target = await signup();
+    const operator = await signup();
+    process.env.PLATFORM_ADMIN_EMAILS = operator.email;
+    try {
+      const res = await deleteAs(operator, target.tenant.id, target.slug);
+      expect(res.status).toBe(400);
+      expect((await res.json()).error.code).toBe('SUSPEND_FIRST');
+      expect(getTenantById(target.tenant.id)).toBeTruthy();
+    } finally {
+      delete process.env.PLATFORM_ADMIN_EMAILS;
+    }
+  });
+
+  it('refuses when the slug confirmation does not match', async () => {
+    const target = await signup();
+    const operator = await signup();
+    process.env.PLATFORM_ADMIN_EMAILS = operator.email;
+    try {
+      setTenantStatus(target.tenant.id, TENANT_STATUS.SUSPENDED);
+      const res = await deleteAs(operator, target.tenant.id, 'not-the-slug');
+      expect(res.status).toBe(400);
+      expect((await res.json()).error.code).toBe('CONFIRM_MISMATCH');
+      expect(getTenantById(target.tenant.id)).toBeTruthy();
+    } finally {
+      delete process.env.PLATFORM_ADMIN_EMAILS;
+    }
+  });
+
+  it('never deletes the primary (legacy) workspace', async () => {
+    const operator = await signup();
+    process.env.PLATFORM_ADMIN_EMAILS = operator.email;
+    try {
+      const res = await deleteAs(operator, '0', '0');
+      expect(res.status).toBe(400);
+      expect((await res.json()).error.code).toBe('CANNOT_DELETE_DEFAULT');
+    } finally {
+      delete process.env.PLATFORM_ADMIN_EMAILS;
+    }
+  });
+
+  it('deletes a suspended workspace, leaving a restorable snapshot behind', async () => {
+    const target = await signup();
+    const operator = await signup();
+    process.env.PLATFORM_ADMIN_EMAILS = operator.email;
+    try {
+      const tenantDir = path.dirname(getDbPath(target.tenant.id));
+      expect(fs.existsSync(tenantDir)).toBe(true);
+
+      setTenantStatus(target.tenant.id, TENANT_STATUS.SUSPENDED);
+      const res = await deleteAs(operator, target.tenant.id, target.slug);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.deleted.slug).toBe(target.slug);
+
+      // Registry row and the whole data directory are gone...
+      expect(getTenantById(target.tenant.id)).toBeUndefined();
+      expect(fs.existsSync(tenantDir)).toBe(false);
+
+      // ...but the pre-delete snapshot survives, outside the deleted directory.
+      expect(fs.existsSync(body.snapshot)).toBe(true);
+      expect(body.snapshot).toContain(`deleted-${target.slug}`);
+      const restored = new Database(body.snapshot, { readonly: true });
+      const admin = restored.prepare('SELECT email FROM users').get();
+      expect(admin.email).toBe(target.email);
+      restored.close();
+      fs.rmSync(body.snapshot, { force: true });
+
+      // A session for the deleted workspace is rejected — and crucially does
+      // not resurrect its directory, since getDb() would otherwise create and
+      // migrate a fresh database on demand.
+      const after = await fetch(`${baseUrl}/api/tenants/me`, { headers: { Cookie: target.cookies } });
+      expect(after.status).toBe(401);
+      expect(fs.existsSync(tenantDir)).toBe(false);
     } finally {
       delete process.env.PLATFORM_ADMIN_EMAILS;
     }

@@ -1,6 +1,18 @@
 import crypto from 'crypto';
-import { getPlatformDb, DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
+import fs from 'fs';
+import path from 'path';
+import {
+  getPlatformDb,
+  getDb,
+  getDataDir,
+  getTenantsDir,
+  closeTenantDb,
+  DEFAULT_TENANT_ID,
+  runWithTenant,
+} from '../db.js';
 import { BadRequestError } from '../middleware/errors.js';
+import { createBackupAsync } from './backup.js';
+import { pushSnapshot } from './offsiteBackup.js';
 import logger from '../lib/logger.js';
 
 export const TENANT_STATUS = {
@@ -120,6 +132,60 @@ export function setTenantStatus(id, status) {
     db.prepare('UPDATE tenants SET status = ? WHERE id = ?').run(status, id);
   }
   return getTenantById(id);
+}
+
+/**
+ * Permanently remove a workspace: its registry row and its entire data
+ * directory (database, uploads, generated PDFs).
+ *
+ * Irreversible, so the guardrails are deliberate rather than advisory:
+ *   - the legacy/default workspace can never be deleted through this path;
+ *   - the workspace must already be suspended, making deletion a two-step act;
+ *   - `confirmSlug` must match exactly;
+ *   - a final snapshot is written to the *top-level* backups directory (not the
+ *     tenant's own, which is about to be deleted) and pushed off-box when
+ *     configured, before anything is removed.
+ *
+ * @param {string} id
+ * @param {{confirmSlug: string}} opts
+ * @returns {Promise<{tenant: object, snapshot: string, offsiteKey: string|null}>}
+ */
+export async function deleteTenant(id, { confirmSlug } = {}) {
+  if (String(id) === DEFAULT_TENANT_ID) {
+    throw new BadRequestError('The primary workspace cannot be deleted.', 'CANNOT_DELETE_DEFAULT');
+  }
+  const tenant = getTenantById(id);
+  if (!tenant) return null;
+
+  if (tenant.status !== TENANT_STATUS.SUSPENDED) {
+    throw new BadRequestError(
+      'Suspend the workspace before deleting it, so an accidental delete takes two deliberate steps.',
+      'SUSPEND_FIRST',
+    );
+  }
+  if (confirmSlug !== tenant.slug) {
+    throw new BadRequestError(
+      `Confirmation does not match: expected the workspace address "${tenant.slug}".`,
+      'CONFIRM_MISMATCH',
+    );
+  }
+
+  // Final snapshot before removal, kept outside the directory being deleted.
+  const snapshot = await createBackupAsync(getDb(id), getDataDir(), `deleted-${tenant.slug}`);
+  let offsiteKeyWritten = null;
+  try {
+    offsiteKeyWritten = await pushSnapshot(snapshot, `deleted/${tenant.slug}`);
+  } catch (err) {
+    logger.error({ err: err.message, tenantId: id }, 'Off-box push of the pre-delete snapshot failed');
+  }
+
+  closeTenantDb(id);
+  const dir = path.join(getTenantsDir(), String(id));
+  if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
+  getPlatformDb().prepare('DELETE FROM tenants WHERE id = ?').run(id);
+
+  logger.warn({ tenantId: id, slug: tenant.slug, snapshot }, 'Workspace deleted');
+  return { tenant, snapshot, offsiteKey: offsiteKeyWritten };
 }
 
 /**

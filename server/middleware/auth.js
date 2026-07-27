@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import logger from '../lib/logger.js';
 import { sendError } from './errors.js';
 import { getDb, getTenantId, DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
+import { getTenantById } from '../services/tenants.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -87,6 +88,15 @@ export function authMiddleware(req, res, next) {
     return sendError(res, 403, 'TENANT_MISMATCH', 'Token is not valid for this workspace');
   }
   const requestTenant = req.tenantId || tokenTenant;
+
+  // When the tenant comes from the token rather than the Host, confirm the
+  // workspace still exists. getDb() creates and migrates a database on demand,
+  // so a token for a deleted workspace would otherwise resurrect its directory
+  // as an empty database on every request. (The legacy tenant has no registry
+  // row by design and is always valid.)
+  if (!req.tenantId && requestTenant !== DEFAULT_TENANT_ID && !getTenantById(requestTenant)) {
+    return sendError(res, 401, 'INVALID_TOKEN', 'Invalid or expired token');
+  }
 
   return runWithTenant(requestTenant, () => {
     const row = getDb()

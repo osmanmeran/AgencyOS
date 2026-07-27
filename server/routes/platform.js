@@ -3,7 +3,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { catchAsync, ForbiddenError, NotFoundError } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
 import { isPlatformAdmin, listWorkspaces, platformStats } from '../services/platform.js';
-import { setTenantStatus, extendTrial, trialDays } from '../services/tenants.js';
+import { setTenantStatus, extendTrial, trialDays, updateTenant, deleteTenant } from '../services/tenants.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
 
 const router = Router();
@@ -76,6 +76,54 @@ router.post(
       ip: req.ip,
     });
     res.json({ workspace: serializeWorkspace(updated) });
+  }),
+);
+
+router.patch(
+  '/workspaces/:id',
+  validate(schemas.updateTenant),
+  catchAsync(async (req, res) => {
+    const updated = updateTenant(req.params.id, req.body);
+    if (!updated) throw new NotFoundError('Workspace not found');
+    logAudit({
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.TENANT_UPDATE,
+      entityType: 'platform',
+      entityId: updated.id,
+      changes: req.body,
+      ip: req.ip,
+    });
+    res.json({ workspace: serializeWorkspace(updated) });
+  }),
+);
+
+// Irreversible. deleteTenant() enforces the guardrails (suspended first, exact
+// slug confirmation, never the primary workspace) and takes a final snapshot —
+// kept outside the directory being removed — before deleting anything.
+router.delete(
+  '/workspaces/:id',
+  validate(schemas.deleteWorkspace),
+  catchAsync(async (req, res) => {
+    const result = await deleteTenant(req.params.id, { confirmSlug: req.body.confirmSlug });
+    if (!result) throw new NotFoundError('Workspace not found');
+    logAudit({
+      userName: req.user.email,
+      action: AUDIT_ACTIONS.PLATFORM_DELETE_WORKSPACE,
+      entityType: 'platform',
+      entityId: result.tenant.id,
+      changes: {
+        slug: result.tenant.slug,
+        name: result.tenant.name,
+        snapshot: result.snapshot,
+        offsiteKey: result.offsiteKey,
+      },
+      ip: req.ip,
+    });
+    res.json({
+      deleted: { id: result.tenant.id, slug: result.tenant.slug, name: result.tenant.name },
+      snapshot: result.snapshot,
+      offsiteKey: result.offsiteKey,
+    });
   }),
 );
 

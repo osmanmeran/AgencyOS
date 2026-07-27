@@ -23,6 +23,7 @@
     "db:migrate:platform:status": "node server/migrations/cli.js platform:status",
     "db:migrate:bootstrap": "node server/migrations/cli.js bootstrap",
     "saas:adopt-tenant-zero": "node scripts/adopt-tenant-zero.mjs",
+    "backup:offsite": "node scripts/offsite-backup-cli.mjs",
     "seed:tours": "node scripts/seedItalianDailyTours.mjs && node scripts/localizeItalianTours.mjs",
     "db:backup:list": "node scripts/backup-cli.mjs list",
     "db:backup:restore": "node scripts/backup-cli.mjs restore",
@@ -32,6 +33,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1095.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hello-pangea/dnd": "^17.0.0",
