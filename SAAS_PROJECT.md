@@ -271,7 +271,82 @@ Covered by `tests/services/offsiteBackup.test.js` (S3 client mocked) and the
 deletion suite in `tests/routes/tenantStatus.test.js`. The delete guardrails and
 snapshot restorability were also verified end-to-end against a scratch DATA_DIR.
 
+## Phase 9 — Restore & backup monitoring ✅ implemented (2026-07-29)
+
+Phase 8 pushed snapshots off-box but could not bring them back, and a failed
+backup only wrote a log line nobody reads. Both halves are now closed.
+
+### Restore
+
+- `scripts/backup-cli.mjs` is workspace-aware: `--tenant <slug|id>` targets any
+  workspace (default: the primary/legacy one, so the original usage is
+  unchanged), and `--from-offsite` downloads the snapshot from S3/R2 first —
+  the case off-box backups exist for.
+- `list --offsite` shows what is stored remotely for a workspace.
+- Before overwriting anything, the snapshot is opened read-only and checked
+  (`PRAGMA integrity_check` plus a sanity check that it is a Marvelops
+  database). Restoring a corrupt file over a live database turns a recoverable
+  incident into an unrecoverable one.
+- `server/services/offsiteBackup.js` gained `downloadFile`, `listSnapshots` and
+  `fetchSnapshot` to support this.
+- See the restore runbook below — the procedure has been rehearsed, including
+  full loss of the local disk.
+
+### Monitoring
+
+- Platform migration `003_backup_runs.js` records every backup pass: when it
+  ran, how many targets, which failed and why.
+- `runBackupPass()` (`backupScheduler.js`) now isolates each target, so one
+  workspace failing no longer aborts the pass — the rest are still backed up and
+  the failure is reported rather than swallowed.
+- Failures email the operator (`BACKUP_ALERT_EMAIL`, falling back to
+  `PLATFORM_ADMIN_EMAILS`). Alerting is best-effort and never throws: an
+  alerting problem must not take down the job it reports on.
+- `backupHealth()` is surfaced on the platform dashboard, including the failure
+  a per-run alert can never catch — **no successful run at all**, i.e. a
+  scheduler that died silently.
+
+Covered by `tests/services/backupRuns.test.js` and
+`tests/services/backupScheduler.test.js` (which simulates one workspace's disk
+failing and asserts the others still complete).
+
 ## Phase 6 — Ops enablement & launch checklist
+
+### Restore runbook (rehearsed 2026-07-29)
+
+Backups only count once a restore has actually been performed. This procedure
+was rehearsed end-to-end against a scratch `DATA_DIR`, including the total-loss
+case (workspace directory deleted, recovered from object storage alone).
+
+```
+# 1. What can I restore? (add --offsite for what's in S3/R2)
+node scripts/backup-cli.mjs list --tenant acme
+node scripts/backup-cli.mjs list --tenant acme --offsite
+
+# 2. STOP THE SERVER. Restoring under a running server leaves the process and
+#    the file on disk out of sync.
+
+# 3. Restore — from the local disk, or pull from off-box when the disk is gone
+node scripts/backup-cli.mjs restore <snapshot>.db --tenant acme
+node scripts/backup-cli.mjs restore <snapshot>.db --tenant acme --from-offsite
+
+# 4. Start the server, and confirm the workspace loads.
+```
+
+- `--tenant` takes a slug or an id; omit it entirely for the primary/legacy
+  workspace, which keeps the original single-tenant behaviour.
+- The snapshot is opened and `PRAGMA integrity_check`ed **before** anything is
+  overwritten — a truncated or corrupt file is refused rather than copied over a
+  live database (verified in the rehearsal).
+- The current database is copied to `marvelops-pre-restore-<ts>.db` first, so
+  the restore itself can be undone.
+- Stale `-wal`/`-shm` files are removed, so nothing is replayed over the
+  restored file.
+
+Rehearsal results: a workspace with users, trips and uploaded files was backed
+up, its live database corrupted, and restored from the local snapshot; then its
+entire directory was deleted and it was recovered from object storage alone.
+Both restores returned the full dataset.
 
 ### Adopt the existing production DB as tenant zero
 
@@ -352,6 +427,9 @@ dev so localhost keeps working unchanged.
 - **Off-box backups**: ✅ done (Phase 8) — set `BACKUP_S3_*` and verify with
   `npm run backup:offsite verify`. Without it, snapshots stay on the same disk
   as the databases they protect.
+- **Backup monitoring**: ✅ done (Phase 9) — set `BACKUP_ALERT_EMAIL` (or rely
+  on `PLATFORM_ADMIN_EMAILS`) plus SMTP, or failures are recorded but nobody is
+  told. The platform dashboard also flags a stale/silent scheduler.
 
 ## Still missing (audited 2026-07-27)
 

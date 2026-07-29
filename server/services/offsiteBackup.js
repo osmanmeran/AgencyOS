@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
   DeleteObjectsCommand,
@@ -119,6 +120,50 @@ export async function listObjects(prefix) {
     token = res.IsTruncated ? res.NextContinuationToken : undefined;
   } while (token);
   return out;
+}
+
+/**
+ * Download an object to a local path. The counterpart to {@link uploadFile} —
+ * pushing snapshots off-box is only half a backup; this is the half that runs
+ * on the worst day.
+ * @returns {Promise<string>} The local path written.
+ */
+export async function downloadFile(key, localPath) {
+  const res = await s3().send(new GetObjectCommand({ Bucket: bucket(), Key: key }));
+  const bytes = Buffer.from(await res.Body.transformToByteArray());
+  fs.mkdirSync(path.dirname(localPath), { recursive: true });
+  fs.writeFileSync(localPath, bytes);
+  return localPath;
+}
+
+/**
+ * Snapshots stored off-box for one scope, newest first.
+ * @returns {Promise<Array<{key: string, filename: string, size: number, lastModified: Date}>>}
+ */
+export async function listSnapshots(scope) {
+  if (!isOffsiteConfigured()) return [];
+  const objects = await listObjects(offsiteKey('db', scope) + '/');
+  return objects
+    .filter((o) => o.Key?.endsWith('.db'))
+    .map((o) => ({
+      key: o.Key,
+      filename: path.basename(o.Key),
+      size: o.Size,
+      lastModified: o.LastModified,
+    }))
+    .sort((a, b) => new Date(b.lastModified || 0).getTime() - new Date(a.lastModified || 0).getTime());
+}
+
+/**
+ * Fetch a snapshot by filename (as shown by {@link listSnapshots}) into `destDir`.
+ * @returns {Promise<string>} Local path of the downloaded snapshot.
+ */
+export async function fetchSnapshot(scope, filename, destDir) {
+  const key = offsiteKey('db', scope, path.basename(filename));
+  const localPath = path.join(destDir, path.basename(filename));
+  await downloadFile(key, localPath);
+  logger.info({ key, localPath }, 'Off-box snapshot downloaded');
+  return localPath;
 }
 
 /**

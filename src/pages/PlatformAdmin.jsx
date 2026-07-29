@@ -128,6 +128,8 @@ export default function PlatformAdmin() {
         </div>
       )}
 
+      {stats?.backups && <BackupHealth health={stats.backups} />}
+
       {actionError && (
         <div className="mt-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
           {actionError}
@@ -234,6 +236,46 @@ export default function PlatformAdmin() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Backup health. Loud when a successful run has gone missing entirely — that's
+ * the case no per-run alert can report, because a scheduler that died sends
+ * nothing at all.
+ */
+function BackupHealth({ health }) {
+  const { lastRunAt, lastSuccessAt, stale, failed, total, offsite, failures } = health;
+  const bad = stale || failed > 0;
+  const palette = bad
+    ? 'border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200'
+    : 'border-border bg-card text-foreground';
+
+  const when = (iso) => (iso ? new Date(iso).toLocaleString() : 'never');
+
+  return (
+    <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${palette}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-medium">Backups</span>
+        <span className="text-xs">
+          {offsite ? 'Off-box copy enabled' : 'Off-box copy NOT configured — snapshots are on one disk'}
+        </span>
+      </div>
+      <p className="mt-1">
+        Last run {when(lastRunAt)} · last fully successful {when(lastSuccessAt)}
+        {total > 0 && ` · ${total - failed}/${total} targets OK`}
+      </p>
+      {stale && <p className="mt-1 font-medium">No successful backup in over 30 hours — check the scheduler.</p>}
+      {failures?.length > 0 && (
+        <ul className="mt-2 list-inside list-disc">
+          {failures.map((f) => (
+            <li key={f.scope}>
+              {f.label || f.scope}: {f.error || 'unknown error'}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

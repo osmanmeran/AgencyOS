@@ -4,6 +4,7 @@ import { catchAsync, ForbiddenError, NotFoundError } from '../middleware/errors.
 import { validate, schemas } from '../middleware/validate.js';
 import { isPlatformAdmin, listWorkspaces, platformStats } from '../services/platform.js';
 import { setTenantStatus, extendTrial, trialDays, updateTenant, deleteTenant } from '../services/tenants.js';
+import { backupHealth } from '../services/backupRuns.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
 
 const router = Router();
@@ -35,7 +36,10 @@ router.get(
 router.get(
   '/stats',
   catchAsync(async (req, res) => {
-    res.json(platformStats());
+    // Backup health rides along with stats so the dashboard surfaces a silent
+    // scheduler — the failure mode a per-run alert can't catch, because a job
+    // that never runs never sends anything.
+    res.json({ ...platformStats(), backups: backupHealth() });
   }),
 );
 
