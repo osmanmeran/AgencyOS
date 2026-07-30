@@ -76,6 +76,19 @@ A full-stack travel agency operations management platform for tour operators and
 - **B2B Client Quoting** — Curated e-shop catalog (categories, suppliers, photos) with markup-based pricing; clients submit quote requests, staff review/price/approve, accepted quotes convert into reservations
 - **Supplier Portal** — View bookings, invoices, ratings
 
+### Multi-Tenant SaaS / Workspaces
+
+Marvelops is multi-tenant: every travel agency runs in its own isolated **workspace**, backed by its own SQLite database file (not a shared table with a `tenant_id` column — see `SAAS_PROJECT.md` for why). Full phase-by-phase implementation log lives in `SAAS_PROJECT.md`; summary below.
+
+- **Tenant isolation** — Each workspace's data (`entities`, `users`, `audit_logs`, `documents`, uploads, generated PDFs, OCR scratch files) lives under `data/tenants/<id>/`, resolved per-request; there is no cross-tenant table. A central `data/platform.db` holds the `tenants` registry (slug, name, status, Azure tenant id, trial deadline).
+- **Workspace routing** — Two modes, chosen automatically: **subdomain routing** (`<agency>.marvelops.app`, requires `APP_ROOT_DOMAIN` + wildcard DNS/TLS) resolves the tenant from the `Host` header; **single-domain (cookie) mode** (default when no root domain is configured, e.g. a bare Railway `*.up.railway.app` URL) resolves it from an `active_tenant` cookie set at login/signup, so subdomain-less hosts can still serve multiple workspaces. A token whose tenant doesn't match the resolved workspace is rejected (`TENANT_MISMATCH`).
+- **Self-serve signup** — `POST /api/tenants/signup` (gated by `ALLOW_PUBLIC_SIGNUP`) creates a new workspace from an agency name + unique slug + admin email/password, or via "Sign up with Microsoft" (the new workspace's Azure AD tenant is derived from the id token). New workspaces start in `trial` status with a `TRIAL_DAYS`-day deadline.
+- **Per-workspace Microsoft SSO** — Each workspace can set its own Azure AD tenant id from **Workspace Settings** (admin only), scoping SSO login to that org instead of a single global `MICROSOFT_TENANT_ID`.
+- **Workspace lifecycle** — `trial → active → suspended`, enforced on every `/api` request (`WORKSPACE_SUSPENDED` / `TRIAL_EXPIRED`, with auth/health/tenant endpoints allowlisted so a blocked workspace can still sign in and see its own status). Users see a status banner when suspended or within 7 days of trial expiry.
+- **Platform admin dashboard** (`src/pages/PlatformAdmin.jsx`, gated by `PLATFORM_ADMIN_EMAILS`) — cross-tenant workspace list with user/entity counts, suspend/reactivate/mark-paid/extend-trial, rename, and a deliberately guarded delete (primary workspace exempt, must already be suspended, exact slug confirmation, final snapshot taken before removal).
+- **Off-box backups & restore** — Nightly snapshots (and uploaded files) are optionally mirrored to S3-compatible storage (`server/services/offsiteBackup.js`, opt-in via `BACKUP_S3_BUCKET`). `scripts/backup-cli.mjs` is workspace-aware (`--tenant <slug|id>`, `--from-offsite`) and integrity-checks a snapshot before ever overwriting a live database. Every backup pass is recorded and failures email an operator; the platform dashboard surfaces backup health, including a scheduler that died silently.
+- **Fleet-resilient migrations** — `npm run db:migrate:bootstrap` runs migrations across every tenant DB with per-tenant error isolation (one bad database doesn't abort the run); `npm run db:migrate:fleet:status` reports pending/unreadable tenants read-only, without applying anything.
+
 ## Quick Start
 
 ```bash
@@ -112,14 +125,19 @@ src/               — React frontend (Vite)
 server/            — Express.js backend
 ├── app.js         — Express app setup
 ├── server.js      — HTTP/HTTPS + WebSocket server
-├── db.js          — SQLite setup + migrations
-├── routes/        — 14 API route modules
-├── services/      — Business logic (auth, entities, email, etc.)
-├── middleware/     — Auth, permissions, error handling
+├── db.js          — SQLite setup + per-tenant DB resolution/migrations
+├── routes/        — 18 API route modules (incl. tenants, platform, uploads)
+├── services/      — Business logic (auth, entities, email, tenants, offsiteBackup, etc.)
+├── middleware/     — Auth, permissions, tenant resolution/status, error handling
 ├── lib/           — Logger, WebSocket helpers
-└── migrations/    — 20 migration files
+└── migrations/    — 23 tenant-DB migration files, + migrations/platform/ (3 files, for platform.db)
 
-entities/          — JSON schemas for 25+ entity types
+data/
+├── marvelops.db            — legacy/tenant-zero DB (pre-multi-tenant deployments)
+├── platform.db             — tenant registry (slug, name, status, trial deadline, Azure tenant id)
+└── tenants/<id>/            — per-workspace DB + uploads/pdfs/ocr_uploads, one dir per tenant
+
+entities/          — JSON schemas for 30+ entity types
 tests/             — Vitest test suite (server-side only)
 ```
 
@@ -143,8 +161,16 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 | `MICROSOFT_CLIENT_ID`     | No       | —       | Microsoft SSO & Outlook     |
 | `MICROSOFT_TENANT_ID`     | No       | —       | Azure AD tenant             |
 | `SMTP_HOST / USER / PASS` | No       | —       | Email sending               |
-| `APP_URL`                 | No       | —       | Callback URLs, invite links |
+| `APP_URL`                 | No       | —       | Callback URLs, invite links (fallback when no tenant/root domain resolves) |
 | `DATA_DIR`                | No       | ./data  | Database + uploads path     |
+| `APP_ROOT_DOMAIN`         | No       | —       | Enables subdomain workspace routing (`<slug>.<domain>`); unset ⇒ single-domain cookie mode |
+| `ALLOW_PUBLIC_SIGNUP`     | No       | false   | Enables self-serve workspace signup (`/api/tenants/signup`) |
+| `TRIAL_DAYS`              | No       | 14      | Trial length for new self-serve workspaces |
+| `PLATFORM_ADMIN_EMAILS`   | No       | —       | Comma-separated emails granted the platform admin dashboard |
+| `BACKUP_S3_BUCKET`        | No       | —       | Enables off-box (S3/R2) backups; unset ⇒ every off-box entry point is a no-op |
+| `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` | No | — | Off-box backup credentials |
+| `BACKUP_S3_REGION` / `BACKUP_S3_ENDPOINT` / `BACKUP_S3_PREFIX` / `BACKUP_S3_KEEP` | No | `auto` / — / — / 30 | Off-box backup config (endpoint required for R2/MinIO) |
+| `BACKUP_ALERT_EMAIL`      | No       | falls back to `PLATFORM_ADMIN_EMAILS` | Who gets emailed when a backup pass fails |
 
 ## Recent Fixes
 
@@ -239,6 +265,23 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 ### Features & UX (2026-07-14)
 
 - **Contextual Task Management** — new `Task` entity type (migration `020_add_task_entity_indexes.js`) backing a booking-linked, SLA-aware to-do system. Generating/saving a **Trip** auto-creates three operational tasks keyed to its departure date; editing the departure date reschedules them. The engine lives in `server/services/tasks.js` (`generateTasksForBooking`, `rescheduleTasksForBooking`, `completeTask`, `listTasks`) and is wired into Trip create/update in `routes/entities.js` (best-effort, never fails the booking request). `listTasks` returns live `is_overdue` / `is_due_soon` / `is_escalated` flags. Exposed via `POST/GET /api/tasks` and `PUT /api/tasks/:id/complete` (audit-logged). Permissions reuse the trip workflow family (`create_trips` / `view_all_trips` / `modify_trips` / `delete_trips`). See the "Contextual Task Management" bullet under Advanced Tools and **FAQ → Contextual Tasks**.
+
+### Multi-Tenant SaaS conversion (2026-07-20 → 2026-07-30)
+
+Converted Marvelops from a single-tenant internal tool into a multi-tenant SaaS product, in 10 phases — full rationale and rehearsal notes in `SAAS_PROJECT.md`. See the **Multi-Tenant SaaS / Workspaces** feature section above for the user-facing summary; highlights by phase:
+
+- **Phase 1-2 — Data layer & auth** — one SQLite file per tenant under `data/tenants/<id>/`, a central `platform.db` tenant registry, subdomain-based (`Host` header) tenant resolution, `tenant_id` added to the JWT, WebSocket broadcasts scoped per tenant via `AsyncLocalStorage`.
+- **Phase 3 — Self-serve signup** — public `POST /api/tenants/signup` (email/password or Microsoft SSO), gated by `ALLOW_PUBLIC_SIGNUP`, with live slug-availability checking.
+- **Phase 4 — Workspace control plane** — `GET/PATCH /api/tenants/me` + `WorkspaceSettings.jsx` so an admin can rename their workspace and set its own Azure AD tenant without touching server env vars.
+- **Phase 5 — Platform admin dashboard** — `PlatformAdmin.jsx`, cross-tenant workspace list + stats, gated by `PLATFORM_ADMIN_EMAILS`.
+- **Phase 6 — Ops enablement** — DNS/TLS runbook (Cloudflare wildcard cert recommended), `scripts/adopt-tenant-zero.mjs` to migrate the pre-existing production DB into the new layout as tenant zero.
+- **Phase 7 — File isolation & lifecycle enforcement** — uploads/PDFs/OCR scratch files moved off the shared, unauthenticated `express.static` mount onto per-tenant, permission-checked routes; `trial`/`suspended` status now actually enforced on every request, with a `WorkspaceStatusBanner` and platform-admin suspend/reactivate/extend-trial controls.
+- **Phase 8 — Off-box backups + workspace admin** — nightly snapshots and uploaded files optionally mirrored to S3/R2 (`BACKUP_S3_BUCKET`); workspace rename/delete added to the platform console with guardrails (primary workspace exempt, must be suspended first, exact slug confirmation, pre-delete snapshot).
+- **Phase 9 — Restore + backup monitoring** — `scripts/backup-cli.mjs` is workspace-aware and can pull a snapshot back from off-box storage (`--from-offsite`), integrity-checking it before overwriting anything; every backup pass is now recorded, failures email an operator, and the dashboard flags a scheduler that died silently.
+- **Phase 10 — Invite links & fleet migrations** — invite/notification emails now link to the issuing workspace's own subdomain instead of a global `APP_URL`; `db:migrate:bootstrap` isolates each tenant's migration run so one bad database can't abort the whole fleet, with a new read-only `db:migrate:fleet:status` preview.
+- **Single-domain (cookie) mode** — added alongside these phases for hosts that can't do wildcard subdomains (e.g. a bare Railway URL): an `active_tenant` cookie selects the workspace instead of the `Host` header, so multi-tenant SaaS works even without `APP_ROOT_DOMAIN`/wildcard DNS configured.
+
+Still missing (tracked in `SAAS_PROJECT.md`): billing/plan gating (Stripe), signup email verification, self-serve data export/account closure.
 
 ## Improvement Roadmap
 

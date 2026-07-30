@@ -194,7 +194,7 @@ const FAQS = [
   },
   {
     q: "How do I open my agency's workspace?",
-    a: "Each workspace has its own subdomain. Visit <your-agency>.marvelops.app (for example acme.marvelops.app) to land directly in your agency's workspace. Bookmarks and shared links should use your subdomain so you always return to the right workspace.",
+    a: "If your instance uses subdomain workspaces, visit <your-agency>.marvelops.app (for example acme.marvelops.app) to land directly in your agency's workspace — bookmarks and shared links should use your subdomain. On instances without wildcard subdomains (for example a plain Railway URL), the app runs in single-domain mode instead: signing in or signing up sets a cookie that remembers which workspace you belong to, so the same bare URL takes you back to your workspace automatically.",
     category: 'saas',
   },
   {
@@ -225,6 +225,21 @@ const FAQS = [
   {
     q: 'What makes a valid workspace address?',
     a: 'Your workspace address becomes the subdomain you sign in at (e.g. acme.marvelops.app). It may contain only lowercase letters, numbers, and hyphens, must be 1–63 characters, and cannot be a reserved word like "www", "api", "app", "admin", or "mail". The sign-up form checks availability as you type.',
+    category: 'saas',
+  },
+  {
+    q: 'Where do I rename my workspace or change its Microsoft sign-in tenant?',
+    a: "Go to Workspace Settings (admin only). You can rename your workspace's display name and set which Azure AD tenant Microsoft sign-in should accept for your team — no request to support needed. The workspace address (subdomain/slug) itself can't be changed here since it's how the platform routes to your workspace.",
+    category: 'saas',
+  },
+  {
+    q: 'What happens when my trial ends, or if my workspace is suspended?',
+    a: "You'll see a status banner once your workspace is suspended or within 7 days of your trial deadline. A suspended or trial-expired workspace blocks normal use of the app, but you can still sign in and see your workspace's status — nothing is deleted. Contact your account manager to reactivate or extend your trial.",
+    category: 'saas',
+  },
+  {
+    q: 'Can our data or files ever end up mixed with another workspace, even in uploads or backups?',
+    a: "No. Uploaded files, generated PDFs, and backups are all isolated per workspace, the same as the database. Files are served through an authenticated, permission-checked route rather than a shared public folder, and backups (including any off-box copy) are scoped and restored per workspace.",
     category: 'saas',
   },
 ];

@@ -55,6 +55,35 @@ Each task has an `escalation_trigger_time` — a priority-based lead before the 
 **I'm on Linux/Railway and imports broke / casing issues?**
 The app deploys from `main` to Railway (Linux, case-sensitive filesystem). Keep file/import casing exact. Locally on macOS the filesystem is case-insensitive, so a casing mismatch only fails at deploy — a case-mismatch import scan was run and came back clean.
 
+## Workspaces & Tenants (multi-tenant SaaS)
+
+**What is a workspace?**
+Marvelops is multi-tenant: every travel agency runs in its own isolated workspace, backed by its own SQLite database file. There's no shared table across agencies — data isolation is at the file level, not a `tenant_id` column. See `SAAS_PROJECT.md` for the full rationale and phase-by-phase implementation log.
+
+**How do I reach my agency's workspace?**
+Two modes, chosen automatically based on config. If `APP_ROOT_DOMAIN` is set (and wildcard DNS/TLS are in place), each workspace gets a subdomain (`acme.marvelops.app`) resolved from the `Host` header. Otherwise the app runs in **single-domain (cookie) mode** — an `active_tenant` cookie set at login/signup selects the workspace on the bare domain, which is what a default `*.up.railway.app` URL needs since wildcard subdomains aren't possible there.
+
+**How is a new workspace created?**
+Self-serve, if `ALLOW_PUBLIC_SIGNUP=true`: `POST /api/tenants/signup` takes an agency name, a unique slug, and either an admin email/password or a Microsoft SSO id token (the workspace's Azure AD tenant is derived from the token). New workspaces start in `trial` status with a `TRIAL_DAYS`-day deadline (default 14). Otherwise an operator provisions one by hand, or with `scripts/adopt-tenant-zero.mjs` for the original pre-multi-tenant production DB.
+
+**Can each agency use its own Microsoft 365 login?**
+Yes. A workspace admin sets the workspace's Azure AD tenant id from **Workspace Settings** — no server env var change needed. Empty/unset falls back to the server-wide `MICROSOFT_TENANT_ID`.
+
+**What happens when a trial expires or a workspace is suspended?**
+`tenantAccessState()` blocks `/api` access (error codes `WORKSPACE_SUSPENDED` / `TRIAL_EXPIRED`), except for auth/health/tenant/platform endpoints so a blocked workspace can still sign in and see its own status. Users see a status banner once suspended or within 7 days of trial expiry. A platform admin can suspend/reactivate/mark-paid/extend-trial from the Platform Admin dashboard (gated by `PLATFORM_ADMIN_EMAILS`).
+
+**Can a workspace be renamed or deleted?**
+Renamed anytime by a platform admin. Deletion is deliberately guarded: the primary/legacy workspace can never be deleted, the workspace must already be suspended, the exact slug must be typed to confirm, and a final snapshot is written outside the directory being removed (and pushed off-box if configured) before anything is deleted.
+
+**Are uploaded files/PDFs isolated per workspace too, not just the database?**
+Yes (Phase 7). Each workspace's uploads, generated PDFs, and OCR scratch files live under `data/tenants/<id>/`, served through an authenticated, permission-checked route — not the old shared, unauthenticated static mount.
+
+**Are backups protected against losing the whole disk?**
+Optionally, yes. With `BACKUP_S3_BUCKET` configured, nightly snapshots and uploaded files are mirrored to S3-compatible storage (S3, R2, MinIO); it's a no-op without that var set. `scripts/backup-cli.mjs restore <snapshot> --tenant <slug> --from-offsite` can pull a snapshot back from object storage and integrity-checks it before ever overwriting a live database. Every backup pass is recorded, and failures email `BACKUP_ALERT_EMAIL` (or `PLATFORM_ADMIN_EMAILS`) so a silently-dead scheduler doesn't go unnoticed.
+
+**What if I run migrations across many tenants and one database is broken?**
+`npm run db:migrate:bootstrap` isolates each tenant's migration in its own try/catch and reports a per-tenant result plus a summary — one bad database no longer aborts the whole run. `npm run db:migrate:fleet:status` previews what would happen (pending counts, unreadable databases) without applying anything.
+
 ## Email & reservations
 
 **Reservation emails had a white-on-white company header / missing service locations.**
