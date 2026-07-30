@@ -90,7 +90,12 @@ export default function Signup() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error?.message || 'Sign-up failed. Please try again.');
+        const details = data.error?.details;
+        if (Array.isArray(details) && details.length) {
+          setError(details.map((d) => d.message).join('. '));
+        } else {
+          setError(data.error?.message || 'Sign-up failed. Please try again.');
+        }
         setLoading(false);
         return;
       }
