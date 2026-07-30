@@ -2881,13 +2881,195 @@
     "gross": "Gross Margin"
   },
   "faq": {
-    "all": "All",
-    "frequently": "Frequently Asked Questions",
-    "find": "Find answers to common questions about using Marvelops TravelPro.",
-    "search": "Search FAQs...",
-    "no": "No matching questions",
-    "try": "Try a different search or category.",
-    "still": "Still have questions? Contact your system administrator or email osman.meran@gmail.com"
+    "all": "Toutes",
+    "frequently": "Foire aux questions",
+    "find": "Trouvez des réponses aux questions courantes sur l’utilisation de Marvelops TravelPro.",
+    "search": "Rechercher dans la FAQ...",
+    "no": "Aucune question correspondante",
+    "try": "Essayez une autre recherche ou catégorie.",
+    "still": "Vous avez encore des questions ? Contactez votre administrateur système ou écrivez à osman.meran@gmail.com",
+    "categories": {
+      "general": "Général",
+      "account": "Compte et utilisateurs",
+      "bookings": "Réservations",
+      "tasks": "Calendrier et tâches",
+      "suppliers": "Fournisseurs et RFP",
+      "email": "E-mail et notifications",
+      "permissions": "Rôles et permissions",
+      "documents": "Documents et PDF",
+      "finance": "Finances et rapports",
+      "saas": "Espaces de travail et organisations"
+    },
+    "items": {
+      "newBooking": {
+        "q": "Comment créer une nouvelle réservation ?",
+        "a": "Allez dans Réservations dans la barre de navigation et cliquez sur « Nouvelle réservation ». Renseignez les informations du client, sélectionnez les services et enregistrez. Vous pouvez aussi créer une réservation directement depuis le profil d’un client."
+      },
+      "newProposal": {
+        "q": "Comment générer une proposition ?",
+        "a": "Cliquez sur « Nouvelle proposition » dans la barre de navigation, ou allez dans Propositions et cliquez sur « Créer une proposition ». Ajoutez les informations du client, les services et les prix, puis cliquez sur Enregistrer. Vous pouvez ensuite télécharger un PDF ou l’envoyer par e-mail."
+      },
+      "sendInvoice": {
+        "q": "Comment envoyer une facture ?",
+        "a": "Allez dans Factures, créez une nouvelle facture avec le client et les lignes de détail. Une fois enregistrée, cliquez sur le bouton e-mail pour l’envoyer directement au client. Vous pouvez aussi télécharger une copie PDF."
+      },
+      "resetPassword": {
+        "q": "Comment réinitialiser mon mot de passe ?",
+        "a": "Cliquez sur votre avatar en haut à droite, accédez aux paramètres de votre profil et utilisez la section « Changer le mot de passe ». Vous aurez besoin de votre mot de passe actuel pour en définir un nouveau."
+      },
+      "addUser": {
+        "q": "Comment ajouter un nouvel utilisateur au système ?",
+        "a": "Allez dans Paramètres > Gestion des utilisateurs (icône bouclier dans la navigation). Cliquez sur « Ajouter un utilisateur », renseignez l’e-mail, le nom et le mot de passe, puis attribuez un niveau de rôle. L’utilisateur recevra l’accès immédiatement."
+      },
+      "userTiers": {
+        "q": "Quels sont les niveaux d’utilisateur et que peuvent-ils faire ?",
+        "a": "Il existe quatre niveaux pour le personnel : Admin — contrôle total du système, y compris la gestion des utilisateurs et les paramètres de l’application (le seul niveau pouvant supprimer des enregistrements) ; Manager — gestion opérationnelle complète, peut créer/modifier/annuler des voyages, factures, fournisseurs, clients, propositions et services (sans suppression) ; Agent — opérations quotidiennes : crée des voyages/factures/propositions, peut consulter tous les voyages sans pouvoir les modifier ni les annuler, modifie les tarifs fournisseurs et gère les demandes de devis B2B ; Accounting — accès en lecture seule aux voyages, factures, rapports, recherche et export. Les valeurs par défaut de chaque niveau peuvent être personnalisées par utilisateur dans le Gestionnaire de permissions. Les comptes du portail Client et Fournisseur n’utilisent pas du tout ces niveaux — leur accès est limité à leurs propres données."
+      },
+      "attachFile": {
+        "q": "Comment joindre un fichier à un client ou une réservation ?",
+        "a": "Ouvrez la page de détail du client ou de la réservation et utilisez la section d’envoi de documents. Vous pouvez envoyer des images, des PDF, des documents Word et des feuilles de calcul. Les fichiers envoyés sont liés à l’enregistrement et accessibles depuis sa vue de détail."
+      },
+      "downloadPdf": {
+        "q": "Comment télécharger le PDF d’une proposition/facture ?",
+        "a": "Sur la page de détail de la proposition ou de la facture, cliquez sur le bouton « Télécharger le PDF ». Le PDF sera généré côté serveur et téléchargé automatiquement. Vous pouvez aussi générer des PDF via le point de terminaison de génération de PDF de l’API."
+      },
+      "sendEmails": {
+        "q": "Puis-je envoyer des e-mails depuis l’application ?",
+        "a": "Oui. Allez dans Paramètres et connectez votre compte Microsoft 365/Outlook dans la section Outlook. Une fois connecté, vous pouvez envoyer des e-mails directement depuis les profils clients, les détails de réservation et l’éditeur d’e-mail."
+      },
+      "realtimeNotifications": {
+        "q": "Comment fonctionnent les notifications en temps réel ?",
+        "a": "Lorsqu’une personne crée ou met à jour une réservation, une facture ou une proposition, une notification apparaît dans l’icône de cloche de la barre de navigation. Les notifications arrivent en temps réel via WebSocket — aucun rafraîchissement de page n’est nécessaire."
+      },
+      "changeLanguage": {
+        "q": "Comment changer la langue de l’application ?",
+        "a": "Cliquez sur votre avatar en haut à droite, survolez l’option Langue et sélectionnez votre langue préférée. L’application prend en charge l’anglais, l’espagnol, le français, l’allemand, l’italien, le turc et le portugais."
+      },
+      "darkMode": {
+        "q": "Comment activer le mode sombre ?",
+        "a": "Cliquez sur l’icône soleil/lune dans la barre de navigation, à côté de la cloche de notifications. Vous pouvez choisir le mode Clair, Sombre ou Système (suit le réglage de votre système d’exploitation)."
+      },
+      "auditTrail": {
+        "q": "Où puis-je consulter le journal d’audit ?",
+        "a": "Les administrateurs peuvent accéder au journal d’audit depuis la section de navigation d’administration (icône Historique). Il affiche toutes les actions modifiant l’état : qui a fait quoi, quand, et ce qui a changé. Filtrez par type d’entité, action ou utilisateur."
+      },
+      "globalSearch": {
+        "q": "Comment fonctionne la recherche globale ?",
+        "a": "Appuyez sur Ctrl+K (Cmd+K sur Mac) pour ouvrir la palette de commandes. Commencez à taper pour rechercher parmi les clients, réservations, fournisseurs, factures et propositions. Les résultats sont regroupés par type."
+      },
+      "customizeInvoice": {
+        "q": "Puis-je personnaliser les en-têtes de facture et l’image de marque ?",
+        "a": "Oui. Allez dans Paramètres et faites défiler jusqu’à la section En-tête de facture. Vous pouvez ajouter le nom de votre entreprise, l’adresse, le numéro de TVA, les coordonnées bancaires et le logo. Ces informations apparaîtront sur toutes les factures générées."
+      },
+      "uploadFileTypes": {
+        "q": "Quels types de fichiers sont pris en charge pour l’envoi ?",
+        "a": "Le système accepte les images (JPEG, PNG, GIF, WebP, SVG), les PDF, le texte brut, le CSV, les documents Word (DOC/DOCX), les feuilles de calcul Excel (XLS/XLSX) et les fichiers JSON. La taille maximale des fichiers est de 20 Mo."
+      },
+      "importData": {
+        "q": "Comment importer des données dans le système ?",
+        "a": "Allez dans Paramètres > Centre d’import. Vous pouvez importer des fournisseurs depuis des fichiers CSV, analyser les prix du marché et importer des contacts depuis Outlook. Le centre d’import vous guide à travers chaque format."
+      },
+      "sessionExpiry": {
+        "q": "Pourquoi ma session a-t-elle expiré ?",
+        "a": "Les sessions expirent après 24 heures pour des raisons de sécurité. Si une invite de connexion apparaît, reconnectez-vous simplement — vos données sont conservées."
+      },
+      "calendarView": {
+        "q": "Comment utiliser la vue Calendrier ?",
+        "a": "Allez dans « Calendrier » dans la barre de navigation. La grille mensuelle affiche tous les voyages avec un code couleur selon leur statut (planification/confirmé/en cours/terminé/annulé). Cliquez sur une date pour voir le détail du jour dans le panneau latéral. Utilisez les flèches pour naviguer entre les mois."
+      },
+      "taskBoardWork": {
+        "q": "Comment fonctionne le tableau des tâches ?",
+        "a": "Allez dans « Tâches » dans la barre de navigation. Le tableau Kanban comporte trois colonnes : En attente, En cours et Terminé. Faites glisser les cartes entre les colonnes ou cliquez sur « Nouvelle tâche » pour en créer une. Chaque tâche peut avoir un client, une priorité (basse/moyenne/haute) et une date d’échéance."
+      },
+      "autoTasks": {
+        "q": "Des tâches sont-elles créées automatiquement quand je crée une réservation ?",
+        "a": "Oui. L’enregistrement d’un nouveau Voyage génère automatiquement trois tâches opérationnelles liées à sa date de départ : Encaisser le solde final (échéance J-30, priorité Haute), Envoyer la liste des chambres à l’hôtel (échéance J-14, Moyenne), et Émettre les billets/documents finaux (échéance J-7, Critique). Elles sont liées à la réservation et au client, et attribuées à la personne ayant créé la réservation. Si ces tâches existent déjà, elles sont resynchronisées plutôt que dupliquées."
+      },
+      "departureDateChange": {
+        "q": "Que se passe-t-il pour les tâches si je change la date de départ d’un voyage ?",
+        "a": "Les tâches générées automatiquement pour ce voyage sont automatiquement reprogrammées — chaque date d’échéance (et la fenêtre de SLA) est recalculée à partir de la nouvelle date de départ. Les tâches créées manuellement conservent leurs propres dates."
+      },
+      "slaFlags": {
+        "q": "Que signifient les indicateurs de SLA/escalade sur les tâches ?",
+        "a": "Chaque tâche a un délai de déclenchement d’escalade basé sur sa priorité (Critique 48 h, Haute 24 h, Moyenne 12 h, Basse 0 h avant l’échéance). Une fois ce délai passé et la tâche toujours ouverte, elle est marquée « escaladée ». Par ailleurs, une tâche est « bientôt due » dans les 24 heures précédant son échéance — c’est ce qui déclenche la bannière de priorité/le compte à rebours dans la vue de réservation. Les deux indicateurs sont calculés en direct, aucune action manuelle n’est nécessaire."
+      },
+      "rfpWizard": {
+        "q": "Comment demander des devis à plusieurs fournisseurs à la fois ?",
+        "a": "Allez dans Fournisseurs > Gestionnaire de RFP (ou accédez directement à la page du Gestionnaire de RFP). Cliquez sur « Nouvelle RFP » et suivez l’assistant en 3 étapes : (1) saisissez les détails du service comme le nom, la quantité et l’échéance, (2) sélectionnez les fournisseurs individuellement ou filtrez par catégorie, (3) vérifiez et envoyez. Chaque fournisseur reçoit une demande de réservation que vous pouvez suivre de en attente → devis reçu → confirmée/refusée."
+      },
+      "commissionTracking": {
+        "q": "Comment suivre les commissions des agents ?",
+        "a": "Allez dans Revenus > Rapport de commissions. Il calcule les commissions à partir des voyages terminés/confirmés en fonction du bénéfice × le taux de commission. Le tableau de bord affiche le revenu total, le bénéfice, la commission et le taux moyen. Des graphiques en barres et en secteurs décomposent la commission par agent. Utilisez le bouton Exporter en CSV pour télécharger les données."
+      },
+      "quoteRequestOnline": {
+        "q": "Les clients peuvent-ils demander un devis en ligne ?",
+        "a": "Oui, de deux façons. (1) Partagez le lien public /request-quote avec des clients potentiels — le formulaire recueille le nom, l’e-mail, la destination, les dates, le nombre de voyageurs, le budget et la description du voyage, et crée un nouveau prospect avec la source « web_quote_request ». (2) Les clients B2B existants ayant accès au portail peuvent se connecter, parcourir le catalogue e-shop sélectionné et soumettre directement une demande de devis."
+      },
+      "b2bQuoting": {
+        "q": "Comment fonctionne la demande de devis client B2B ?",
+        "a": "Les comptes du portail client voient un catalogue de services de type e-shop (organisé par catégorie et fournisseur, avec photos) dont les prix incluent automatiquement leur marge. Ils choisissent des services et soumettent une demande de devis. Votre équipe l’examine dans Demandes de devis, peut ajuster le prix ou la disponibilité, puis l’approuve ou la rejette. Une fois approuvé, le devis se transforme en réservation."
+      },
+      "multiCurrencyDashboard": {
+        "q": "Comment fonctionne le tableau de bord multidevises ?",
+        "a": "Allez dans Revenus et sélectionnez l’onglet « Multidevises ». Choisissez une devise de base (USD, EUR, GBP, etc.) et le tableau de bord convertit toutes les factures et coûts de voyage en utilisant des taux de change actualisés. Les graphiques en barres montrent le revenu par devise et par mois, tous convertis dans la devise de base choisie."
+      },
+      "automatedReminders": {
+        "q": "Quels rappels automatiques existent ?",
+        "a": "Le système effectue des vérifications toutes les heures : (1) les factures dues dans 3 jours déclenchent une notification « bientôt due », (2) les factures en retard déclenchent une notification « en retard », (3) les voyages commençant demain déclenchent une notification « voyage bientôt » . Les notifications apparaissent dans l’icône de cloche. Les rappels sont dédupliqués afin de ne pas recevoir la même alerte deux fois en 24 heures."
+      },
+      "supplierColumns": {
+        "q": "Comment créer et gérer des colonnes supplémentaires dans le tableau des fournisseurs ?",
+        "a": "Sur la page Fournisseurs, cliquez sur « Colonnes » (administrateurs uniquement) pour ajouter des champs personnalisés comme les coordonnées, des étiquettes ou une région. Ils apparaissent comme de nouvelles colonnes dans le tableau et comme des champs modifiables dans le formulaire fournisseur."
+      },
+      "supplierSearchWeb": {
+        "q": "Comment fonctionne la fonctionnalité « Rechercher sur le web » des fournisseurs ?",
+        "a": "Ouvrez un fournisseur et cliquez sur « Rechercher sur le web ». L’application interroge plusieurs sources pour trouver des entreprises correspondantes et renvoie une liste de candidats parmi lesquels choisir : OpenStreetMap via Nominatim et Photon (tous deux enrichis via Overpass avec téléphone, site web, e-mail, marque et horaires d’ouverture — Photon offre une meilleure correspondance approximative), Wikipédia, Wikidata (site officiel/téléphone/e-mail) et, en option, Yelp Fusion (téléphone, note, avis, catégories) lorsqu’une YELP_API_KEY est configurée. Choisissez un résultat et cliquez sur « Appliquer les données » pour préremplir automatiquement le nom, l’adresse, le téléphone, le site web, l’e-mail, la note et les notes du fournisseur (y compris la marque et les horaires) dans le formulaire d’édition. Les recherches s’élargissent automatiquement (nom + ville → nom seul → sans mots génériques), afin de trouver aussi les fournisseurs dont le nom indiqué diffère du nom officiel."
+      },
+      "workspaceWhat": {
+        "q": "Qu’est-ce qu’un espace de travail ?",
+        "a": "Marvelops est multi-tenant : chaque agence de voyage fonctionne dans son propre espace de travail isolé (tenant). Chaque espace de travail possède sa propre base de données, ses utilisateurs, clients, fournisseurs et réservations — les données de votre agence sont entièrement séparées de celles de toute autre agence sur la plateforme, sans enregistrement partagé entre espaces de travail."
+      },
+      "workspaceOpen": {
+        "q": "Comment accéder à l’espace de travail de mon agence ?",
+        "a": "Si votre instance utilise des espaces de travail par sous-domaine, visitez <votre-agence>.marvelops.app (par exemple acme.marvelops.app) pour accéder directement à l’espace de travail de votre agence — vos favoris et liens partagés doivent utiliser votre sous-domaine. Sur les instances sans sous-domaines génériques (par exemple une URL Railway simple), l’application fonctionne en mode domaine unique : la connexion ou l’inscription définit un cookie qui mémorise l’espace de travail auquel vous appartenez, de sorte que la même URL simple vous ramène automatiquement à votre espace de travail."
+      },
+      "workspaceDataSeparate": {
+        "q": "Les données de mon agence sont-elles séparées de celles des autres agences ?",
+        "a": "Oui. Les espaces de travail sont isolés au niveau de la base de données — les données de chaque agence résident dans son propre fichier de base de données dédié. Il n’existe aucune table partagée entre agences, de sorte qu’un utilisateur d’un espace de travail ne peut jamais voir ni modifier les enregistrements d’une autre agence, même via les notifications en temps réel ou les mises à jour en direct."
+      },
+      "workspaceMicrosoftSso": {
+        "q": "Notre agence peut-elle se connecter avec nos propres comptes Microsoft/Office 365 ?",
+        "a": "Oui. Chaque espace de travail peut connecter son propre tenant Azure AD pour l’authentification unique Microsoft, de sorte que votre équipe se connecte avec les comptes Microsoft de votre organisation plutôt qu’avec un compte partagé. Votre administrateur configure le tenant Microsoft de l’espace de travail ; si aucun n’est configuré, la plateforme utilise l’application Microsoft par défaut."
+      },
+      "workspaceCreate": {
+        "q": "Comment un nouvel espace de travail est-il créé ?",
+        "a": "Les nouveaux espaces de travail sont créés de deux façons. (1) En libre-service : si votre instance a l’inscription ouverte activée, allez sur la page d’inscription, choisissez une adresse d’espace de travail unique (par ex. « acme »), saisissez le nom de votre agence ainsi qu’un e-mail/mot de passe administrateur, et votre espace de travail isolé est provisionné instantanément avec son propre sous-domaine. (2) Provisionné par un administrateur : sinon, contactez votre gestionnaire de compte ou le support, qui configurera un espace de travail d’agence supplémentaire pour vous."
+      },
+      "workspaceOneLogin": {
+        "q": "Une même connexion peut-elle appartenir à plusieurs espaces de travail ?",
+        "a": "Chaque connexion est limitée à un seul espace de travail via son sous-domaine. Pour travailler dans une autre agence, connectez-vous via le sous-domaine de cette agence. Un compte unique couvrant plusieurs espaces de travail n’est pas pris en charge dans cette version."
+      },
+      "workspaceSelfServe": {
+        "q": "Puis-je créer mon propre espace de travail ?",
+        "a": "Oui — si l’inscription en libre-service est activée pour votre instance. Vous choisissez une adresse d’espace de travail, saisissez le nom de votre agence ainsi qu’un e-mail/mot de passe administrateur, et la plateforme crée immédiatement votre espace de travail avec sa propre base de données et son sous-domaine isolés. Sur les instances où le libre-service est désactivé (contrôlé par le paramètre ALLOW_PUBLIC_SIGNUP), les nouveaux espaces de travail sont créés par un administrateur."
+      },
+      "workspaceAddressValid": {
+        "q": "Qu’est-ce qui rend une adresse d’espace de travail valide ?",
+        "a": "Votre adresse d’espace de travail devient le sous-domaine sur lequel vous vous connectez (par ex. acme.marvelops.app). Elle ne peut contenir que des lettres minuscules, des chiffres et des tirets, doit comporter entre 1 et 63 caractères, et ne peut pas être un mot réservé comme « www », « api », « app », « admin » ou « mail ». Le formulaire d’inscription vérifie la disponibilité au fur et à mesure de la saisie."
+      },
+      "workspaceSettingsFaq": {
+        "q": "Où puis-je renommer mon espace de travail ou changer son tenant de connexion Microsoft ?",
+        "a": "Allez dans les Paramètres de l’espace de travail (administrateurs uniquement). Vous pouvez renommer le nom d’affichage de votre espace de travail et définir quel tenant Azure AD la connexion Microsoft de votre équipe doit accepter — sans avoir besoin de contacter le support. L’adresse de l’espace de travail (sous-domaine/slug) elle-même ne peut pas être modifiée ici, car c’est elle qui permet à la plateforme d’acheminer vers votre espace de travail."
+      },
+      "workspaceTrialSuspend": {
+        "q": "Que se passe-t-il quand mon essai se termine ou que mon espace de travail est suspendu ?",
+        "a": "Une bannière de statut apparaît dès que votre espace de travail est suspendu ou à moins de 7 jours de la fin de votre essai. Un espace de travail suspendu ou dont l’essai a expiré bloque l’utilisation normale de l’application, mais vous pouvez toujours vous connecter et consulter le statut de votre espace de travail — rien n’est supprimé. Contactez votre gestionnaire de compte pour réactiver ou prolonger votre essai."
+      },
+      "workspaceFileBackupIsolation": {
+        "q": "Nos données ou fichiers peuvent-ils un jour se mélanger avec ceux d’un autre espace de travail, y compris dans les envois ou les sauvegardes ?",
+        "a": "Non. Les fichiers envoyés, les PDF générés et les sauvegardes sont tous isolés par espace de travail, tout comme la base de données. Les fichiers sont servis via une route authentifiée et vérifiée par permission plutôt qu’un dossier public partagé, et les sauvegardes (y compris toute copie externe) sont cloisonnées et restaurées par espace de travail."
+      }
+    }
   },
   "itineraryBuilder": {
     "day": "day",
@@ -3160,5 +3342,131 @@
     "you_2": "You need the Manage Users permission to access this page.",
     "edit_2": "Edit User:",
     "no": "No users found"
+  },
+  "signup": {
+    "title": "Créez votre espace de travail",
+    "subtitle": "Configurez un espace de travail Marvelops dédié à votre agence",
+    "disabledNoticeBefore": "L’inscription en libre-service est actuellement désactivée. Définissez",
+    "disabledNoticeAfter": "dans l’environnement du serveur pour l’activer.",
+    "agencyNameLabel": "Nom de l’agence",
+    "agencyNamePlaceholder": "Acme Travel",
+    "workspaceAddressLabel": "Adresse de l’espace de travail",
+    "workspaceAddressPlaceholder": "acme",
+    "yourWorkspaceSuffix": " (votre espace de travail)",
+    "slugAvailable": "Disponible",
+    "slugTaken": "Cette adresse est déjà prise",
+    "slugInvalid": "Utilisez uniquement des minuscules, des chiffres et des tirets",
+    "yourNameLabel": "Votre nom (facultatif)",
+    "yourNamePlaceholder": "Jane Doe",
+    "adminEmailLabel": "E-mail administrateur",
+    "adminEmailPlaceholder": "vous@agence.com",
+    "adminPasswordLabel": "Mot de passe administrateur",
+    "adminPasswordPlaceholder": "Au moins 8 caractères",
+    "adminPasswordHint": "Min. 8 caractères, avec majuscule, minuscule et un chiffre.",
+    "creating": "Création de l’espace de travail…",
+    "createWorkspace": "Créer l’espace de travail",
+    "or": "ou",
+    "signUpWithMicrosoft": "S’inscrire avec Microsoft",
+    "alreadyHaveWorkspace": "Vous avez déjà un espace de travail ?",
+    "signIn": "Se connecter",
+    "errGenericSignup": "Échec de l’inscription. Veuillez réessayer.",
+    "errEnterAgencyAndSlug": "Saisissez d’abord le nom de votre agence et l’adresse de l’espace de travail.",
+    "errChooseValidSlug": "Choisissez d’abord une adresse d’espace de travail valide et disponible.",
+    "errMicrosoftSignupFailed": "Impossible de démarrer l’inscription avec Microsoft."
+  },
+  "workspaceSettings": {
+    "loading": "Chargement de l’espace de travail…",
+    "title": "Paramètres de l’espace de travail",
+    "subtitle": "Gérez le nom de votre espace de travail et la configuration de connexion Microsoft.",
+    "errLoad": "Échec du chargement des paramètres de l’espace de travail",
+    "errSave": "Échec de l’enregistrement des paramètres de l’espace de travail",
+    "saved": "Paramètres de l’espace de travail enregistrés.",
+    "addressLabel": "Adresse de l’espace de travail",
+    "addressImmutable": "L’adresse de l’espace de travail ne peut pas être modifiée.",
+    "statusLabel": "Statut",
+    "trialEnds": "L’essai se termine le {date}.",
+    "nameLabel": "Nom de l’espace de travail",
+    "namePlaceholder": "Le nom de votre agence",
+    "azureLabel": "ID de tenant Microsoft Azure",
+    "azureHint": "Restreint la connexion Microsoft à ce tenant Azure AD. Laissez vide pour utiliser la valeur par défaut du serveur. Non requis pour la connexion par e-mail/mot de passe.",
+    "saving": "Enregistrement…",
+    "saveChanges": "Enregistrer les modifications",
+    "adminOnly": "Seul un administrateur de l’espace de travail peut modifier ces paramètres."
+  },
+  "platformAdmin": {
+    "loading": "Chargement de la plateforme…",
+    "title": "Administration de la plateforme",
+    "subtitle": "Vue d’ensemble multi-tenant de tous les espaces de travail.",
+    "notAuthorized": "Vous n’avez pas d’accès administrateur de la plateforme. Contactez l’opérateur SaaS pour être ajouté à PLATFORM_ADMIN_EMAILS.",
+    "cardWorkspaces": "Espaces de travail",
+    "cardTotalUsers": "Utilisateurs au total",
+    "cardTotalRecords": "Enregistrements au total",
+    "cardActive": "Actifs",
+    "backupsTitle": "Sauvegardes",
+    "backupsOffsiteOn": "Copie externe activée",
+    "backupsOffsiteOff": "Copie externe NON configurée — les instantanés sont sur un seul disque",
+    "backupsSummary": "Dernière exécution {lastRun} · dernier succès complet {lastSuccess}",
+    "backupsTargetsOk": "{ok}/{total} cibles OK",
+    "backupsStale": "Aucune sauvegarde réussie depuis plus de 30 heures — vérifiez le planificateur.",
+    "backupsNever": "jamais",
+    "colWorkspace": "Espace de travail",
+    "colAddress": "Adresse",
+    "colStatus": "Statut",
+    "colTrialEnds": "Fin de l’essai",
+    "colUsers": "Utilisateurs",
+    "colRecords": "Enregistrements",
+    "colCreated": "Créé",
+    "colActions": "Actions",
+    "noWorkspaces": "Aucun espace de travail pour le moment.",
+    "trialExpired": "Expiré",
+    "trialDays": "{days}j",
+    "actionRename": "Renommer",
+    "actionReactivate": "Réactiver",
+    "actionDelete": "Supprimer",
+    "actionExtendTrial": "Prolonger l’essai",
+    "actionMarkPaid": "Marquer comme payé",
+    "actionSuspend": "Suspendre",
+    "renamePromptTitle": "Nouveau nom de l’espace de travail",
+    "renameErr": "Échec du renommage",
+    "deletePromptBody": "Supprimer définitivement « {name} » et toutes ses données ?\n\nUn instantané final est d’abord effectué. Saisissez l’adresse de l’espace de travail ({slug}) pour confirmer.",
+    "deleteErr": "Échec de la suppression",
+    "deletedNotice": "« {name} » supprimé. Instantané conservé dans {snapshot}",
+    "actionFailed": "Échec de l’action",
+    "loadErr": "Échec du chargement des données de la plateforme"
+  },
+  "workspaceStatusBanner": {
+    "suspended": "Cet espace de travail est suspendu. Les données sont en sécurité, mais les modifications sont bloquées — veuillez contacter le support.",
+    "trialEnded": "Votre essai est terminé. Passez à une offre payante pour continuer à utiliser l’espace de travail.",
+    "trialEndingOne": "Votre essai se termine dans {days} jour. Passez à une offre payante pour conserver l’accès.",
+    "trialEndingMany": "Votre essai se termine dans {days} jours. Passez à une offre payante pour conserver l’accès."
+  },
+  "workspaceStatus": {
+    "trial": "Essai",
+    "active": "Actif",
+    "suspended": "Suspendu"
+  },
+  "reservationEmail": {
+    "pageTitle": "Confirmation de réservation de voyage",
+    "dear": "Cher/Chère",
+    "valuedClient": "cher client",
+    "intro": "Veuillez trouver ci-dessous les détails de votre réservation de voyage. Nous avons hâte de rendre votre voyage inoubliable.",
+    "reservationLabel": "Réservation",
+    "referenceLabel": "Référence",
+    "pendingValue": "En attente",
+    "destinationLabel": "Destination",
+    "datesLabel": "Dates",
+    "dateLabel": "Date(s)",
+    "locationLabel": "Lieu",
+    "detailsLabel": "Détails",
+    "pickupLabel": "Prise en charge",
+    "dropoffLabel": "Dépose",
+    "flightLabel": "Vol",
+    "returnLabel": "Retour",
+    "quantityLabel": "Quantité",
+    "servicesIncluded": "Services inclus",
+    "total": "TOTAL",
+    "notesLabel": "Remarques :",
+    "viewItinerary": "Voir l’itinéraire complet en ligne →",
+    "termsAndConditions": "Conditions générales"
   }
 }

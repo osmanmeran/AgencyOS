@@ -1,6 +1,6 @@
 import { useT } from '@/lib/i18n/I18nContext';
 export default function PendingUsersTable({ users, onApprove, onDeny }) {
-  const { t: _t } = useT();
+  const { t: _t, language } = useT();
   const pending = users.filter((u) => !u.is_active);
   if (pending.length === 0) return null;
 
@@ -36,7 +36,7 @@ export default function PendingUsersTable({ users, onApprove, onDeny }) {
               <td className="px-4 py-2.5 font-medium text-amber-900 dark:text-amber-300">{u.name}</td>
               <td className="px-4 py-2.5 text-amber-700 dark:text-amber-300">{u.email}</td>
               <td className="px-4 py-2.5 text-amber-600 dark:text-amber-300 text-xs">
-                {u.created_date ? new Date(u.created_date).toLocaleDateString() : '-'}
+                {u.created_date ? new Date(u.created_date).toLocaleDateString(language) : '-'}
               </td>
               <td className="px-4 py-2.5 text-right">
                 <button

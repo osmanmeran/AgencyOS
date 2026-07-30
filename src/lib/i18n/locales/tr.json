@@ -2881,13 +2881,195 @@
     "gross": "Gross Margin"
   },
   "faq": {
-    "all": "All",
-    "frequently": "Frequently Asked Questions",
-    "find": "Find answers to common questions about using Marvelops TravelPro.",
-    "search": "Search FAQs...",
-    "no": "No matching questions",
-    "try": "Try a different search or category.",
-    "still": "Still have questions? Contact your system administrator or email osman.meran@gmail.com"
+    "all": "Tümü",
+    "frequently": "Sıkça Sorulan Sorular",
+    "find": "Marvelops TravelPro kullanımıyla ilgili sık sorulan soruların yanıtlarını bulun.",
+    "search": "SSS içinde ara...",
+    "no": "Eşleşen soru bulunamadı",
+    "try": "Farklı bir arama veya kategori deneyin.",
+    "still": "Hâlâ sorunuz mu var? Sistem yöneticinizle iletişime geçin veya osman.meran@gmail.com adresine yazın",
+    "categories": {
+      "general": "Genel",
+      "account": "Hesap ve Kullanıcılar",
+      "bookings": "Rezervasyonlar",
+      "tasks": "Takvim ve Görevler",
+      "suppliers": "Tedarikçiler ve Teklif Talebi",
+      "email": "E-posta ve Bildirimler",
+      "permissions": "Roller ve İzinler",
+      "documents": "Belgeler ve PDF’ler",
+      "finance": "Finans ve Raporlar",
+      "saas": "Çalışma Alanları ve Kuruluşlar"
+    },
+    "items": {
+      "newBooking": {
+        "q": "Yeni bir rezervasyonu nasıl oluştururum?",
+        "a": "Üst menüden Rezervasyonlar’a gidin ve \"Yeni Rezervasyon\"a tıklayın. Müşteri bilgilerini girin, hizmetleri seçin ve kaydedin. Rezervasyonları doğrudan bir müşteri profilinden de oluşturabilirsiniz."
+      },
+      "newProposal": {
+        "q": "Bir teklif nasıl oluşturulur?",
+        "a": "Menü çubuğunda \"Yeni Teklif\"e tıklayın veya Teklifler’e gidip \"Teklif Oluştur\"a tıklayın. Müşteri bilgilerini, hizmetleri ve fiyatlandırmayı ekleyip Kaydet’e tıklayın. Ardından bir PDF indirebilir veya e-posta ile gönderebilirsiniz."
+      },
+      "sendInvoice": {
+        "q": "Bir faturayı nasıl gönderirim?",
+        "a": "Faturalar’a gidin, müşteri ve kalemlerle yeni bir fatura oluşturun. Kaydettikten sonra, doğrudan müşteriye göndermek için e-posta düğmesine tıklayın. Ayrıca bir PDF kopyası da indirebilirsiniz."
+      },
+      "resetPassword": {
+        "q": "Şifremi nasıl sıfırlarım?",
+        "a": "Sağ üstteki avatarınıza tıklayın, profil ayarlarınıza gidin ve \"Şifre Değiştir\" bölümünü kullanın. Yeni bir şifre belirlemek için mevcut şifrenize ihtiyacınız olacak."
+      },
+      "addUser": {
+        "q": "Sisteme yeni bir kullanıcıyı nasıl eklerim?",
+        "a": "Ayarlar > Kullanıcı Yönetimi’ne gidin (menüdeki kalkan simgesi). \"Kullanıcı Ekle\"ye tıklayın, e-posta, ad ve şifreyi girin, ardından bir rol seviyesi atayın. Kullanıcı erişimi hemen alacaktır."
+      },
+      "userTiers": {
+        "q": "Kullanıcı seviyeleri nelerdir ve neler yapabilirler?",
+        "a": "Dört personel seviyesi vardır: Admin — kullanıcı yönetimi ve uygulama ayarları dahil tam sistem kontrolü (kayıtları silebilen tek seviye); Manager — tam operasyon yönetimi, seyahat, fatura, tedarikçi, müşteri, teklif ve hizmetleri oluşturabilir/değiştirebilir/iptal edebilir (silme yok); Agent — günlük operasyonlar: seyahat/fatura/teklif oluşturur, tüm seyahatleri görüntüleyebilir ama değiştiremez veya iptal edemez, tedarikçi fiyatlandırmasını düzenler ve B2B teklif taleplerini yönetir; Accounting — seyahatlere, faturalara, raporlara, aramaya ve dışa aktarmaya salt okunur erişim. Her seviyenin varsayılanları İzin Yöneticisi’nde kullanıcı bazında geçersiz kılınabilir. Müşteri ve Tedarikçi portalı hesapları bu seviyeleri hiç kullanmaz — erişimleri yalnızca kendi verileriyle sınırlıdır."
+      },
+      "attachFile": {
+        "q": "Bir müşteriye veya rezervasyona nasıl dosya eklerim?",
+        "a": "Müşteri veya rezervasyon detay sayfasını açın ve belge yükleme bölümünü kullanın. Resim, PDF, Word belgesi ve elektronik tablo yükleyebilirsiniz. Yüklenen dosyalar ilgili kayda bağlanır ve detay görünümünden erişilebilir olur."
+      },
+      "downloadPdf": {
+        "q": "Bir teklifin/faturanın PDF’ini nasıl indiririm?",
+        "a": "Teklif veya fatura detay sayfasında \"PDF İndir\" düğmesine tıklayın. PDF sunucu tarafında oluşturulacak ve otomatik olarak indirilecektir. PDF’leri API’deki PDF oluşturma uç noktasından da oluşturabilirsiniz."
+      },
+      "sendEmails": {
+        "q": "Uygulamadan e-posta gönderebilir miyim?",
+        "a": "Evet. Ayarlar’a gidin ve Outlook bölümünden Microsoft 365/Outlook hesabınızı bağlayın. Bağlandıktan sonra, müşteri profillerinden, rezervasyon detaylarından ve e-posta düzenleyicisinden doğrudan e-posta gönderebilirsiniz."
+      },
+      "realtimeNotifications": {
+        "q": "Gerçek zamanlı bildirimler nasıl çalışır?",
+        "a": "Biri bir rezervasyon, fatura veya teklif oluşturduğunda ya da güncellediğinde, üst menüdeki zil simgesinde bir bildirim görünür. Bildirimler WebSocket üzerinden gerçek zamanlı olarak gelir — sayfayı yenilemeye gerek yoktur."
+      },
+      "changeLanguage": {
+        "q": "Uygulama dilini nasıl değiştiririm?",
+        "a": "Sağ üstteki avatarınıza tıklayın, Dil seçeneğinin üzerine gelin ve tercih ettiğiniz dili seçin. Uygulama İngilizce, İspanyolca, Fransızca, Almanca, İtalyanca, Türkçe ve Portekizce’yi destekler."
+      },
+      "darkMode": {
+        "q": "Karanlık modu nasıl etkinleştiririm?",
+        "a": "Üst menüde bildirim ziline yakın olan güneş/ay simgesine tıklayın. Açık, Koyu veya Sistem (işletim sistemi ayarınızı takip eder) modlarından birini seçebilirsiniz."
+      },
+      "auditTrail": {
+        "q": "Denetim kaydını nerede görebilirim?",
+        "a": "Yöneticiler, admin gezinme bölümünden (Geçmiş simgesi) Denetim Kaydı’na erişebilir. Durum değiştiren tüm işlemleri gösterir: kim, ne zaman, neyi değiştirdi. Varlık türüne, işleme veya kullanıcıya göre filtreleyin."
+      },
+      "globalSearch": {
+        "q": "Genel arama nasıl çalışır?",
+        "a": "Komut paletini açmak için Ctrl+K (Mac’te Cmd+K) tuşlarına basın. Müşteriler, rezervasyonlar, tedarikçiler, faturalar ve teklifler arasında arama yapmak için yazmaya başlayın. Sonuçlar türe göre gruplandırılır."
+      },
+      "customizeInvoice": {
+        "q": "Fatura başlıklarını ve markalaşmayı özelleştirebilir miyim?",
+        "a": "Evet. Ayarlar’a gidin ve Fatura Başlığı bölümüne kaydırın. Şirket adınızı, adresinizi, vergi kimlik numaranızı, banka bilgilerinizi ve logonuzu ekleyebilirsiniz. Bu bilgiler oluşturulan tüm faturalarda görünür."
+      },
+      "uploadFileTypes": {
+        "q": "Yükleme için hangi dosya türleri desteklenir?",
+        "a": "Sistem, resimleri (JPEG, PNG, GIF, WebP, SVG), PDF’leri, düz metni, CSV’yi, Word belgelerini (DOC/DOCX), Excel elektronik tablolarını (XLS/XLSX) ve JSON dosyalarını kabul eder. Maksimum dosya boyutu 20 MB’dır."
+      },
+      "importData": {
+        "q": "Sisteme veri nasıl aktarırım?",
+        "a": "Ayarlar > İçe Aktarma Merkezi’ne gidin. CSV dosyalarından tedarikçi aktarabilir, piyasa fiyatlarını analiz edebilir ve Outlook’tan kişi aktarabilirsiniz. İçe aktarma merkezi sizi her format boyunca yönlendirir."
+      },
+      "sessionExpiry": {
+        "q": "Oturumum neden sona erdi?",
+        "a": "Güvenlik nedeniyle oturumlar 24 saat sonra sona erer. Bir giriş istemi görürseniz, tekrar giriş yapmanız yeterlidir — verileriniz korunur."
+      },
+      "calendarView": {
+        "q": "Takvim görünümünü nasıl kullanırım?",
+        "a": "Üst menüden \"Takvim\"e gidin. Aylık ızgara, tüm seyahatleri duruma göre renk kodlu olarak gösterir (planlama/onaylandı/devam ediyor/tamamlandı/iptal edildi). Yan paneldeki gün detaylarını görmek için herhangi bir tarihe tıklayın. Aylar arasında gezinmek için okları kullanın."
+      },
+      "taskBoardWork": {
+        "q": "Görev panosu nasıl çalışır?",
+        "a": "Üst menüden \"Görevler\"e gidin. Kanban panosunda üç sütun vardır: Beklemede, Devam Ediyor ve Tamamlandı. Kartları sütunlar arasında sürükleyin veya bir tane oluşturmak için \"Yeni Görev\"e tıklayın. Her görevin bir müşterisi, önceliği (düşük/orta/yüksek) ve bitiş tarihi olabilir."
+      },
+      "autoTasks": {
+        "q": "Bir rezervasyon oluşturduğumda görevler otomatik olarak oluşturulur mu?",
+        "a": "Evet. Yeni bir Seyahat kaydedildiğinde, kalkış tarihine bağlı üç operasyonel görev otomatik olarak oluşturulur: Kalan Bakiyeyi Tahsil Et (30 gün önce son tarih, Yüksek öncelik), Oda Listesini Otele Gönder (14 gün önce son tarih, Orta) ve Bilet/Son Belgeleri Düzenle (7 gün önce son tarih, Kritik). Bunlar rezervasyona ve müşteriye bağlanır ve rezervasyonu oluşturan kişiye atanır. Bu görevler zaten mevcutsa, çoğaltılmak yerine yeniden eşitlenir."
+      },
+      "departureDateChange": {
+        "q": "Bir seyahatin kalkış tarihini değiştirirsem görevlere ne olur?",
+        "a": "O Seyahatten otomatik olarak oluşturulan görevler otomatik olarak yeniden zamanlanır — her son tarih (ve SLA penceresi) yeni kalkış tarihine göre yeniden hesaplanır. Manuel olarak oluşturduğunuz görevler kendi tarihlerini korur."
+      },
+      "slaFlags": {
+        "q": "Görevlerdeki SLA/eskalasyon işaretleri ne anlama gelir?",
+        "a": "Her görevin önceliğine dayalı bir eskalasyon tetikleme süresi vardır (Kritik son tarihten 48 sa. önce, Yüksek 24 sa., Orta 12 sa., Düşük 0 sa.). Bu süre geçtiğinde ve görev hâlâ açıksa \"eskale edildi\" olarak işaretlenir. Ayrı olarak, bir görev son tarihinden önceki 24 saat içinde \"yakında bitiyor\" olur — rezervasyon görünümündeki öncelik banner’ını/geri sayımı bu belirler. Her iki işaret de canlı olarak hesaplanır, manuel bir işlem gerekmez."
+      },
+      "rfpWizard": {
+        "q": "Aynı anda birden fazla tedarikçiden nasıl teklif talep ederim?",
+        "a": "Tedarikçiler > RFP Yöneticisi’ne gidin (veya doğrudan RFP Yöneticisi sayfasına gidin). \"Yeni RFP\"ye tıklayın ve 3 adımlı sihirbazı izleyin: (1) ad, miktar ve son tarih gibi hizmet ayrıntılarını girin, (2) tedarikçileri tek tek seçin veya kategoriye göre filtreleyin, (3) inceleyip gönderin. Her tedarikçi, beklemede → teklif verildi → onaylandı/reddedildi şeklinde takip edebileceğiniz bir Rezervasyon Talebi alır."
+      },
+      "commissionTracking": {
+        "q": "Acente komisyonlarını nasıl takip ederim?",
+        "a": "Gelir > Komisyon Raporu’na gidin. Tamamlanmış/onaylanmış seyahatlerden kâr × komisyon oranına göre komisyonları hesaplar. Panel toplam geliri, kârı, komisyonu ve ortalama oranı gösterir. Çubuk ve pasta grafikler komisyonu acenteye göre ayırır. Verileri indirmek için CSV Dışa Aktar düğmesini kullanın."
+      },
+      "quoteRequestOnline": {
+        "q": "Müşteriler çevrimiçi teklif talep edebilir mi?",
+        "a": "Evet, iki şekilde. (1) Potansiyel müşterilerle /request-quote genel bağlantısını paylaşın — form ad, e-posta, hedef, tarihler, yolcu sayısı, bütçe ve seyahat açıklaması toplar ve \"web_quote_request\" kaynağıyla yeni bir potansiyel müşteri oluşturur. (2) Portal erişimi olan mevcut B2B müşterileri giriş yapabilir, seçilmiş e-mağaza kataloğuna göz atabilir ve doğrudan bir teklif talebi gönderebilir."
+      },
+      "b2bQuoting": {
+        "q": "B2B müşteri teklif verme nasıl çalışır?",
+        "a": "Müşteri portalı hesapları, otomatik olarak kendi kâr marjlarıyla fiyatlandırılmış, e-mağaza tarzında bir hizmet kataloğu görür (kategoriye ve tedarikçiye göre düzenlenmiş, fotoğraflarla). Hizmet seçip bir teklif talebi gönderirler. Ekibiniz bunu Teklif Talepleri’nde inceler, fiyatı veya müsaitliği ayarlayabilir ve onaylayabilir ya da reddedebilir. Onaylandığında, teklif bir rezervasyona dönüşür."
+      },
+      "multiCurrencyDashboard": {
+        "q": "Çoklu para birimi paneli nasıl çalışır?",
+        "a": "Gelir’e gidin ve \"Çoklu Para Birimi\" sekmesini seçin. Bir temel para birimi seçin (USD, EUR, GBP vb.) ve panel, güncel döviz kurlarını kullanarak tüm faturaları ve seyahat maliyetlerini dönüştürür. Çubuk grafikler, seçtiğiniz temel para birimine dönüştürülmüş olarak para birimine ve aya göre geliri gösterir."
+      },
+      "automatedReminders": {
+        "q": "Hangi otomatik hatırlatmalar mevcut?",
+        "a": "Sistem saatlik kontroller yapar: (1) 3 gün içinde vadesi gelen faturalar bir \"yakında vadesi geliyor\" bildirimi tetikler, (2) vadesi geçmiş faturalar bir \"vadesi geçti\" bildirimi tetikler, (3) yarın başlayacak seyahatler bir \"seyahat yakında başlıyor\" bildirimi tetikler. Bildirimler zil simgesinde görünür. Hatırlatmalar tekilleştirilir, böylece 24 saat içinde aynı uyarıyı iki kez almazsınız."
+      },
+      "supplierColumns": {
+        "q": "Tedarikçi tablosunda ek sütunları nasıl oluşturur ve yönetirim?",
+        "a": "Tedarikçiler sayfasında, iletişim bilgisi, etiket veya bölge gibi özel alanlar eklemek için \"Sütunlar\"a (yalnızca admin) tıklayın. Bunlar tabloda yeni sütunlar olarak ve tedarikçi formunda düzenlenebilir alanlar olarak görünür."
+      },
+      "supplierSearchWeb": {
+        "q": "Tedarikçi \"Web’de Ara\" özelliği nasıl çalışır?",
+        "a": "Bir tedarikçiyi açın ve \"Web’de Ara\"ya tıklayın. Uygulama, eşleşen işletmeleri bulmak için birkaç kaynağı sorgular ve seçebileceğiniz bir aday listesi döndürür: Nominatim ve Photon üzerinden OpenStreetMap (her ikisi de telefon, web sitesi, e-posta, marka ve çalışma saatleri için Overpass ile zenginleştirilmiştir — Photon daha iyi bulanık eşleştirme sağlar), Wikipedia, Wikidata (resmi site/telefon/e-posta) ve bir YELP_API_KEY yapılandırıldığında isteğe bağlı olarak Yelp Fusion (telefon, puan, yorumlar, kategoriler). Birini seçin ve tedarikçinin adını, adresini, telefonunu, web sitesini, e-postasını, puanını ve notlarını (marka ve çalışma saatleri dahil) düzenleme formuna otomatik olarak doldurmak için \"Veriyi Uygula\"ya tıklayın. Sorgular otomatik olarak genişler (ad + şehir → yalnızca ad → genel kelimeler çıkarılmış hâli), böylece listelenen adı resmi addan farklı olan tedarikçiler de bulunur."
+      },
+      "workspaceWhat": {
+        "q": "Çalışma alanı nedir?",
+        "a": "Marvelops çoklu kiracılıdır: her seyahat acentesi kendi izole çalışma alanında (kiracı) çalışır. Her çalışma alanının kendi veritabanı, kullanıcıları, müşterileri, tedarikçileri ve rezervasyonları vardır — acentenizin verileri, çalışma alanları arasında paylaşılan hiçbir kayıt olmadan platformdaki diğer tüm acentelerden tamamen ayrıdır."
+      },
+      "workspaceOpen": {
+        "q": "Acentemin çalışma alanını nasıl açarım?",
+        "a": "Örneğiniz alt alan adlı çalışma alanları kullanıyorsa, doğrudan acentenizin çalışma alanına gitmek için <acenteniz>.marvelops.app (örneğin acme.marvelops.app) adresini ziyaret edin — yer imleri ve paylaşılan bağlantılar alt alan adınızı kullanmalıdır. Joker alt alan adı bulunmayan örneklerde (örneğin basit bir Railway URL’si) uygulama bunun yerine tek alan adı modunda çalışır: giriş yapmak veya kaydolmak, hangi çalışma alanına ait olduğunuzu hatırlayan bir çerez ayarlar, böylece aynı basit URL sizi otomatik olarak çalışma alanınıza geri götürür."
+      },
+      "workspaceDataSeparate": {
+        "q": "Acentemin verileri diğer acentelerden ayrı mı tutuluyor?",
+        "a": "Evet. Çalışma alanları veritabanı düzeyinde izole edilmiştir — her acentenin verileri kendi özel veritabanı dosyasında yer alır. Acenteler arasında paylaşılan hiçbir tablo yoktur, bu nedenle bir çalışma alanındaki bir kullanıcı, gerçek zamanlı bildirimler veya canlı güncellemeler yoluyla bile başka bir acentenin kayıtlarını asla göremez veya değiştiremez."
+      },
+      "workspaceMicrosoftSso": {
+        "q": "Acentemiz kendi Microsoft/Office 365 hesaplarımızla giriş yapabilir mi?",
+        "a": "Evet. Her çalışma alanı, Microsoft tek oturum açma için kendi Azure AD kiracısını bağlayabilir, böylece ekibiniz paylaşılan bir hesap yerine kuruluşunuzun Microsoft hesaplarıyla giriş yapar. Yöneticiniz çalışma alanının Microsoft kiracısını ayarlar; hiçbiri yapılandırılmamışsa platform varsayılan Microsoft uygulamasına döner."
+      },
+      "workspaceCreate": {
+        "q": "Yeni bir çalışma alanı nasıl oluşturulur?",
+        "a": "Yeni çalışma alanları iki şekilde oluşturulur. (1) Kendin yap: örneğinizde açık kayıt etkinse, kayıt sayfasına gidin, benzersiz bir çalışma alanı adresi seçin (örn. \"acme\"), acente adınızı ve bir admin e-posta/şifresini girin; izole çalışma alanınız kendi alt alan adıyla anında hazır hale getirilir. (2) Admin tarafından sağlanır: aksi takdirde, hesap yöneticinizle veya destek ekibiyle iletişime geçin; sizin için ek bir acente çalışma alanı kuracaklardır."
+      },
+      "workspaceOneLogin": {
+        "q": "Bir giriş birden fazla çalışma alanına ait olabilir mi?",
+        "a": "Her giriş, alt alan adı aracılığıyla tek bir çalışma alanıyla sınırlıdır. Farklı bir acentede çalışmak için o acentenin alt alan adı üzerinden giriş yapın. Bu sürümde birden fazla çalışma alanını kapsayan tek bir hesap desteklenmemektedir."
+      },
+      "workspaceSelfServe": {
+        "q": "Kendi çalışma alanımı oluşturabilir miyim?",
+        "a": "Evet — örneğiniz için kendin-yap kaydı etkinse. Bir çalışma alanı adresi seçersiniz, acente adınızı ve bir admin e-posta/şifresini girersiniz ve platform hemen kendi izole veritabanı ve alt alan adıyla çalışma alanınızı oluşturur. Kendin-yap kaydının devre dışı olduğu örneklerde (ALLOW_PUBLIC_SIGNUP ayarıyla kontrol edilir), yeni çalışma alanları bunun yerine bir yönetici tarafından oluşturulur."
+      },
+      "workspaceAddressValid": {
+        "q": "Geçerli bir çalışma alanı adresini ne belirler?",
+        "a": "Çalışma alanı adresiniz, giriş yaptığınız alt alan adı olur (örn. acme.marvelops.app). Yalnızca küçük harf, rakam ve tire içerebilir, 1-63 karakter uzunluğunda olmalıdır ve \"www\", \"api\", \"app\", \"admin\" veya \"mail\" gibi ayrılmış bir kelime olamaz. Kayıt formu, yazarken kullanılabilirliği kontrol eder."
+      },
+      "workspaceSettingsFaq": {
+        "q": "Çalışma alanımı nerede yeniden adlandırırım veya Microsoft giriş kiracısını nerede değiştiririm?",
+        "a": "Çalışma Alanı Ayarları’na gidin (yalnızca admin). Çalışma alanınızın görünen adını yeniden adlandırabilir ve ekibinizin Microsoft girişinin hangi Azure AD kiracısını kabul edeceğini ayarlayabilirsiniz — destek ekibine başvurmaya gerek kalmadan. Çalışma alanı adresinin (alt alan adı/slug) kendisi burada değiştirilemez, çünkü platformun çalışma alanınıza nasıl yönlendirileceğini o belirler."
+      },
+      "workspaceTrialSuspend": {
+        "q": "Deneme süresi bittiğinde veya çalışma alanım askıya alındığında ne olur?",
+        "a": "Çalışma alanınız askıya alındığında veya deneme süresinin bitmesine 7 gün veya daha az kaldığında bir durum banner’ı göreceksiniz. Askıya alınmış veya deneme süresi dolmuş bir çalışma alanı, uygulamanın normal kullanımını engeller, ancak yine de giriş yapıp çalışma alanınızın durumunu görebilirsiniz — hiçbir şey silinmez. Deneme süresini yeniden etkinleştirmek veya uzatmak için hesap yöneticinizle iletişime geçin."
+      },
+      "workspaceFileBackupIsolation": {
+        "q": "Verilerimiz veya dosyalarımız, yüklemelerde veya yedeklemelerde bile başka bir çalışma alanıyla karışabilir mi?",
+        "a": "Hayır. Yüklenen dosyalar, oluşturulan PDF’ler ve yedeklemeler, veritabanı gibi çalışma alanı başına izole edilmiştir. Dosyalar, paylaşılan bir genel klasör yerine kimlik doğrulamalı, izin kontrollü bir rota üzerinden sunulur ve yedeklemeler (harici herhangi bir kopya dahil) çalışma alanı başına sınırlandırılır ve çalışma alanı başına geri yüklenir."
+      }
+    }
   },
   "itineraryBuilder": {
     "day": "day",
@@ -3160,5 +3342,131 @@
     "you_2": "You need the Manage Users permission to access this page.",
     "edit_2": "Edit User:",
     "no": "No users found"
+  },
+  "signup": {
+    "title": "Çalışma alanınızı oluşturun",
+    "subtitle": "Acenteniz için özel bir Marvelops çalışma alanı kurun",
+    "disabledNoticeBefore": "Kendin-yap kayıt şu anda devre dışı. Etkinleştirmek için sunucu ortamında",
+    "disabledNoticeAfter": "değerini ayarlayın.",
+    "agencyNameLabel": "Acente adı",
+    "agencyNamePlaceholder": "Acme Travel",
+    "workspaceAddressLabel": "Çalışma alanı adresi",
+    "workspaceAddressPlaceholder": "acme",
+    "yourWorkspaceSuffix": " (çalışma alanınız)",
+    "slugAvailable": "Uygun",
+    "slugTaken": "Bu adres zaten alınmış",
+    "slugInvalid": "Yalnızca küçük harf, rakam ve tire kullanın",
+    "yourNameLabel": "Adınız (isteğe bağlı)",
+    "yourNamePlaceholder": "Jane Doe",
+    "adminEmailLabel": "Admin e-postası",
+    "adminEmailPlaceholder": "siz@acente.com",
+    "adminPasswordLabel": "Admin şifresi",
+    "adminPasswordPlaceholder": "En az 8 karakter",
+    "adminPasswordHint": "En az 8 karakter, büyük harf, küçük harf ve bir rakam içermeli.",
+    "creating": "Çalışma alanı oluşturuluyor…",
+    "createWorkspace": "Çalışma alanı oluştur",
+    "or": "veya",
+    "signUpWithMicrosoft": "Microsoft ile kaydol",
+    "alreadyHaveWorkspace": "Zaten bir çalışma alanınız mı var?",
+    "signIn": "Giriş yap",
+    "errGenericSignup": "Kayıt başarısız oldu. Lütfen tekrar deneyin.",
+    "errEnterAgencyAndSlug": "Önce acente adınızı ve çalışma alanı adresinizi girin.",
+    "errChooseValidSlug": "Önce geçerli, uygun bir çalışma alanı adresi seçin.",
+    "errMicrosoftSignupFailed": "Microsoft ile kayıt başlatılamadı."
+  },
+  "workspaceSettings": {
+    "loading": "Çalışma alanı yükleniyor…",
+    "title": "Çalışma alanı ayarları",
+    "subtitle": "Çalışma alanı adınızı ve Microsoft giriş yapılandırmasını yönetin.",
+    "errLoad": "Çalışma alanı ayarları yüklenemedi",
+    "errSave": "Çalışma alanı ayarları kaydedilemedi",
+    "saved": "Çalışma alanı ayarları kaydedildi.",
+    "addressLabel": "Çalışma alanı adresi",
+    "addressImmutable": "Çalışma alanı adresi değiştirilemez.",
+    "statusLabel": "Durum",
+    "trialEnds": "Deneme süresi {date} tarihinde sona eriyor.",
+    "nameLabel": "Çalışma alanı adı",
+    "namePlaceholder": "Acentenizin adı",
+    "azureLabel": "Microsoft Azure kiracı kimliği",
+    "azureHint": "Microsoft girişini bu Azure AD kiracısıyla sınırlar. Sunucu varsayılanına dönmek için boş bırakın. E-posta/şifre ile giriş için gerekli değildir.",
+    "saving": "Kaydediliyor…",
+    "saveChanges": "Değişiklikleri kaydet",
+    "adminOnly": "Bu ayarları yalnızca bir çalışma alanı admini değiştirebilir."
+  },
+  "platformAdmin": {
+    "loading": "Platform yükleniyor…",
+    "title": "Platform yönetimi",
+    "subtitle": "Tüm çalışma alanlarına kiracılar arası genel bakış.",
+    "notAuthorized": "Platform admin erişiminiz yok. PLATFORM_ADMIN_EMAILS listesine eklenmek için SaaS operatörüyle iletişime geçin.",
+    "cardWorkspaces": "Çalışma alanları",
+    "cardTotalUsers": "Toplam kullanıcı",
+    "cardTotalRecords": "Toplam kayıt",
+    "cardActive": "Aktif",
+    "backupsTitle": "Yedeklemeler",
+    "backupsOffsiteOn": "Harici kopya etkin",
+    "backupsOffsiteOff": "Harici kopya YAPILANDIRILMAMIŞ — anlık görüntüler tek bir diskte",
+    "backupsSummary": "Son çalışma {lastRun} · en son tamamen başarılı {lastSuccess}",
+    "backupsTargetsOk": "{ok}/{total} hedef başarılı",
+    "backupsStale": "30 saatten fazla süredir başarılı yedekleme yok — zamanlayıcıyı kontrol edin.",
+    "backupsNever": "hiçbir zaman",
+    "colWorkspace": "Çalışma alanı",
+    "colAddress": "Adres",
+    "colStatus": "Durum",
+    "colTrialEnds": "Deneme bitişi",
+    "colUsers": "Kullanıcılar",
+    "colRecords": "Kayıtlar",
+    "colCreated": "Oluşturulma",
+    "colActions": "İşlemler",
+    "noWorkspaces": "Henüz çalışma alanı yok.",
+    "trialExpired": "Süresi doldu",
+    "trialDays": "{days}g",
+    "actionRename": "Yeniden adlandır",
+    "actionReactivate": "Yeniden etkinleştir",
+    "actionDelete": "Sil",
+    "actionExtendTrial": "Denemeyi uzat",
+    "actionMarkPaid": "Ödendi olarak işaretle",
+    "actionSuspend": "Askıya al",
+    "renamePromptTitle": "Yeni çalışma alanı adı",
+    "renameErr": "Yeniden adlandırma başarısız oldu",
+    "deletePromptBody": "\"{name}\" ve tüm verileri kalıcı olarak silinsin mi?\n\nÖnce son bir anlık görüntü alınır. Onaylamak için çalışma alanı adresini ({slug}) yazın.",
+    "deleteErr": "Silme başarısız oldu",
+    "deletedNotice": "\"{name}\" silindi. Anlık görüntü {snapshot} konumunda saklandı",
+    "actionFailed": "İşlem başarısız oldu",
+    "loadErr": "Platform verileri yüklenemedi"
+  },
+  "workspaceStatusBanner": {
+    "suspended": "Bu çalışma alanı askıya alındı. Veriler güvende, ancak değişiklikler engellendi — lütfen destek ile iletişime geçin.",
+    "trialEnded": "Deneme süreniz sona erdi. Çalışma alanını kullanmaya devam etmek için yükseltme yapın.",
+    "trialEndingOne": "Deneme süreniz {days} gün içinde sona eriyor. Erişimi korumak için yükseltme yapın.",
+    "trialEndingMany": "Deneme süreniz {days} gün içinde sona eriyor. Erişimi korumak için yükseltme yapın."
+  },
+  "workspaceStatus": {
+    "trial": "Deneme",
+    "active": "Aktif",
+    "suspended": "Askıya Alındı"
+  },
+  "reservationEmail": {
+    "pageTitle": "Seyahat Rezervasyon Onayı",
+    "dear": "Sayın",
+    "valuedClient": "değerli müşterimiz",
+    "intro": "Seyahat rezervasyon detaylarınızı aşağıda bulabilirsiniz. Yolculuğunuzu unutulmaz kılmayı dört gözle bekliyoruz.",
+    "reservationLabel": "Rezervasyon",
+    "referenceLabel": "Referans",
+    "pendingValue": "Beklemede",
+    "destinationLabel": "Hedef",
+    "datesLabel": "Tarihler",
+    "dateLabel": "Tarih(ler)",
+    "locationLabel": "Konum",
+    "detailsLabel": "Detaylar",
+    "pickupLabel": "Alış",
+    "dropoffLabel": "Bırakış",
+    "flightLabel": "Uçuş",
+    "returnLabel": "Dönüş",
+    "quantityLabel": "Adet",
+    "servicesIncluded": "Dahil Olan Hizmetler",
+    "total": "TOPLAM",
+    "notesLabel": "Notlar:",
+    "viewItinerary": "Tam Gezi Planını Çevrimiçi Görüntüle →",
+    "termsAndConditions": "Şartlar ve Koşullar"
   }
 }

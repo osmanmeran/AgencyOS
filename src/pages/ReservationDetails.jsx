@@ -48,7 +48,7 @@ import NotesAndTerms from '@/components/reservation-details/NotesAndTerms';
 import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ReservationDetails() {
-  const { t: _t } = useT();
+  const { t: _t, language } = useT();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');
   const navigate = useNavigate();
@@ -158,7 +158,7 @@ export default function ReservationDetails() {
         await db.integrations.Core.SendEmail({
           to: sendEmailTo,
           subject: `Your Travel Reservation: ${trip.name}`,
-          body: buildEmailBody(trip, appSettings, supplierById),
+          body: buildEmailBody(trip, appSettings, supplierById, { t: _t, language }),
         });
         const history = [...(trip.change_history || []), changeEntry('email_sent', `Proposal sent to ${sendEmailTo}`)];
         return db.entities.Trip.update(tripId, { proposal_status: 'sent', change_history: history });

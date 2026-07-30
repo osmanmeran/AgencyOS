@@ -78,7 +78,7 @@ export default function AppSettings() {
   const queryClient = useQueryClient();
   const { refreshUser } = useAuth();
   const { hasPermission, user } = usePermissions();
-  const { t } = useT();
+  const { t, language } = useT();
   const [activeTab, setActiveTab] = useState('general');
   const [newDepartment, setNewDepartment] = useState('');
   const [newCurrency, setNewCurrency] = useState('');
@@ -638,7 +638,7 @@ export default function AppSettings() {
                   <>
                     Last updated:{' '}
                     <span className="font-medium text-foreground">
-                      {new Date(ratesInfo.updated_at).toLocaleString()}
+                      {new Date(ratesInfo.updated_at).toLocaleString(language)}
                     </span>{' '}
                     · Source: <span className="font-medium text-foreground">{ratesInfo.source}</span>
                   </>

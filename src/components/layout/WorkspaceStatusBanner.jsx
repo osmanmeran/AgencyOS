@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useT } from '@/lib/i18n/I18nContext';
 
 // Surfaces the workspace lifecycle state the server now enforces
 // (server/middleware/tenantStatus.js). Without this, a suspended or lapsed
@@ -7,6 +8,7 @@ import { useEffect, useState } from 'react';
 // Silent by design when there's nothing to say — including on the legacy
 // single-tenant deployment, where /api/tenants/me has no registry row to return.
 export default function WorkspaceStatusBanner() {
+  const { t } = useT();
   const [workspace, setWorkspace] = useState(null);
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function WorkspaceStatusBanner() {
     };
   }, []);
 
-  const notice = workspace && bannerFor(workspace);
+  const notice = workspace && bannerFor(workspace, t);
   if (!notice) return null;
 
   const palette =
@@ -42,12 +44,9 @@ export default function WorkspaceStatusBanner() {
 }
 
 /** @returns {{tone: 'error'|'warning', message: string}|null} */
-function bannerFor(workspace) {
+function bannerFor(workspace, t) {
   if (workspace.status === 'suspended') {
-    return {
-      tone: 'error',
-      message: 'This workspace is suspended. Data is safe, but changes are blocked — please contact support.',
-    };
+    return { tone: 'error', message: t('workspaceStatusBanner.suspended') };
   }
 
   if (workspace.status !== 'trial' || !workspace.trialEndsAt) return null;
@@ -57,12 +56,14 @@ function bannerFor(workspace) {
 
   const daysLeft = Math.ceil((endsAt - Date.now()) / 86400000);
   if (daysLeft <= 0) {
-    return { tone: 'error', message: 'Your trial has ended. Upgrade to continue using the workspace.' };
+    return { tone: 'error', message: t('workspaceStatusBanner.trialEnded') };
   }
   // Stay quiet until the deadline is close enough to act on.
   if (daysLeft > 7) return null;
   return {
     tone: 'warning',
-    message: `Your trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Upgrade to keep access.`,
+    message: t(daysLeft === 1 ? 'workspaceStatusBanner.trialEndingOne' : 'workspaceStatusBanner.trialEndingMany', {
+      days: daysLeft,
+    }),
   };
 }

@@ -2881,13 +2881,195 @@
     "gross": "Gross Margin"
   },
   "faq": {
-    "all": "All",
-    "frequently": "Frequently Asked Questions",
-    "find": "Find answers to common questions about using Marvelops TravelPro.",
-    "search": "Search FAQs...",
-    "no": "No matching questions",
-    "try": "Try a different search or category.",
-    "still": "Still have questions? Contact your system administrator or email osman.meran@gmail.com"
+    "all": "Alle",
+    "frequently": "Häufig gestellte Fragen",
+    "find": "Antworten auf häufige Fragen zur Nutzung von Marvelops TravelPro.",
+    "search": "FAQs durchsuchen...",
+    "no": "Keine passenden Fragen gefunden",
+    "try": "Versuchen Sie eine andere Suche oder Kategorie.",
+    "still": "Haben Sie weitere Fragen? Wenden Sie sich an Ihren Systemadministrator oder schreiben Sie an osman.meran@gmail.com",
+    "categories": {
+      "general": "Allgemein",
+      "account": "Konto & Benutzer",
+      "bookings": "Buchungen & Reservierungen",
+      "tasks": "Kalender & Aufgaben",
+      "suppliers": "Lieferanten & Angebotsanfragen",
+      "email": "E-Mail & Benachrichtigungen",
+      "permissions": "Rollen & Berechtigungen",
+      "documents": "Dokumente & PDFs",
+      "finance": "Finanzen & Berichte",
+      "saas": "Workspaces & Mandanten"
+    },
+    "items": {
+      "newBooking": {
+        "q": "Wie erstelle ich eine neue Buchung?",
+        "a": "Gehen Sie in der oberen Navigation zu Reservierungen und klicken Sie auf „Neue Reservierung“. Geben Sie die Kundendaten ein, wählen Sie Leistungen aus und speichern Sie. Sie können Buchungen auch direkt aus einem Kundenprofil erstellen."
+      },
+      "newProposal": {
+        "q": "Wie erstelle ich ein Angebot?",
+        "a": "Klicken Sie in der Navigationsleiste auf „Neues Angebot“ oder gehen Sie zu Angebote und klicken Sie auf „Angebot erstellen“. Fügen Sie Kundendaten, Leistungen und Preise hinzu und klicken Sie auf Speichern. Anschließend können Sie ein PDF herunterladen oder es per E-Mail versenden."
+      },
+      "sendInvoice": {
+        "q": "Wie versende ich eine Rechnung?",
+        "a": "Gehen Sie zu Rechnungen, erstellen Sie eine neue Rechnung mit Kunde und Positionen. Klicken Sie nach dem Speichern auf die E-Mail-Schaltfläche, um sie direkt an den Kunden zu senden. Sie können auch eine PDF-Kopie herunterladen."
+      },
+      "resetPassword": {
+        "q": "Wie setze ich mein Passwort zurück?",
+        "a": "Klicken Sie oben rechts auf Ihren Avatar, gehen Sie zu Ihren Profileinstellungen und verwenden Sie den Bereich „Passwort ändern“. Sie benötigen Ihr aktuelles Passwort, um ein neues festzulegen."
+      },
+      "addUser": {
+        "q": "Wie füge ich einen neuen Benutzer zum System hinzu?",
+        "a": "Gehen Sie zu Einstellungen > Benutzerverwaltung (Schild-Symbol in der Navigation). Klicken Sie auf „Benutzer hinzufügen“, geben Sie E-Mail, Name und Passwort ein und weisen Sie eine Rollenstufe zu. Der Benutzer erhält sofort Zugriff."
+      },
+      "userTiers": {
+        "q": "Welche Benutzerstufen gibt es und was können sie tun?",
+        "a": "Es gibt vier Mitarbeiterstufen: Admin — volle Systemkontrolle, einschließlich Benutzerverwaltung und App-Einstellungen (die einzige Stufe, die Datensätze löschen kann); Manager — vollständige Betriebsführung, kann Reisen, Rechnungen, Lieferanten, Kunden, Angebote und Leistungen erstellen/ändern/stornieren (kein Löschen); Agent — Tagesgeschäft: erstellt Reisen/Rechnungen/Angebote, kann alle Reisen einsehen, aber nicht ändern oder stornieren, bearbeitet Lieferantenpreise und bearbeitet B2B-Angebotsanfragen; Buchhaltung — nur Lesezugriff auf Reisen, Rechnungen, Berichte, Suche und Export. Die Standardeinstellungen jeder Stufe können pro Benutzer im Berechtigungsmanager überschrieben werden. Kunden- und Lieferantenportal-Konten verwenden diese Stufen überhaupt nicht — ihr Zugriff ist auf ihre eigenen Daten beschränkt."
+      },
+      "attachFile": {
+        "q": "Wie hänge ich eine Datei an einen Kunden oder eine Buchung an?",
+        "a": "Öffnen Sie die Detailseite des Kunden oder der Buchung und verwenden Sie den Bereich zum Hochladen von Dokumenten. Sie können Bilder, PDFs, Word-Dokumente und Tabellenkalkulationen hochladen. Hochgeladene Dateien sind mit dem Datensatz verknüpft und in dessen Detailansicht zugänglich."
+      },
+      "downloadPdf": {
+        "q": "Wie lade ich ein PDF eines Angebots/einer Rechnung herunter?",
+        "a": "Klicken Sie auf der Detailseite des Angebots oder der Rechnung auf die Schaltfläche „PDF herunterladen“. Das PDF wird serverseitig erstellt und automatisch heruntergeladen. Sie können PDFs auch über den PDF-Generierungs-Endpunkt der API erstellen."
+      },
+      "sendEmails": {
+        "q": "Kann ich E-Mails aus der App versenden?",
+        "a": "Ja. Gehen Sie zu Einstellungen und verbinden Sie im Bereich Outlook Ihr Microsoft 365/Outlook-Konto. Nach der Verbindung können Sie E-Mails direkt aus Kundenprofilen, Buchungsdetails und dem E-Mail-Editor versenden."
+      },
+      "realtimeNotifications": {
+        "q": "Wie funktionieren Echtzeit-Benachrichtigungen?",
+        "a": "Wenn jemand eine Buchung, Rechnung oder ein Angebot erstellt oder aktualisiert, erscheint eine Benachrichtigung im Glockensymbol in der oberen Navigationsleiste. Benachrichtigungen treffen in Echtzeit per WebSocket ein — kein Neuladen der Seite erforderlich."
+      },
+      "changeLanguage": {
+        "q": "Wie ändere ich die App-Sprache?",
+        "a": "Klicken Sie oben rechts auf Ihren Avatar, fahren Sie mit der Maus über die Option Sprache und wählen Sie Ihre bevorzugte Sprache. Die App unterstützt Englisch, Spanisch, Französisch, Deutsch, Italienisch, Türkisch und Portugiesisch."
+      },
+      "darkMode": {
+        "q": "Wie aktiviere ich den Dunkelmodus?",
+        "a": "Klicken Sie in der oberen Navigationsleiste neben der Benachrichtigungsglocke auf das Sonne/Mond-Symbol. Sie können zwischen Hell, Dunkel oder System (folgt Ihrer Betriebssystemeinstellung) wählen."
+      },
+      "auditTrail": {
+        "q": "Wo finde ich das Prüfprotokoll?",
+        "a": "Admins können über den Admin-Navigationsbereich (Verlauf-Symbol) auf das Prüfprotokoll zugreifen. Es zeigt alle statusändernden Aktionen: wer was wann geändert hat. Filtern Sie nach Objekttyp, Aktion oder Benutzer."
+      },
+      "globalSearch": {
+        "q": "Wie funktioniert die globale Suche?",
+        "a": "Drücken Sie Strg+K (Cmd+K auf dem Mac), um die Befehlspalette zu öffnen. Beginnen Sie zu tippen, um Kunden, Buchungen, Lieferanten, Rechnungen und Angebote zu durchsuchen. Die Ergebnisse werden nach Typ gruppiert."
+      },
+      "customizeInvoice": {
+        "q": "Kann ich Rechnungsköpfe und das Branding anpassen?",
+        "a": "Ja. Gehen Sie zu Einstellungen und scrollen Sie zum Bereich Rechnungskopf. Sie können Firmenname, Adresse, Steuernummer, Bankdaten und Logo hinzufügen. Diese Angaben erscheinen auf allen erstellten Rechnungen."
+      },
+      "uploadFileTypes": {
+        "q": "Welche Dateitypen werden zum Hochladen unterstützt?",
+        "a": "Das System akzeptiert Bilder (JPEG, PNG, GIF, WebP, SVG), PDFs, Klartext, CSV, Word-Dokumente (DOC/DOCX), Excel-Tabellen (XLS/XLSX) und JSON-Dateien. Die maximale Dateigröße beträgt 20 MB."
+      },
+      "importData": {
+        "q": "Wie importiere ich Daten in das System?",
+        "a": "Gehen Sie zu Einstellungen > Import-Center. Sie können Lieferanten aus CSV-Dateien importieren, Marktpreise analysieren und Kontakte aus Outlook importieren. Das Import-Center führt Sie durch jedes Format."
+      },
+      "sessionExpiry": {
+        "q": "Warum ist meine Sitzung abgelaufen?",
+        "a": "Sitzungen laufen aus Sicherheitsgründen nach 24 Stunden ab. Wenn eine Anmeldeaufforderung erscheint, melden Sie sich einfach erneut an — Ihre Daten bleiben erhalten."
+      },
+      "calendarView": {
+        "q": "Wie benutze ich die Kalenderansicht?",
+        "a": "Gehen Sie in der oberen Navigation zu „Kalender“. Das Monatsraster zeigt alle Reisen farblich nach Status gekennzeichnet (geplant/bestätigt/laufend/abgeschlossen/storniert). Klicken Sie auf ein Datum, um Tagesdetails im Seitenbereich zu sehen. Verwenden Sie die Pfeile, um zwischen Monaten zu navigieren."
+      },
+      "taskBoardWork": {
+        "q": "Wie funktioniert das Aufgabenboard?",
+        "a": "Gehen Sie in der oberen Navigation zu „Aufgaben“. Das Kanban-Board hat drei Spalten: Ausstehend, In Bearbeitung und Erledigt. Ziehen Sie Karten zwischen den Spalten oder klicken Sie auf „Neue Aufgabe“, um eine zu erstellen. Jede Aufgabe kann einen Kunden, eine Priorität (niedrig/mittel/hoch) und ein Fälligkeitsdatum haben."
+      },
+      "autoTasks": {
+        "q": "Werden Aufgaben automatisch erstellt, wenn ich eine Buchung anlege?",
+        "a": "Ja. Beim Speichern einer neuen Reise werden automatisch drei operative Aufgaben erstellt, die an das Abreisedatum gekoppelt sind: Restzahlung einziehen (fällig 30 Tage vorher, hohe Priorität), Zimmerliste ans Hotel senden (fällig 14 Tage vorher, mittel) und Tickets/Enddokumente ausstellen (fällig 7 Tage vorher, kritisch). Sie sind mit der Buchung und dem Kunden verknüpft und dem Ersteller der Buchung zugewiesen. Falls diese Aufgaben bereits existieren, werden sie synchronisiert statt dupliziert."
+      },
+      "departureDateChange": {
+        "q": "Was passiert mit den Aufgaben, wenn ich das Abreisedatum einer Reise ändere?",
+        "a": "Die automatisch erstellten Aufgaben dieser Reise werden automatisch neu terminiert — jedes Fälligkeitsdatum (und das SLA-Fenster) wird anhand des neuen Abreisedatums neu berechnet. Manuell erstellte Aufgaben behalten ihre eigenen Termine."
+      },
+      "slaFlags": {
+        "q": "Was bedeuten die SLA-/Eskalationskennzeichen bei Aufgaben?",
+        "a": "Jede Aufgabe hat eine Eskalationsauslösezeit, die auf ihrer Priorität basiert (kritisch 48 Std., hoch 24 Std., mittel 12 Std., niedrig 0 Std. vor dem Fälligkeitsdatum). Sobald diese Zeit verstrichen ist und die Aufgabe noch offen ist, wird sie als „eskaliert“ markiert. Unabhängig davon gilt eine Aufgabe als „bald fällig“, wenn sie innerhalb von 24 Stunden vor ihrem Fälligkeitsdatum liegt — das steuert das Prioritätsbanner/den Countdown in der Buchungsansicht. Beide Kennzeichen werden live berechnet, es ist keine manuelle Aktion erforderlich."
+      },
+      "rfpWizard": {
+        "q": "Wie fordere ich gleichzeitig Angebote von mehreren Lieferanten an?",
+        "a": "Gehen Sie zu Lieferanten > RFP-Manager (oder navigieren Sie direkt zur RFP-Manager-Seite). Klicken Sie auf „Neue Angebotsanfrage“ und folgen Sie dem 3-Schritte-Assistenten: (1) Leistungsdetails wie Name, Menge und Frist eingeben, (2) Lieferanten einzeln auswählen oder nach Kategorie filtern, (3) prüfen und senden. Jeder Lieferant erhält eine Buchungsanfrage, die Sie von ausstehend → mit Angebot → bestätigt/abgelehnt verfolgen können."
+      },
+      "commissionTracking": {
+        "q": "Wie verfolge ich Vermittlerprovisionen?",
+        "a": "Gehen Sie zu Umsatz > Provisionsbericht. Er berechnet Provisionen aus abgeschlossenen/bestätigten Reisen auf Basis von Gewinn × Provisionssatz. Das Dashboard zeigt Gesamtumsatz, Gewinn, Provision und Durchschnittssatz. Balken- und Kreisdiagramme schlüsseln die Provision nach Vermittler auf. Verwenden Sie die Schaltfläche CSV exportieren, um die Daten herunterzuladen."
+      },
+      "quoteRequestOnline": {
+        "q": "Können Kunden online eine Anfrage stellen?",
+        "a": "Ja, auf zwei Arten. (1) Teilen Sie den öffentlichen Link /request-quote mit potenziellen Kunden — das Formular erfasst Name, E-Mail, Reiseziel, Termine, Teilnehmerzahl, Budget und Reisebeschreibung und erstellt einen neuen Lead mit der Quelle „web_quote_request“. (2) Bestehende B2B-Kunden mit Portalzugang können sich anmelden, den kuratierten E-Shop-Katalog durchsuchen und direkt eine Angebotsanfrage stellen."
+      },
+      "b2bQuoting": {
+        "q": "Wie funktioniert die B2B-Kundenangebotserstellung?",
+        "a": "Kundenportal-Konten sehen einen E-Shop-artigen Katalog von Leistungen (organisiert nach Kategorie und Lieferant, mit Fotos), der automatisch mit ihrem Aufschlag bepreist ist. Sie wählen Leistungen aus und stellen eine Angebotsanfrage. Ihr Team prüft sie in den Angebotsanfragen, kann Preise oder Verfügbarkeit anpassen und genehmigt oder lehnt sie ab. Nach der Genehmigung wird das Angebot in eine Reservierung umgewandelt."
+      },
+      "multiCurrencyDashboard": {
+        "q": "Wie funktioniert das Multiwährungs-Dashboard?",
+        "a": "Gehen Sie zu Umsatz und wählen Sie den Tab „Mehrwährung“. Wählen Sie eine Basiswährung (USD, EUR, GBP usw.) und das Dashboard rechnet alle Rechnungen und Reisekosten anhand aktueller Wechselkurse um. Balkendiagramme zeigen den Umsatz nach Währung und Monat, jeweils umgerechnet in Ihre gewählte Basiswährung."
+      },
+      "automatedReminders": {
+        "q": "Welche automatischen Erinnerungen gibt es?",
+        "a": "Das System führt stündliche Prüfungen durch: (1) Rechnungen, die in 3 Tagen fällig sind, lösen eine „bald fällig“-Benachrichtigung aus, (2) überfällige Rechnungen lösen eine „überfällig“-Benachrichtigung aus, (3) Reisen, die morgen beginnen, lösen eine „Reise beginnt bald“-Benachrichtigung aus. Benachrichtigungen erscheinen im Glockensymbol. Erinnerungen werden dedupliziert, sodass Sie dieselbe Meldung nicht zweimal innerhalb von 24 Stunden erhalten."
+      },
+      "supplierColumns": {
+        "q": "Wie erstelle und verwalte ich zusätzliche Spalten in der Lieferantentabelle?",
+        "a": "Klicken Sie auf der Lieferantenseite auf „Spalten“ (nur Admin), um benutzerdefinierte Felder wie Kontaktinfo, Tags oder Region hinzuzufügen. Diese erscheinen als neue Spalten in der Tabelle und als bearbeitbare Felder im Lieferantenformular."
+      },
+      "supplierSearchWeb": {
+        "q": "Wie funktioniert die Funktion „Web durchsuchen“ bei Lieferanten?",
+        "a": "Öffnen Sie einen Lieferanten und klicken Sie auf „Web durchsuchen“. Die App fragt mehrere Quellen ab, um passende Unternehmen zu finden, und liefert eine Liste von Kandidaten zur Auswahl: OpenStreetMap über Nominatim und Photon (beide über Overpass angereichert mit Telefon, Website, E-Mail, Marke und Öffnungszeiten — Photon liefert eine bessere unscharfe Suche), Wikipedia, Wikidata (offizielle Website/Telefon/E-Mail) und optional Yelp Fusion (Telefon, Bewertung, Rezensionen, Kategorien), wenn ein YELP_API_KEY konfiguriert ist. Wählen Sie einen Eintrag aus und klicken Sie auf „Daten übernehmen“, um Name, Adresse, Telefon, Website, E-Mail, Bewertung und Notizen (einschließlich Marke und Öffnungszeiten) des Lieferanten automatisch in das Bearbeitungsformular zu übernehmen. Anfragen werden automatisch erweitert (Name + Stadt → nur Name → ohne generische Wörter), sodass auch Lieferanten gefunden werden, deren gelisteter Name vom offiziellen abweicht."
+      },
+      "workspaceWhat": {
+        "q": "Was ist ein Workspace?",
+        "a": "Marvelops ist mandantenfähig: Jedes Reisebüro läuft in seinem eigenen isolierten Workspace (Mandant). Jeder Workspace hat seine eigene Datenbank, Benutzer, Kunden, Lieferanten und Buchungen — die Daten Ihres Unternehmens sind vollständig von jedem anderen Unternehmen auf der Plattform getrennt, ohne gemeinsam genutzte Datensätze zwischen Workspaces."
+      },
+      "workspaceOpen": {
+        "q": "Wie öffne ich den Workspace meines Unternehmens?",
+        "a": "Wenn Ihre Instanz Subdomain-Workspaces verwendet, besuchen Sie <ihr-unternehmen>.marvelops.app (zum Beispiel acme.marvelops.app), um direkt in den Workspace Ihres Unternehmens zu gelangen — Lesezeichen und geteilte Links sollten Ihre Subdomain verwenden. Auf Instanzen ohne Wildcard-Subdomains (zum Beispiel eine einfache Railway-URL) läuft die App stattdessen im Single-Domain-Modus: Beim An- oder Registrieren wird ein Cookie gesetzt, das sich merkt, zu welchem Workspace Sie gehören, sodass dieselbe einfache URL Sie automatisch wieder zu Ihrem Workspace bringt."
+      },
+      "workspaceDataSeparate": {
+        "q": "Werden die Daten meines Unternehmens von anderen Unternehmen getrennt gehalten?",
+        "a": "Ja. Workspaces sind auf Datenbankebene isoliert — die Daten jedes Unternehmens liegen in einer eigenen, dedizierten Datenbankdatei. Es gibt keine gemeinsam genutzte Tabelle zwischen Unternehmen, sodass ein Benutzer in einem Workspace niemals die Datensätze eines anderen Unternehmens sehen oder ändern kann, auch nicht über Echtzeit-Benachrichtigungen oder Live-Updates."
+      },
+      "workspaceMicrosoftSso": {
+        "q": "Kann sich unser Unternehmen mit unseren eigenen Microsoft-/Office-365-Konten anmelden?",
+        "a": "Ja. Jeder Workspace kann seinen eigenen Azure-AD-Mandanten für die Microsoft-Einmalanmeldung verbinden, sodass sich Ihr Team mit den Microsoft-Konten Ihrer Organisation statt mit einem gemeinsam genutzten Konto anmeldet. Ihr Administrator legt den Microsoft-Mandanten des Workspace fest; ist keiner konfiguriert, greift die Plattform auf die Standard-Microsoft-App zurück."
+      },
+      "workspaceCreate": {
+        "q": "Wie wird ein neuer Workspace erstellt?",
+        "a": "Neue Workspaces werden auf zwei Arten erstellt. (1) Self-Service: Wenn Ihre Instanz die offene Registrierung aktiviert hat, gehen Sie zur Registrierungsseite, wählen eine eindeutige Workspace-Adresse (z. B. „acme“), geben Ihren Unternehmensnamen sowie eine Admin-E-Mail/ein Passwort ein, und Ihr isolierter Workspace wird sofort mit eigener Subdomain bereitgestellt. (2) Von einem Admin bereitgestellt: Andernfalls wenden Sie sich an Ihren Kundenbetreuer oder den Support, der einen zusätzlichen Unternehmens-Workspace für Sie einrichtet."
+      },
+      "workspaceOneLogin": {
+        "q": "Kann ein Login zu mehr als einem Workspace gehören?",
+        "a": "Jedes Login ist über seine Subdomain auf einen einzigen Workspace beschränkt. Um in einem anderen Unternehmen zu arbeiten, melden Sie sich über die Subdomain dieses Unternehmens an. Ein einzelnes Konto, das mehrere Workspaces umfasst, ist in dieser Version nicht möglich."
+      },
+      "workspaceSelfServe": {
+        "q": "Kann ich meinen eigenen Workspace erstellen?",
+        "a": "Ja — wenn die Self-Service-Registrierung für Ihre Instanz aktiviert ist. Sie wählen eine Workspace-Adresse, geben Ihren Unternehmensnamen sowie eine Admin-E-Mail/ein Passwort ein, und die Plattform erstellt sofort Ihren Workspace mit eigener isolierter Datenbank und Subdomain. Auf Instanzen, auf denen die Self-Service-Registrierung deaktiviert ist (gesteuert über die Einstellung ALLOW_PUBLIC_SIGNUP), werden neue Workspaces stattdessen von einem Administrator erstellt."
+      },
+      "workspaceAddressValid": {
+        "q": "Was macht eine gültige Workspace-Adresse aus?",
+        "a": "Ihre Workspace-Adresse wird zur Subdomain, unter der Sie sich anmelden (z. B. acme.marvelops.app). Sie darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten, muss 1–63 Zeichen lang sein und darf kein reserviertes Wort wie „www“, „api“, „app“, „admin“ oder „mail“ sein. Das Registrierungsformular prüft die Verfügbarkeit während der Eingabe."
+      },
+      "workspaceSettingsFaq": {
+        "q": "Wo benenne ich meinen Workspace um oder ändere seinen Microsoft-Anmeldemandanten?",
+        "a": "Gehen Sie zu Workspace-Einstellungen (nur Admin). Sie können den Anzeigenamen Ihres Workspace umbenennen und festlegen, welcher Azure-AD-Mandant für die Microsoft-Anmeldung Ihres Teams akzeptiert werden soll — keine Anfrage an den Support nötig. Die Workspace-Adresse (Subdomain/Slug) selbst kann hier nicht geändert werden, da sie bestimmt, wie die Plattform zu Ihrem Workspace routet."
+      },
+      "workspaceTrialSuspend": {
+        "q": "Was passiert, wenn meine Testphase endet oder mein Workspace gesperrt wird?",
+        "a": "Sie sehen ein Statusbanner, sobald Ihr Workspace gesperrt ist oder Ihre Testphase innerhalb von 7 Tagen abläuft. Ein gesperrter oder abgelaufener Workspace blockiert die normale Nutzung der App, aber Sie können sich weiterhin anmelden und den Status Ihres Workspace einsehen — nichts wird gelöscht. Wenden Sie sich an Ihren Kundenbetreuer, um die Testphase zu reaktivieren oder zu verlängern."
+      },
+      "workspaceFileBackupIsolation": {
+        "q": "Können unsere Daten oder Dateien jemals mit einem anderen Workspace vermischt werden, auch bei Uploads oder Backups?",
+        "a": "Nein. Hochgeladene Dateien, erstellte PDFs und Backups sind alle pro Workspace isoliert, genau wie die Datenbank. Dateien werden über eine authentifizierte, berechtigungsgeprüfte Route bereitgestellt statt über einen gemeinsam genutzten öffentlichen Ordner, und Backups (einschließlich einer externen Kopie) sind pro Workspace abgegrenzt und werden pro Workspace wiederhergestellt."
+      }
+    }
   },
   "itineraryBuilder": {
     "day": "day",
@@ -3160,5 +3342,131 @@
     "you_2": "You need the Manage Users permission to access this page.",
     "edit_2": "Edit User:",
     "no": "No users found"
+  },
+  "signup": {
+    "title": "Workspace erstellen",
+    "subtitle": "Richten Sie einen eigenen Marvelops-Workspace für Ihr Unternehmen ein",
+    "disabledNoticeBefore": "Die Self-Service-Registrierung ist derzeit deaktiviert. Setzen Sie",
+    "disabledNoticeAfter": "in der Serverumgebung, um sie zu aktivieren.",
+    "agencyNameLabel": "Unternehmensname",
+    "agencyNamePlaceholder": "Acme Travel",
+    "workspaceAddressLabel": "Workspace-Adresse",
+    "workspaceAddressPlaceholder": "acme",
+    "yourWorkspaceSuffix": " (Ihr Workspace)",
+    "slugAvailable": "Verfügbar",
+    "slugTaken": "Diese Adresse ist bereits vergeben",
+    "slugInvalid": "Nur Kleinbuchstaben, Zahlen und Bindestriche verwenden",
+    "yourNameLabel": "Ihr Name (optional)",
+    "yourNamePlaceholder": "Jane Doe",
+    "adminEmailLabel": "Admin-E-Mail",
+    "adminEmailPlaceholder": "sie@unternehmen.de",
+    "adminPasswordLabel": "Admin-Passwort",
+    "adminPasswordPlaceholder": "Mindestens 8 Zeichen",
+    "adminPasswordHint": "Mind. 8 Zeichen, mit Groß-, Kleinbuchstaben und einer Zahl.",
+    "creating": "Workspace wird erstellt…",
+    "createWorkspace": "Workspace erstellen",
+    "or": "oder",
+    "signUpWithMicrosoft": "Mit Microsoft registrieren",
+    "alreadyHaveWorkspace": "Sie haben bereits einen Workspace?",
+    "signIn": "Anmelden",
+    "errGenericSignup": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "errEnterAgencyAndSlug": "Geben Sie zuerst Ihren Unternehmensnamen und die Workspace-Adresse ein.",
+    "errChooseValidSlug": "Wählen Sie zuerst eine gültige, verfügbare Workspace-Adresse.",
+    "errMicrosoftSignupFailed": "Die Microsoft-Registrierung konnte nicht gestartet werden."
+  },
+  "workspaceSettings": {
+    "loading": "Workspace wird geladen…",
+    "title": "Workspace-Einstellungen",
+    "subtitle": "Verwalten Sie den Namen Ihres Workspace und die Microsoft-Anmeldekonfiguration.",
+    "errLoad": "Workspace-Einstellungen konnten nicht geladen werden",
+    "errSave": "Workspace-Einstellungen konnten nicht gespeichert werden",
+    "saved": "Workspace-Einstellungen gespeichert.",
+    "addressLabel": "Workspace-Adresse",
+    "addressImmutable": "Die Workspace-Adresse kann nicht geändert werden.",
+    "statusLabel": "Status",
+    "trialEnds": "Testphase endet am {date}.",
+    "nameLabel": "Workspace-Name",
+    "namePlaceholder": "Name Ihres Unternehmens",
+    "azureLabel": "Microsoft Azure-Mandanten-ID",
+    "azureHint": "Beschränkt die Microsoft-Anmeldung auf diesen Azure-AD-Mandanten. Leer lassen, um auf den Serverstandard zurückzugreifen. Für die Anmeldung mit E-Mail/Passwort nicht erforderlich.",
+    "saving": "Wird gespeichert…",
+    "saveChanges": "Änderungen speichern",
+    "adminOnly": "Nur ein Workspace-Admin kann diese Einstellungen ändern."
+  },
+  "platformAdmin": {
+    "loading": "Plattform wird geladen…",
+    "title": "Plattform-Administration",
+    "subtitle": "Mandantenübergreifende Übersicht aller Workspaces.",
+    "notAuthorized": "Sie haben keinen Plattform-Admin-Zugriff. Wenden Sie sich an den SaaS-Betreiber, um zu PLATFORM_ADMIN_EMAILS hinzugefügt zu werden.",
+    "cardWorkspaces": "Workspaces",
+    "cardTotalUsers": "Benutzer gesamt",
+    "cardTotalRecords": "Datensätze gesamt",
+    "cardActive": "Aktiv",
+    "backupsTitle": "Backups",
+    "backupsOffsiteOn": "Externe Kopie aktiviert",
+    "backupsOffsiteOff": "Externe Kopie NICHT konfiguriert — Snapshots liegen auf einer Festplatte",
+    "backupsSummary": "Letzter Lauf {lastRun} · zuletzt vollständig erfolgreich {lastSuccess}",
+    "backupsTargetsOk": "{ok}/{total} Ziele OK",
+    "backupsStale": "Seit über 30 Stunden kein erfolgreiches Backup — Scheduler prüfen.",
+    "backupsNever": "nie",
+    "colWorkspace": "Workspace",
+    "colAddress": "Adresse",
+    "colStatus": "Status",
+    "colTrialEnds": "Testphase endet",
+    "colUsers": "Benutzer",
+    "colRecords": "Datensätze",
+    "colCreated": "Erstellt",
+    "colActions": "Aktionen",
+    "noWorkspaces": "Noch keine Workspaces.",
+    "trialExpired": "Abgelaufen",
+    "trialDays": "{days}T",
+    "actionRename": "Umbenennen",
+    "actionReactivate": "Reaktivieren",
+    "actionDelete": "Löschen",
+    "actionExtendTrial": "Testphase verlängern",
+    "actionMarkPaid": "Als bezahlt markieren",
+    "actionSuspend": "Sperren",
+    "renamePromptTitle": "Neuer Workspace-Name",
+    "renameErr": "Umbenennen fehlgeschlagen",
+    "deletePromptBody": "„{name}“ und alle zugehörigen Daten dauerhaft löschen?\n\nZuerst wird ein finaler Snapshot erstellt. Geben Sie die Workspace-Adresse ({slug}) zur Bestätigung ein.",
+    "deleteErr": "Löschen fehlgeschlagen",
+    "deletedNotice": "„{name}“ gelöscht. Snapshot gespeichert unter {snapshot}",
+    "actionFailed": "Aktion fehlgeschlagen",
+    "loadErr": "Plattformdaten konnten nicht geladen werden"
+  },
+  "workspaceStatusBanner": {
+    "suspended": "Dieser Workspace ist gesperrt. Die Daten sind sicher, aber Änderungen sind blockiert — bitte wenden Sie sich an den Support.",
+    "trialEnded": "Ihre Testphase ist beendet. Führen Sie ein Upgrade durch, um den Workspace weiter zu nutzen.",
+    "trialEndingOne": "Ihre Testphase endet in {days} Tag. Führen Sie ein Upgrade durch, um den Zugriff zu behalten.",
+    "trialEndingMany": "Ihre Testphase endet in {days} Tagen. Führen Sie ein Upgrade durch, um den Zugriff zu behalten."
+  },
+  "workspaceStatus": {
+    "trial": "Testphase",
+    "active": "Aktiv",
+    "suspended": "Gesperrt"
+  },
+  "reservationEmail": {
+    "pageTitle": "Reisebuchungsbestätigung",
+    "dear": "Sehr geehrte/r",
+    "valuedClient": "geschätzter Kunde",
+    "intro": "Nachfolgend finden Sie die Details Ihrer Reisebuchung. Wir freuen uns darauf, Ihre Reise unvergesslich zu machen.",
+    "reservationLabel": "Buchung",
+    "referenceLabel": "Referenz",
+    "pendingValue": "Ausstehend",
+    "destinationLabel": "Reiseziel",
+    "datesLabel": "Termine",
+    "dateLabel": "Datum/Daten",
+    "locationLabel": "Ort",
+    "detailsLabel": "Details",
+    "pickupLabel": "Abholung",
+    "dropoffLabel": "Absetzung",
+    "flightLabel": "Flug",
+    "returnLabel": "Rückfahrt",
+    "quantityLabel": "Menge",
+    "servicesIncluded": "Enthaltene Leistungen",
+    "total": "GESAMT",
+    "notesLabel": "Hinweise:",
+    "viewItinerary": "Vollständige Reiseroute online ansehen →",
+    "termsAndConditions": "Allgemeine Geschäftsbedingungen"
   }
 }

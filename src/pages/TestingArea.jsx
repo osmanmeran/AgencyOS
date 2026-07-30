@@ -47,14 +47,14 @@ async function api(path, opts = {}) {
 }
 
 export default function TestingArea() {
-  const { t } = useT();
+  const { t, language } = useT();
   const { user } = useAuth();
   const [results, setResults] = useState(/** @type {any} */ ({}));
   const [loading, setLoading] = useState(/** @type {any} */ ({}));
 
   const addResult = (key, data) => {
     const status = data?.error ? 'fail' : 'pass';
-    setResults((prev) => ({ ...prev, [key]: { status, data, timestamp: new Date().toLocaleTimeString() } }));
+    setResults((prev) => ({ ...prev, [key]: { status, data, timestamp: new Date().toLocaleTimeString(language) } }));
   };
 
   const runTest = async (key, fn) => {
