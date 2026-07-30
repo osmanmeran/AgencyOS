@@ -32,6 +32,33 @@ function slugFromHost(host) {
 }
 
 /**
+ * Absolute base URL for the requesting workspace, used to build links that
+ * leave the request — invite emails, client-facing notification links.
+ *
+ * In subdomain mode (APP_ROOT_DOMAIN set) with a resolved tenant, this is the
+ * tenant's own `<slug>.<APP_ROOT_DOMAIN>` — landing the recipient directly on
+ * their workspace. Without this, a global `APP_URL` set for an unrelated
+ * reason (a single canonical URL for cron/report links, say) silently sends
+ * every invite to the apex instead. The apex still resolves correctly via the
+ * active_tenant cookie fallback below (and via the token search in
+ * `locateInvite`, which never depends on which domain accepted it) — but
+ * landing straight on the subdomain is strictly better and doesn't depend on
+ * that fallback surviving a browser's cookie settings.
+ *
+ * Falls back to `APP_URL`, then the request's own origin, when there is no
+ * per-tenant subdomain to build: the legacy/default tenant, or single-domain
+ * (cookie) mode, where every workspace is reached through the bare domain by
+ * design.
+ */
+export function workspaceUrl(req) {
+  const rootDomain = process.env.APP_ROOT_DOMAIN;
+  if (rootDomain && req.tenant?.slug) {
+    return `https://${req.tenant.slug}.${rootDomain.replace(/^\.+/, '')}`;
+  }
+  return process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+}
+
+/**
  * Resolve the tenant for a request from its Host header, before auth runs
  * (see SAAS_PROJECT.md, Phase 2). Sets `req.tenantId` / `req.tenant` and runs
  * the rest of the request inside that tenant's DB context. Unknown subdomains
