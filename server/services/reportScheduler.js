@@ -1,7 +1,7 @@
 import { getDb } from '../db.js';
 import logger from '../lib/logger.js';
 import { getRevenueOverview, getCommissionReport } from './reports.js';
-import { sendEmail } from './email.js';
+import { sendEmail, escapeHtml } from './email.js';
 import { forEachTenant } from './tenants.js';
 
 let intervalHandle = null;
@@ -57,12 +57,14 @@ function money(n) {
 }
 
 function renderCommissionsHtml(data) {
+  // t.name / t.client_name are staff-entered trip/client fields — escape
+  // before interpolating into HTML sent verbatim as the email body.
   const rows = data.trips
     .map(
       (t) => `
     <tr>
-      <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${t.name || ''}</td>
-      <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${t.client_name || ''}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${escapeHtml(t.name || '')}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${escapeHtml(t.client_name || '')}</td>
       <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${money(t.final_price)}</td>
       <td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;">${money(t.commission)}</td>
     </tr>`,

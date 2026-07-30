@@ -2,6 +2,7 @@ import { getDb } from '../db.js';
 import logger from '../lib/logger.js';
 import { createNotification } from './notifications.js';
 import { forEachTenant } from './tenants.js';
+import { escapeHtml } from './email.js';
 
 let intervalHandle = null;
 
@@ -121,13 +122,17 @@ function createNotificationForEntity(db, entityId, type, message) {
 
   // Also emails the user if they've opted into email notifications
   // (services/notifications.js checks the preference and no-ops otherwise).
+  // `message` embeds user-controlled fields (trip name, destination, invoice
+  // number) — sendEmail() sends `body` verbatim as the email's HTML, so it
+  // must be escaped here even though the in-app `message`/`title` (rendered
+  // as text by React, never as HTML) is left as-is.
   createNotification({
     userId,
     type,
     title: message,
     message,
     data: { entityId },
-    email: { subject: message, body: message },
+    email: { subject: message, body: escapeHtml(message) },
   });
 
   logger.info({ userId, type, entityId }, 'Auto-reminder notification created');

@@ -11,8 +11,13 @@ import { startReminderService, stopReminderService } from '../../server/services
 function insertEntity(type, data) {
   const id = uid();
   const now = new Date().toISOString();
-  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)')
-    .run(id, type, JSON.stringify(data), now, now);
+  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+    id,
+    type,
+    JSON.stringify(data),
+    now,
+    now,
+  );
   return id;
 }
 
@@ -28,7 +33,7 @@ function insertUser({ email, emailNotifications }) {
   const id = uid();
   const now = new Date().toISOString();
   db.prepare(
-    'INSERT INTO users (id, email, password, name, user_tier, role, is_active, email_notifications, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)'
+    'INSERT INTO users (id, email, password, name, user_tier, role, is_active, email_notifications, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)',
   ).run(id, email, 'hashed', 'Test User', 'agent', 'agent', emailNotifications ? 1 : 0, now, now);
   return id;
 }
@@ -137,6 +142,29 @@ describe('Reminder Service', () => {
     expect(notes).toHaveLength(1);
     expect(notes[0].type).toBe('trip_starting_soon');
     expect(notes[0].message).toContain('Safari Adventure');
+  });
+
+  it('escapes HTML in the emailed body but leaves the in-app notification message as plain text', () => {
+    const userId = insertUser({ email: 'reminder-xss@example.com', emailNotifications: true });
+    const tripId = insertEntity('Trip', {
+      name: '<img src=x onerror=alert(1)>Safari',
+      destination: 'Kenya',
+      status: 'confirmed',
+      start_date: daysFromNow(1),
+      created_by: userId,
+    });
+
+    startReminderService();
+    stopReminderService();
+
+    const notes = notificationsFor(tripId);
+    expect(notes).toHaveLength(1);
+    expect(notes[0].message).toContain('<img src=x onerror=alert(1)>Safari');
+
+    const emailed = db.prepare('SELECT * FROM email_logs WHERE to_email = ?').all('reminder-xss@example.com');
+    expect(emailed).toHaveLength(1);
+    expect(emailed[0].body).not.toContain('<img src=x onerror=alert(1)>');
+    expect(emailed[0].body).toContain('&lt;img src=x onerror=alert(1)&gt;Safari');
   });
 
   it('also emails a user who opted into email notifications', () => {

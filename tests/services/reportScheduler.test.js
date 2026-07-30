@@ -15,8 +15,13 @@ function insertSchedule(overrides = {}) {
     active: true,
     ...overrides,
   };
-  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)')
-    .run(id, 'ReportSchedule', JSON.stringify(data), now, now);
+  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+    id,
+    'ReportSchedule',
+    JSON.stringify(data),
+    now,
+    now,
+  );
   return id;
 }
 
@@ -29,9 +34,29 @@ function emailsTo(address) {
   return db.prepare('SELECT * FROM email_logs WHERE to_email = ?').all(address);
 }
 
+function insertTrip(overrides = {}) {
+  const id = uid();
+  const now = new Date().toISOString();
+  const data = {
+    status: 'confirmed',
+    final_price: 1000,
+    total_cost: 800,
+    ...overrides,
+  };
+  db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+    id,
+    'Trip',
+    JSON.stringify(data),
+    now,
+    now,
+  );
+  return id;
+}
+
 describe('Report Scheduler', () => {
   beforeEach(() => {
     db.prepare(`DELETE FROM entities WHERE type = 'ReportSchedule'`).run();
+    db.prepare(`DELETE FROM entities WHERE type = 'Trip'`).run();
   });
 
   it('sends a due schedule with no last_sent_date and stamps last_sent_date', async () => {
@@ -91,6 +116,19 @@ describe('Report Scheduler', () => {
     await runDueSchedules();
 
     expect(getSchedule(id).last_sent_date).toBeUndefined();
+  });
+
+  it('escapes trip/client names in the commission report HTML body', async () => {
+    insertTrip({ name: '<img src=x onerror=alert(1)>', client_name: 'A & B "Travel"' });
+    insertSchedule({ report_type: 'commissions', recipients: 'commissions-xss@example.com' });
+
+    await runDueSchedules();
+
+    const emails = emailsTo('commissions-xss@example.com');
+    expect(emails).toHaveLength(1);
+    expect(emails[0].body).not.toContain('<img src=x onerror=alert(1)>');
+    expect(emails[0].body).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(emails[0].body).toContain('A &amp; B &quot;Travel&quot;');
   });
 
   it('supports multiple comma-separated recipients', async () => {

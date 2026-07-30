@@ -8,7 +8,7 @@ auth, WebSocket real-time sync. See `README.md` for features/setup and
 ## Commands
 
 - `npm run dev` — Vite dev server; `npm run server` — Express backend
-- `npm test` — Vitest (26 files, ~248 tests, backend-only)
+- `npm test` — Vitest (52 files, ~409 tests, backend-only)
 - `npm run lint` / `npm run typecheck` — both run in CI alongside test + build
 - `npm run db:migrate` / `db:migrate:status` — migrations (`server/migrations/*.js`, filename order)
 
@@ -26,6 +26,18 @@ auth, WebSocket real-time sync. See `README.md` for features/setup and
   bundled as the fallback; the others are code-split and lazy-loaded on demand
   via `import.meta.glob` in `src/lib/i18n/I18nContext.jsx`). Pages use `useT()`;
   translation of pages is in progress (~44 of 58 done).
+- **Multi-tenant SaaS**: each workspace gets its own SQLite file
+  (`data/tenants/<id>/marvelops.db`), opened on demand and LRU-capped at 50
+  concurrently-open connections (`server/db.js`). `server/middleware/tenant.js`
+  resolves the tenant from the Host subdomain (or an `active_tenant` cookie in
+  single-domain mode) before auth runs, and the rest of the request executes
+  inside `runWithTenant()` (`AsyncLocalStorage`), so the ~100 existing
+  `getDb()` call sites are tenant-scoped automatically. `authMiddleware`
+  double-checks the JWT's `tenant_id` claim against the resolved subdomain so
+  a token can't be replayed against another workspace. A separate
+  `platform.db` (the tenant registry) backs `/api/platform/*`, gated by the
+  `PLATFORM_ADMIN_EMAILS` allow-list — distinct from the per-workspace
+  `admin` tier, which has no cross-tenant access.
 
 ---
 
@@ -206,7 +218,131 @@ from the README's earlier review. Items marked ✅ were fixed on 2026-07-10.
 
 ## Deployment/ops notes
 
-- SQLite on Railway: confirm the DB file lives on a persistent volume and add
-  off-box backups (S3/R2) — `createBackupSync` snapshots are on the same disk.
-- `server/ocr_parse.py` is invoked as a subprocess but is not in the repo;
-  either vendor it or feature-flag the OCR route.
+- SQLite on Railway: confirm the DB file lives on a persistent volume.
+  ✅ Off-box backups (S3/R2) shipped — `server/services/offsiteBackup.js` +
+  `backupScheduler.js` fan out `createBackupSync` snapshots per tenant,
+  monitored via `backupRuns.js`/`backupHealth()` (surfaced on the platform
+  admin dashboard).
+- ✅ `server/ocr_parse.py` is now vendored in the repo; the route stays
+  feature-flagged behind `OCR_ENABLED` since the Python/tesseract/poppler
+  deps still aren't part of the default Node/Railway image.
+
+---
+
+# App Evaluation — Suggestions (2026-07-30)
+
+Scope: the codebase has grown substantially since the 2026-07-10 review — a
+full multi-tenant SaaS layer (per-tenant SQLite files, subdomain/cookie
+routing, platform admin, off-box backups, self-serve signup) landed on top of
+the original single-tenant app. This pass re-verified every item from
+2026-07-10 against current code and reviewed the new SaaS surface for the
+same. Good news first: **every item from the previous review that wasn't
+already ✅ is now resolved**, without a dedicated follow-up pass —
+found as a side effect of reviewing the new code:
+
+- Refresh-token rotation (previously "a worthwhile future upgrade", item 5) —
+  now implemented: short-lived (15m) access tokens + a rotating, SHA-256-hashed
+  refresh token (`server/migrations/021_refresh_tokens.js`,
+  `services/auth.js`'s `rotateRefreshToken`). Each refresh revokes the
+  previous token, so a leaked one can't be replayed.
+- The Supplier Portal provisioning gap (item 17's note) — now has a real
+  provisioning path: `POST /api/auth/supplier-portal/grant`
+  (`server/routes/auth.js`), gated by `grant_supplier_portal`, mirroring the
+  Client Portal flow.
+- `server/ocr_parse.py` is vendored (deployment note above).
+
+New findings from this pass, in priority order:
+
+## 🔴 Fix now
+
+1. ✅ **FIXED — Unescaped HTML injection in auto-generated email bodies** —
+   `sendEmail({ body })` (`server/services/email.js`) sends `body` verbatim
+   as the email's `html`. The `template`/`templateData` path already escapes
+   every string field (`escapeTemplateData`), but two call sites built HTML
+   by hand from **unescaped, staff-entered fields** and passed it through
+   `body` instead: `services/reminders.js` (`Trip "${data.name}" to
+${data.destination}...`, invoice reminders) and
+   `services/reportScheduler.js`'s `renderCommissionsHtml` (trip name, client
+   name in an HTML table). A trip or client name containing `<img
+src=x onerror=...>` or a fake "session expired, click here" link would
+   render live in the recipient's email client — a stored HTML-injection /
+   phishing vector reaching whoever the report schedule or reminder targets
+   (often an admin/manager), sent from the app's own trusted address.
+   Fixed by exporting `escapeHtml` from `services/email.js` and applying it
+   at both sites: `reminders.js` now escapes the composed message only for
+   the `email.body` field (the in-app notification `title`/`message` stays
+   unescaped — React renders it as text, not HTML, so escaping there would
+   just show literal `&amp;` to users); `reportScheduler.js` escapes
+   `t.name`/`t.client_name` before interpolating into the commission table.
+   Regression tests added: `tests/services/reminders.test.js` and
+   `tests/services/reportScheduler.test.js` both assert a `<img onerror=...>`
+   trip name is neutralized in the emailed body. The third `sendEmail({body})`
+   caller, `POST /api/integrations/email/send` (`routes/integrations.js`), is
+   intentionally unescaped — it's a staff member composing free-text/rich-text
+   email through the app's own compose UI, not data reflected without intent.
+
+## 🟡 Security hardening (next)
+
+2. **`refresh_tokens` has no pruning job** — every access-token refresh (every
+   ~15 min for an active session) inserts a new row; revoked/expired rows are
+   never deleted. Not a vulnerability (rows are useless once
+   `revoked`/`expires_at` has passed, and lookups stay index-backed), but the
+   table grows unbounded per tenant DB with no cap. Add a periodic sweep
+   (e.g. alongside `backupScheduler`'s per-tenant loop) deleting rows where
+   `revoked = 1 OR expires_at < now`.
+
+3. **CSP `connectSrc` allows `cdn.jsdelivr.net` for no reason** — grep
+   confirms `cdn.jsdelivr.net` is only ever fetched server-side
+   (`services/exchangeRates.js`, a Node `fetch()` for currency rates, which
+   CSP doesn't govern). No frontend code references it. Drop it from
+   `server/app.js`'s `connectSrc` — one less allowed origin for no loss of
+   functionality.
+
+## 🟠 Architecture & scalability
+
+4. **`MAX_OPEN_DBS = 50` tenant-connection cap is a hardcoded, unmonitored
+   ceiling** (`server/db.js`) — fine at current scale, but two things are
+   worth tracking before this becomes a real SaaS with many active
+   workspaces: (a) there's no metric/alert on eviction frequency, so the
+   first sign of hitting the ceiling under load would be user-visible
+   latency (every request from an evicted tenant re-opens + re-migrates its
+   DB); (b) `evictLruTenant()` can in principle close a connection that a
+   concurrent async request for that same tenant is still mid-flight on (an
+   `await` between two `getDb()` calls in the same handler), surfacing as a
+   rare "database is closed" error that a retry clears. Neither is urgent at
+   today's tenant count, but worth a connection-pool-aware redesign (or at
+   minimum an eviction counter in `/api/platform/stats`) before onboarding
+   enough workspaces to churn the LRU regularly.
+
+5. **No self-service password reset** — `routes/auth.js` has no
+   forgot-password flow; a locked-out user needs an admin to reset their
+   password (or use Microsoft SSO). Low urgency (not a vulnerability — the
+   absence of a reset flow removes a whole class of reset-token bugs), but
+   worth deciding deliberately rather than by omission now that self-serve
+   signup (`/api/tenants/signup`) exists and new workspaces won't always have
+   a second admin on hand to help.
+
+## 🟢 Verified healthy (no action needed)
+
+- Tenant isolation is physical (one SQLite file per tenant, not a shared
+  table with a `tenant_id` column), which rules out an entire class of
+  cross-tenant leak bugs (a forgotten `WHERE tenant_id = ?`) by construction.
+  `authMiddleware` cross-checks the JWT's tenant claim against the resolved
+  subdomain on every request.
+- File/path handling is consistently hardened: `routes/ocr.js`,
+  `routes/uploads.js` (`fs.realpathSync` comparison — the strictest of the
+  three), and `routes/pdf.js` all resolve the caller-supplied path and verify
+  it stays under the tenant-scoped directory before touching disk.
+  `routes/ocr.js`'s subprocess call uses `spawn()` with an argument array
+  (no shell), so it isn't vulnerable to command injection despite taking
+  user-supplied text.
+- Background jobs (`reportScheduler`, `reminders`, `backupScheduler`) all
+  iterate every tenant via `forEachTenant`/`allTenantIds` — none of them
+  silently regressed to legacy-tenant-only behavior after the multi-tenant
+  migration.
+- `/api/testing/*` (fixed-password test-user provisioning) is gated behind
+  `authMiddleware` + `requireAdmin` and explicitly 403s in production for
+  both user-creation endpoints.
+- Platform admin routes (`routes/platform.js`) are allow-list gated
+  (`PLATFORM_ADMIN_EMAILS`, distinct from workspace `admin` tier) and every
+  mutation is audit-logged.

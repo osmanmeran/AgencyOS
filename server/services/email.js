@@ -150,7 +150,11 @@ const TEMPLATES = {
 };
 
 const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-function escapeHtml(str) {
+// Exported so callers building ad hoc HTML email bodies (outside the `template`
+// path, which already escapes via escapeTemplateData below) can escape
+// user-controlled fields — trip/client names, notes — before interpolating
+// them into HTML that gets sent verbatim as the email's `html` body.
+export function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
 }
 
