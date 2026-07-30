@@ -6,7 +6,7 @@ import { useT } from '@/lib/i18n/I18nContext';
 // with aggregated stats. Access is gated server-side by PLATFORM_ADMIN_EMAILS;
 // non-admins receive a 403 and see the not-authorized message below.
 export default function PlatformAdmin() {
-  const { t } = useT();
+  const { t, language } = useT();
   const { request } = useApi();
   const [workspaces, setWorkspaces] = useState([]);
   const [stats, setStats] = useState(null);
@@ -125,7 +125,7 @@ export default function PlatformAdmin() {
         </div>
       )}
 
-      {stats?.backups && <BackupHealth health={stats.backups} t={t} />}
+      {stats?.backups && <BackupHealth health={stats.backups} t={t} language={language} />}
 
       {actionError && (
         <div className="mt-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
@@ -173,12 +173,12 @@ export default function PlatformAdmin() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  <TrialCell trialEndsAt={w.trialEndsAt} status={w.status} t={t} />
+                  <TrialCell trialEndsAt={w.trialEndsAt} status={w.status} t={t} language={language} />
                 </td>
                 <td className="px-4 py-3 text-right text-foreground">{w.userCount}</td>
                 <td className="px-4 py-3 text-right text-foreground">{w.entityCount}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {w.createdDate ? new Date(w.createdDate).toLocaleDateString() : '—'}
+                  {w.createdDate ? new Date(w.createdDate).toLocaleDateString(language) : '—'}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
@@ -240,14 +240,14 @@ export default function PlatformAdmin() {
  * the case no per-run alert can report, because a scheduler that died sends
  * nothing at all.
  */
-function BackupHealth({ health, t }) {
+function BackupHealth({ health, t, language }) {
   const { lastRunAt, lastSuccessAt, stale, failed, total, offsite, failures } = health;
   const bad = stale || failed > 0;
   const palette = bad
     ? 'border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200'
     : 'border-border bg-card text-foreground';
 
-  const when = (iso) => (iso ? new Date(iso).toLocaleString() : t('platformAdmin.backupsNever'));
+  const when = (iso) => (iso ? new Date(iso).toLocaleString(language) : t('platformAdmin.backupsNever'));
 
   return (
     <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${palette}`}>
@@ -276,7 +276,7 @@ function BackupHealth({ health, t }) {
 }
 
 /** Trial deadline cell: only meaningful while a workspace is still on trial. */
-function TrialCell({ trialEndsAt, status, t }) {
+function TrialCell({ trialEndsAt, status, t, language }) {
   if (status !== 'trial' || !trialEndsAt) return <span>—</span>;
   const ends = new Date(trialEndsAt);
   const daysLeft = Math.ceil((ends.getTime() - Date.now()) / 86400000);
@@ -284,7 +284,7 @@ function TrialCell({ trialEndsAt, status, t }) {
     return <span className="font-medium text-red-600 dark:text-red-400">{t('platformAdmin.trialExpired')}</span>;
   return (
     <span className={daysLeft <= 3 ? 'font-medium text-amber-600 dark:text-amber-400' : undefined}>
-      {ends.toLocaleDateString()} ({t('platformAdmin.trialDays', { days: daysLeft })})
+      {ends.toLocaleDateString(language)} ({t('platformAdmin.trialDays', { days: daysLeft })})
     </span>
   );
 }

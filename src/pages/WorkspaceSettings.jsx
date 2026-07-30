@@ -7,7 +7,7 @@ import { useT } from '@/lib/i18n/I18nContext';
 // the workspace display name and configure the Azure tenant used for Microsoft
 // SSO login. Members can view the current settings; only admins can change them.
 export default function WorkspaceSettings() {
-  const { t } = useT();
+  const { t, language } = useT();
   const { user } = useAuth();
   const { request } = useApi();
   const isAdmin = user?.user_tier === 'admin';
@@ -109,7 +109,7 @@ export default function WorkspaceSettings() {
           </span>
           {state?.status === 'trial' && state?.trialEndsAt && (
             <p className="mt-1 text-xs text-muted-foreground">
-              {t('workspaceSettings.trialEnds', { date: new Date(state.trialEndsAt).toLocaleDateString() })}
+              {t('workspaceSettings.trialEnds', { date: new Date(state.trialEndsAt).toLocaleDateString(language) })}
             </p>
           )}
         </div>
