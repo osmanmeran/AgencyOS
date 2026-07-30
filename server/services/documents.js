@@ -1,23 +1,18 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import multer from 'multer';
-import { getDb, uid } from '../db.js';
+import { getDb, uid, getUploadDir } from '../db.js';
 import logger from '../lib/logger.js';
 import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 import { ALLOWED_MIME_TYPES } from '../lib/mimeTypes.js';
 import { findEntityById } from './entities.js';
 import { ForbiddenError } from '../middleware/errors.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOAD_DIR = process.env.DATA_DIR
-  ? path.join(process.env.DATA_DIR, 'uploads')
-  : path.join(__dirname, '..', 'data', 'uploads');
-
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
+// Upload paths are resolved per request, not once at module load: each tenant
+// stores its files under its own directory (getUploadDir reads the request's
+// tenant context), so one agency's documents never land in another's folder.
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  destination: (req, file, cb) => cb(null, getUploadDir()),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const safeName = sanitizeFilename(path.basename(file.originalname, ext));
@@ -134,7 +129,7 @@ export function deleteDocument(id) {
   const doc = db.prepare('SELECT * FROM documents WHERE id = ?').get(id);
   if (!doc) return null;
 
-  const filePath = path.join(UPLOAD_DIR, doc.stored_name);
+  const filePath = path.join(getUploadDir(), path.basename(doc.stored_name));
   try {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   } catch (err) {

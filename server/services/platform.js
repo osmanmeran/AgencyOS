@@ -35,6 +35,7 @@ export function listWorkspaces({ includeStats = true } = {}) {
       name: t.name,
       status: t.status,
       azureTenantId: t.azure_tenant_id,
+      trialEndsAt: t.trial_ends_at || null,
       createdDate: t.created_date,
     };
     if (!includeStats) return base;

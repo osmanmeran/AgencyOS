@@ -256,6 +256,30 @@ export function migrateAllTenants({ quiet = false } = {}) {
   return results;
 }
 
+/**
+ * Close and forget one tenant's connection. Required before removing a
+ * workspace's files: an open handle left in the cache would be handed to a
+ * later request for a tenant whose database no longer exists.
+ * @returns {boolean} Whether a cached connection was closed.
+ */
+export function closeTenantDb(tenantId) {
+  const key = String(tenantId);
+  const database = dbCache.get(key);
+  if (!database) return false;
+  try {
+    database.pragma('wal_checkpoint(TRUNCATE)');
+  } catch {
+    // ignore — we're discarding this database anyway
+  }
+  try {
+    database.close();
+  } catch {
+    // ignore
+  }
+  dbCache.delete(key);
+  return true;
+}
+
 export function closeDb() {
   for (const [key, database] of dbCache) {
     try {
@@ -300,6 +324,37 @@ export function getDataDir() {
 
 export function getTenantsDir() {
   return TENANTS_DIR;
+}
+
+/**
+ * Root data directory for a tenant's *files* (uploads, generated PDFs).
+ *
+ * The legacy/default tenant keeps the original top-level paths (`data/uploads`,
+ * `data/pdfs`) so every file uploaded before multi-tenancy resolves unchanged —
+ * note that adopt-tenant-zero moves only the .db file, never the file dirs.
+ * Every other tenant gets its own subtree under `data/tenants/<id>/`, which is
+ * what keeps one agency's documents off another's filesystem.
+ * @param {string|number} [tenantId] Omit to use the current request's tenant.
+ */
+export function getTenantDataDir(tenantId) {
+  const key = tenantId !== undefined ? String(tenantId) : (getTenantId() ?? DEFAULT_TENANT_ID);
+  if (key === DEFAULT_TENANT_ID) return DATA_DIR;
+  return path.join(TENANTS_DIR, key);
+}
+
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/** Upload directory for a tenant (created on demand). @param {string|number} [tenantId] */
+export function getUploadDir(tenantId) {
+  return ensureDir(path.join(getTenantDataDir(tenantId), 'uploads'));
+}
+
+/** Generated-PDF directory for a tenant (created on demand). @param {string|number} [tenantId] */
+export function getPdfDir(tenantId) {
+  return ensureDir(path.join(getTenantDataDir(tenantId), 'pdfs'));
 }
 
 export function getEntities() {

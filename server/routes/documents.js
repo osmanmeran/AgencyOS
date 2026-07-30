@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
+import { getUploadDir } from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { catchAsync, sendError } from '../middleware/errors.js';
 import {
@@ -12,11 +12,6 @@ import {
   deleteDocument,
   userCanAccessDocument,
 } from '../services/documents.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOAD_DIR = process.env.DATA_DIR
-  ? path.join(process.env.DATA_DIR, 'uploads')
-  : path.join(__dirname, '..', 'data', 'uploads');
 
 const router = Router();
 
@@ -67,7 +62,9 @@ router.get(
     if (!doc) return sendError(res, 404, 'DOCUMENT_NOT_FOUND', 'Document not found');
     if (!userCanAccessDocument(req.user, doc)) return sendError(res, 403, 'FORBIDDEN', 'Access denied');
 
-    const filePath = path.join(UPLOAD_DIR, doc.stored_name);
+    // Resolved inside the requesting workspace's own uploads directory, so a
+    // document id from another tenant can't reach that tenant's file.
+    const filePath = path.join(getUploadDir(), path.basename(doc.stored_name));
     if (!fs.existsSync(filePath)) return sendError(res, 404, 'FILE_NOT_FOUND', 'File not found on disk');
 
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(doc.original_name)}"`);

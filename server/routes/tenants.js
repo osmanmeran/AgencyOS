@@ -201,6 +201,7 @@ router.get(
       name: tenant.name,
       status: tenant.status,
       azureTenantId: tenant.azure_tenant_id,
+      trialEndsAt: tenant.trial_ends_at || null,
       createdDate: tenant.created_date,
     });
   }),
@@ -230,6 +231,7 @@ router.patch(
       name: updated.name,
       status: updated.status,
       azureTenantId: updated.azure_tenant_id,
+      trialEndsAt: updated.trial_ends_at || null,
       createdDate: updated.created_date,
     });
   }),

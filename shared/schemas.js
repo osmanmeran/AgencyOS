@@ -57,6 +57,20 @@ export const schemas = {
       path: ['name'],
     }),
 
+  // Platform-operator workspace lifecycle actions (server/routes/platform.js).
+  setWorkspaceStatus: z.object({
+    status: z.enum(['trial', 'active', 'suspended']),
+  }),
+
+  extendTrial: z.object({
+    days: z.coerce.number().int().positive().max(365).optional(),
+  }),
+
+  // Deleting a workspace is irreversible: the caller must echo back its slug.
+  deleteWorkspace: z.object({
+    confirmSlug: z.string().min(1, 'Type the workspace address to confirm'),
+  }),
+
   createUser: z
     .object({
       email: z.string().email('Invalid email format'),
