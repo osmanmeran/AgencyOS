@@ -33,6 +33,7 @@ import {
   acceptInvite,
 } from '../services/auth.js';
 import { getTenantById } from '../services/tenants.js';
+import { workspaceUrl } from '../middleware/tenant.js';
 import { sendEmail } from '../services/email.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
 import logger from '../lib/logger.js';
@@ -263,8 +264,7 @@ router.post(
 
     const inviter = getUserById(req.user.id);
     const inviterName = inviter?.name || req.user.email;
-    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
-    const inviteUrl = `${appUrl}/accept-invite?token=${result.token}`;
+    const inviteUrl = `${workspaceUrl(req)}/accept-invite?token=${result.token}`;
 
     sendEmail({
       to: result.email,

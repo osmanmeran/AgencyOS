@@ -310,6 +310,65 @@ Covered by `tests/services/backupRuns.test.js` and
 `tests/services/backupScheduler.test.js` (which simulates one workspace's disk
 failing and asserts the others still complete).
 
+## Phase 10 — Invite links & fleet migrations ✅ implemented (2026-07-30)
+
+Two robustness gaps found while re-auditing after Phase 9: one a real
+functional bug (worse UX, not broken auth — see below), the other a fleet-scale
+availability risk that hadn't mattered yet at 1-3 tenants.
+
+### Tenant-aware invite/notification links
+
+`server/routes/auth.js` (`/invite`) and `server/routes/b2b.js` (quote-response
+notifications) built their email links from `process.env.APP_URL` unconditionally,
+ignoring which workspace the request came from. `acceptInvite()` already
+searches every tenant DB for the token (`locateInvite`) and the `active_tenant`
+cookie already falls back correctly on the apex, so a stray `APP_URL` never
+actually broke authentication — but it did silently send every invite to the
+apex domain instead of the issuing workspace's own subdomain, which is worse
+UX and an easy trap for an operator who sets `APP_URL` for an unrelated reason
+(e.g. a single canonical URL for cron/report links).
+
+- `workspaceUrl(req)` (`server/middleware/tenant.js`) now builds the tenant's
+  own `<slug>.<APP_ROOT_DOMAIN>` when a tenant is resolved and subdomain
+  routing is active, landing the recipient directly on their workspace instead
+  of relying on the cookie fallback. Falls back to `APP_URL`, then the
+  request's own origin, for the legacy tenant and single-domain (cookie) mode
+  — where there's no per-tenant subdomain to build.
+- Node's `fetch` does not allow spoofing the `Host` header (confirmed
+  empirically), so the subdomain-preferred-over-`APP_URL` case is unit-tested
+  directly against `workspaceUrl()` (`tests/middleware/tenant.test.js`), the
+  same pattern the codebase already uses for `tenantMiddleware` itself.
+  `tests/routes/invite.test.js` covers the route end-to-end in single-domain
+  mode (real HTTP, no Host spoofing needed there).
+
+### Fleet migrations no longer abort on one bad tenant
+
+`server/migrations/cli.js bootstrap` looped every tenant database with no
+per-tenant error isolation: one throwing migration (or corrupt file) propagated
+out of the loop, aborting the whole run and leaving every tenant after it in
+`fs.readdirSync()` order — not any meaningful priority — unmigrated, with no
+report of which. Harmless at 2-3 tenants, a real availability risk at fleet
+scale.
+
+- Each tenant now runs in its own try/catch (`migrateOneTenant`), always
+  closing the handle whether it succeeds or fails, so one bad database is
+  reported and skipped rather than stopping the run.
+- `bootstrap` prints a per-tenant result and a summary (`N/M migrated
+successfully`), exits non-zero if any tenant failed, and re-running is
+  idempotent — already-migrated tenants are untouched.
+- New read-only `db:migrate:fleet:status` reports pending-migration counts
+  (and unreadable databases) per tenant without applying anything, so an
+  operator can see what `bootstrap` would do — and which tenant DBs are even
+  openable — before committing to a fleet-wide run.
+
+Verified end-to-end against a scratch `DATA_DIR` (3 tenants, one corrupted
+mid-run): the two healthy tenants migrated regardless of where the broken one
+fell in the run, `fleet:status` flagged the corruption without touching any
+file, and re-running after the fix showed a clean `3/3`. Covered by
+`tests/migrations/cli.fleet.test.js`, which spawns the real CLI as a subprocess
+(it calls `process.exit()` on every branch, so it can't be asserted on
+in-process).
+
 ## Phase 6 — Ops enablement & launch checklist
 
 ### Restore runbook (rehearsed 2026-07-29)
@@ -440,10 +499,6 @@ dev so localhost keeps working unchanged.
 - **Self-serve offboarding** — an operator can now delete a workspace
   (Phase 8), but a workspace admin can't export their own data or close their
   own account.
-- **Invite links are tenant-fragile**: `server/routes/auth.js` prefers
-  `APP_URL` over the request `Host`, so with `APP_URL` set an invite from
-  workspace X points at the apex and the token won't resolve. Leave `APP_URL`
-  unset (the `Host` fallback is correct) until this is fixed properly.
 
 ## Open questions before implementation starts
 

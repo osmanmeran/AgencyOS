@@ -5,6 +5,7 @@ import { validate, schemas } from '../middleware/validate.js';
 import { getDb, uid } from '../db.js';
 import { broadcast } from '../lib/ws.js';
 import { getTenantId } from '../db.js';
+import { workspaceUrl } from '../middleware/tenant.js';
 import { hasPermission } from '../permissions.js';
 import { sendEmail } from '../services/email.js';
 import { getExchangeRate } from '../services/integrations.js';
@@ -681,7 +682,6 @@ router.put(
 
     const client = getEntityById(db, 'Client', existing.client_id);
     if (client?.email) {
-      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
       sendEmail({
         to: client.email,
         subject: `Your quote request "${existing.title}" has been updated`,
@@ -691,7 +691,7 @@ router.put(
           quoteTitle: existing.title,
           status: data.status,
           responseNotes: data.response_notes,
-          quoteUrl: `${appUrl}/ClientQuoteDetails?id=${req.params.id}`,
+          quoteUrl: `${workspaceUrl(req)}/ClientQuoteDetails?id=${req.params.id}`,
         },
       }).catch((err) =>
         logger.warn({ err: err.message, quoteId: req.params.id }, 'Failed to send quote response email'),

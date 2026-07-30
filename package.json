@@ -22,6 +22,7 @@
     "db:migrate:platform": "node server/migrations/cli.js platform",
     "db:migrate:platform:status": "node server/migrations/cli.js platform:status",
     "db:migrate:bootstrap": "node server/migrations/cli.js bootstrap",
+    "db:migrate:fleet:status": "node server/migrations/cli.js fleet:status",
     "saas:adopt-tenant-zero": "node scripts/adopt-tenant-zero.mjs",
     "backup:offsite": "node scripts/offsite-backup-cli.mjs",
     "seed:tours": "node scripts/seedItalianDailyTours.mjs && node scripts/localizeItalianTours.mjs",
