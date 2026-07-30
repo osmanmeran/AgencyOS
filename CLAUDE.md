@@ -281,9 +281,36 @@ src=x onerror=...>` or a fake "session expired, click here" link would
    intentionally unescaped — it's a staff member composing free-text/rich-text
    email through the app's own compose UI, not data reflected without intent.
 
+2. ✅ **FIXED — `npm audit` flagged 9 dependency vulnerabilities** — `npm
+audit fix` (no `--force`, no major bumps) resolved 7 of them in place:
+   `body-parser` (DoS via a silently-disabled size limit), `postcss` (path
+   traversal disclosing arbitrary `.map` files via source-map auto-loading),
+   `dompurify`, `js-yaml`, and the `shell-quote`/`concurrently` dev-tool
+   chain. `react-router-dom` was bumped 6.26 → 7.18.2 (package.json + lock)
+   to pick up a fix for an open-redirect bypass in `<Link>`/`useNavigate`
+   (the app's classic declarative-mode usage — `BrowserRouter`, `Routes`,
+   `Route`, `Navigate`, `Outlet`, `Link`, `useLocation`, `useNavigate`,
+   `useSearchParams` — is unaffected by v7's API changes, which only bite
+   apps opting into the new data-router/framework mode); verified via the
+   full test suite, lint, typecheck, a production build, and a headless
+   browser smoke test of the built app (Dashboard rendered, sidebar
+   navigation worked, zero console/page errors beyond the expected API 500s
+   from the backend not running). Two remaining `npm audit` items were
+   evaluated and left as-is rather than force-fixed:
+   - `brace-expansion` (via `eslint-plugin-react` → `minimatch`) — ESLint is
+     a dev-only tool that processes local source globs, never
+     attacker-supplied input, so the DoS advisory has no reachable path here;
+     the only available fix downgrades `eslint-plugin-react` to a
+     much older 7.22.0.
+   - The newest `react-router` advisory (RSC-mode CSRF bypass,
+     `GHSA-qwww-vcr4-c8h2`) only applies to React Server Components mode,
+     which this Vite SPA doesn't use at all (no SSR, no RSC). The only fix
+     path (`react-router-dom@7.11.0`) would reintroduce the open-redirect bug
+     this update just fixed, so it's a strictly worse trade.
+
 ## 🟡 Security hardening (next)
 
-2. **`refresh_tokens` has no pruning job** — every access-token refresh (every
+3. **`refresh_tokens` has no pruning job** — every access-token refresh (every
    ~15 min for an active session) inserts a new row; revoked/expired rows are
    never deleted. Not a vulnerability (rows are useless once
    `revoked`/`expires_at` has passed, and lookups stay index-backed), but the
@@ -291,7 +318,7 @@ src=x onerror=...>` or a fake "session expired, click here" link would
    (e.g. alongside `backupScheduler`'s per-tenant loop) deleting rows where
    `revoked = 1 OR expires_at < now`.
 
-3. **CSP `connectSrc` allows `cdn.jsdelivr.net` for no reason** — grep
+4. **CSP `connectSrc` allows `cdn.jsdelivr.net` for no reason** — grep
    confirms `cdn.jsdelivr.net` is only ever fetched server-side
    (`services/exchangeRates.js`, a Node `fetch()` for currency rates, which
    CSP doesn't govern). No frontend code references it. Drop it from
@@ -300,7 +327,7 @@ src=x onerror=...>` or a fake "session expired, click here" link would
 
 ## 🟠 Architecture & scalability
 
-4. **`MAX_OPEN_DBS = 50` tenant-connection cap is a hardcoded, unmonitored
+5. **`MAX_OPEN_DBS = 50` tenant-connection cap is a hardcoded, unmonitored
    ceiling** (`server/db.js`) — fine at current scale, but two things are
    worth tracking before this becomes a real SaaS with many active
    workspaces: (a) there's no metric/alert on eviction frequency, so the
@@ -314,7 +341,7 @@ src=x onerror=...>` or a fake "session expired, click here" link would
    minimum an eviction counter in `/api/platform/stats`) before onboarding
    enough workspaces to churn the LRU regularly.
 
-5. **No self-service password reset** — `routes/auth.js` has no
+6. **No self-service password reset** — `routes/auth.js` has no
    forgot-password flow; a locked-out user needs an admin to reset their
    password (or use Microsoft SSO). Low urgency (not a vulnerability — the
    absence of a reset flow removes a whole class of reset-token bugs), but
