@@ -55,7 +55,14 @@ export function workspaceUrl(req) {
   if (rootDomain && req.tenant?.slug) {
     return `https://${req.tenant.slug}.${rootDomain.replace(/^\.+/, '')}`;
   }
-  return process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+  // Every caller appends its own leading-slash path (`${workspaceUrl(req)}/foo`),
+  // so a trailing slash on APP_URL (very easy to set — it's how a browser
+  // address bar shows a bare root URL) would double up into `...com//foo`.
+  // That breaks route matching entirely: neither React Router nor the
+  // login-redirect exemptions for standalone pages (App.jsx, api-client.js)
+  // recognize a path starting with `//` as the route they're meant to allow.
+  const base = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+  return base.replace(/\/+$/, '');
 }
 
 /**

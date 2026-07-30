@@ -134,4 +134,17 @@ describe('workspaceUrl', () => {
     const req = { tenant: null, protocol: 'https', get: () => 'marvelops.app' };
     expect(workspaceUrl(req)).toBe('https://acme-agency.example');
   });
+
+  it('strips a trailing slash from APP_URL so callers never produce a double slash', () => {
+    // Regression: a browser address bar shows a bare root URL with a trailing
+    // slash, so operators naturally copy APP_URL that way (e.g. Railway).
+    // Every caller appends its own leading-slash path
+    // (`${workspaceUrl(req)}/share/itinerary/...`), and a resulting
+    // `...com//share/itinerary/...` fails to match both React Router's route
+    // and the login-redirect exemptions for standalone pages — a passenger's
+    // public itinerary link silently bounced to the login page.
+    process.env.APP_URL = 'https://marvelops-production.up.railway.app/';
+    const req = { tenant: null, protocol: 'https', get: () => 'marvelops.app' };
+    expect(workspaceUrl(req)).toBe('https://marvelops-production.up.railway.app');
+  });
 });
