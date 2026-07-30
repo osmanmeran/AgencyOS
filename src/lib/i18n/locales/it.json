@@ -1323,9 +1323,10 @@
     "errorCancel": "Impossibile annullare la fattura",
     "successPaymentRecorded": "Pagamento registrato",
     "errorPaymentRecord": "Impossibile registrare il pagamento",
-    "serviceDetailsTitle": "Service Details",
-    "website": "Website",
-    "mapLocation": "Map location"
+    "serviceDetailsTitle": "Dettagli del Servizio",
+    "website": "Sito Web",
+    "mapLocation": "Vedi Mappa",
+    "passengerLabel": "Passeggero: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Torna ai Fornitori",
@@ -2113,7 +2114,8 @@
     "total": "Totale:",
     "amountPaid": "Importo Pagato:",
     "amountDue": "Importo Dovuto:",
-    "paymentTerms": "Termini di Pagamento:"
+    "paymentTerms": "Termini di Pagamento:",
+    "passengerLabel": "Passeggero: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Itinerario Non Trovato",

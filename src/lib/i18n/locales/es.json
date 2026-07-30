@@ -1323,9 +1323,10 @@
     "errorCancel": "Error al cancelar la factura",
     "successPaymentRecorded": "Pago registrado",
     "errorPaymentRecord": "Error al registrar el pago",
-    "serviceDetailsTitle": "Service Details",
-    "website": "Website",
-    "mapLocation": "Map location"
+    "serviceDetailsTitle": "Detalles del Servicio",
+    "website": "Sitio Web",
+    "mapLocation": "Ver Ubicación",
+    "passengerLabel": "Pasajero: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Volver a Proveedores",
@@ -2113,7 +2114,8 @@
     "total": "Total:",
     "amountPaid": "Monto Pagado:",
     "amountDue": "Monto Adeudado:",
-    "paymentTerms": "Términos de Pago:"
+    "paymentTerms": "Términos de Pago:",
+    "passengerLabel": "Pasajero: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Itinerario No Encontrado",

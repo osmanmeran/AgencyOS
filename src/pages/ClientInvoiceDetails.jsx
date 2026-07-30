@@ -1,5 +1,6 @@
 import { db } from '@/lib/DbContext';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useMyClient } from '@/hooks/useMyClient';
 
@@ -38,6 +39,27 @@ export default function ClientInvoiceDetails() {
     })
   );
 
+  const { data: trip } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['clientInvoiceTrip', invoice?.trip_id],
+      queryFn: () => db.entities.Trip.get(invoice.trip_id),
+      enabled: !!invoice?.trip_id,
+    })
+  );
+
+  const contactPassenger = useMemo(() => {
+    const pax = trip?.passengers || [];
+    return pax.find((p) => p.is_contact) || pax[0] || null;
+  }, [trip]);
+
+  const tripDateRange = useMemo(() => {
+    if (!trip?.start_date && !trip?.end_date) return '';
+    return [trip?.start_date, trip?.end_date]
+      .filter(Boolean)
+      .map((d) => format(parseISO(d), 'MMM d, yyyy'))
+      .join(' – ');
+  }, [trip]);
+
   if (isLoading) {
     return <SkeletonCard />;
   }
@@ -69,8 +91,8 @@ export default function ClientInvoiceDetails() {
         </Button>
       </div>
 
-      <Card className="p-8 bg-card shadow-lg print:shadow-none">
-        <div className="flex justify-between items-start mb-8">
+      <Card className="p-8 print:p-4 bg-card shadow-lg print:shadow-none">
+        <div className="flex justify-between items-start mb-8 print:mb-4">
           <div>
             <h1 className="text-4xl font-bold text-foreground mb-2">{t('clientInvoiceDetails.invoiceLabel')}</h1>
             <div className="text-lg text-muted-foreground">{invoice.invoice_number}</div>
@@ -118,7 +140,7 @@ export default function ClientInvoiceDetails() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-4 mb-8 print:mb-4">
           <div>
             <div className="text-sm text-muted-foreground mb-1">{t('clientInvoiceDetails.billTo')}</div>
             <div className="font-bold text-lg text-foreground">{billingCompany?.name || client?.name}</div>
@@ -138,6 +160,17 @@ export default function ClientInvoiceDetails() {
             {client?.email && <div className="text-muted-foreground">{client.email}</div>}
           </div>
           <div className="text-right">
+            {trip && (
+              <div className="mb-4">
+                {trip.destination && <div className="font-semibold text-foreground">{trip.destination}</div>}
+                {tripDateRange && <div className="text-muted-foreground">{tripDateRange}</div>}
+                {contactPassenger?.name && (
+                  <div className="text-muted-foreground">
+                    {t('clientInvoiceDetails.passengerLabel', { name: contactPassenger.name })}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="mb-4">
               <div className="text-sm text-muted-foreground">{t('clientInvoiceDetails.issueDate')}</div>
               <div className="font-semibold text-foreground">{format(parseISO(invoice.issue_date), 'MMM d, yyyy')}</div>
@@ -150,26 +183,32 @@ export default function ClientInvoiceDetails() {
         </div>
 
         {/* Line Items */}
-        <div className="mb-8">
+        <div className="mb-8 print:mb-4">
           <table className="w-full">
             <thead className="border-b-2 border-border">
               <tr className="text-left">
-                <th className="pb-3 text-muted-foreground">{t('clientInvoiceDetails.descriptionCol')}</th>
-                <th className="pb-3 text-muted-foreground text-center">{t('clientInvoiceDetails.qtyCol')}</th>
-                <th className="pb-3 text-muted-foreground text-right">{t('clientInvoiceDetails.priceCol')}</th>
-                <th className="pb-3 text-muted-foreground text-right">{t('clientInvoiceDetails.amountCol')}</th>
+                <th className="pb-3 print:pb-1.5 text-muted-foreground">{t('clientInvoiceDetails.descriptionCol')}</th>
+                <th className="pb-3 print:pb-1.5 text-muted-foreground text-center">
+                  {t('clientInvoiceDetails.qtyCol')}
+                </th>
+                <th className="pb-3 print:pb-1.5 text-muted-foreground text-right">
+                  {t('clientInvoiceDetails.priceCol')}
+                </th>
+                <th className="pb-3 print:pb-1.5 text-muted-foreground text-right">
+                  {t('clientInvoiceDetails.amountCol')}
+                </th>
               </tr>
             </thead>
             <tbody>
               {invoice.line_items?.map((item, index) => (
-                <tr key={index} className="border-b border-border">
-                  <td className="py-4">{item.description}</td>
-                  <td className="py-4 text-center">{item.quantity}</td>
-                  <td className="py-4 text-right">
+                <tr key={index} className="border-b border-border print:break-inside-avoid">
+                  <td className="py-4 print:py-2">{item.description}</td>
+                  <td className="py-4 print:py-2 text-center">{item.quantity}</td>
+                  <td className="py-4 print:py-2 text-right">
                     {cs}
                     {item.unit_price.toFixed(2)}
                   </td>
-                  <td className="py-4 text-right font-semibold">
+                  <td className="py-4 print:py-2 text-right font-semibold">
                     {cs}
                     {item.amount.toFixed(2)}
                   </td>
@@ -180,8 +219,8 @@ export default function ClientInvoiceDetails() {
         </div>
 
         {/* Totals */}
-        <div className="flex justify-end">
-          <div className="w-80 space-y-3">
+        <div className="flex justify-end print:break-inside-avoid">
+          <div className="w-80 space-y-3 print:space-y-1.5">
             <div className="flex justify-between text-lg">
               <span className="text-muted-foreground">{t('clientInvoiceDetails.subtotal')}</span>
               <span className="font-semibold">
@@ -235,7 +274,7 @@ export default function ClientInvoiceDetails() {
         </div>
 
         {invoice.payment_terms && (
-          <div className="mt-8 pt-8 border-t border-border">
+          <div className="mt-8 print:mt-4 pt-8 print:pt-4 border-t border-border">
             <div className="text-sm font-semibold text-foreground mb-1">{t('clientInvoiceDetails.paymentTerms')}</div>
             <div className="text-muted-foreground">{invoice.payment_terms}</div>
           </div>

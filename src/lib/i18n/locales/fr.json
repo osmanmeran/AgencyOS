@@ -1323,9 +1323,10 @@
     "errorCancel": "Échec de l'annulation de la facture",
     "successPaymentRecorded": "Paiement enregistré",
     "errorPaymentRecord": "Échec de l'enregistrement du paiement",
-    "serviceDetailsTitle": "Service Details",
-    "website": "Website",
-    "mapLocation": "Map location"
+    "serviceDetailsTitle": "Détails des Services",
+    "website": "Site Web",
+    "mapLocation": "Voir sur la Carte",
+    "passengerLabel": "Passager : {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Retour aux Fournisseurs",
@@ -2113,7 +2114,8 @@
     "total": "Total :",
     "amountPaid": "Montant Payé :",
     "amountDue": "Montant Dû :",
-    "paymentTerms": "Conditions de Paiement :"
+    "paymentTerms": "Conditions de Paiement :",
+    "passengerLabel": "Passager : {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Itinéraire Introuvable",
