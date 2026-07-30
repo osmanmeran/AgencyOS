@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import * as dateFnsLocales from 'date-fns/locale';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { assetUrl } from '@/lib/assetUrl';
 import {
@@ -16,6 +17,14 @@ import {
 } from 'lucide-react';
 
 export const currSymbol = (cur) => getCurrencySymbol(cur);
+
+const DATE_FNS_LOCALES = {
+  de: dateFnsLocales.de,
+  es: dateFnsLocales.es,
+  fr: dateFnsLocales.fr,
+  it: dateFnsLocales.it,
+  tr: dateFnsLocales.tr,
+};
 
 export const PROPOSAL_STATUS_CONFIG = {
   pending: {
@@ -75,7 +84,12 @@ export const SERVICE_TYPE_CONFIG = {
   },
 };
 
-export function buildEmailBody(trip, appSettings, suppliers = {}) {
+/**
+ * @param {{ t: (key: string, params?: any) => string, language?: string }} i18n
+ */
+export function buildEmailBody(trip, appSettings, suppliers = {}, i18n) {
+  const { t, language = 'en' } = i18n;
+  const T = (key) => t(`reservationEmail.${key}`);
   const sc = currSymbol(trip.selling_currency || 'USD');
   const itineraryUrl = `${window.location.origin}/client-itinerary?id=${trip.id}`;
   const companyName = appSettings?.invoice_header?.company_name || appSettings?.app_name || 'Marvel Tour';
@@ -94,7 +108,7 @@ export function buildEmailBody(trip, appSettings, suppliers = {}) {
   const esc = (v) => (v == null ? '' : String(v)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const fmtDate = (d) => {
     try {
-      return format(new Date(d), 'MMM d, yyyy');
+      return format(new Date(d), 'MMM d, yyyy', { locale: DATE_FNS_LOCALES[language] });
     } catch {
       return d || '';
     }
@@ -118,29 +132,29 @@ export function buildEmailBody(trip, appSettings, suppliers = {}) {
       if (s.start_date || s.end_date) {
         const ds = s.start_date ? fmtDate(s.start_date) : '';
         const de = s.end_date ? fmtDate(s.end_date) : ds;
-        addRow('Date(s)', ds && de && ds !== de ? `${ds} – ${de}` : ds || de);
+        addRow(T('dateLabel'), ds && de && ds !== de ? `${ds} – ${de}` : ds || de);
       }
       const sLoc =
         s.location ||
         (suppliers[s.supplier_id] ? suppliers[s.supplier_id].city || suppliers[s.supplier_id].area || '' : '');
-      if (sLoc) addRow('Location', sLoc);
-      if (s.description) addRow('Details', s.description);
+      if (sLoc) addRow(T('locationLabel'), sLoc);
+      if (s.description) addRow(T('detailsLabel'), s.description);
       if (s.pickup_location || s.pickup_time)
-        addRow('Pick up', `${s.pickup_location || ''}${s.pickup_time ? ` @ ${s.pickup_time}` : ''}`.trim());
-      if (s.dropoff_location) addRow('Drop off', s.dropoff_location);
-      if (s.transfer_flight_number) addRow('Flight', s.transfer_flight_number);
+        addRow(T('pickupLabel'), `${s.pickup_location || ''}${s.pickup_time ? ` @ ${s.pickup_time}` : ''}`.trim());
+      if (s.dropoff_location) addRow(T('dropoffLabel'), s.dropoff_location);
+      if (s.transfer_flight_number) addRow(T('flightLabel'), s.transfer_flight_number);
       if (s.return_leg && s.return_leg.enabled) {
         const rl = s.return_leg;
         const parts = [];
         if (rl.date) parts.push(fmtDate(rl.date));
         if (rl.pickup_location)
-          parts.push(`Pick up: ${rl.pickup_location}${rl.pickup_time ? ` @ ${rl.pickup_time}` : ''}`);
-        if (rl.dropoff_location) parts.push(`Drop off: ${rl.dropoff_location}`);
-        if (rl.flight_number) parts.push(`Flight: ${rl.flight_number}`);
-        addRow('Return', parts.join(' · '));
+          parts.push(`${T('pickupLabel')}: ${rl.pickup_location}${rl.pickup_time ? ` @ ${rl.pickup_time}` : ''}`);
+        if (rl.dropoff_location) parts.push(`${T('dropoffLabel')}: ${rl.dropoff_location}`);
+        if (rl.flight_number) parts.push(`${T('flightLabel')}: ${rl.flight_number}`);
+        addRow(T('returnLabel'), parts.join(' · '));
       }
       const unitLabel = s.unit ? s.unit.replace(/_/g, ' ') : '';
-      if (qty > 1 || unitLabel) addRow('Quantity', `${qty}${unitLabel ? ` × ${unitLabel}` : ''}`);
+      if (qty > 1 || unitLabel) addRow(T('quantityLabel'), `${qty}${unitLabel ? ` × ${unitLabel}` : ''}`);
 
       return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:14px;background:#ffffff;">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px;">
@@ -171,31 +185,31 @@ export function buildEmailBody(trip, appSettings, suppliers = {}) {
 
   <!-- Title bar -->
   <div style="background:#f0f9ff;border-bottom:1px solid #bae6fd;padding:16px 40px;text-align:center;">
-    <p style="margin:0;color:#0369a1;font-size:13px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">Travel Reservation Confirmation</p>
+    <p style="margin:0;color:#0369a1;font-size:13px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">${T('pageTitle')}</p>
   </div>
 
   <!-- Body -->
   <div style="padding:36px 40px;">
-    <p style="color:#1e293b;font-size:16px;margin:0 0 24px;">Dear <strong>${trip.client_name || 'Valued Client'}</strong>,</p>
-    <p style="color:#475569;font-size:14px;margin:0 0 28px;line-height:1.6;">Please find your travel reservation details below. We look forward to making your journey unforgettable.</p>
+    <p style="color:#1e293b;font-size:16px;margin:0 0 24px;">${T('dear')} <strong>${trip.client_name || T('valuedClient')}</strong>,</p>
+    <p style="color:#475569;font-size:14px;margin:0 0 28px;line-height:1.6;">${T('intro')}</p>
 
     <!-- Trip Info -->
     <div style="background:#f8fafc;border-radius:12px;padding:20px 24px;margin-bottom:28px;border:1px solid #e2e8f0;">
       <table style="width:100%;border-collapse:collapse;">
         <tr>
-          <td style="padding:6px 0;color:#64748b;font-size:13px;width:140px;">Reservation</td>
+          <td style="padding:6px 0;color:#64748b;font-size:13px;width:140px;">${T('reservationLabel')}</td>
           <td style="padding:6px 0;color:#1e293b;font-size:13px;font-weight:600;">${trip.name || '—'}</td>
         </tr>
         <tr>
-          <td style="padding:6px 0;color:#64748b;font-size:13px;">Reference</td>
-          <td style="padding:6px 0;color:#1e293b;font-size:13px;font-weight:600;">${trip.reference_number || 'Pending'}</td>
+          <td style="padding:6px 0;color:#64748b;font-size:13px;">${T('referenceLabel')}</td>
+          <td style="padding:6px 0;color:#1e293b;font-size:13px;font-weight:600;">${trip.reference_number || T('pendingValue')}</td>
         </tr>
         <tr>
-          <td style="padding:6px 0;color:#64748b;font-size:13px;">Destination</td>
+          <td style="padding:6px 0;color:#64748b;font-size:13px;">${T('destinationLabel')}</td>
           <td style="padding:6px 0;color:#1e293b;font-size:13px;">${trip.destination || '—'}</td>
         </tr>
         <tr>
-          <td style="padding:6px 0;color:#64748b;font-size:13px;">Dates</td>
+          <td style="padding:6px 0;color:#64748b;font-size:13px;">${T('datesLabel')}</td>
           <td style="padding:6px 0;color:#1e293b;font-size:13px;">${trip.start_date || ''} → ${trip.end_date || ''}</td>
         </tr>
       </table>
@@ -205,27 +219,27 @@ export function buildEmailBody(trip, appSettings, suppliers = {}) {
       serviceCards
         ? `
     <!-- Services -->
-    <h3 style="color:#1e293b;font-size:14px;font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.5px;">Services Included</h3>
+    <h3 style="color:#1e293b;font-size:14px;font-weight:700;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.5px;">${T('servicesIncluded')}</h3>
     <div style="margin-bottom:16px;">${serviceCards}</div>
     <div style="background:#1a1a2e;border-radius:8px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
-      <span style="color:#94a3b8;font-size:13px;font-weight:600;">TOTAL</span>
+      <span style="color:#94a3b8;font-size:13px;font-weight:600;">${T('total')}</span>
       <span style="color:#ffffff;font-size:16px;font-weight:700;">${sc}${(trip.total_cost || 0).toFixed(2)}</span>
     </div>`
         : ''
     }
 
-    ${trip.notes ? `<div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:14px 18px;border-radius:0 8px 8px 0;margin-bottom:24px;"><p style="margin:0;color:#92400e;font-size:13px;line-height:1.6;"><strong>Notes:</strong> ${trip.notes}</p></div>` : ''}
+    ${trip.notes ? `<div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:14px 18px;border-radius:0 8px 8px 0;margin-bottom:24px;"><p style="margin:0;color:#92400e;font-size:13px;line-height:1.6;"><strong>${T('notesLabel')}</strong> ${trip.notes}</p></div>` : ''}
 
     <!-- CTA Button -->
     <div style="text-align:center;margin:32px 0;">
-      <a href="${itineraryUrl}" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;padding:14px 36px;border-radius:10px;text-decoration:none;font-size:15px;font-weight:600;letter-spacing:-0.2px;">View Full Itinerary Online →</a>
+      <a href="${itineraryUrl}" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;padding:14px 36px;border-radius:10px;text-decoration:none;font-size:15px;font-weight:600;letter-spacing:-0.2px;">${T('viewItinerary')}</a>
     </div>
 
     ${
       trip.terms_and_conditions
         ? `
     <div style="border-top:1px solid #e2e8f0;padding-top:20px;margin-top:8px;">
-      <h4 style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px;">Terms & Conditions</h4>
+      <h4 style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px;">${T('termsAndConditions')}</h4>
       <p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0;">${trip.terms_and_conditions}</p>
     </div>`
         : ''
@@ -235,7 +249,7 @@ export function buildEmailBody(trip, appSettings, suppliers = {}) {
   <!-- Footer -->
   <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;text-align:center;">
     ${footerText ? `<p style="color:#94a3b8;font-size:12px;margin:0 0 6px;">${footerText}</p>` : ''}
-    <p style="color:#cbd5e1;font-size:11px;margin:0;">${companyName} · ${new Date().toLocaleDateString('it-IT')}</p>
+    <p style="color:#cbd5e1;font-size:11px;margin:0;">${companyName} · ${new Date().toLocaleDateString(language)}</p>
   </div>
 
 </div>

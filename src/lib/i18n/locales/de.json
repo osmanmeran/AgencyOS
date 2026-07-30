@@ -3444,5 +3444,29 @@
     "trial": "Testphase",
     "active": "Aktiv",
     "suspended": "Gesperrt"
+  },
+  "reservationEmail": {
+    "pageTitle": "Reisebuchungsbestätigung",
+    "dear": "Sehr geehrte/r",
+    "valuedClient": "geschätzter Kunde",
+    "intro": "Nachfolgend finden Sie die Details Ihrer Reisebuchung. Wir freuen uns darauf, Ihre Reise unvergesslich zu machen.",
+    "reservationLabel": "Buchung",
+    "referenceLabel": "Referenz",
+    "pendingValue": "Ausstehend",
+    "destinationLabel": "Reiseziel",
+    "datesLabel": "Termine",
+    "dateLabel": "Datum/Daten",
+    "locationLabel": "Ort",
+    "detailsLabel": "Details",
+    "pickupLabel": "Abholung",
+    "dropoffLabel": "Absetzung",
+    "flightLabel": "Flug",
+    "returnLabel": "Rückfahrt",
+    "quantityLabel": "Menge",
+    "servicesIncluded": "Enthaltene Leistungen",
+    "total": "GESAMT",
+    "notesLabel": "Hinweise:",
+    "viewItinerary": "Vollständige Reiseroute online ansehen →",
+    "termsAndConditions": "Allgemeine Geschäftsbedingungen"
   }
 }

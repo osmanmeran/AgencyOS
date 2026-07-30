@@ -3444,5 +3444,29 @@
     "trial": "Deneme",
     "active": "Aktif",
     "suspended": "Askıya Alındı"
+  },
+  "reservationEmail": {
+    "pageTitle": "Seyahat Rezervasyon Onayı",
+    "dear": "Sayın",
+    "valuedClient": "değerli müşterimiz",
+    "intro": "Seyahat rezervasyon detaylarınızı aşağıda bulabilirsiniz. Yolculuğunuzu unutulmaz kılmayı dört gözle bekliyoruz.",
+    "reservationLabel": "Rezervasyon",
+    "referenceLabel": "Referans",
+    "pendingValue": "Beklemede",
+    "destinationLabel": "Hedef",
+    "datesLabel": "Tarihler",
+    "dateLabel": "Tarih(ler)",
+    "locationLabel": "Konum",
+    "detailsLabel": "Detaylar",
+    "pickupLabel": "Alış",
+    "dropoffLabel": "Bırakış",
+    "flightLabel": "Uçuş",
+    "returnLabel": "Dönüş",
+    "quantityLabel": "Adet",
+    "servicesIncluded": "Dahil Olan Hizmetler",
+    "total": "TOPLAM",
+    "notesLabel": "Notlar:",
+    "viewItinerary": "Tam Gezi Planını Çevrimiçi Görüntüle →",
+    "termsAndConditions": "Şartlar ve Koşullar"
   }
 }

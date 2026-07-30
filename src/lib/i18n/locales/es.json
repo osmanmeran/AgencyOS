@@ -3444,5 +3444,29 @@
     "trial": "Prueba",
     "active": "Activo",
     "suspended": "Suspendido"
+  },
+  "reservationEmail": {
+    "pageTitle": "Confirmación de reserva de viaje",
+    "dear": "Estimado/a",
+    "valuedClient": "estimado cliente",
+    "intro": "A continuación encontrará los detalles de su reserva de viaje. Esperamos hacer de su viaje una experiencia inolvidable.",
+    "reservationLabel": "Reserva",
+    "referenceLabel": "Referencia",
+    "pendingValue": "Pendiente",
+    "destinationLabel": "Destino",
+    "datesLabel": "Fechas",
+    "dateLabel": "Fecha(s)",
+    "locationLabel": "Ubicación",
+    "detailsLabel": "Detalles",
+    "pickupLabel": "Recogida",
+    "dropoffLabel": "Entrega",
+    "flightLabel": "Vuelo",
+    "returnLabel": "Regreso",
+    "quantityLabel": "Cantidad",
+    "servicesIncluded": "Servicios incluidos",
+    "total": "TOTAL",
+    "notesLabel": "Notas:",
+    "viewItinerary": "Ver el itinerario completo en línea →",
+    "termsAndConditions": "Términos y condiciones"
   }
 }

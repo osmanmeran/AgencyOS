@@ -3444,5 +3444,29 @@
     "trial": "Prova",
     "active": "Attivo",
     "suspended": "Sospeso"
+  },
+  "reservationEmail": {
+    "pageTitle": "Conferma di prenotazione viaggio",
+    "dear": "Gentile",
+    "valuedClient": "gentile cliente",
+    "intro": "Di seguito i dettagli della sua prenotazione di viaggio. Non vediamo l’ora di rendere il suo viaggio indimenticabile.",
+    "reservationLabel": "Prenotazione",
+    "referenceLabel": "Riferimento",
+    "pendingValue": "In attesa",
+    "destinationLabel": "Destinazione",
+    "datesLabel": "Date",
+    "dateLabel": "Data/e",
+    "locationLabel": "Posizione",
+    "detailsLabel": "Dettagli",
+    "pickupLabel": "Ritiro",
+    "dropoffLabel": "Riconsegna",
+    "flightLabel": "Volo",
+    "returnLabel": "Ritorno",
+    "quantityLabel": "Quantità",
+    "servicesIncluded": "Servizi inclusi",
+    "total": "TOTALE",
+    "notesLabel": "Note:",
+    "viewItinerary": "Visualizza l’itinerario completo online →",
+    "termsAndConditions": "Termini e condizioni"
   }
 }
