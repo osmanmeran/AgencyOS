@@ -35,7 +35,7 @@ const SERVICE_BOOKING_STATUS_CONFIG = {
 };
 
 export default function ServiceBookingManager({ trip, user, suppliers, appSettings }) {
-  const { t } = useT();
+  const { t, language } = useT();
   const queryClient = useQueryClient();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
@@ -202,7 +202,7 @@ export default function ServiceBookingManager({ trip, user, suppliers, appSettin
                       {service.booking_requested_date && (
                         <p>
                           {t('serviceBookingManager.requestedOnLabel', {
-                            date: new Date(service.booking_requested_date).toLocaleDateString(),
+                            date: new Date(service.booking_requested_date).toLocaleDateString(language),
                             email: service.booking_requested_email,
                           })}
                         </p>

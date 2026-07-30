@@ -40,7 +40,7 @@ async function api(path, opts = {}) {
 }
 
 export default function SuggestionsManager() {
-  const { t } = useT();
+  const { t, language } = useT();
   const [filterStatus, setFilterStatus] = useState('all');
   const queryClient = useQueryClient();
 
@@ -126,7 +126,7 @@ export default function SuggestionsManager() {
                       {s.description && <p className="text-sm text-muted-foreground mt-1.5">{s.description}</p>}
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                         <span>{s.user_name || s.user_email || t('suggestionsManager.anonymous')}</span>
-                        {s.created_date && <span>{new Date(s.created_date).toLocaleDateString()}</span>}
+                        {s.created_date && <span>{new Date(s.created_date).toLocaleDateString(language)}</span>}
                         <Badge className="bg-muted text-muted-foreground text-[10px] capitalize">{s.type}</Badge>
                       </div>
                     </div>

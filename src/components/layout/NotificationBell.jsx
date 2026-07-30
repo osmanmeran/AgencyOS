@@ -47,7 +47,7 @@ async function api(path, opts = {}) {
 }
 
 export default function NotificationBell() {
-  const { t } = useT();
+  const { t, language } = useT();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
@@ -153,7 +153,7 @@ export default function NotificationBell() {
                     <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
                     {n.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>}
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      {new Date(n.created_date).toLocaleDateString(undefined, {
+                      {new Date(n.created_date).toLocaleDateString(language, {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',

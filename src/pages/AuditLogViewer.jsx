@@ -54,7 +54,7 @@ const ENTITY_TYPE_OPTIONS = [
 ];
 
 export default function AuditLogViewer() {
-  const { t } = useT();
+  const { t, language } = useT();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterEntity, setFilterEntity] = useState('');
@@ -224,7 +224,7 @@ export default function AuditLogViewer() {
                           </div>
                         )}
                         <p className="text-[10px] text-muted-foreground mt-1">
-                          {new Date(log.created_date).toLocaleString(undefined, {
+                          {new Date(log.created_date).toLocaleString(language, {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',
