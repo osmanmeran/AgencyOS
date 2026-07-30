@@ -307,6 +307,15 @@ audit fix` (no `--force`, no major bumps) resolved 7 of them in place:
      which this Vite SPA doesn't use at all (no SSR, no RSC). The only fix
      path (`react-router-dom@7.11.0`) would reintroduce the open-redirect bug
      this update just fixed, so it's a strictly worse trade.
+   - Re-verified as-is on 2026-07-30 after GitHub's Dependabot flagged "2 high"
+     on `main`: `npm audit` still surfaces exactly these same two — the
+     `brace-expansion`/`eslint-plugin-react` DoS advisory (dev-only tool, no
+     attacker-reachable input) and the `react-router` RSC-mode CSRF bypass
+     (unreachable — no SSR/RSC in this app). `react-router-dom` is still
+     pinned at `^7.18.2`, `eslint-plugin-react` at `^7.37.4`. Left untouched
+     again for the same reasons above; Dependabot's repo-level scanner has no
+     way to encode "not reachable in this app's usage," so it will keep
+     flagging these two until upstream ships a real fix.
 
 ## 🟡 Security hardening (next)
 
