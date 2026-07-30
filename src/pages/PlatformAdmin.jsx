@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useApi } from '@/hooks/useApi';
+import { useT } from '@/lib/i18n/I18nContext';
 
 // Platform (SaaS operator) admin dashboard (Phase 5). Lists every workspace
 // with aggregated stats. Access is gated server-side by PLATFORM_ADMIN_EMAILS;
 // non-admins receive a 403 and see the not-authorized message below.
 export default function PlatformAdmin() {
+  const { t } = useT();
   const { request } = useApi();
   const [workspaces, setWorkspaces] = useState([]);
   const [stats, setStats] = useState(null);
@@ -22,7 +24,7 @@ export default function PlatformAdmin() {
         setWorkspaces(ws.workspaces || []);
         setStats(st);
       } catch (err) {
-        setError(err.message || 'Failed to load platform data');
+        setError(err.message || t('platformAdmin.loadErr'));
       } finally {
         setLoading(false);
       }
@@ -41,14 +43,14 @@ export default function PlatformAdmin() {
       });
       setWorkspaces((prev) => prev.map((w) => (w.id === id ? { ...w, ...res.workspace } : w)));
     } catch (err) {
-      setActionError(err.message || 'Action failed');
+      setActionError(err.message || t('platformAdmin.actionFailed'));
     } finally {
       setBusyId(null);
     }
   }
 
   async function rename(workspace) {
-    const name = window.prompt('New workspace name', workspace.name);
+    const name = window.prompt(t('platformAdmin.renamePromptTitle'), workspace.name);
     if (!name || name === workspace.name) return;
     setBusyId(workspace.id);
     setActionError('');
@@ -59,7 +61,7 @@ export default function PlatformAdmin() {
       });
       setWorkspaces((prev) => prev.map((w) => (w.id === workspace.id ? { ...w, ...res.workspace } : w)));
     } catch (err) {
-      setActionError(err.message || 'Rename failed');
+      setActionError(err.message || t('platformAdmin.renameErr'));
     } finally {
       setBusyId(null);
     }
@@ -68,10 +70,7 @@ export default function PlatformAdmin() {
   // Irreversible, so the UI asks for the same confirmation the API enforces:
   // the workspace must already be suspended, and the operator types its address.
   async function destroy(workspace) {
-    const typed = window.prompt(
-      `Permanently delete "${workspace.name}" and all of its data?\n\n` +
-        `A final snapshot is taken first. Type the workspace address (${workspace.slug}) to confirm.`,
-    );
+    const typed = window.prompt(t('platformAdmin.deletePromptBody', { name: workspace.name, slug: workspace.slug }));
     if (typed === null) return;
     setBusyId(workspace.id);
     setActionError('');
@@ -81,28 +80,26 @@ export default function PlatformAdmin() {
         body: JSON.stringify({ confirmSlug: typed.trim() }),
       });
       setWorkspaces((prev) => prev.filter((w) => w.id !== workspace.id));
-      setNotice(`Deleted "${res.deleted.name}". Snapshot kept at ${res.snapshot}`);
+      setNotice(t('platformAdmin.deletedNotice', { name: res.deleted.name, snapshot: res.snapshot }));
     } catch (err) {
-      setActionError(err.message || 'Delete failed');
+      setActionError(err.message || t('platformAdmin.deleteErr'));
     } finally {
       setBusyId(null);
     }
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20 text-muted-foreground">Loading platform…</div>;
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground">{t('platformAdmin.loading')}</div>
+    );
   }
 
   if (error) {
     const notAuthorized = /platform admin/i.test(error);
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">Platform admin</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          {notAuthorized
-            ? 'You do not have platform admin access. Contact the SaaS operator to be added to PLATFORM_ADMIN_EMAILS.'
-            : error}
-        </p>
+        <h1 className="text-2xl font-semibold text-foreground">{t('platformAdmin.title')}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">{notAuthorized ? t('platformAdmin.notAuthorized') : error}</p>
       </div>
     );
   }
@@ -116,19 +113,19 @@ export default function PlatformAdmin() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="text-2xl font-semibold text-foreground">Platform admin</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Cross-tenant overview of all workspaces.</p>
+      <h1 className="text-2xl font-semibold text-foreground">{t('platformAdmin.title')}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{t('platformAdmin.subtitle')}</p>
 
       {stats && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Card label="Workspaces" value={stats.workspaceCount} />
-          <Card label="Total users" value={stats.totalUsers} />
-          <Card label="Total records" value={stats.totalEntities} />
-          <Card label="Active" value={stats.byStatus?.active || 0} />
+          <Card label={t('platformAdmin.cardWorkspaces')} value={stats.workspaceCount} />
+          <Card label={t('platformAdmin.cardTotalUsers')} value={stats.totalUsers} />
+          <Card label={t('platformAdmin.cardTotalRecords')} value={stats.totalEntities} />
+          <Card label={t('platformAdmin.cardActive')} value={stats.byStatus?.active || 0} />
         </div>
       )}
 
-      {stats?.backups && <BackupHealth health={stats.backups} />}
+      {stats?.backups && <BackupHealth health={stats.backups} t={t} />}
 
       {actionError && (
         <div className="mt-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
@@ -146,21 +143,21 @@ export default function PlatformAdmin() {
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border bg-muted/40 text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">Workspace</th>
-              <th className="px-4 py-3 font-medium">Address</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Trial ends</th>
-              <th className="px-4 py-3 text-right font-medium">Users</th>
-              <th className="px-4 py-3 text-right font-medium">Records</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">{t('platformAdmin.colWorkspace')}</th>
+              <th className="px-4 py-3 font-medium">{t('platformAdmin.colAddress')}</th>
+              <th className="px-4 py-3 font-medium">{t('platformAdmin.colStatus')}</th>
+              <th className="px-4 py-3 font-medium">{t('platformAdmin.colTrialEnds')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colUsers')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colRecords')}</th>
+              <th className="px-4 py-3 font-medium">{t('platformAdmin.colCreated')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colActions')}</th>
             </tr>
           </thead>
           <tbody>
             {workspaces.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
-                  No workspaces yet.
+                  {t('platformAdmin.noWorkspaces')}
                 </td>
               </tr>
             )}
@@ -171,14 +168,12 @@ export default function PlatformAdmin() {
                   <code className="rounded bg-muted px-1.5 py-0.5">{w.slug}</code>
                 </td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${statusColor(w.status)}`}
-                  >
-                    {w.status}
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor(w.status)}`}>
+                    {t(`workspaceStatus.${w.status}`)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  <TrialCell trialEndsAt={w.trialEndsAt} status={w.status} />
+                  <TrialCell trialEndsAt={w.trialEndsAt} status={w.status} t={t} />
                 </td>
                 <td className="px-4 py-3 text-right text-foreground">{w.userCount}</td>
                 <td className="px-4 py-3 text-right text-foreground">{w.entityCount}</td>
@@ -188,7 +183,7 @@ export default function PlatformAdmin() {
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
                     <ActionButton disabled={busyId === w.id} onClick={() => rename(w)}>
-                      Rename
+                      {t('platformAdmin.actionRename')}
                     </ActionButton>
                     {w.status === 'suspended' ? (
                       <>
@@ -196,10 +191,10 @@ export default function PlatformAdmin() {
                           disabled={busyId === w.id}
                           onClick={() => runAction(w.id, '/status', { status: 'active' })}
                         >
-                          Reactivate
+                          {t('platformAdmin.actionReactivate')}
                         </ActionButton>
                         <ActionButton disabled={busyId === w.id} variant="danger" onClick={() => destroy(w)}>
-                          Delete
+                          {t('platformAdmin.actionDelete')}
                         </ActionButton>
                       </>
                     ) : (
@@ -210,13 +205,13 @@ export default function PlatformAdmin() {
                               disabled={busyId === w.id}
                               onClick={() => runAction(w.id, '/extend-trial', {})}
                             >
-                              Extend trial
+                              {t('platformAdmin.actionExtendTrial')}
                             </ActionButton>
                             <ActionButton
                               disabled={busyId === w.id}
                               onClick={() => runAction(w.id, '/status', { status: 'active' })}
                             >
-                              Mark paid
+                              {t('platformAdmin.actionMarkPaid')}
                             </ActionButton>
                           </>
                         )}
@@ -225,7 +220,7 @@ export default function PlatformAdmin() {
                           variant="danger"
                           onClick={() => runAction(w.id, '/status', { status: 'suspended' })}
                         >
-                          Suspend
+                          {t('platformAdmin.actionSuspend')}
                         </ActionButton>
                       </>
                     )}
@@ -245,28 +240,28 @@ export default function PlatformAdmin() {
  * the case no per-run alert can report, because a scheduler that died sends
  * nothing at all.
  */
-function BackupHealth({ health }) {
+function BackupHealth({ health, t }) {
   const { lastRunAt, lastSuccessAt, stale, failed, total, offsite, failures } = health;
   const bad = stale || failed > 0;
   const palette = bad
     ? 'border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200'
     : 'border-border bg-card text-foreground';
 
-  const when = (iso) => (iso ? new Date(iso).toLocaleString() : 'never');
+  const when = (iso) => (iso ? new Date(iso).toLocaleString() : t('platformAdmin.backupsNever'));
 
   return (
     <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${palette}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium">Backups</span>
+        <span className="font-medium">{t('platformAdmin.backupsTitle')}</span>
         <span className="text-xs">
-          {offsite ? 'Off-box copy enabled' : 'Off-box copy NOT configured — snapshots are on one disk'}
+          {offsite ? t('platformAdmin.backupsOffsiteOn') : t('platformAdmin.backupsOffsiteOff')}
         </span>
       </div>
       <p className="mt-1">
-        Last run {when(lastRunAt)} · last fully successful {when(lastSuccessAt)}
-        {total > 0 && ` · ${total - failed}/${total} targets OK`}
+        {t('platformAdmin.backupsSummary', { lastRun: when(lastRunAt), lastSuccess: when(lastSuccessAt) })}
+        {total > 0 && ` · ${t('platformAdmin.backupsTargetsOk', { ok: total - failed, total })}`}
       </p>
-      {stale && <p className="mt-1 font-medium">No successful backup in over 30 hours — check the scheduler.</p>}
+      {stale && <p className="mt-1 font-medium">{t('platformAdmin.backupsStale')}</p>}
       {failures?.length > 0 && (
         <ul className="mt-2 list-inside list-disc">
           {failures.map((f) => (
@@ -281,14 +276,15 @@ function BackupHealth({ health }) {
 }
 
 /** Trial deadline cell: only meaningful while a workspace is still on trial. */
-function TrialCell({ trialEndsAt, status }) {
+function TrialCell({ trialEndsAt, status, t }) {
   if (status !== 'trial' || !trialEndsAt) return <span>—</span>;
   const ends = new Date(trialEndsAt);
   const daysLeft = Math.ceil((ends.getTime() - Date.now()) / 86400000);
-  if (daysLeft <= 0) return <span className="font-medium text-red-600 dark:text-red-400">Expired</span>;
+  if (daysLeft <= 0)
+    return <span className="font-medium text-red-600 dark:text-red-400">{t('platformAdmin.trialExpired')}</span>;
   return (
     <span className={daysLeft <= 3 ? 'font-medium text-amber-600 dark:text-amber-400' : undefined}>
-      {ends.toLocaleDateString()} ({daysLeft}d)
+      {ends.toLocaleDateString()} ({t('platformAdmin.trialDays', { days: daysLeft })})
     </span>
   );
 }

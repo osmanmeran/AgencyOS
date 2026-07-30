@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { isMicrosoftSsoConfigured, signupWithMicrosoft } from '@/lib/microsoft-auth';
+import { useT } from '@/lib/i18n/I18nContext';
 
 // Public, pre-auth workspace self-serve signup (Phase 3). Posts directly to
 // /api/tenants/signup (which is CSRF-exempt, like login) and, on success,
 // redirects to the new workspace URL. No existing session is required.
 export default function Signup() {
+  const { t } = useT();
   const [agencyName, setAgencyName] = useState('');
   const [slug, setSlug] = useState('');
   const [adminName, setAdminName] = useState('');
@@ -62,9 +64,9 @@ export default function Signup() {
       try {
         const res = await fetch(`/api/tenants/check-slug?slug=${encodeURIComponent(slug)}`);
         const data = await res.json();
-        if (data.available) setSlugState({ status: 'ok', message: 'Available' });
-        else if (data.reason === 'taken') setSlugState({ status: 'error', message: 'That address is already taken' });
-        else setSlugState({ status: 'error', message: 'Use lowercase letters, numbers, and hyphens only' });
+        if (data.available) setSlugState({ status: 'ok', message: t('signup.slugAvailable') });
+        else if (data.reason === 'taken') setSlugState({ status: 'error', message: t('signup.slugTaken') });
+        else setSlugState({ status: 'error', message: t('signup.slugInvalid') });
       } catch {
         setSlugState({ status: 'idle', message: '' });
       }
@@ -90,14 +92,14 @@ export default function Signup() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error?.message || 'Sign-up failed. Please try again.');
+        setError(data.error?.message || t('signup.errGenericSignup'));
         setLoading(false);
         return;
       }
       // The response sets the auth cookies; navigate to the new workspace.
       window.location.href = data.workspaceUrl || '/';
     } catch (err) {
-      setError(err.message || 'Sign-up failed. Please try again.');
+      setError(err.message || t('signup.errGenericSignup'));
       setLoading(false);
     }
   };
@@ -105,17 +107,17 @@ export default function Signup() {
   const handleMicrosoftSignup = async () => {
     setError('');
     if (!agencyName || !slug) {
-      setError('Enter your agency name and workspace address first.');
+      setError(t('signup.errEnterAgencyAndSlug'));
       return;
     }
     if (slugState.status === 'error') {
-      setError('Choose a valid, available workspace address first.');
+      setError(t('signup.errChooseValidSlug'));
       return;
     }
     try {
       await signupWithMicrosoft(window.location.pathname, { agencyName, slug, adminName });
     } catch (err) {
-      setError(err.message || 'Could not start Microsoft sign-up.');
+      setError(err.message || t('signup.errMicrosoftSignupFailed'));
     }
   };
 
@@ -133,8 +135,8 @@ export default function Signup() {
           <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl font-bold text-white">M</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Create your workspace</h1>
-          <p className="text-muted-foreground mt-1">Set up a dedicated Marvelops workspace for your agency</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('signup.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('signup.subtitle')}</p>
         </div>
 
         {error && (
@@ -145,37 +147,41 @@ export default function Signup() {
 
         {!signupEnabled && (
           <div className="mb-4 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-sm p-3 rounded-lg border border-amber-300 dark:border-amber-800">
-            Self-serve signup is currently disabled. Set <code className="font-mono">ALLOW_PUBLIC_SIGNUP=true</code> in
-            the server environment to enable it.
+            {t('signup.disabledNoticeBefore')} <code className="font-mono">ALLOW_PUBLIC_SIGNUP=true</code>{' '}
+            {t('signup.disabledNoticeAfter')}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Agency name</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t('signup.agencyNameLabel')}
+            </label>
             <input
               type="text"
               value={agencyName}
               onChange={(e) => onAgencyChange(e.target.value)}
-              placeholder="Acme Travel"
+              placeholder={t('signup.agencyNamePlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
               required
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Workspace address</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t('signup.workspaceAddressLabel')}
+            </label>
             <div className="flex items-stretch">
               <input
                 type="text"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value.toLowerCase())}
-                placeholder="acme"
+                placeholder={t('signup.workspaceAddressPlaceholder')}
                 className="w-full px-3 py-2.5 border border-border rounded-l-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                 required
               />
               <span className="flex items-center px-3 bg-muted border border-l-0 border-border rounded-r-lg text-sm text-muted-foreground whitespace-nowrap">
-                {addressSuffix || ' (your workspace)'}
+                {addressSuffix || t('signup.yourWorkspaceSuffix')}
               </span>
             </div>
             {slug && (
@@ -186,41 +192,43 @@ export default function Signup() {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Your name (optional)</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('signup.yourNameLabel')}</label>
             <input
               type="text"
               value={adminName}
               onChange={(e) => setAdminName(e.target.value)}
-              placeholder="Jane Doe"
+              placeholder={t('signup.yourNamePlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Admin email</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t('signup.adminEmailLabel')}
+            </label>
             <input
               type="email"
               value={adminEmail}
               onChange={(e) => setAdminEmail(e.target.value)}
-              placeholder="you@agency.com"
+              placeholder={t('signup.adminEmailPlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
               required
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Admin password</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {t('signup.adminPasswordLabel')}
+            </label>
             <input
               type="password"
               value={adminPassword}
               onChange={(e) => setAdminPassword(e.target.value)}
-              placeholder="At least 8 characters"
+              placeholder={t('signup.adminPasswordPlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
               required
             />
-            <p className="text-xs mt-1 text-muted-foreground">
-              Min 8 characters, with uppercase, lowercase, and a number.
-            </p>
+            <p className="text-xs mt-1 text-muted-foreground">{t('signup.adminPasswordHint')}</p>
           </div>
 
           <button
@@ -228,7 +236,7 @@ export default function Signup() {
             disabled={loading || slugState.status === 'error' || !signupEnabled}
             className="w-full py-2.5 bg-foreground hover:bg-foreground/90 disabled:bg-muted text-background text-sm font-medium rounded-lg transition-all"
           >
-            {loading ? 'Creating workspace…' : 'Create workspace'}
+            {loading ? t('signup.creating') : t('signup.createWorkspace')}
           </button>
         </form>
 
@@ -239,7 +247,7 @@ export default function Signup() {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-card px-2 text-muted-foreground">or</span>
+                <span className="bg-card px-2 text-muted-foreground">{t('signup.or')}</span>
               </div>
             </div>
             <button
@@ -253,15 +261,15 @@ export default function Signup() {
                 <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
                 <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
               </svg>
-              Sign up with Microsoft
+              {t('signup.signUpWithMicrosoft')}
             </button>
           </>
         )}
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Already have a workspace?{' '}
+          {t('signup.alreadyHaveWorkspace')}{' '}
           <a href="/mock-login" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
-            Sign in
+            {t('signup.signIn')}
           </a>
         </p>
       </div>

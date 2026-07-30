@@ -19,229 +19,61 @@ import {
 import { useT } from '@/lib/i18n/I18nContext';
 
 const CATEGORIES = [
-  { key: 'general', label: 'General', icon: HelpCircle },
-  { key: 'account', label: 'Account & Users', icon: Users },
-  { key: 'bookings', label: 'Bookings & Reservations', icon: FileText },
-  { key: 'tasks', label: 'Calendar & Tasks', icon: Calendar },
-  { key: 'suppliers', label: 'Suppliers & RFP', icon: SendHorizontal },
-  { key: 'email', label: 'Email & Notifications', icon: Mail },
-  { key: 'permissions', label: 'Roles & Permissions', icon: Shield },
-  { key: 'documents', label: 'Documents & PDFs', icon: FileDown },
-  { key: 'finance', label: 'Finance & Reports', icon: DollarSign },
-  { key: 'saas', label: 'Workspaces & Tenants', icon: Building2 },
+  { key: 'general', icon: HelpCircle },
+  { key: 'account', icon: Users },
+  { key: 'bookings', icon: FileText },
+  { key: 'tasks', icon: Calendar },
+  { key: 'suppliers', icon: SendHorizontal },
+  { key: 'email', icon: Mail },
+  { key: 'permissions', icon: Shield },
+  { key: 'documents', icon: FileDown },
+  { key: 'finance', icon: DollarSign },
+  { key: 'saas', icon: Building2 },
 ];
 
 const FAQS = [
-  {
-    q: 'How do I create a new booking?',
-    a: 'Navigate to Reservations in the top nav and click "New Reservation". Fill in the client details, select services, and save. You can also create bookings directly from a client profile.',
-    category: 'bookings',
-  },
-  {
-    q: 'How do I generate a proposal?',
-    a: 'Click "New Proposal" in the nav bar or go to Proposals and click "Create Proposal". Add client details, services, pricing, and click Save. You can then download a PDF or send it via email.',
-    category: 'bookings',
-  },
-  {
-    q: 'How do I send an invoice?',
-    a: 'Go to Invoices, create a new invoice with the client and line items. Once saved, click the email button to send it directly to the client. You can also download a PDF copy.',
-    category: 'bookings',
-  },
-  {
-    q: 'How do I reset my password?',
-    a: 'Click your avatar in the top-right, go to your profile settings, and use the "Change Password" section. You\'ll need your current password to set a new one.',
-    category: 'account',
-  },
-  {
-    q: 'How do I add a new user to the system?',
-    a: 'Go to Settings > User Management (shield icon in the nav). Click "Add User", fill in the email, name, and password, and assign a role tier. The user will receive access immediately.',
-    category: 'permissions',
-  },
-  {
-    q: 'What are the user tiers and what can they do?',
-    a: "There are four staff tiers: Admin — full system control, including user management and app settings (the only tier that can delete records); Manager — full operations management, can create/modify/cancel trips, invoices, suppliers, clients, proposals, and services (no delete); Agent — daily ops: creates trips/invoices/proposals, can view all trips but can't modify or cancel them, edits supplier pricing, and handles B2B quote requests; Accounting — read-only access to trips, invoices, reports, search, and export. Each tier's defaults can be overridden per user in Permission Manager. Client and Supplier portal accounts don't use these tiers at all — their access is limited to their own data.",
-    category: 'permissions',
-  },
-  {
-    q: 'How do I attach a file to a client or booking?',
-    a: 'Open the client or booking detail page and use the document upload section. You can upload images, PDFs, Word docs, and spreadsheets. Uploaded files are linked to the entity and accessible from its detail view.',
-    category: 'documents',
-  },
-  {
-    q: 'How do I download a PDF of a proposal/invoice?',
-    a: 'On the proposal or invoice detail page, click the "Download PDF" button. The PDF will be generated server-side and downloaded automatically. You can also generate PDFs from the PDF generation endpoint in the API.',
-    category: 'documents',
-  },
-  {
-    q: 'Can I send emails from the app?',
-    a: 'Yes. Go to Settings and connect your Microsoft 365/Outlook account under the Outlook section. Once connected, you can send emails directly from client profiles, booking details, and the email composer.',
-    category: 'email',
-  },
-  {
-    q: 'How do real-time notifications work?',
-    a: 'When someone creates or updates a booking, invoice, or proposal, a notification appears in the bell icon in the top nav bar. Notifications arrive in real-time via WebSocket — no page refresh needed.',
-    category: 'email',
-  },
-  {
-    q: 'How do I change the app language?',
-    a: 'Click your avatar in the top-right, hover over the Language option, and select your preferred language. The app supports English, Spanish, French, German, Italian, Turkish, and Portuguese.',
-    category: 'general',
-  },
-  {
-    q: 'How do I enable dark mode?',
-    a: 'Click the sun/moon icon in the top nav bar next to the notification bell. You can choose Light, Dark, or System mode (follows your OS setting).',
-    category: 'general',
-  },
-  {
-    q: 'Where can I see the audit trail?',
-    a: 'Admins can access the Audit Trail from the admin nav section (History icon). It shows all state-changing actions: who did what, when, and what changed. Filter by entity type, action, or user.',
-    category: 'general',
-  },
-  {
-    q: 'How does the global search work?',
-    a: 'Press Ctrl+K (Cmd+K on Mac) to open the command palette. Start typing to search across clients, bookings, suppliers, invoices, and proposals. Results are grouped by type.',
-    category: 'general',
-  },
-  {
-    q: 'Can I customize invoice headers and branding?',
-    a: 'Yes. Go to Settings and scroll to the Invoice Header section. You can add your company name, address, tax ID, bank details, and logo. These details appear on all generated invoices.',
-    category: 'general',
-  },
-  {
-    q: 'What file types are supported for upload?',
-    a: 'The system accepts images (JPEG, PNG, GIF, WebP, SVG), PDFs, plain text, CSV, Word documents (DOC/DOCX), Excel spreadsheets (XLS/XLSX), and JSON files. Maximum file size is 20 MB.',
-    category: 'documents',
-  },
-  {
-    q: 'How do I import data into the system?',
-    a: 'Go to Settings > Import Hub. You can import suppliers from CSV files, analyze market pricing, and import contacts from Outlook. The import hub guides you through each format.',
-    category: 'general',
-  },
-  {
-    q: 'Why did my session expire?',
-    a: 'Sessions expire after 24 hours for security. If you see a login prompt, just sign in again — your data is preserved.',
-    category: 'account',
-  },
-  {
-    q: 'How do I use the Calendar view?',
-    a: 'Go to "Calendar" in the top nav. The month grid shows all trips color-coded by status (planning/confirmed/in_progress/completed/cancelled). Click any date to see day details in the side panel. Use the arrows to navigate between months.',
-    category: 'tasks',
-  },
-  {
-    q: 'How does the Task Board work?',
-    a: 'Go to "Tasks" in the top nav. The Kanban board has three columns: Pending, In Progress, and Done. Drag cards between columns or click "New Task" to create one. Each task can have a client, priority (low/medium/high), and due date.',
-    category: 'tasks',
-  },
-  {
-    q: 'Are tasks created automatically when I create a booking?',
-    a: "Yes. Saving a new Trip auto-generates three operational tasks tied to its departure date: Collect Final Balance (due 30 days before, High priority), Send Rooming List to Hotel (due 14 days before, Medium), and Issue Tickets / Final Docs (due 7 days before, Critical). They are linked to the booking and customer and assigned to the booking's creator. If those tasks already exist they are resynced rather than duplicated.",
-    category: 'tasks',
-  },
-  {
-    q: "What happens to tasks if I change a trip's departure date?",
-    a: 'The tasks auto-generated from that Trip are rescheduled automatically — each due date (and SLA window) is recomputed from the new departure date. Tasks you created manually keep their own dates.',
-    category: 'tasks',
-  },
-  {
-    q: 'What do the SLA / escalation flags mean on tasks?',
-    a: 'Each task has an escalation trigger time based on its priority (Critical 48h, High 24h, Medium 12h, Low 0 before the due date). Once that passes and the task is still open it is flagged "escalated". Separately, a task is "due soon" in the 24 hours before its due date — that drives the priority banner / countdown in the booking view. Both flags are computed live, so no manual action is needed.',
-    category: 'tasks',
-  },
-  {
-    q: 'How do I request quotes from multiple suppliers at once?',
-    a: 'Go to Suppliers > RFP Manager (or navigate directly to the RFP Manager page). Click "New RFP" and follow the 3-step wizard: (1) enter service details like name, quantity, and deadline, (2) select suppliers individually or filter by category, (3) review and send. Each supplier gets a Booking Request that you can track through pending → quoted → confirmed/rejected.',
-    category: 'suppliers',
-  },
-  {
-    q: 'How do I track agent commissions?',
-    a: 'Go to Revenue > Commission Report. It calculates commissions from completed/confirmed trips based on profit × commission rate. The dashboard shows total revenue, profit, commission, and average rate. Bar and pie charts break down commission by agent. Use the Export CSV button to download the data.',
-    category: 'finance',
-  },
-  {
-    q: 'Can clients request a quote online?',
-    a: 'Yes, two ways. (1) Share the public link /request-quote with potential clients — the form collects name, email, destination, dates, traveler count, budget, and trip description, and creates a new lead with source "web_quote_request". (2) Existing B2B clients with portal access can log in, browse the curated e-shop catalog, and submit a quote request directly.',
-    category: 'general',
-  },
-  {
-    q: 'How does B2B client quoting work?',
-    a: 'Client portal accounts see an e-shop-style catalog of services (organized by category and supplier, with photos) priced with their markup automatically applied. They pick services and submit a quote request. Your team reviews it in Quote Requests, can adjust pricing or availability, and approves or rejects it. Once approved, the quote converts into a reservation.',
-    category: 'bookings',
-  },
-  {
-    q: 'How does the multi-currency dashboard work?',
-    a: 'Go to Revenue and select the "Multi-Currency" tab. Choose a base currency (USD, EUR, GBP, etc.) and the dashboard converts all invoices and trip costs using live exchange rates. Bar charts show revenue by currency and by month, all converted to your selected base currency.',
-    category: 'finance',
-  },
-  {
-    q: 'What automated reminders exist?',
-    a: 'The system runs hourly checks: (1) invoices due in 3 days trigger a "due soon" notification, (2) overdue invoices trigger an "overdue" notification, (3) trips starting tomorrow trigger a "trip starting soon" notification. Notifications appear in the bell icon. Reminders are deduplicated so you won\'t get the same alert twice in 24 hours.',
-    category: 'email',
-  },
-  {
-    q: 'How do I create and manage extra columns in the supplier table?',
-    a: 'On the Suppliers page, click "Columns" (admin only) to add custom fields like contact info, tags, or region. These appear as new columns in the table and as editable fields in the supplier form.',
-    category: 'suppliers',
-  },
-  {
-    q: 'How does the supplier "Search Web" feature work?',
-    a: 'Open a supplier and click "Search Web". The app queries several sources to find matching businesses and returns a list of candidates you can pick from: OpenStreetMap via Nominatim and Photon (both enriched through Overpass for phone, website, email, brand, and opening hours — Photon adds better fuzzy matching), Wikipedia, Wikidata (official site / phone / email), and optionally Yelp Fusion (phone, rating, reviews, categories) when a YELP_API_KEY is configured. Pick one and click "Apply Data" to autofill the supplier\'s name, address, phone, website, email, rating, and notes (including brand and opening hours) into the edit form. Queries broaden automatically (name + city → bare name → stripped of generic words) so it still finds suppliers whose listed name differs from the official one.',
-    category: 'suppliers',
-  },
-  {
-    q: 'What is a workspace?',
-    a: "Marvelops is multi-tenant: every travel agency runs inside its own isolated workspace (tenant). Each workspace has its own database, users, clients, suppliers, and bookings — your agency's data is completely separate from every other agency on the platform, with no shared records across workspaces.",
-    category: 'saas',
-  },
-  {
-    q: "How do I open my agency's workspace?",
-    a: "If your instance uses subdomain workspaces, visit <your-agency>.marvelops.app (for example acme.marvelops.app) to land directly in your agency's workspace — bookmarks and shared links should use your subdomain. On instances without wildcard subdomains (for example a plain Railway URL), the app runs in single-domain mode instead: signing in or signing up sets a cookie that remembers which workspace you belong to, so the same bare URL takes you back to your workspace automatically.",
-    category: 'saas',
-  },
-  {
-    q: "Is my agency's data kept separate from other agencies?",
-    a: "Yes. Workspaces are isolated at the database level — each agency's data lives in its own dedicated database file. There is no shared table across agencies, so a user in one workspace can never see or modify another agency's records, even through real-time notifications or live updates.",
-    category: 'saas',
-  },
-  {
-    q: 'Can our agency sign in with our own Microsoft / Office 365 accounts?',
-    a: "Yes. Each workspace can connect its own Azure AD tenant for Microsoft single sign-on, so your team logs in with your organization's Microsoft accounts rather than a shared one. Your administrator sets the workspace's Microsoft tenant; if none is configured, the platform falls back to the default Microsoft app.",
-    category: 'saas',
-  },
-  {
-    q: 'How is a new workspace created?',
-    a: 'New workspaces are created in two ways. (1) Self-serve: if your instance has open sign-up enabled, go to the sign-up page, choose a unique workspace address (e.g. "acme"), enter your agency name and an admin email/password, and your isolated workspace is provisioned instantly with its own subdomain. (2) Admin-provisioned: otherwise, reach out to your account manager or support and they will set up an additional agency workspace for you.',
-    category: 'saas',
-  },
-  {
-    q: 'Can one login belong to more than one workspace?',
-    a: "Each login is scoped to a single workspace via its subdomain. To work in a different agency, sign in through that agency's subdomain. A single account spanning multiple workspaces is not enabled in this release.",
-    category: 'saas',
-  },
-  {
-    q: 'Can I create my own workspace?',
-    a: 'Yes — if self-serve sign-up is turned on for your instance. You pick a workspace address, enter your agency name and an admin email/password, and the platform creates your workspace with its own isolated database and subdomain right away. On instances where self-serve is disabled (controlled by the ALLOW_PUBLIC_SIGNUP setting), new workspaces are created by an administrator instead.',
-    category: 'saas',
-  },
-  {
-    q: 'What makes a valid workspace address?',
-    a: 'Your workspace address becomes the subdomain you sign in at (e.g. acme.marvelops.app). It may contain only lowercase letters, numbers, and hyphens, must be 1–63 characters, and cannot be a reserved word like "www", "api", "app", "admin", or "mail". The sign-up form checks availability as you type.',
-    category: 'saas',
-  },
-  {
-    q: 'Where do I rename my workspace or change its Microsoft sign-in tenant?',
-    a: "Go to Workspace Settings (admin only). You can rename your workspace's display name and set which Azure AD tenant Microsoft sign-in should accept for your team — no request to support needed. The workspace address (subdomain/slug) itself can't be changed here since it's how the platform routes to your workspace.",
-    category: 'saas',
-  },
-  {
-    q: 'What happens when my trial ends, or if my workspace is suspended?',
-    a: "You'll see a status banner once your workspace is suspended or within 7 days of your trial deadline. A suspended or trial-expired workspace blocks normal use of the app, but you can still sign in and see your workspace's status — nothing is deleted. Contact your account manager to reactivate or extend your trial.",
-    category: 'saas',
-  },
-  {
-    q: 'Can our data or files ever end up mixed with another workspace, even in uploads or backups?',
-    a: "No. Uploaded files, generated PDFs, and backups are all isolated per workspace, the same as the database. Files are served through an authenticated, permission-checked route rather than a shared public folder, and backups (including any off-box copy) are scoped and restored per workspace.",
-    category: 'saas',
-  },
+  { key: 'newBooking', category: 'bookings' },
+  { key: 'newProposal', category: 'bookings' },
+  { key: 'sendInvoice', category: 'bookings' },
+  { key: 'resetPassword', category: 'account' },
+  { key: 'addUser', category: 'permissions' },
+  { key: 'userTiers', category: 'permissions' },
+  { key: 'attachFile', category: 'documents' },
+  { key: 'downloadPdf', category: 'documents' },
+  { key: 'sendEmails', category: 'email' },
+  { key: 'realtimeNotifications', category: 'email' },
+  { key: 'changeLanguage', category: 'general' },
+  { key: 'darkMode', category: 'general' },
+  { key: 'auditTrail', category: 'general' },
+  { key: 'globalSearch', category: 'general' },
+  { key: 'customizeInvoice', category: 'general' },
+  { key: 'uploadFileTypes', category: 'documents' },
+  { key: 'importData', category: 'general' },
+  { key: 'sessionExpiry', category: 'account' },
+  { key: 'calendarView', category: 'tasks' },
+  { key: 'taskBoardWork', category: 'tasks' },
+  { key: 'autoTasks', category: 'tasks' },
+  { key: 'departureDateChange', category: 'tasks' },
+  { key: 'slaFlags', category: 'tasks' },
+  { key: 'rfpWizard', category: 'suppliers' },
+  { key: 'commissionTracking', category: 'finance' },
+  { key: 'quoteRequestOnline', category: 'general' },
+  { key: 'b2bQuoting', category: 'bookings' },
+  { key: 'multiCurrencyDashboard', category: 'finance' },
+  { key: 'automatedReminders', category: 'email' },
+  { key: 'supplierColumns', category: 'suppliers' },
+  { key: 'supplierSearchWeb', category: 'suppliers' },
+  { key: 'workspaceWhat', category: 'saas' },
+  { key: 'workspaceOpen', category: 'saas' },
+  { key: 'workspaceDataSeparate', category: 'saas' },
+  { key: 'workspaceMicrosoftSso', category: 'saas' },
+  { key: 'workspaceCreate', category: 'saas' },
+  { key: 'workspaceOneLogin', category: 'saas' },
+  { key: 'workspaceSelfServe', category: 'saas' },
+  { key: 'workspaceAddressValid', category: 'saas' },
+  { key: 'workspaceSettingsFaq', category: 'saas' },
+  { key: 'workspaceTrialSuspend', category: 'saas' },
+  { key: 'workspaceFileBackupIsolation', category: 'saas' },
 ];
 
 export default function FAQ() {
@@ -251,10 +83,10 @@ export default function FAQ() {
   const [openItems, setOpenItems] = useState(new Set());
 
   const filtered = FAQS.filter((faq) => {
+    const q = _t(`faq.items.${faq.key}.q`);
+    const a = _t(`faq.items.${faq.key}.a`);
     const matchesSearch =
-      !search ||
-      faq.q.toLowerCase().includes(search.toLowerCase()) ||
-      faq.a.toLowerCase().includes(search.toLowerCase());
+      !search || q.toLowerCase().includes(search.toLowerCase()) || a.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = activeCategory === 'all' || faq.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
@@ -307,7 +139,7 @@ export default function FAQ() {
               }`}
             >
               <Icon className="w-4 h-4" />
-              {cat.label}
+              {_t(`faq.categories.${cat.key}`)}
             </button>
           );
         })}
@@ -339,7 +171,9 @@ export default function FAQ() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{faq.q}</h3>
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          {_t(`faq.items.${faq.key}.q`)}
+                        </h3>
                         {isOpen ? (
                           <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" />
                         ) : (
@@ -347,7 +181,9 @@ export default function FAQ() {
                         )}
                       </div>
                       {isOpen && (
-                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{faq.a}</p>
+                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                          {_t(`faq.items.${faq.key}.a`)}
+                        </p>
                       )}
                     </div>
                   </div>
