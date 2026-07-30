@@ -26,6 +26,7 @@ import Signup from '@/pages/Signup';
 import MicrosoftCallback from '@/pages/MicrosoftCallback';
 import OutlookCallback from '@/pages/OutlookCallback';
 import ClientItinerary from '@/pages/ClientItinerary';
+import PublicItinerary from '@/pages/PublicItinerary';
 import RequestQuote from '@/pages/RequestQuote';
 import AcceptInvite from '@/pages/AcceptInvite';
 
@@ -60,6 +61,15 @@ const NON_REDIRECT_ROUTES = [
   '/client-itinerary',
   '/request-quote',
 ];
+// Prefix variant: /share/itinerary/:token has a dynamic path segment, so it
+// can't be listed in NON_REDIRECT_ROUTES' exact-match array. This is the
+// public link handed to passengers with no account at all — it must render
+// (and never bounce to login) whether or not the visitor has a session.
+const NON_REDIRECT_PREFIXES = ['/share/itinerary/'];
+
+function isNonRedirectPath(pathname) {
+  return NON_REDIRECT_ROUTES.includes(pathname) || NON_REDIRECT_PREFIXES.some((p) => pathname.startsWith(p));
+}
 
 function isClientPortalPage(pageName) {
   return CLIENT_PORTAL_PREFIXES.some((p) => pageName?.startsWith(p));
@@ -83,9 +93,14 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Don't redirect if already on the login page (breaks redirect loop)
-      if (['/mock-login', '/signup', '/accept-invite', '/auth/microsoft/callback'].includes(window.location.pathname)) {
-        // Allow the login page to render without a valid session
+      // Don't redirect if already on the login page (breaks redirect loop),
+      // or on a standalone page that's meant to work without a session (e.g.
+      // the public itinerary share link a passenger opens with no account).
+      if (
+        ['/mock-login', '/signup', '/accept-invite', '/auth/microsoft/callback'].includes(window.location.pathname) ||
+        isNonRedirectPath(window.location.pathname)
+      ) {
+        // Allow the page to render without a valid session
       } else {
         navigateToLogin();
         return null;
@@ -101,7 +116,7 @@ const AuthenticatedApp = () => {
   if (
     isAuthenticated &&
     user?.user_tier === 'client' &&
-    !NON_REDIRECT_ROUTES.includes(location.pathname) &&
+    !isNonRedirectPath(location.pathname) &&
     !isClientPortalPage(location.pathname.replace(/^\//, ''))
   ) {
     return <Navigate to="/ClientPortal" replace />;
@@ -112,7 +127,7 @@ const AuthenticatedApp = () => {
   if (
     isAuthenticated &&
     user?.user_tier === 'supplier' &&
-    !NON_REDIRECT_ROUTES.includes(location.pathname) &&
+    !isNonRedirectPath(location.pathname) &&
     location.pathname.replace(/^\//, '') !== 'SupplierPortal'
   ) {
     return <Navigate to="/SupplierPortal" replace />;
@@ -185,6 +200,7 @@ const AuthenticatedApp = () => {
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/auth/outlook-callback" element={<OutlookCallback />} />
         <Route path="/client-itinerary" element={<ClientItinerary />} />
+        <Route path="/share/itinerary/:token" element={<PublicItinerary />} />
         <Route path="/request-quote" element={<RequestQuote />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>

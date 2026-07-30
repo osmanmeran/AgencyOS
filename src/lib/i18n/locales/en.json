@@ -2139,6 +2139,8 @@
   },
   "clientTripDetails": {
     "backToTrips": "Back to Trips",
+    "shareItinerary": "Share Itinerary",
+    "stopSharing": "Stop Sharing",
     "notFoundOrDenied": "Trip not found or access denied",
     "itinerary": "Itinerary",
     "map": "Map",
@@ -3162,6 +3164,7 @@
   },
   "reservationDetails": {
     "error": "Error:",
+    "stopSharing": "Stop Sharing",
     "back": "Back",
     "confirm": "Confirm",
     "reject": "Reject",

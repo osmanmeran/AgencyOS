@@ -39,6 +39,10 @@ const db = globalThis.__B44_DB__ || {
       }),
     },
   ),
+  trips: {
+    share: async () => ({ share_enabled: false, share_token: null, share_url: '' }),
+    revokeShare: async () => ({ share_enabled: false, share_token: null }),
+  },
   integrations: {
     Core: {
       UploadFile: async () => ({ file_url: '' }),

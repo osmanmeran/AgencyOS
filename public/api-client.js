@@ -58,6 +58,15 @@
     '/client-itinerary',
     '/request-quote',
   ];
+  // Prefix variant for routes with a dynamic path segment (the share token).
+  var NO_REDIRECT_PREFIXES = ['/share/itinerary/'];
+  function isNoRedirectPath(pathname) {
+    if (NO_REDIRECT_PATHS.indexOf(pathname) !== -1) return true;
+    for (var i = 0; i < NO_REDIRECT_PREFIXES.length; i++) {
+      if (pathname.indexOf(NO_REDIRECT_PREFIXES[i]) === 0) return true;
+    }
+    return false;
+  }
 
   // Single in-flight refresh so concurrent 401s share one rotation instead of
   // each trying (and the second failing because the first already revoked it).
@@ -115,7 +124,7 @@
           return api(path, Object.assign({}, options, { _isRefresh: true }));
         } catch (e) {
           setCurrentUser(null);
-          if (typeof window !== 'undefined' && NO_REDIRECT_PATHS.indexOf(window.location.pathname) === -1) {
+          if (typeof window !== 'undefined' && !isNoRedirectPath(window.location.pathname)) {
             // Don't redirect on the login page (would loop returnUrl forever)
             // or on standalone/pre-auth pages like the SSO callback, whose own
             // handshake would be interrupted by a hard navigation.
@@ -342,6 +351,14 @@
       },
     },
     entities: entityApis,
+    trips: {
+      share: function (id, opts) {
+        return api('/trips/' + id + '/share', { method: 'POST', body: JSON.stringify(opts || {}) });
+      },
+      revokeShare: function (id) {
+        return api('/trips/' + id + '/share', { method: 'DELETE' });
+      },
+    },
     integrations: {
       Core: {
         UploadFile: function (data) {

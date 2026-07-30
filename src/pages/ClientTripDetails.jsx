@@ -1,12 +1,23 @@
 import { db } from '@/lib/DbContext';
 
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMyClient } from '@/hooks/useMyClient';
 
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar as CalendarIcon, MapPin, Map, MessageSquare, List } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar as CalendarIcon,
+  MapPin,
+  Map,
+  MessageSquare,
+  List,
+  Share2,
+  Check,
+  Ban,
+} from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format } from 'date-fns';
@@ -17,12 +28,15 @@ import TripMap from '../components/client-trip/TripMap';
 import TripApprovalBar from '../components/client-trip/TripApprovalBar';
 import { groupServicesByDay } from '../lib/serviceItinerary';
 import { useT } from '@/lib/i18n/I18nContext';
+import { showSuccess, showError } from '@/lib/toast';
 
 export default function ClientTripDetails() {
   const { t } = useT();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');
   const client = useMyClient();
+  const queryClient = useQueryClient();
+  const [shareCopied, setShareCopied] = useState(false);
 
   const { data: trip, isLoading } = /** @type {any} */ (
     useQuery({
@@ -45,6 +59,30 @@ export default function ClientTripDetails() {
       queryKey: ['itineraryEvents', tripId],
       queryFn: () => db.entities.ItineraryEvent.filter({ trip_id: tripId }, 'date'),
       enabled: !!tripId,
+    })
+  );
+
+  const shareMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () => db.trips.share(tripId, {}),
+      onSuccess: (/** @type {any} */ result) => {
+        queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
+        navigator.clipboard.writeText(result.share_url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      },
+      onError: (error) => showError('Failed to create share link', error.message),
+    })
+  );
+
+  const revokeShareMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () => db.trips.revokeShare(tripId),
+      onSuccess: () => {
+        showSuccess('Public link disabled');
+        queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
+      },
+      onError: (error) => showError('Failed to disable the public link', error.message),
     })
   );
 
@@ -81,12 +119,30 @@ export default function ClientTripDetails() {
 
   return (
     <div className="space-y-6">
-      <Link to={createPageUrl('ClientTrips')}>
-        <Button variant="ghost" className="gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          {t('clientTripDetails.backToTrips')}
-        </Button>
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link to={createPageUrl('ClientTrips')}>
+          <Button variant="ghost" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            {t('clientTripDetails.backToTrips')}
+          </Button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => shareMutation.mutate()}>
+            {shareCopied ? (
+              <Check className="w-4 h-4 text-green-600 dark:text-green-300" />
+            ) : (
+              <Share2 className="w-4 h-4" />
+            )}
+            {shareCopied ? t('clientItinerary.copied') : t('clientTripDetails.shareItinerary')}
+          </Button>
+          {trip.share_enabled && (
+            <Button variant="outline" className="gap-2" onClick={() => revokeShareMutation.mutate()}>
+              <Ban className="w-4 h-4" />
+              {t('clientTripDetails.stopSharing')}
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Trip Header */}
       <div className="relative h-72 rounded-2xl overflow-hidden shadow-xl">

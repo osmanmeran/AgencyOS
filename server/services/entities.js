@@ -219,7 +219,7 @@ function requireEntityPermission(user, entityType, action, body) {
   }
 }
 
-function upsertFts(db, id, type, data) {
+export function upsertFts(db, id, type, data) {
   if (!hasFts(db)) return;
   try {
     db.prepare('DELETE FROM entities_fts WHERE id = ?').run(id);

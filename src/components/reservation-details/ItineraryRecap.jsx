@@ -13,6 +13,7 @@ export default function ItineraryRecap({
   handleShareItinerary,
   shareCopied,
   supplierMap,
+  handleRevokeShare,
 }) {
   const { t: _t } = useT();
   return (
@@ -39,23 +40,39 @@ export default function ItineraryRecap({
               <Map className="w-6 h-6 text-white" />
               <h2 className="text-xl font-bold text-white">{_t('reservationDetails.itinerary')}</h2>
             </div>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleShareItinerary}
-              sx={{
-                color: 'white',
-                borderColor: 'rgba(255,255,255,0.4)',
-                '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' },
-              }}
-            >
-              {shareCopied ? (
-                <Check size={16} style={{ marginRight: 3, color: '#4ade80' }} />
-              ) : (
-                <Share2 size={16} style={{ marginRight: 3 }} />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleShareItinerary}
+                sx={{
+                  color: 'white',
+                  borderColor: 'rgba(255,255,255,0.4)',
+                  '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' },
+                }}
+              >
+                {shareCopied ? (
+                  <Check size={16} style={{ marginRight: 3, color: '#4ade80' }} />
+                ) : (
+                  <Share2 size={16} style={{ marginRight: 3 }} />
+                )}
+                {shareCopied ? 'Link Copied!' : 'Share'}
+              </Button>
+              {trip.share_enabled && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleRevokeShare}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'rgba(255,255,255,0.4)',
+                    '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' },
+                  }}
+                >
+                  {_t('reservationDetails.stopSharing')}
+                </Button>
               )}
-              {shareCopied ? 'Link Copied!' : 'Share'}
-            </Button>
+            </div>
           </div>
         </div>
       </div>

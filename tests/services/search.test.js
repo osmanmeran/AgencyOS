@@ -104,7 +104,7 @@ describe('Search Service', () => {
     // actually contains malformed rows is exactly the case where migration 013
     // skips creating them (see its json_valid guard). Drop them here to model
     // that state so we can insert a bad row and verify search stays resilient.
-    // (020's Task indexes are dropped for the same reason.)
+    // (020's Task indexes and 022's share_token index are dropped for the same reason.)
     db.exec(`
       DROP INDEX IF EXISTS idx_entities_type_status;
       DROP INDEX IF EXISTS idx_entities_type_due_date;
@@ -119,6 +119,7 @@ describe('Search Service', () => {
       DROP INDEX IF EXISTS idx_entities_type_task_priority;
       DROP INDEX IF EXISTS idx_entities_type_task_due_date;
       DROP INDEX IF EXISTS idx_entities_type_task_escalated;
+      DROP INDEX IF EXISTS idx_entities_type_share_token;
     `);
     db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
       badId,

@@ -140,6 +140,25 @@ export default function ReservationDetails() {
     })
   );
 
+  const shareMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {boolean} */ rotate) => db.trips.share(tripId, { rotate }),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trip', tripId] }),
+      onError: (error) => showError('Failed to create share link', error.message),
+    })
+  );
+
+  const revokeShareMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: () => db.trips.revokeShare(tripId),
+      onSuccess: () => {
+        showSuccess('Public link disabled');
+        queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
+      },
+      onError: (error) => showError('Failed to disable the public link', error.message),
+    })
+  );
+
   const deleteMutation = /** @type {any} */ (
     useMutation({
       mutationFn: () => db.entities.Trip.delete(tripId),
@@ -178,23 +197,31 @@ export default function ReservationDetails() {
     setNoteModalOpen(true);
   };
 
+  // Ensures a public share link exists (creating one on first use — cheap and
+  // idempotent, it reuses the existing token) and returns its URL.
+  const getShareUrl = async () => {
+    const result = await shareMutation.mutateAsync(false);
+    return result.share_url;
+  };
+
   const handleShareItinerary = async () => {
-    const url = `${window.location.origin}/client-itinerary?id=${trip.id}`;
+    let url;
+    try {
+      url = await getShareUrl();
+    } catch {
+      return; // error already toasted by shareMutation.onError
+    }
     if (navigator.share) {
       try {
         await navigator.share({ title: trip.name || 'Itinerary', url });
+        return;
       } catch (e) {
-        if (e.name !== 'AbortError') {
-          navigator.clipboard.writeText(url);
-          setShareCopied(true);
-          setTimeout(() => setShareCopied(false), 2000);
-        }
+        if (e.name === 'AbortError') return;
       }
-    } else {
-      navigator.clipboard.writeText(url);
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
     }
+    navigator.clipboard.writeText(url);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
   };
 
   const handleServiceUpdate = (updatedService) => {
@@ -725,6 +752,7 @@ export default function ReservationDetails() {
           handleShareItinerary={handleShareItinerary}
           shareCopied={shareCopied}
           supplierMap={supplierMap}
+          handleRevokeShare={() => revokeShareMutation.mutate()}
         />
       )}
 
@@ -828,8 +856,13 @@ export default function ReservationDetails() {
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/client-itinerary?id=${trip.id}`);
+                onClick={async () => {
+                  try {
+                    const url = await getShareUrl();
+                    navigator.clipboard.writeText(url);
+                  } catch {
+                    // error already toasted by shareMutation.onError
+                  }
                   setSendEmailOpen(false);
                 }}
               >

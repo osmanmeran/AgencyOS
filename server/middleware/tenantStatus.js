@@ -8,7 +8,10 @@ import { sendError } from './errors.js';
 //   - /auth/*          sign in / out and read the current session
 //   - /tenants/*       read the workspace (status + trial end), sign up a new one
 //   - /platform/*      the operator's own console — how a workspace gets reactivated
-const ALLOWED_PREFIXES = ['/health', '/auth', '/tenants', '/platform'];
+//   - /public/*        share links (e.g. a passenger's itinerary) resolve their own
+//                       tenant from the token (see services/itineraryShare.js) and
+//                       shouldn't go dark just because the agency's billing lapsed
+const ALLOWED_PREFIXES = ['/health', '/auth', '/tenants', '/platform', '/public'];
 
 function isAllowlisted(pathname) {
   return ALLOWED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

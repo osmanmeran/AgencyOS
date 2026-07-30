@@ -37,6 +37,8 @@ import adminRoutes from './routes/admin.js';
 import taskRoutes from './routes/tasks.js';
 import tenantRoutes from './routes/tenants.js';
 import platformRoutes from './routes/platform.js';
+import tripShareRoutes from './routes/tripShare.js';
+import publicItineraryRoutes from './routes/publicItinerary.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -129,6 +131,17 @@ app.use('/api/notifications', mutationLimiter);
 app.use('/api/documents', mutationLimiter);
 app.use('/api/pdf', mutationLimiter);
 app.use('/api/testing', mutationLimiter);
+// Unauthenticated: rate-limit by IP against share-token guessing, but stay
+// generous enough for a family reopening the same link over a couple of weeks.
+const publicShareLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many requests. Please try again later.' } },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => ipKeyGenerator(req.ip),
+});
+app.use('/api/public/itinerary', publicShareLimiter);
 app.use('/api', standardLimiter);
 
 // Lifecycle gate: a suspended workspace (or one whose trial has lapsed) can
@@ -159,6 +172,11 @@ app.use('/api/tenants', tenantRoutes);
 // Platform (SaaS operator) admin: cross-tenant workspace list + stats. Auth +
 // allow-list gated inside the router.
 app.use('/api/platform', platformRoutes);
+
+app.use('/api/trips', auditMiddleware, tripShareRoutes);
+// Public itinerary link: deliberately unauthenticated (see routes/publicItinerary.js)
+// — a passenger with no account opens this straight from a shared URL.
+app.use('/api/public/itinerary', publicItineraryRoutes);
 
 app.get('/api/health', (req, res) => {
   const checks = { database: 'ok', migrations: 'ok', disk: 'ok' };

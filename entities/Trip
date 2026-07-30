@@ -211,6 +211,15 @@
     "image_url": {
       "type": "string"
     },
+    "share_token": {
+      "type": "string",
+      "description": "Opaque token for the public itinerary link. Set via POST /api/trips/:id/share; never client-writable."
+    },
+    "share_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the public itinerary link (/share/itinerary/:token) is currently active"
+    },
     "change_history": {
       "type": "array",
       "items": {
