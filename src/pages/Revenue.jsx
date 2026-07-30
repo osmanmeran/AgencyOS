@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import Chip from '@mui/material/Chip';
 import { useTheme } from '@mui/material/styles';
+import { useT } from '@/lib/i18n/I18nContext';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,6 +75,7 @@ function StatCard({ label, value, icon, color = 'primary' }) {
 }
 
 function OverviewTab() {
+  const { language } = useT();
   const { data: overview = /** @type {any} */ ({}) } = /** @type {any} */ (
     useQuery({
       queryKey: ['revenueOverview'],
@@ -146,7 +148,7 @@ function OverviewTab() {
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.dark', mb: 0.5 }}>
                 $
-                {monthlyConfirmedRevenue.toLocaleString(undefined, {
+                {monthlyConfirmedRevenue.toLocaleString(language, {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
                 })}
@@ -595,6 +597,7 @@ function InvoicesTab() {
 }
 
 function MultiCurrencyTab() {
+  const { language } = useT();
   const theme = useTheme();
   const [baseCurrency, setBaseCurrency] = useState('USD');
   const [rates, setRates] = useState(/** @type {any} */ ({}));
@@ -721,7 +724,7 @@ function MultiCurrencyTab() {
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {baseCurrency}{' '}
-                {totalRevenueBase.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {totalRevenueBase.toLocaleString(language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
             </CardContent>
           </Card>
@@ -770,7 +773,7 @@ function MultiCurrencyTab() {
                     <XAxis dataKey="currency" tick={axisTick} stroke={gridStroke} />
                     <YAxis tick={axisTick} stroke={gridStroke} />
                     <Tooltip
-                      formatter={(v) => `${baseCurrency} ${v.toLocaleString()}`}
+                      formatter={(v) => `${baseCurrency} ${v.toLocaleString(language)}`}
                       contentStyle={{
                         backgroundColor: theme.palette.background.paper,
                         border: `1px solid ${theme.palette.divider}`,
@@ -808,7 +811,7 @@ function MultiCurrencyTab() {
                     <XAxis dataKey="month" tick={axisTick} stroke={gridStroke} />
                     <YAxis tick={axisTick} stroke={gridStroke} />
                     <Tooltip
-                      formatter={(v) => `${baseCurrency} ${v.toLocaleString()}`}
+                      formatter={(v) => `${baseCurrency} ${v.toLocaleString(language)}`}
                       contentStyle={{
                         backgroundColor: theme.palette.background.paper,
                         border: `1px solid ${theme.palette.divider}`,
