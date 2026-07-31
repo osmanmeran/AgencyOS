@@ -81,7 +81,30 @@
       "passwordPlaceholder": "Ingresa tu contraseña",
       "signIn": "Iniciar Sesión",
       "errLoginFailedPeriod": "Error al iniciar sesión.",
-      "errLoginFailed": "Error al iniciar sesión"
+      "errLoginFailed": "Error al iniciar sesión",
+      "forgotPassword": "¿Olvidaste tu contraseña?"
+    },
+    "forgotPassword": {
+      "title": "Restablecer tu contraseña",
+      "subtitle": "Ingresa tu correo electrónico y te enviaremos un enlace para restablecerla",
+      "sending": "Enviando...",
+      "submit": "Enviar Enlace de Restablecimiento",
+      "checkEmailBody": "Si ese correo está registrado, un enlace de restablecimiento está en camino. Expira en 1 hora.",
+      "backToLogin": "Volver al inicio de sesión",
+      "errGeneric": "Algo salió mal. Por favor, inténtalo de nuevo."
+    },
+    "resetPassword": {
+      "title": "Elige una nueva contraseña",
+      "subtitle": "Ingresa una nueva contraseña para tu cuenta",
+      "invalidLinkTitle": "Enlace Inválido",
+      "invalidLinkBody": "A este enlace de restablecimiento de contraseña le falta el token requerido.",
+      "newPasswordLabel": "Nueva Contraseña",
+      "submitting": "Guardando...",
+      "submit": "Restablecer Contraseña",
+      "successTitle": "Contraseña Actualizada",
+      "successBody": "Tu contraseña ha sido cambiada. Ahora puedes iniciar sesión con tu nueva contraseña.",
+      "goToLogin": "Ir a Iniciar Sesión",
+      "errGeneric": "No se pudo restablecer la contraseña. El enlace puede haber expirado."
     },
     "microsoftCallback": {
       "verifyingCode": "Verificando código de autorización...",
@@ -153,7 +176,15 @@
     "quickActions": "Acciones Rápidas",
     "tripCalendar": "Calendario de Viajes",
     "today": "Hoy",
-    "weekdays": ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"],
+    "weekdays": [
+      "Dom",
+      "Lun",
+      "Mar",
+      "Mié",
+      "Jue",
+      "Vie",
+      "Sáb"
+    ],
     "confirmedArrivalsMonth": "Llegadas Confirmadas — {month}",
     "noConfirmedArrivalsMonth": "No hay llegadas confirmadas este mes",
     "confirmedArrivalSingular": "{count} llegada confirmada",
@@ -554,12 +585,12 @@
   },
   "paymentLink": {
     "title": "Pago en Línea",
-    "simulatedBadge": "Simulado",
-    "shareText": "Comparte este enlace firmado con {client} para cobrar el pago de {amount} en línea.",
+    "shareText": "Comparte este enlace de pago seguro de Stripe con {client} para cobrar el pago de {amount} en línea.",
     "defaultClient": "el cliente",
+    "generate": "Generar Enlace de Pago",
     "linkCopied": "¡Enlace Copiado!",
     "copyPaymentLink": "Copiar Enlace de Pago",
-    "footerTip": "El token incluye una carga firmada (monto, referencia) — a prueba de manipulaciones. Conecta una pasarela de pago (p. ej. Stripe) para procesar pagos en línea reales."
+    "footerTip": "Los pagos se procesan de forma segura mediante Stripe y se aplican automáticamente a esta factura."
   },
   "saveAsTemplate": {
     "button": "Guardar como Plantilla",
@@ -2091,6 +2122,29 @@
     "paidInFull": "Pagada en su totalidad",
     "dueAmount": "Vence: {amount}"
   },
+  "clientPayments": {
+    "title": "Mis Pagos",
+    "subtitle": "Tu historial de pagos y recibos",
+    "totalPaid": "Total Pagado",
+    "noPaymentsTitle": "Aún no hay pagos",
+    "noPaymentsBody": "Tu historial de pagos aparecerá aquí una vez que realices un pago.",
+    "reference": "Referencia:",
+    "viewInvoice": "Ver Factura",
+    "status": {
+      "completed": "Completado",
+      "pending": "Pendiente",
+      "failed": "Fallido",
+      "refunded": "Reembolsado"
+    },
+    "method": {
+      "credit_card": "Tarjeta",
+      "bank_transfer": "Transferencia Bancaria",
+      "paypal": "PayPal",
+      "check": "Cheque",
+      "cash": "Efectivo",
+      "other": "Otro"
+    }
+  },
   "clientInvoiceDetails": {
     "notFound": "Factura no encontrada",
     "backToInvoices": "Volver a Facturas",
@@ -2113,7 +2167,11 @@
     "total": "Total:",
     "amountPaid": "Monto Pagado:",
     "amountDue": "Monto Adeudado:",
-    "paymentTerms": "Términos de Pago:"
+    "paymentTerms": "Términos de Pago:",
+    "payNow": "Pagar Ahora",
+    "errorPayNow": "No se pudo iniciar el pago",
+    "paymentCancelled": "El pago fue cancelado — no se realizó ningún cargo.",
+    "paymentProcessing": "Pago recibido — confirmando con tu banco. Esta página se actualizará automáticamente."
   },
   "clientItinerary": {
     "notFoundTitle": "Itinerario No Encontrado",

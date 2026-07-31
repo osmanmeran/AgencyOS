@@ -122,6 +122,19 @@ const TEMPLATES = {
   `,
     }),
 
+  password_reset: ({ name, resetUrl }) =>
+    TEMPLATES.generic({
+      content: `
+    <h2 style="color: #1e293b; margin-top: 0;">Reset your password</h2>
+    <p>Hi ${name},</p>
+    <p>We received a request to reset the password for your Marvelops TravelPro account. Click the button below to choose a new one:</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${resetUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset Password</a>
+    </div>
+    <p style="color: #64748b; font-size: 14px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email — your password won't change.</p>
+  `,
+    }),
+
   quote_response: ({ clientName, quoteTitle, status, responseNotes, quoteUrl }) =>
     TEMPLATES.generic({
       content: `

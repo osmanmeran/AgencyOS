@@ -106,7 +106,30 @@
       "passwordPlaceholder": "Enter your password",
       "signIn": "Sign In",
       "errLoginFailedPeriod": "Login failed.",
-      "errLoginFailed": "Login failed"
+      "errLoginFailed": "Login failed",
+      "forgotPassword": "Forgot password?"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "subtitle": "Enter your email and we'll send you a reset link",
+      "sending": "Sending...",
+      "submit": "Send Reset Link",
+      "checkEmailBody": "If that email is registered, a reset link is on its way. It expires in 1 hour.",
+      "backToLogin": "Back to login",
+      "errGeneric": "Something went wrong. Please try again."
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "subtitle": "Enter a new password for your account",
+      "invalidLinkTitle": "Invalid Link",
+      "invalidLinkBody": "This password reset link is missing the required token.",
+      "newPasswordLabel": "New Password",
+      "submitting": "Saving...",
+      "submit": "Reset Password",
+      "successTitle": "Password Updated",
+      "successBody": "Your password has been changed. You can now sign in with your new password.",
+      "goToLogin": "Go to Login",
+      "errGeneric": "Failed to reset password. The link may have expired."
     },
     "microsoftCallback": {
       "verifyingCode": "Verifying authorization code...",
@@ -2192,6 +2215,29 @@
     "issued": "Issued: {date}",
     "paidInFull": "Paid in full",
     "dueAmount": "Due: {amount}"
+  },
+  "clientPayments": {
+    "title": "My Payments",
+    "subtitle": "Your payment history and receipts",
+    "totalPaid": "Total Paid",
+    "noPaymentsTitle": "No payments yet",
+    "noPaymentsBody": "Your payment history will appear here once you make a payment.",
+    "reference": "Reference:",
+    "viewInvoice": "View Invoice",
+    "status": {
+      "completed": "Completed",
+      "pending": "Pending",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    },
+    "method": {
+      "credit_card": "Card",
+      "bank_transfer": "Bank Transfer",
+      "paypal": "PayPal",
+      "check": "Check",
+      "cash": "Cash",
+      "other": "Other"
+    }
   },
   "clientInvoiceDetails": {
     "notFound": "Invoice not found",

@@ -34,6 +34,7 @@ import FlightTakeoffRounded from '@mui/icons-material/FlightTakeoffRounded';
 import BusinessRounded from '@mui/icons-material/BusinessRounded';
 import PeopleRounded from '@mui/icons-material/PeopleRounded';
 import AssignmentRounded from '@mui/icons-material/AssignmentRounded';
+import ReceiptLongRounded from '@mui/icons-material/ReceiptLongRounded';
 import SettingsRounded from '@mui/icons-material/SettingsRounded';
 import HistoryRounded from '@mui/icons-material/HistoryRounded';
 import BuildRounded from '@mui/icons-material/BuildRounded';
@@ -148,6 +149,7 @@ const CLIENT_NAV = (_t) => [
   { label: 'My Proposals', icon: <RateReviewRounded />, page: 'ClientProposals' },
   { label: 'My Trips', icon: <FlightTakeoffRounded />, page: 'ClientTrips' },
   { label: 'My Invoices', icon: <AssignmentRounded />, page: 'ClientInvoices' },
+  { label: 'My Payments', icon: <ReceiptLongRounded />, page: 'ClientPayments' },
 ];
 
 function NavItem({ item, currentPageName, depth = 0 }) {
@@ -434,6 +436,7 @@ export default function Layout({ children, currentPageName }) {
     currentPageName?.startsWith('ClientProposal') ||
     currentPageName?.startsWith('ClientTrip') ||
     currentPageName?.startsWith('ClientInvoice') ||
+    currentPageName?.startsWith('ClientPayments') ||
     currentPageName?.startsWith('ClientQuote');
 
   const isSupplierPortal = currentPageName === 'SupplierPortal';

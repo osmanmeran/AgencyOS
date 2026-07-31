@@ -11,6 +11,11 @@ import {
   deleteUser,
   getAllUsers,
   VALID_TIERS,
+  requestPasswordReset,
+  locatePasswordReset,
+  resetPassword,
+  createRefreshToken,
+  findValidRefreshToken,
 } from '../../server/services/auth.js';
 
 describe('Auth Service', () => {
@@ -185,6 +190,82 @@ describe('Auth Service', () => {
       const users = getAllUsers();
       expect(Array.isArray(users)).toBe(true);
       expect(users.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('requestPasswordReset / resetPassword', () => {
+    it('returns null for an unknown email without creating a token', () => {
+      expect(requestPasswordReset(`nobody-${Date.now()}@test.com`)).toBeNull();
+    });
+
+    it('returns null for an inactive account', () => {
+      const email = `inactive-${Date.now()}@test.com`;
+      const created = createUser({ email, password: 'TestPass1', name: 'Inactive' });
+      updateUser(created.id, { is_active: false });
+      expect(requestPasswordReset(email)).toBeNull();
+    });
+
+    it('returns null for an SSO-linked account (no usable local password to reset)', () => {
+      const db = getDb();
+      const now = new Date().toISOString();
+      const email = `sso-reset-${Date.now()}@test.com`;
+      db.prepare(
+        'INSERT INTO users (id, email, password, name, user_tier, role, microsoft_id, is_active, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)',
+      ).run(`sso-reset-${Date.now()}`, email, '', 'SSO User', 'agent', 'agent', 'ms-oid-reset-test', now, now);
+      expect(requestPasswordReset(email)).toBeNull();
+    });
+
+    it('issues a token for an active, password-based account and resets the password with it', () => {
+      const email = `reset-${Date.now()}@test.com`;
+      const created = createUser({ email, password: 'OldPass123', name: 'Reset Me' });
+
+      const result = requestPasswordReset(email);
+      expect(result).toMatchObject({ email, name: 'Reset Me' });
+      expect(result.token).toBeTruthy();
+
+      const located = locatePasswordReset(result.token);
+      expect(located.user.id).toBe(created.id);
+
+      resetPassword({ token: result.token, newPassword: 'NewPass456' });
+
+      const found = getUserById(created.id);
+      expect(bcrypt.compareSync('NewPass456', found.password)).toBe(true);
+      expect(bcrypt.compareSync('OldPass123', found.password)).toBe(false);
+      expect(found.password_reset_token).toBeNull();
+
+      // The token is single-use.
+      expect(locatePasswordReset(result.token)).toBeNull();
+      expect(authenticateLocal(email, 'NewPass456').user.email).toBe(email);
+    });
+
+    it('revokes every existing refresh token for the account on reset', () => {
+      const email = `reset-revoke-${Date.now()}@test.com`;
+      const created = createUser({ email, password: 'OldPass123', name: 'Revoke Me' });
+      const raw = createRefreshToken(created.id, {});
+      expect(findValidRefreshToken(raw)).toBeTruthy();
+
+      const { token } = requestPasswordReset(email);
+      resetPassword({ token, newPassword: 'NewPass456' });
+
+      expect(findValidRefreshToken(raw)).toBeNull();
+    });
+
+    it('rejects an invalid/unknown reset token', () => {
+      expect(() => resetPassword({ token: 'not-a-real-token', newPassword: 'NewPass456' })).toThrow(
+        /Invalid or expired/,
+      );
+    });
+
+    it('rejects an expired reset token', () => {
+      const email = `reset-expired-${Date.now()}@test.com`;
+      const created = createUser({ email, password: 'OldPass123', name: 'Expired' });
+      const { token } = requestPasswordReset(email);
+      // Force the token into the past.
+      getDb()
+        .prepare('UPDATE users SET password_reset_expires = ? WHERE id = ?')
+        .run(new Date(Date.now() - 1000).toISOString(), created.id);
+
+      expect(() => resetPassword({ token, newPassword: 'NewPass456' })).toThrow(/expired/);
     });
   });
 });

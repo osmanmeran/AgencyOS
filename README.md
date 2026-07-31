@@ -64,6 +64,7 @@ A full-stack travel agency operations management platform for tour operators and
 ### Admin
 
 - **User Management** — CRUD with invite tokens, 4 permission tiers (admin/manager/agent/accounting)
+- **Self-Service Password Reset** — `/forgot-password` + `/reset-password`, scoped to the current workspace, 1-hour token expiry, resets every other active session on completion. Responds identically whether or not the email is registered (no enumeration), and mints no token for Microsoft-SSO-linked accounts (they have no local password to reset)
 - **Permission Manager** — Granular custom permissions per user
 - **App Settings** — Branding, departments, invoice header, default currency
 - **Setup Guide** — A dismissible checklist (`/SetupWizard`, admin-only) for finishing a new workspace: branding, invoice details, Stripe payments, Outlook email, and inviting the team, each showing live completion status with a link into the real settings section. A Dashboard banner nudges toward it until it's dismissed or every step is done.
@@ -73,7 +74,7 @@ A full-stack travel agency operations management platform for tour operators and
 
 ### Portal Access
 
-- **Client Portal** — Clients log in to view proposals, trips, invoices, and browse the tour catalog. Staff provision access per client directly from the CRM (grant / revoke): granting auto-creates a `client`-tier login with an admin-set temporary password and auto-creates/links the client's **Company**, while revoking disables the account. The portal header is branded with the agency's invoice logo.
+- **Client Portal** — Clients log in to view proposals, trips, invoices, payment history, and browse the tour catalog. Staff provision access per client directly from the CRM (grant / revoke): granting auto-creates a `client`-tier login with an admin-set temporary password and auto-creates/links the client's **Company**, while revoking disables the account. The portal header is branded with the agency's invoice logo.
 - **Tour Catalog Search** — Clients browse the tour catalog from two pills (**Daily Tours** / **Multi-Day Tours**), filter by travel date and a destination dropdown of all available destinations, and see cover photos, descriptions, and day-by-day itineraries. Featured tours are highlighted in a dedicated section, and active special offers show original/discounted prices with the discount percentage. Tours are readable by all authenticated portal users (writes remain staff-only)
 - **B2B Client Quoting** — Curated e-shop catalog (categories, suppliers, photos) with markup-based pricing; clients submit quote requests, staff review/price/approve, accepted quotes convert into reservations
 - **Supplier Portal** — View bookings, invoices, ratings

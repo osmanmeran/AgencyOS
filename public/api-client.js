@@ -43,7 +43,14 @@
   // trigger the refresh-on-401 retry below (which would swallow the real error
   // like "Invalid email or password" behind a generic "Session expired").
   // Mirrors server/middleware/csrf.js EXEMPT_PATHS (+ /auth/refresh itself).
-  var AUTH_ENTRY_PATHS = ['/auth/login', '/auth/microsoft', '/auth/accept-invite', '/auth/refresh'];
+  var AUTH_ENTRY_PATHS = [
+    '/auth/login',
+    '/auth/microsoft',
+    '/auth/accept-invite',
+    '/auth/refresh',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+  ];
 
   // Standalone / pre-auth pages that run their own auth handshake (or are
   // magic-link pages). A failed background `me()` here must NOT hard-redirect
@@ -54,6 +61,8 @@
     '/mock-login',
     '/auth/microsoft/callback',
     '/accept-invite',
+    '/forgot-password',
+    '/reset-password',
     '/auth/outlook-callback',
     '/client-itinerary',
     '/request-quote',
@@ -322,6 +331,12 @@
           setCurrentUser(result.user);
           return result.user;
         });
+      },
+      forgotPassword: function (email) {
+        return api('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email: email }) });
+      },
+      resetPassword: function (data) {
+        return api('/auth/reset-password', { method: 'POST', body: JSON.stringify(data || {}) });
       },
       // Client Portal access provisioning (requires grant_client_portal)
       getClientPortal: function (clientId) {

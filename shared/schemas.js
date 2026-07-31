@@ -163,6 +163,20 @@ export const schemas = {
       .regex(/[0-9]/, 'Password must contain a number'),
   }),
 
+  forgotPassword: z.object({
+    email: z.string().email('Invalid email format'),
+  }),
+
+  resetPassword: z.object({
+    token: z.string().min(1, 'Token is required'),
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+      .regex(/[a-z]/, 'Password must contain a lowercase letter')
+      .regex(/[0-9]/, 'Password must contain a number'),
+  }),
+
   entityType: z.object({
     type: z.string().min(1, 'Entity type is required'),
   }),

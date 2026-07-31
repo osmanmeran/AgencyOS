@@ -29,6 +29,7 @@ const QuoteRequests = lazy(() => import('./pages/QuoteRequests'));
 const CreateInvoice = lazy(() => import('./pages/CreateInvoice'));
 const InvoiceDetails = lazy(() => import('./pages/InvoiceDetails'));
 const ClientInvoices = lazy(() => import('./pages/ClientInvoices'));
+const ClientPayments = lazy(() => import('./pages/ClientPayments'));
 const ClientInvoiceDetails = lazy(() => import('./pages/ClientInvoiceDetails'));
 const SupplierPortal = lazy(() => import('./pages/SupplierPortal'));
 const SupplierBookingDetails = lazy(() => import('./pages/SupplierBookingDetails'));
@@ -81,6 +82,7 @@ export const PAGES = {
   InvoiceDetails: InvoiceDetails,
   Dashboard: Dashboard,
   ClientInvoices: ClientInvoices,
+  ClientPayments: ClientPayments,
   ClientInvoiceDetails: ClientInvoiceDetails,
   SupplierPortal: SupplierPortal,
   SupplierBookingDetails: SupplierBookingDetails,

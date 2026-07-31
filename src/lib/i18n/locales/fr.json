@@ -81,7 +81,30 @@
       "passwordPlaceholder": "Entrez votre mot de passe",
       "signIn": "Se connecter",
       "errLoginFailedPeriod": "Échec de la connexion.",
-      "errLoginFailed": "Échec de la connexion"
+      "errLoginFailed": "Échec de la connexion",
+      "forgotPassword": "Mot de passe oublié ?"
+    },
+    "forgotPassword": {
+      "title": "Réinitialiser votre mot de passe",
+      "subtitle": "Entrez votre e-mail et nous vous enverrons un lien de réinitialisation",
+      "sending": "Envoi en cours...",
+      "submit": "Envoyer le Lien de Réinitialisation",
+      "checkEmailBody": "Si cet e-mail est enregistré, un lien de réinitialisation est en route. Il expire dans 1 heure.",
+      "backToLogin": "Retour à la connexion",
+      "errGeneric": "Une erreur s'est produite. Veuillez réessayer."
+    },
+    "resetPassword": {
+      "title": "Choisissez un nouveau mot de passe",
+      "subtitle": "Entrez un nouveau mot de passe pour votre compte",
+      "invalidLinkTitle": "Lien Invalide",
+      "invalidLinkBody": "Ce lien de réinitialisation de mot de passe ne contient pas le jeton requis.",
+      "newPasswordLabel": "Nouveau Mot de Passe",
+      "submitting": "Enregistrement...",
+      "submit": "Réinitialiser le Mot de Passe",
+      "successTitle": "Mot de Passe Mis à Jour",
+      "successBody": "Votre mot de passe a été modifié. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
+      "goToLogin": "Aller à la Connexion",
+      "errGeneric": "Échec de la réinitialisation du mot de passe. Le lien a peut-être expiré."
     },
     "microsoftCallback": {
       "verifyingCode": "Vérification du code d'autorisation...",
@@ -153,7 +176,15 @@
     "quickActions": "Actions Rapides",
     "tripCalendar": "Calendrier des Voyages",
     "today": "Aujourd'hui",
-    "weekdays": ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"],
+    "weekdays": [
+      "Dim",
+      "Lun",
+      "Mar",
+      "Mer",
+      "Jeu",
+      "Ven",
+      "Sam"
+    ],
     "confirmedArrivalsMonth": "Arrivées Confirmées — {month}",
     "noConfirmedArrivalsMonth": "Aucune arrivée confirmée ce mois-ci",
     "confirmedArrivalSingular": "{count} arrivée confirmée",
@@ -554,12 +585,12 @@
   },
   "paymentLink": {
     "title": "Paiement en Ligne",
-    "simulatedBadge": "Simulé",
-    "shareText": "Partagez ce lien signé avec {client} pour recevoir le paiement de {amount} en ligne.",
+    "shareText": "Partagez ce lien de paiement Stripe sécurisé avec {client} pour recevoir le paiement de {amount} en ligne.",
     "defaultClient": "le client",
+    "generate": "Générer un Lien de Paiement",
     "linkCopied": "Lien Copié !",
     "copyPaymentLink": "Copier le Lien de Paiement",
-    "footerTip": "Le jeton inclut une charge utile signée (montant, référence) — infalsifiable. Connectez une passerelle de paiement (p. ex. Stripe) pour traiter de vrais paiements en ligne."
+    "footerTip": "Les paiements sont traités de manière sécurisée par Stripe et appliqués automatiquement à cette facture."
   },
   "saveAsTemplate": {
     "button": "Enregistrer comme Modèle",
@@ -2091,6 +2122,29 @@
     "paidInFull": "Payée intégralement",
     "dueAmount": "Dû : {amount}"
   },
+  "clientPayments": {
+    "title": "Mes Paiements",
+    "subtitle": "Votre historique de paiements et reçus",
+    "totalPaid": "Total Payé",
+    "noPaymentsTitle": "Aucun paiement pour le moment",
+    "noPaymentsBody": "Votre historique de paiements apparaîtra ici une fois que vous aurez effectué un paiement.",
+    "reference": "Référence :",
+    "viewInvoice": "Voir la Facture",
+    "status": {
+      "completed": "Terminé",
+      "pending": "En attente",
+      "failed": "Échoué",
+      "refunded": "Remboursé"
+    },
+    "method": {
+      "credit_card": "Carte",
+      "bank_transfer": "Virement Bancaire",
+      "paypal": "PayPal",
+      "check": "Chèque",
+      "cash": "Espèces",
+      "other": "Autre"
+    }
+  },
   "clientInvoiceDetails": {
     "notFound": "Facture introuvable",
     "backToInvoices": "Retour aux Factures",
@@ -2113,7 +2167,11 @@
     "total": "Total :",
     "amountPaid": "Montant Payé :",
     "amountDue": "Montant Dû :",
-    "paymentTerms": "Conditions de Paiement :"
+    "paymentTerms": "Conditions de Paiement :",
+    "payNow": "Payer Maintenant",
+    "errorPayNow": "Impossible de démarrer le paiement",
+    "paymentCancelled": "Le paiement a été annulé — aucun montant n'a été débité.",
+    "paymentProcessing": "Paiement reçu — confirmation auprès de votre banque en cours. Cette page se mettra à jour automatiquement."
   },
   "clientItinerary": {
     "notFoundTitle": "Itinéraire Introuvable",

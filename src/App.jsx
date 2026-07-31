@@ -29,6 +29,8 @@ import ClientItinerary from '@/pages/ClientItinerary';
 import PublicItinerary from '@/pages/PublicItinerary';
 import RequestQuote from '@/pages/RequestQuote';
 import AcceptInvite from '@/pages/AcceptInvite';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -47,6 +49,7 @@ const CLIENT_PORTAL_PREFIXES = [
   'ClientProposal',
   'ClientTrip',
   'ClientInvoice',
+  'ClientPayments',
   'ClientQuoteBuilder',
   'ClientQuote',
 ];
@@ -57,6 +60,8 @@ const NON_REDIRECT_ROUTES = [
   '/signup',
   '/auth/microsoft/callback',
   '/accept-invite',
+  '/forgot-password',
+  '/reset-password',
   '/auth/outlook-callback',
   '/client-itinerary',
   '/request-quote',
@@ -97,7 +102,14 @@ const AuthenticatedApp = () => {
       // or on a standalone page that's meant to work without a session (e.g.
       // the public itinerary share link a passenger opens with no account).
       if (
-        ['/mock-login', '/signup', '/accept-invite', '/auth/microsoft/callback'].includes(window.location.pathname) ||
+        [
+          '/mock-login',
+          '/signup',
+          '/accept-invite',
+          '/forgot-password',
+          '/reset-password',
+          '/auth/microsoft/callback',
+        ].includes(window.location.pathname) ||
         isNonRedirectPath(window.location.pathname)
       ) {
         // Allow the page to render without a valid session
@@ -198,6 +210,8 @@ const AuthenticatedApp = () => {
         <Route path="/signup" element={<Signup />} />
         <Route path="/auth/microsoft/callback" element={<MicrosoftCallback />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/outlook-callback" element={<OutlookCallback />} />
         <Route path="/client-itinerary" element={<ClientItinerary />} />
         <Route path="/share/itinerary/:token" element={<PublicItinerary />} />

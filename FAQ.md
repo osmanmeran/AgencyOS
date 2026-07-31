@@ -84,6 +84,9 @@ Optionally, yes. With `BACKUP_S3_BUCKET` configured, nightly snapshots and uploa
 **What if I run migrations across many tenants and one database is broken?**
 `npm run db:migrate:bootstrap` isolates each tenant's migration in its own try/catch and reports a per-tenant result plus a summary — one bad database no longer aborts the whole run. `npm run db:migrate:fleet:status` previews what would happen (pending counts, unreadable databases) without applying anything.
 
+**Does the `refresh_tokens` table just grow forever?**
+No — a daily job (`server/services/refreshTokenPruning.js`, same `forEachTenant` pattern as the other maintenance jobs) deletes rows that are revoked or past their expiry, across every workspace. Every access-token refresh writes a new row and revokes the old one, so without this the table would grow unbounded per tenant even though the rows are harmless once revoked/expired (lookups stay index-backed regardless of table size).
+
 ## Online Payments (bring-your-own-key Stripe)
 
 **How do clients pay online?**
@@ -108,6 +111,20 @@ No. Zero env vars, on Railway or anywhere else — that was the whole point of m
 3. Paste the resulting webhook signing secret back into Settings.
 
 No new ports, no new system packages (unlike the OCR feature's Python/tesseract requirement), no CSP changes (Stripe Checkout is a full-page redirect, not an embedded script or iframe), and no manual DB step — the new per-tenant `stripe_settings`/`stripe_webhook_events` tables run through the same automatic migration path as everything else, on next boot / next time each tenant's database opens. If you want every existing tenant migrated immediately after a deploy rather than lazily on first request, run `npm run db:migrate:bootstrap` once (same as any other migration rollout).
+
+**Can clients see their own payment history?**
+Yes — **My Payments** in the Client Portal (`/ClientPayments`) lists every `ClientPayment` record for that client: amount, date, method (card/bank transfer/PayPal/check/cash), status, and — for a Stripe payment — the transaction reference as a receipt. A payment linked to an invoice shows a **View Invoice** button straight to it. Same row-level scoping as every other Client Portal page (a client only ever sees their own `client_id`'s records).
+
+## Login & Account Recovery
+
+**What if a user forgets their password?**
+Self-service password reset: **Forgot password?** on the login page (`/forgot-password`) takes an email and, if it matches an active, password-based account, emails a reset link (`/reset-password?token=...`) that expires in 1 hour. Choosing a new password there immediately revokes every refresh token the account currently holds — logging out any other active session, in case the reset was prompted by a compromised password.
+
+**Does this leak which emails are registered?**
+No — `POST /api/auth/forgot-password` responds with the exact same message ("If that email is registered, a reset link has been sent") whether or not the email exists, is active, or is even a password-based account at all. A Microsoft-SSO-linked account gets no token minted (there's no local password to reset — `authenticateLocal` already refuses password login for those), but the caller can't tell the difference from an unknown email.
+
+**Which workspace does a reset apply to, if the same email exists in more than one?**
+Only the workspace the request came from (the one already selected via subdomain or the `active_tenant` cookie) — unlike login, there's no password yet to disambiguate a same-email match across workspaces, so this deliberately doesn't guess or email every matching workspace.
 
 ## Email & reservations
 
