@@ -423,6 +423,17 @@
         },
       },
     },
+    payments: {
+      createCheckoutSession: function (invoiceId) {
+        return api('/payments/checkout-session', { method: 'POST', body: JSON.stringify({ invoiceId: invoiceId }) });
+      },
+      getSettings: function () {
+        return api('/payments/settings');
+      },
+      saveSettings: function (opts) {
+        return api('/payments/settings', { method: 'POST', body: JSON.stringify(opts || {}) });
+      },
+    },
     appLogs: {
       logUserInApp: function (pageName) {
         return api('/app-logs', { method: 'POST', body: JSON.stringify({ pageName: pageName }) });

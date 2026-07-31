@@ -2,6 +2,7 @@
 import { db } from '@/lib/DbContext';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/components/permissions/PermissionContext';
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import StripeSettingsPanel from '@/components/app-settings/StripeSettingsPanel';
 import {
   Settings,
   Globe,
@@ -79,7 +81,11 @@ export default function AppSettings() {
   const { refreshUser } = useAuth();
   const { hasPermission, user } = usePermissions();
   const { t, language } = useT();
-  const [activeTab, setActiveTab] = useState('general');
+  // Reads the initial tab from ?tab=... so other pages (e.g. the Setup Guide)
+  // can deep-link into a specific section; tab clicks stay purely internal
+  // state, same as before, so the URL doesn't need to track further changes.
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'general');
   const [newDepartment, setNewDepartment] = useState('');
   const [newCurrency, setNewCurrency] = useState('');
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, email: '', name: '' });
@@ -1118,6 +1124,8 @@ export default function AppSettings() {
               </div>
             )}
           </Card>
+
+          <StripeSettingsPanel />
         </div>
       )}
     </div>

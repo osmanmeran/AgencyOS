@@ -14,6 +14,7 @@ import { startReminderService } from './services/reminders.js';
 import { startReportScheduler } from './services/reportScheduler.js';
 import { startBackupScheduler } from './services/backupScheduler.js';
 import { startExchangeRateScheduler } from './services/exchangeRateScheduler.js';
+import { startRefreshTokenCleanupScheduler } from './services/refreshTokenCleanup.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
@@ -58,6 +59,7 @@ const onServerStart = () => {
   startReportScheduler();
   startBackupScheduler();
   startExchangeRateScheduler();
+  startRefreshTokenCleanupScheduler();
 };
 
 let server;

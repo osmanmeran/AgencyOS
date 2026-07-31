@@ -50,6 +50,8 @@ import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
 import VisibilityRounded from '@mui/icons-material/VisibilityRounded';
 import TourRounded from '@mui/icons-material/TourRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
+import HelpOutlineRounded from '@mui/icons-material/HelpOutlineRounded';
+import RocketLaunchRounded from '@mui/icons-material/RocketLaunchRounded';
 
 import MarvelopsLogo from './components/layout/MarvelopsLogo';
 import { PermissionProvider } from './components/permissions/PermissionContext';
@@ -123,6 +125,7 @@ const NAV_SECTIONS = {
         { label: t('nav.itineraryBuilder') || 'Itinerary Builder', page: 'ItineraryBuilder' },
       ],
     },
+    { label: 'Getting Started', icon: <HelpOutlineRounded />, page: 'GettingStarted' },
   ],
   admin: (t) => [
     { label: 'User Management', icon: <PeopleRounded />, page: 'UserManagement' },
@@ -132,6 +135,7 @@ const NAV_SECTIONS = {
       page: 'AppSettings',
       children: [{ label: t('nav.importHub'), page: 'ImportHub' }],
     },
+    { label: 'Setup Guide', icon: <RocketLaunchRounded />, page: 'SetupWizard' },
     { label: 'Audit Trail', icon: <HistoryRounded />, page: 'AuditLogViewer' },
     { label: 'Testing', icon: <BuildRounded />, page: 'TestingArea' },
   ],

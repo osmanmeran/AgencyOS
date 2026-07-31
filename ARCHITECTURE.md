@@ -84,6 +84,46 @@ frontend's label/description lookup (`PERMISSION_MAP`) live outside it.
   rather than going through the generic entity routes, so its own handlers
   do their own scoping (`requireClientContext`/`resolveReadClientContext`).
 
+## Online payments (bring-your-own-key Stripe)
+
+- No platform-level Stripe key and no Stripe Connect "platform" application —
+  each workspace pastes its own Stripe secret key (generated instantly from
+  their own Stripe Dashboard, no approval process) directly into Settings →
+  Integrations → Payments. `server/services/stripeSettings.js` stores it in
+  that tenant's own DB (`stripe_settings`, a singleton row — same
+  never-exposed-via-generic-API pattern as `OutlookToken`), verifying it with
+  a harmless `balance.retrieve()` call before saving so a copy-paste mistake
+  is caught immediately. This means literally zero Railway/hosting env vars
+  are needed for a new workspace to accept payments.
+- Because each tenant's Stripe account is fully independent (not a connected
+  sub-account under one platform), there's no shared webhook endpoint or
+  connected-account id to route on. Instead each workspace registers its
+  _own_ webhook endpoint in its _own_ Stripe Dashboard, pointed at
+  `POST /api/webhooks/stripe/:tenantId` (the URL, with their tenant id baked
+  in, is shown to them in Settings) and pastes back the resulting signing
+  secret. `server/routes/stripeWebhook.js` resolves the tenant straight from
+  that URL path segment, then verifies the signature against _that tenant's
+  own_ saved webhook secret (`verifyStripeSignatureForTenant`) — one
+  workspace's secret can never be used to spoof events for another.
+- The route is mounted with its own `express.raw()` parser _before_ the
+  global `express.json()`, `tenantMiddleware`, `csrfMiddleware`, and
+  `authMiddleware` — Stripe's request carries none of the Host subdomain /
+  session cookie those depend on, and signature verification needs the
+  untouched raw body. Each event id is recorded in a per-tenant
+  `stripe_webhook_events` table before processing, so a Stripe retry can't
+  double-credit a payment.
+- `server/services/payments.js`'s `recordInvoicePayment` is the atomic,
+  server-side replacement for `InvoiceDetails.jsx`'s old three-separate-calls
+  "Record Payment" flow: it updates the `Invoice`, inserts the `ClientPayment`,
+  and bumps the `Client`'s running totals inside one DB transaction, called
+  only from the webhook handler (there's no user/request context to
+  authorize against — Stripe calls it directly).
+- Both payment surfaces (Client Portal "Pay Now" and staff's "Send Payment
+  Link" in `InvoiceDetails.jsx`) hit the same `POST /api/payments/checkout-session`
+  route, which creates a Stripe Checkout Session directly on the tenant's own
+  account — funds settle straight into the agency's own Stripe balance,
+  there is no platform account for money to pass through.
+
 ## Authentication
 
 - **JWT** (`server/middleware/auth.js`) — signed with `JWT_SECRET` (falls

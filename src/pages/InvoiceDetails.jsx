@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { SkeletonCard } from '@/components/ui/skeletons';
 import { ArrowLeft, Download, Send, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
+import PaymentLinkPanel from '../components/invoices/PaymentLinkPanel';
 import PaymentReminderButton from '../components/invoices/PaymentReminderButton';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -573,6 +574,11 @@ export default function InvoiceDetails() {
                 </>
               )}
             </div>
+          </div>
+
+          {/* Payment Link (screen only) */}
+          <div className="print:hidden mb-8">
+            <PaymentLinkPanel invoice={invoice} client={client} />
           </div>
 
           {/* Footer - Bank Details, Payment Terms, Notes */}

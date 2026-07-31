@@ -84,6 +84,32 @@ Optionally, yes. With `BACKUP_S3_BUCKET` configured, nightly snapshots and uploa
 **What if I run migrations across many tenants and one database is broken?**
 `npm run db:migrate:bootstrap` isolates each tenant's migration in its own try/catch and reports a per-tenant result plus a summary — one bad database no longer aborts the whole run. `npm run db:migrate:fleet:status` previews what would happen (pending counts, unreadable databases) without applying anything.
 
+## Online Payments (bring-your-own-key Stripe)
+
+**How do clients pay online?**
+Each workspace pastes its own Stripe secret key directly into Settings → Integrations → Payments (generated instantly from their own Stripe Dashboard — no approval process, no OAuth redirect). Once that's saved, a client sees a **Pay Now** button on their invoice in the Client Portal; it redirects to a Stripe Checkout page for the remaining balance and comes back to the invoice afterward.
+
+**Can staff send a payment link without the client logging into the portal?**
+Yes — the same Checkout Session is available as **Generate Payment Link** on the staff invoice page (replacing the old placeholder "simulated" link, which never actually charged anyone), for copying into an email or message.
+
+**Does the "Send Reminder" button also include a pay link?**
+Yes, when Stripe is configured for the workspace — `PaymentReminderButton.jsx` fetches a live Checkout Session as soon as the reminder dialog opens and splices a "Pay online now" line into the default message (only if the admin hasn't started editing it, so an in-progress edit is never clobbered). If Stripe isn't set up yet, the dialog shows "Connect Stripe in Settings to include a pay-online link" and the reminder still sends without one — it's a nice-to-have, not a requirement.
+
+**Whose Stripe account does the money land in?**
+The agency's own, always — there's no Connect umbrella, no platform Stripe account, and no application fee. Each workspace's Checkout Sessions are created directly on their own account using their own key, so funds settle straight into that agency's Stripe balance.
+
+**How does the invoice actually get marked paid?**
+A webhook is the only thing that marks a payment as received — the Checkout Session's "success" redirect is just a UX nicety, not a trust boundary. Because every tenant has a fully independent Stripe account (not a Connect sub-account), each workspace registers its **own** webhook endpoint in its **own** Stripe Dashboard, pointed at a URL with its tenant id baked in (`POST /api/webhooks/stripe/<tenantId>`, shown to the admin in Settings) and pastes back the signing secret Stripe gives them. On `checkout.session.completed`, the route resolves the tenant from that URL path, verifies the signature against _that tenant's own_ saved webhook secret (one workspace's secret can't be used to forge events for another), then atomically updates the `Invoice`, inserts a `ClientPayment` row, and bumps the client's running totals. Each Stripe event id is recorded so a retried/duplicate webhook delivery can't double-credit a payment.
+
+**Does this need any hosting/environment changes?**
+No. Zero env vars, on Railway or anywhere else — that was the whole point of moving off Stripe Connect. Each workspace configures itself entirely through its own Settings page:
+
+1. Paste a Stripe secret key (verified against Stripe immediately, so a typo is caught on the spot rather than surfacing later as a confusing failure).
+2. Create a webhook endpoint in their own Stripe Dashboard pointed at the URL Settings shows them, listening for `checkout.session.completed`.
+3. Paste the resulting webhook signing secret back into Settings.
+
+No new ports, no new system packages (unlike the OCR feature's Python/tesseract requirement), no CSP changes (Stripe Checkout is a full-page redirect, not an embedded script or iframe), and no manual DB step — the new per-tenant `stripe_settings`/`stripe_webhook_events` tables run through the same automatic migration path as everything else, on next boot / next time each tenant's database opens. If you want every existing tenant migrated immediately after a deploy rather than lazily on first request, run `npm run db:migrate:bootstrap` once (same as any other migration rollout).
+
 ## Email & reservations
 
 **Reservation emails had a white-on-white company header / missing service locations.**

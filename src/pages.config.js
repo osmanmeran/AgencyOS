@@ -52,6 +52,8 @@ const DailyTours = lazy(() => import('./pages/DailyTours'));
 const MultiDayTours = lazy(() => import('./pages/MultiDayTours'));
 const WorkspaceSettings = lazy(() => import('./pages/WorkspaceSettings'));
 const PlatformAdmin = lazy(() => import('./pages/PlatformAdmin'));
+const SetupWizard = lazy(() => import('./pages/SetupWizard'));
+const GettingStarted = lazy(() => import('./pages/GettingStarted'));
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -107,6 +109,8 @@ export const PAGES = {
   MultiDayTours: MultiDayTours,
   WorkspaceSettings: WorkspaceSettings,
   PlatformAdmin: PlatformAdmin,
+  SetupWizard: SetupWizard,
+  GettingStarted: GettingStarted,
 };
 
 export const pagesConfig = {
