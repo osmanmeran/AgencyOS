@@ -316,6 +316,13 @@ audit fix` (no `--force`, no major bumps) resolved 7 of them in place:
      again for the same reasons above; Dependabot's repo-level scanner has no
      way to encode "not reachable in this app's usage," so it will keep
      flagging these two until upstream ships a real fix.
+   - Re-verified again on 2026-07-31: same two findings, still the only two.
+     This pass also checked whether bumping `eslint` itself (rather than
+     downgrading `eslint-plugin-react`) could clear the `brace-expansion`
+     chain without a trade-off — it can't: `eslint-plugin-react@7.37.5`
+     (latest published) still caps its peer range at `eslint ^9.7`, with no
+     v10-compatible release yet, so there is no forward-only fix available.
+     Left both as-is; no dependency changes.
 
 ## 🟡 Security hardening (next)
 
