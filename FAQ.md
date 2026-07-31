@@ -84,6 +84,27 @@ Optionally, yes. With `BACKUP_S3_BUCKET` configured, nightly snapshots and uploa
 **What if I run migrations across many tenants and one database is broken?**
 `npm run db:migrate:bootstrap` isolates each tenant's migration in its own try/catch and reports a per-tenant result plus a summary — one bad database no longer aborts the whole run. `npm run db:migrate:fleet:status` previews what would happen (pending counts, unreadable databases) without applying anything.
 
+## Online Payments (Stripe Connect)
+
+**How do clients pay online?**
+Each workspace connects its own Stripe account (Settings → Integrations → "Connect with Stripe"), which walks the admin through Stripe's hosted onboarding (an Express account). Once charges are enabled, a client sees a **Pay Now** button on their invoice in the Client Portal; it redirects to a Stripe Checkout page for the remaining balance and comes back to the invoice afterward.
+
+**Can staff send a payment link without the client logging into the portal?**
+Yes — the same Checkout Session is available as **Generate Payment Link** on the staff invoice page (replacing the old placeholder "simulated" link, which never actually charged anyone), for copying into an email or message.
+
+**Whose Stripe account does the money land in?**
+The agency's own — this is Stripe Connect (Express accounts), not a shared platform account. Checkout Sessions are created as a direct charge on the workspace's connected account (`{ stripeAccount: acctId }`), so funds settle straight into that agency's Stripe balance. The platform's own Stripe secret key only drives account creation and API calls; it never touches the money.
+
+**How does the invoice actually get marked paid?**
+A webhook (`POST /api/webhooks/stripe`) is the only thing that marks a payment as received — the Checkout Session's "success" redirect is just a UX nicety, not a trust boundary. On `checkout.session.completed`, it looks up which workspace the event belongs to (via the Stripe connected-account id, not a subdomain — the webhook itself carries no session/cookie), then atomically updates the `Invoice`, inserts a `ClientPayment` row, and bumps the client's running totals. Each Stripe event id is recorded so a retried/duplicate webhook delivery can't double-credit a payment.
+
+**Does this need any hosting/environment changes?**
+Two new env vars, both optional (payments are simply unavailable — not broken — until they're set):
+- `STRIPE_SECRET_KEY` — the platform's own Stripe secret key (drives account creation/onboarding for every workspace).
+- `STRIPE_WEBHOOK_SECRET` — the signing secret for **one** webhook endpoint registered in the Stripe Dashboard, pointed at `https://<your-deployed-domain>/api/webhooks/stripe`, listening to events **on connected accounts** (`checkout.session.completed`, `account.updated`). Only one endpoint is needed for the whole platform — the webhook resolves the workspace from the event itself, not from a subdomain — so this doesn't change per-tenant.
+
+Nothing else changes: no new ports, no new system packages (unlike the OCR feature's Python/tesseract requirement), no CSP changes (Stripe Checkout is a full-page redirect, not an embedded script or iframe), and no manual DB step — the three new migrations (two per-tenant tables, one column on the platform tenant registry) run automatically the same way every other migration does, on next boot / next time each tenant's database opens. If you want every existing tenant migrated immediately after a deploy rather than lazily on first request, run `npm run db:migrate:bootstrap` once (same as any other migration rollout).
+
 ## Email & reservations
 
 **Reservation emails had a white-on-white company header / missing service locations.**
