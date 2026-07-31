@@ -84,23 +84,32 @@ frontend's label/description lookup (`PERMISSION_MAP`) live outside it.
   rather than going through the generic entity routes, so its own handlers
   do their own scoping (`requireClientContext`/`resolveReadClientContext`).
 
-## Online payments (Stripe Connect)
+## Online payments (bring-your-own-key Stripe)
 
-- One platform Stripe account drives every workspace's own connected Express
-  account — there is no per-tenant secret key, only a connected account id.
-  Onboarding (`server/services/stripeConnect.js`) creates the Express account
-  and a hosted Account Link; the account id is stored twice: locally in the
-  tenant's own DB (`stripe_connect_account`, the source of truth for "can
-  this workspace accept payments right now") and mirrored onto the platform
-  `tenants.stripe_account_id` column purely so an incoming webhook can look
-  up which tenant it belongs to.
-- `POST /api/webhooks/stripe` (`server/routes/stripeWebhook.js`) is mounted
-  with its own `express.raw()` parser *before* the global `express.json()`,
-  `tenantMiddleware`, `csrfMiddleware`, and `authMiddleware` — Stripe's
-  request carries none of the Host subdomain / session cookie those depend
-  on, and signature verification needs the untouched raw body. Tenant
-  routing instead comes from the connected-account id on the event itself
-  (`event.account`), and each event id is recorded in a per-tenant
+- No platform-level Stripe key and no Stripe Connect "platform" application —
+  each workspace pastes its own Stripe secret key (generated instantly from
+  their own Stripe Dashboard, no approval process) directly into Settings →
+  Integrations → Payments. `server/services/stripeSettings.js` stores it in
+  that tenant's own DB (`stripe_settings`, a singleton row — same
+  never-exposed-via-generic-API pattern as `OutlookToken`), verifying it with
+  a harmless `balance.retrieve()` call before saving so a copy-paste mistake
+  is caught immediately. This means literally zero Railway/hosting env vars
+  are needed for a new workspace to accept payments.
+- Because each tenant's Stripe account is fully independent (not a connected
+  sub-account under one platform), there's no shared webhook endpoint or
+  connected-account id to route on. Instead each workspace registers its
+  *own* webhook endpoint in its *own* Stripe Dashboard, pointed at
+  `POST /api/webhooks/stripe/:tenantId` (the URL, with their tenant id baked
+  in, is shown to them in Settings) and pastes back the resulting signing
+  secret. `server/routes/stripeWebhook.js` resolves the tenant straight from
+  that URL path segment, then verifies the signature against *that tenant's
+  own* saved webhook secret (`verifyStripeSignatureForTenant`) — one
+  workspace's secret can never be used to spoof events for another.
+- The route is mounted with its own `express.raw()` parser *before* the
+  global `express.json()`, `tenantMiddleware`, `csrfMiddleware`, and
+  `authMiddleware` — Stripe's request carries none of the Host subdomain /
+  session cookie those depend on, and signature verification needs the
+  untouched raw body. Each event id is recorded in a per-tenant
   `stripe_webhook_events` table before processing, so a Stripe retry can't
   double-credit a payment.
 - `server/services/payments.js`'s `recordInvoicePayment` is the atomic,
@@ -111,9 +120,9 @@ frontend's label/description lookup (`PERMISSION_MAP`) live outside it.
   authorize against — Stripe calls it directly).
 - Both payment surfaces (Client Portal "Pay Now" and staff's "Send Payment
   Link" in `InvoiceDetails.jsx`) hit the same `POST /api/payments/checkout-session`
-  route, which creates a Stripe Checkout Session as a **direct charge** on the
-  tenant's connected account (`{ stripeAccount: accountId }`) — funds settle
-  straight into the agency's own Stripe account, never the platform's.
+  route, which creates a Stripe Checkout Session directly on the tenant's own
+  account — funds settle straight into the agency's own Stripe balance,
+  there is no platform account for money to pass through.
 
 ## Authentication
 

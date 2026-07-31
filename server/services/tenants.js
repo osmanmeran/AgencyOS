@@ -73,34 +73,6 @@ export function getTenantBySlug(slug) {
   return getPlatformDb().prepare('SELECT * FROM tenants WHERE slug = ?').get(String(slug).toLowerCase());
 }
 
-/**
- * Looks up a tenant by its connected Stripe account id. Used by the Stripe
- * webhook route to route an incoming event (which carries no Host subdomain
- * or cookie) back to the tenant that owns the connected account it fired on.
- */
-export function getTenantByStripeAccountId(accountId) {
-  return getPlatformDb().prepare('SELECT * FROM tenants WHERE stripe_account_id = ?').get(accountId);
-}
-
-/**
- * Records a tenant's Stripe Connect account id on the registry so incoming
- * webhook events can be routed back to it (see {@link getTenantByStripeAccountId}).
- *
- * Requires a pre-existing registry row: the legacy/default tenant only has
- * one once `saas:adopt-tenant-zero` has run (or in a deployment that was
- * always multi-tenant). A deployment that hasn't adopted yet has no row to
- * key a Stripe account to, since {@link allTenantIds}/{@link forEachTenant}
- * already hardcode the default tenant id separately from this table — an
- * auto-inserted row here would make it appear twice in both.
- * @returns {object|null} The updated row, or null if the tenant isn't registered yet.
- */
-export function setTenantStripeAccountId(id, accountId) {
-  const db = getPlatformDb();
-  if (!getTenantById(id)) return null;
-  db.prepare('UPDATE tenants SET stripe_account_id = ? WHERE id = ?').run(accountId, id);
-  return getTenantById(id);
-}
-
 export function listTenants() {
   return getPlatformDb()
     .prepare(

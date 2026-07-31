@@ -1,12 +1,12 @@
 // Stripe-backed invoice payments: a Checkout Session redirect for the Client
 // Portal's "Pay Now", and the same session's URL handed back as a copyable
-// link for staff to send outside the portal. Both surfaces create a Checkout
-// Session as a *direct charge* on the tenant's connected Express account
-// (`{ stripeAccount: accountId }`), so funds settle straight into the travel
-// agency's own Stripe account rather than the platform's.
+// link for staff to send outside the portal. Both surfaces create the
+// Checkout Session directly on the tenant's own Stripe account (bring-your-
+// own-key — see services/stripeSettings.js), so funds settle straight into
+// the travel agency's own Stripe balance, never the platform's.
 import { getDb, uid } from '../db.js';
 import { BadRequestError, NotFoundError } from '../middleware/errors.js';
-import { getStripeClient, getConnectStatus } from './stripeConnect.js';
+import { getStripeClientForTenant } from './stripeSettings.js';
 import { upsertFts } from './entities.js';
 import logger from '../lib/logger.js';
 
@@ -40,12 +40,12 @@ function toStripeAmount(amountMajorUnits, currency) {
 
 /**
  * Creates a Stripe Checkout Session for the remaining balance of an invoice,
- * on the tenant's connected Stripe account. The caller (route layer) is
+ * on the tenant's own Stripe account. The caller (route layer) is
  * responsible for verifying the requester may act on this invoice — this
  * function only re-validates that there's actually something to charge and
- * that the workspace can accept payments right now.
+ * that the workspace has its own Stripe key configured.
  * @throws {BadRequestError} If the invoice is already settled, has no
- *   remaining balance, or the workspace's Stripe account can't take charges yet.
+ *   remaining balance, or the workspace hasn't saved a Stripe secret key yet.
  */
 export async function createInvoiceCheckoutSession(tenantId, invoice, { successUrl, cancelUrl }) {
   if (invoice.status === 'paid' || invoice.status === 'cancelled') {
@@ -56,39 +56,28 @@ export async function createInvoiceCheckoutSession(tenantId, invoice, { successU
     throw new BadRequestError('This invoice has no remaining balance', 'INVOICE_NOT_PAYABLE');
   }
 
-  const connect = getConnectStatus(tenantId);
-  if (!connect.connected || !connect.chargesEnabled) {
-    throw new BadRequestError(
-      'Online payments are not enabled for this workspace yet. Finish connecting Stripe in Settings.',
-      'STRIPE_NOT_READY',
-    );
-  }
-
+  const stripe = getStripeClientForTenant(tenantId);
   const currency = (invoice.currency || 'USD').toLowerCase();
-  const stripe = getStripeClient();
-  const session = await stripe.checkout.sessions.create(
-    {
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency,
-            product_data: { name: `Invoice ${invoice.invoice_number || invoice.id}` },
-            unit_amount: toStripeAmount(amountDue, currency),
-          },
-          quantity: 1,
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    line_items: [
+      {
+        price_data: {
+          currency,
+          product_data: { name: `Invoice ${invoice.invoice_number || invoice.id}` },
+          unit_amount: toStripeAmount(amountDue, currency),
         },
-      ],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      client_reference_id: invoice.id,
-      metadata: { tenant_id: String(tenantId), invoice_id: invoice.id, invoice_number: invoice.invoice_number || '' },
-      payment_intent_data: {
-        metadata: { tenant_id: String(tenantId), invoice_id: invoice.id },
+        quantity: 1,
       },
+    ],
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    client_reference_id: invoice.id,
+    metadata: { tenant_id: String(tenantId), invoice_id: invoice.id, invoice_number: invoice.invoice_number || '' },
+    payment_intent_data: {
+      metadata: { tenant_id: String(tenantId), invoice_id: invoice.id },
     },
-    { stripeAccount: connect.accountId },
-  );
+  });
 
   return { url: session.url, sessionId: session.id };
 }

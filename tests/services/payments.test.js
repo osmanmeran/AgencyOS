@@ -10,8 +10,8 @@ vi.mock('stripe', () => {
     constructor() {
       this.checkout = {
         sessions: {
-          create: async (params, opts) => {
-            calls.checkoutSessionsCreate.push({ params, opts });
+          create: async (params) => {
+            calls.checkoutSessionsCreate.push({ params });
             return sessionResponse;
           },
         },
@@ -41,26 +41,21 @@ describe('payments service', () => {
   beforeEach(() => {
     calls.checkoutSessionsCreate.length = 0;
     sessionResponse = { id: 'cs_test_1', url: 'https://checkout.stripe.com/pay/cs_test_1' };
-    process.env.STRIPE_SECRET_KEY = 'sk_test_123';
     tenant = createTenant({ slug: `pay-${Date.now()}`, name: 'Payments Test Agency' });
     db = getDb(tenant.id);
   });
 
-  afterEach(() => {
-    delete process.env.STRIPE_SECRET_KEY;
-  });
-
-  function connectAccount({ chargesEnabled = true } = {}) {
+  function configureStripeKey() {
     const now = new Date().toISOString();
     db.prepare(
-      `INSERT INTO stripe_connect_account (id, account_id, charges_enabled, payouts_enabled, details_submitted, created_at, updated_at)
-       VALUES (1, 'acct_test', ?, 1, 1, ?, ?)`,
-    ).run(chargesEnabled ? 1 : 0, now, now);
+      `INSERT INTO stripe_settings (id, secret_key, webhook_secret, verified_at, created_at, updated_at)
+       VALUES (1, 'sk_test_tenant', 'whsec_test_tenant', ?, ?, ?)`,
+    ).run(now, now, now);
   }
 
   describe('createInvoiceCheckoutSession', () => {
     it('rejects an invoice that is already paid', async () => {
-      connectAccount();
+      configureStripeKey();
       const invoice = { id: 'inv1', status: 'paid', amount_due: 0, total_amount: 100 };
       await expect(
         createInvoiceCheckoutSession(tenant.id, invoice, { successUrl: 's', cancelUrl: 'c' }),
@@ -68,30 +63,22 @@ describe('payments service', () => {
     });
 
     it('rejects an invoice with no remaining balance', async () => {
-      connectAccount();
+      configureStripeKey();
       const invoice = { id: 'inv1', status: 'sent', amount_due: 0, total_amount: 100, amount_paid: 100 };
       await expect(
         createInvoiceCheckoutSession(tenant.id, invoice, { successUrl: 's', cancelUrl: 'c' }),
       ).rejects.toThrow(/no remaining balance/);
     });
 
-    it('rejects when the workspace has no connected Stripe account yet', async () => {
+    it('rejects when the workspace has no Stripe secret key saved yet', async () => {
       const invoice = { id: 'inv1', status: 'sent', amount_due: 150, total_amount: 150 };
       await expect(
         createInvoiceCheckoutSession(tenant.id, invoice, { successUrl: 's', cancelUrl: 'c' }),
-      ).rejects.toThrow(/not enabled/);
+      ).rejects.toThrow(/not configured/);
     });
 
-    it('rejects when the connected account cannot take charges yet', async () => {
-      connectAccount({ chargesEnabled: false });
-      const invoice = { id: 'inv1', status: 'sent', amount_due: 150, total_amount: 150 };
-      await expect(
-        createInvoiceCheckoutSession(tenant.id, invoice, { successUrl: 's', cancelUrl: 'c' }),
-      ).rejects.toThrow(/not enabled/);
-    });
-
-    it('creates a Checkout Session on the connected account for the remaining balance', async () => {
-      connectAccount();
+    it('creates a Checkout Session on the workspace own Stripe account for the remaining balance', async () => {
+      configureStripeKey();
       const invoice = { id: 'inv1', invoice_number: 'INV-001', status: 'sent', amount_due: 125.5, total_amount: 125.5, currency: 'EUR' };
       const result = await createInvoiceCheckoutSession(tenant.id, invoice, {
         successUrl: 'https://app/success',
@@ -99,8 +86,7 @@ describe('payments service', () => {
       });
       expect(result.url).toBe(sessionResponse.url);
       expect(calls.checkoutSessionsCreate).toHaveLength(1);
-      const { params, opts } = calls.checkoutSessionsCreate[0];
-      expect(opts).toEqual({ stripeAccount: 'acct_test' });
+      const { params } = calls.checkoutSessionsCreate[0];
       expect(params.line_items[0].price_data.unit_amount).toBe(12550);
       expect(params.line_items[0].price_data.currency).toBe('eur');
       expect(params.metadata).toMatchObject({ tenant_id: String(tenant.id), invoice_id: 'inv1' });
@@ -108,7 +94,7 @@ describe('payments service', () => {
     });
 
     it('converts a zero-decimal currency amount without multiplying by 100', async () => {
-      connectAccount();
+      configureStripeKey();
       const invoice = { id: 'inv1', invoice_number: 'INV-JPY', status: 'sent', amount_due: 5000, total_amount: 5000, currency: 'JPY' };
       await createInvoiceCheckoutSession(tenant.id, invoice, { successUrl: 's', cancelUrl: 'c' });
       expect(calls.checkoutSessionsCreate[0].params.line_items[0].price_data.unit_amount).toBe(5000);

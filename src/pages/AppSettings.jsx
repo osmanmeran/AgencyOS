@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import StripeConnectPanel from '@/components/app-settings/StripeConnectPanel';
+import StripeSettingsPanel from '@/components/app-settings/StripeSettingsPanel';
 import {
   Settings,
   Globe,
@@ -1120,7 +1120,7 @@ export default function AppSettings() {
             )}
           </Card>
 
-          <StripeConnectPanel />
+          <StripeSettingsPanel />
         </div>
       )}
     </div>

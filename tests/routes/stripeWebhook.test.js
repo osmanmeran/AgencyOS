@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { getDb, getPlatformDb, getDbPath } from '../../server/db.js';
-import { createTenant, setTenantStripeAccountId } from '../../server/services/tenants.js';
+import { createTenant } from '../../server/services/tenants.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -29,8 +29,6 @@ let baseUrl;
 const createdTenantIds = [];
 
 beforeAll(async () => {
-  process.env.STRIPE_SECRET_KEY = 'sk_test_123';
-  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_123';
   await new Promise((resolve, reject) => {
     server = app.listen(0, () => {
       baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -41,8 +39,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  delete process.env.STRIPE_SECRET_KEY;
-  delete process.env.STRIPE_WEBHOOK_SECRET;
   const platform = getPlatformDb();
   for (const id of createdTenantIds) {
     try {
@@ -73,25 +69,33 @@ function insertEntity(db, type, id, data) {
   );
 }
 
-function post(body, sig = 'good-sig') {
-  return fetch(`${baseUrl}/api/webhooks/stripe`, {
+function post(tenantId, body, sig = 'good-sig') {
+  return fetch(`${baseUrl}/api/webhooks/stripe/${tenantId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'stripe-signature': sig },
     body: JSON.stringify(body),
   });
 }
 
-describe('POST /api/webhooks/stripe', () => {
+describe('POST /api/webhooks/stripe/:tenantId', () => {
   let tenant;
   let db;
   let invoiceId;
-  let accountId;
+
+  function configureStripeKey({ withWebhookSecret = true } = {}) {
+    const now = new Date().toISOString();
+    db.prepare(
+      `INSERT INTO stripe_settings (id, secret_key, webhook_secret, verified_at, created_at, updated_at)
+       VALUES (1, 'sk_test_tenant', ?, ?, ?, ?)`,
+    ).run(withWebhookSecret ? 'whsec_test_tenant' : null, now, now, now);
+  }
 
   beforeEach(() => {
-    tenant = createTenant({ slug: `webhook-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: 'Webhook Test Agency' });
+    tenant = createTenant({
+      slug: `webhook-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: 'Webhook Test Agency',
+    });
     createdTenantIds.push(tenant.id);
-    accountId = `acct_webhook_${tenant.id}`;
-    setTenantStripeAccountId(tenant.id, accountId);
     db = getDb(tenant.id);
     invoiceId = 'inv_' + Math.random().toString(36).slice(2);
     insertEntity(db, 'Invoice', invoiceId, {
@@ -103,32 +107,40 @@ describe('POST /api/webhooks/stripe', () => {
     });
   });
 
-  it('rejects a request with an invalid signature', async () => {
-    const res = await post({ id: 'evt_bad', type: 'checkout.session.completed' }, 'bad-signature');
+  it('404s for an unknown tenant id', async () => {
+    const res = await post('no-such-tenant', { id: 'evt_x', type: 'checkout.session.completed' });
+    expect(res.status).toBe(404);
+  });
+
+  it('rejects when the workspace has no webhook secret saved yet', async () => {
+    configureStripeKey({ withWebhookSecret: false });
+    const res = await post(tenant.id, { id: 'evt_x', type: 'checkout.session.completed' });
     expect(res.status).toBe(400);
   });
 
-  it('ignores an event with no connected account', async () => {
-    const res = await post({ id: 'evt_no_account', type: 'checkout.session.completed', data: { object: {} } });
-    expect(res.status).toBe(200);
-    expect((await res.json()).ignored).toBe('no connected account');
+  it('rejects a request with an invalid signature', async () => {
+    configureStripeKey();
+    const res = await post(tenant.id, { id: 'evt_bad', type: 'checkout.session.completed' }, 'bad-signature');
+    expect(res.status).toBe(400);
   });
 
-  it('ignores an event for an unrecognized connected account', async () => {
-    const res = await post({
-      id: 'evt_unknown_acct',
-      account: 'acct_does_not_exist',
-      type: 'checkout.session.completed',
-      data: { object: {} },
+  it("verifies against this tenant's own webhook secret and does not leak across tenants", async () => {
+    configureStripeKey();
+    const other = createTenant({
+      slug: `webhook-other-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: 'Other Agency',
     });
-    expect(res.status).toBe(200);
-    expect((await res.json()).ignored).toBe('unknown account');
+    createdTenantIds.push(other.id);
+    // Other tenant has no webhook secret configured at all — posting to
+    // *its* URL must fail regardless of the first tenant's config.
+    const res = await post(other.id, { id: 'evt_x', type: 'checkout.session.completed' });
+    expect(res.status).toBe(400);
   });
 
   it('records a completed checkout session against the right tenant and invoice', async () => {
-    const res = await post({
+    configureStripeKey();
+    const res = await post(tenant.id, {
       id: 'evt_checkout_1',
-      account: accountId,
       type: 'checkout.session.completed',
       data: {
         object: {
@@ -153,9 +165,9 @@ describe('POST /api/webhooks/stripe', () => {
   });
 
   it('does not double-credit a duplicate/retried event id', async () => {
+    configureStripeKey();
     const event = {
       id: 'evt_checkout_dup',
-      account: accountId,
       type: 'checkout.session.completed',
       data: {
         object: {
@@ -168,8 +180,8 @@ describe('POST /api/webhooks/stripe', () => {
         },
       },
     };
-    await post(event);
-    await post(event);
+    await post(tenant.id, event);
+    await post(tenant.id, event);
 
     const invoiceRow = JSON.parse(db.prepare('SELECT data FROM entities WHERE id = ?').get(invoiceId).data);
     // Two identical events must only be applied once: 40 credited, not 80.
@@ -179,9 +191,9 @@ describe('POST /api/webhooks/stripe', () => {
   });
 
   it('ignores a checkout session that has not actually been paid yet', async () => {
-    await post({
+    configureStripeKey();
+    await post(tenant.id, {
       id: 'evt_unpaid',
-      account: accountId,
       type: 'checkout.session.completed',
       data: {
         object: {
@@ -195,23 +207,5 @@ describe('POST /api/webhooks/stripe', () => {
     });
     const invoiceRow = JSON.parse(db.prepare('SELECT data FROM entities WHERE id = ?').get(invoiceId).data);
     expect(invoiceRow.amount_paid).toBe(0);
-  });
-
-  it('applies an account.updated event to the tenant local Stripe status', async () => {
-    const now = new Date().toISOString();
-    db.prepare(
-      `INSERT INTO stripe_connect_account (id, account_id, charges_enabled, payouts_enabled, details_submitted, created_at, updated_at)
-       VALUES (1, ?, 0, 0, 0, ?, ?)`,
-    ).run(accountId, now, now);
-
-    await post({
-      id: 'evt_account_updated',
-      account: accountId,
-      type: 'account.updated',
-      data: { object: { id: accountId, charges_enabled: true, payouts_enabled: true, details_submitted: true } },
-    });
-
-    const row = db.prepare('SELECT * FROM stripe_connect_account WHERE id = 1').get();
-    expect(row.charges_enabled).toBe(1);
   });
 });

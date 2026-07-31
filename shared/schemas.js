@@ -241,6 +241,19 @@ export const schemas = {
     invoiceId: z.string().min(1, 'invoiceId is required'),
   }),
 
+  // Bring-your-own-key Stripe settings: a workspace pastes its own secret key
+  // and/or webhook signing secret directly from its own Stripe Dashboard.
+  // Either field may be sent independently (the secret key typically arrives
+  // first, the webhook secret once the tenant has created their own endpoint).
+  saveStripeSettings: z
+    .object({
+      secretKey: z.string().regex(/^sk_/, 'Must be a Stripe secret key (starts with "sk_")').optional(),
+      webhookSecret: z.string().regex(/^whsec_/, 'Must be a Stripe webhook signing secret (starts with "whsec_")').optional(),
+    })
+    .refine((d) => d.secretKey !== undefined || d.webhookSecret !== undefined, {
+      message: 'Provide a secretKey and/or a webhookSecret',
+    }),
+
   outlookConnect: z.object({
     token_data: z.object({
       access_token: z.string().min(1),

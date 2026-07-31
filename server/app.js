@@ -54,8 +54,8 @@ app.set('trust proxy', 1);
 // Stripe's request carries no Host subdomain or session cookie for
 // tenantMiddleware/csrfMiddleware/authMiddleware to key off — so this route
 // runs before every one of those, rather than carving out an exception in each.
-// Tenant routing instead comes from the connected-account id on the event
-// itself (see routes/stripeWebhook.js).
+// Tenant routing instead comes from the tenant id in the URL path itself —
+// each workspace registers its own webhook endpoint (see routes/stripeWebhook.js).
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRoutes);
 
 app.use(

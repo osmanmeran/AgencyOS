@@ -24,7 +24,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Invoices** — CRUD with line items, status tracking (draft/sent/paid/overdue/cancelled)
 - **Revenue Reports** — Charts and breakdowns
 - **Commission Reports** — Profit/commission calculation from trip data
-- **Client Payments** — Manual payment recording, plus real online payments via Stripe Connect: each workspace onboards its own Stripe Express account (Settings → Integrations), clients pay an invoice's remaining balance from the Client Portal ("Pay Now"), and staff can generate the same Stripe Checkout link to send outside the portal. A webhook confirms payment and updates the invoice/`ClientPayment`/client totals atomically — funds settle directly into the agency's own Stripe account, never the platform's
+- **Client Payments** — Manual payment recording, plus real online payments via bring-your-own-key Stripe (no platform Stripe account, no Connect approval process — each workspace pastes its own secret key in Settings → Integrations). Clients pay an invoice's remaining balance from the Client Portal ("Pay Now"), and staff can generate the same Stripe Checkout link to send outside the portal. Each workspace's own webhook confirms payment and updates the invoice/`ClientPayment`/client totals atomically — funds settle directly into the agency's own Stripe account, there's no platform account for money to pass through
 
 ### Advanced Tools
 
@@ -330,7 +330,6 @@ Still missing (tracked in `SAAS_PROJECT.md`): billing/plan gating (Stripe), sign
 
 ### Remaining Gaps
 
-- **No payment gateway** — `ClientPayment` entity exists but Stripe/PayPal integration is absent
 - **No SMS provider** — SMS endpoint logs locally but sends nothing
 - **No LLM/AI features** — `InvokeLLM` and `GenerateImage` are stubbed but unimplemented
 - **No calendar sync** — iCal, Google Calendar, Outlook calendar sync absent

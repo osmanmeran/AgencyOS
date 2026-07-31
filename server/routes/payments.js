@@ -6,12 +6,7 @@ import { workspaceUrl } from '../middleware/tenant.js';
 import { getTenantId } from '../db.js';
 import { hasPermission } from '../permissions.js';
 import { findEntityById } from '../services/entities.js';
-import {
-  isStripeConfigured,
-  getConnectStatus,
-  createOnboardingLink,
-  syncConnectStatus,
-} from '../services/stripeConnect.js';
+import { getPaymentSettingsStatus, saveStripeSettings } from '../services/stripeSettings.js';
 import { createInvoiceCheckoutSession } from '../services/payments.js';
 
 const router = Router();
@@ -24,34 +19,26 @@ function requireManageAppSettings(req) {
   }
 }
 
-// ── Stripe Connect onboarding (workspace admin) ─────────────────────────
+// ── Bring-your-own-key Stripe settings (workspace admin) ────────────────
 
 router.get(
-  '/connect/status',
+  '/settings',
   catchAsync(async (req, res) => {
     requireManageAppSettings(req);
-    res.json({ stripeConfigured: isStripeConfigured(), ...getConnectStatus(getTenantId()) });
-  }),
-);
-
-router.post(
-  '/connect/onboard',
-  catchAsync(async (req, res) => {
-    requireManageAppSettings(req);
-    const base = workspaceUrl(req);
-    const result = await createOnboardingLink(getTenantId(), {
-      returnUrl: `${base}/AppSettings?stripeOnboarding=return`,
-      refreshUrl: `${base}/AppSettings?stripeOnboarding=refresh`,
+    const tenantId = getTenantId();
+    res.json({
+      ...getPaymentSettingsStatus(tenantId),
+      webhookUrl: `${workspaceUrl(req)}/api/webhooks/stripe/${tenantId}`,
     });
-    res.json(result);
   }),
 );
 
 router.post(
-  '/connect/sync',
+  '/settings',
+  validate(schemas.saveStripeSettings),
   catchAsync(async (req, res) => {
     requireManageAppSettings(req);
-    const status = await syncConnectStatus(getTenantId());
+    const status = await saveStripeSettings(getTenantId(), req.body);
     res.json(status);
   }),
 );
