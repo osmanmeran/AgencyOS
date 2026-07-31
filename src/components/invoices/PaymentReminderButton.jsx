@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Bell, Loader2, CheckCircle, Mail } from 'lucide-react';
+import { Bell, Loader2, CheckCircle, Mail, Link2 } from 'lucide-react';
 
 import { format } from 'date-fns';
 import { useT } from '@/lib/i18n/I18nContext';
@@ -21,6 +21,10 @@ export default function PaymentReminderButton({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [message, setMessage] = useState('');
+  // idle | loading | ready | unavailable — 'unavailable' means Stripe isn't
+  // configured for this workspace yet, not an error worth interrupting the
+  // reminder over (the email is still useful without a pay link).
+  const [payLinkStatus, setPayLinkStatus] = useState('idle');
 
   if (!invoice || !client?.email) return null;
   if (invoice.status === 'paid' || invoice.status === 'cancelled') return null;
@@ -29,7 +33,7 @@ export default function PaymentReminderButton({
   const dueDate = format(new Date(invoice.due_date), 'MMMM d, yyyy');
   const isOverdue = new Date(invoice.due_date) < new Date();
 
-  const defaultMessage = `Dear ${client?.name},
+  const buildMessage = (payLink) => `Dear ${client?.name},
 
 This is a ${isOverdue ? 'final' : 'friendly'} reminder that invoice ${invoice.invoice_number} for $${invoice.amount_due?.toFixed(2)} is ${isOverdue ? 'overdue' : 'due on ' + dueDate}.
 
@@ -38,7 +42,7 @@ ${isOverdue ? `The payment was due on ${dueDate} and has not yet been received. 
 Invoice Number: ${invoice.invoice_number}
 Amount Due: $${invoice.amount_due?.toFixed(2)}
 Due Date: ${dueDate}
-
+${payLink ? `\nPay online now: ${payLink}\n` : ''}
 If you have already made the payment, please disregard this notice.
 
 Thank you for your prompt attention.
@@ -46,9 +50,22 @@ Thank you for your prompt attention.
 Best regards,
 ${companyName}`;
 
-  const handleOpen = () => {
-    setMessage(defaultMessage);
+  const handleOpen = async () => {
+    const withoutLink = buildMessage(null);
+    setMessage(withoutLink);
+    setPayLinkStatus('loading');
     setOpen(true);
+
+    try {
+      const { url } = await db.payments.createCheckoutSession(invoice.id);
+      setPayLinkStatus('ready');
+      // Only splice the link in if the admin hasn't started editing yet —
+      // clobbering an in-progress edit just because the link finished
+      // loading would be surprising.
+      setMessage((prev) => (prev === withoutLink ? buildMessage(url) : prev));
+    } catch (err) {
+      setPayLinkStatus(err.code === 'STRIPE_NOT_CONFIGURED' ? 'unavailable' : 'error');
+    }
   };
 
   const handleSend = async () => {
@@ -108,7 +125,24 @@ ${companyName}`;
             </div>
 
             <div className="space-y-1">
-              <Label>{t('paymentReminderButton.emailMessageLabel')}</Label>
+              <div className="flex items-center justify-between">
+                <Label>{t('paymentReminderButton.emailMessageLabel')}</Label>
+                {payLinkStatus === 'loading' && (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Adding payment link…
+                  </span>
+                )}
+                {payLinkStatus === 'ready' && (
+                  <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-300">
+                    <Link2 className="w-3 h-3" /> Payment link included
+                  </span>
+                )}
+                {payLinkStatus === 'unavailable' && (
+                  <span className="text-xs text-muted-foreground">
+                    Connect Stripe in Settings to include a pay-online link
+                  </span>
+                )}
+              </div>
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}

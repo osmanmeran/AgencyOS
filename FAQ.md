@@ -92,6 +92,9 @@ Each workspace pastes its own Stripe secret key directly into Settings → Integ
 **Can staff send a payment link without the client logging into the portal?**
 Yes — the same Checkout Session is available as **Generate Payment Link** on the staff invoice page (replacing the old placeholder "simulated" link, which never actually charged anyone), for copying into an email or message.
 
+**Does the "Send Reminder" button also include a pay link?**
+Yes, when Stripe is configured for the workspace — `PaymentReminderButton.jsx` fetches a live Checkout Session as soon as the reminder dialog opens and splices a "Pay online now" line into the default message (only if the admin hasn't started editing it, so an in-progress edit is never clobbered). If Stripe isn't set up yet, the dialog shows "Connect Stripe in Settings to include a pay-online link" and the reminder still sends without one — it's a nice-to-have, not a requirement.
+
 **Whose Stripe account does the money land in?**
 The agency's own, always — there's no Connect umbrella, no platform Stripe account, and no application fee. Each workspace's Checkout Sessions are created directly on their own account using their own key, so funds settle straight into that agency's Stripe balance.
 
