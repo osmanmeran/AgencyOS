@@ -62,7 +62,10 @@ export default function SetupWizard() {
   const { data: settings } = useQuery({ queryKey: ['appSettings'], queryFn: loadAppSettings });
   const { data: payments } = useQuery({ queryKey: ['setupWizard', 'payments'], queryFn: loadPaymentSettings });
   const { data: outlook } = useQuery({ queryKey: ['setupWizard', 'outlook'], queryFn: loadOutlookStatus });
-  const { data: activeStaffCount } = useQuery({ queryKey: ['setupWizard', 'staffCount'], queryFn: loadActiveStaffCount });
+  const { data: activeStaffCount } = useQuery({
+    queryKey: ['setupWizard', 'staffCount'],
+    queryFn: loadActiveStaffCount,
+  });
 
   if (!hasPermission('manage_app_settings')) {
     return (
@@ -207,8 +210,8 @@ export default function SetupWizard() {
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Check what each staff tier (manager, agent, accounting) can see and do, and adjust if the defaults
-              don't fit your agency.
+              Check what each staff tier (manager, agent, accounting) can see and do, and adjust if the defaults don't
+              fit your agency.
             </p>
           </div>
           <Link to={createPageUrl('AppSettings') + '?tab=permissions'} className="shrink-0">

@@ -157,23 +157,23 @@ Each user's effective permissions are their tier's defaults plus any per-user ov
 
 ## Environment Variables
 
-| Variable                  | Required | Default | Purpose                     |
-| ------------------------- | -------- | ------- | --------------------------- |
-| `JWT_SECRET`              | Yes      | —       | JWT signing key             |
-| `PORT`                    | No       | 3001    | Server port                 |
-| `MICROSOFT_CLIENT_ID`     | No       | —       | Microsoft SSO & Outlook     |
-| `MICROSOFT_TENANT_ID`     | No       | —       | Azure AD tenant             |
-| `SMTP_HOST / USER / PASS` | No       | —       | Email sending               |
-| `APP_URL`                 | No       | —       | Callback URLs, invite links (fallback when no tenant/root domain resolves) |
-| `DATA_DIR`                | No       | ./data  | Database + uploads path     |
-| `APP_ROOT_DOMAIN`         | No       | —       | Enables subdomain workspace routing (`<slug>.<domain>`); unset ⇒ single-domain cookie mode |
-| `ALLOW_PUBLIC_SIGNUP`     | No       | false   | Enables self-serve workspace signup (`/api/tenants/signup`) |
-| `TRIAL_DAYS`              | No       | 14      | Trial length for new self-serve workspaces |
-| `PLATFORM_ADMIN_EMAILS`   | No       | —       | Comma-separated emails granted the platform admin dashboard |
-| `BACKUP_S3_BUCKET`        | No       | —       | Enables off-box (S3/R2) backups; unset ⇒ every off-box entry point is a no-op |
-| `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` | No | — | Off-box backup credentials |
-| `BACKUP_S3_REGION` / `BACKUP_S3_ENDPOINT` / `BACKUP_S3_PREFIX` / `BACKUP_S3_KEEP` | No | `auto` / — / — / 30 | Off-box backup config (endpoint required for R2/MinIO) |
-| `BACKUP_ALERT_EMAIL`      | No       | falls back to `PLATFORM_ADMIN_EMAILS` | Who gets emailed when a backup pass fails |
+| Variable                                                                          | Required | Default                               | Purpose                                                                                    |
+| --------------------------------------------------------------------------------- | -------- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `JWT_SECRET`                                                                      | Yes      | —                                     | JWT signing key                                                                            |
+| `PORT`                                                                            | No       | 3001                                  | Server port                                                                                |
+| `MICROSOFT_CLIENT_ID`                                                             | No       | —                                     | Microsoft SSO & Outlook                                                                    |
+| `MICROSOFT_TENANT_ID`                                                             | No       | —                                     | Azure AD tenant                                                                            |
+| `SMTP_HOST / USER / PASS`                                                         | No       | —                                     | Email sending                                                                              |
+| `APP_URL`                                                                         | No       | —                                     | Callback URLs, invite links (fallback when no tenant/root domain resolves)                 |
+| `DATA_DIR`                                                                        | No       | ./data                                | Database + uploads path                                                                    |
+| `APP_ROOT_DOMAIN`                                                                 | No       | —                                     | Enables subdomain workspace routing (`<slug>.<domain>`); unset ⇒ single-domain cookie mode |
+| `ALLOW_PUBLIC_SIGNUP`                                                             | No       | false                                 | Enables self-serve workspace signup (`/api/tenants/signup`)                                |
+| `TRIAL_DAYS`                                                                      | No       | 14                                    | Trial length for new self-serve workspaces                                                 |
+| `PLATFORM_ADMIN_EMAILS`                                                           | No       | —                                     | Comma-separated emails granted the platform admin dashboard                                |
+| `BACKUP_S3_BUCKET`                                                                | No       | —                                     | Enables off-box (S3/R2) backups; unset ⇒ every off-box entry point is a no-op              |
+| `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY`                         | No       | —                                     | Off-box backup credentials                                                                 |
+| `BACKUP_S3_REGION` / `BACKUP_S3_ENDPOINT` / `BACKUP_S3_PREFIX` / `BACKUP_S3_KEEP` | No       | `auto` / — / — / 30                   | Off-box backup config (endpoint required for R2/MinIO)                                     |
+| `BACKUP_ALERT_EMAIL`                                                              | No       | falls back to `PLATFORM_ADMIN_EMAILS` | Who gets emailed when a backup pass fails                                                  |
 
 ## Recent Fixes
 

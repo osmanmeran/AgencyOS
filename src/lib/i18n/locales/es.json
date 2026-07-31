@@ -1354,9 +1354,10 @@
     "errorCancel": "Error al cancelar la factura",
     "successPaymentRecorded": "Pago registrado",
     "errorPaymentRecord": "Error al registrar el pago",
-    "serviceDetailsTitle": "Service Details",
-    "website": "Website",
-    "mapLocation": "Map location"
+    "serviceDetailsTitle": "Detalles del Servicio",
+    "website": "Sitio Web",
+    "mapLocation": "Ver Ubicación",
+    "passengerLabel": "Pasajero: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Volver a Proveedores",
@@ -2171,7 +2172,8 @@
     "payNow": "Pagar Ahora",
     "errorPayNow": "No se pudo iniciar el pago",
     "paymentCancelled": "El pago fue cancelado — no se realizó ningún cargo.",
-    "paymentProcessing": "Pago recibido — confirmando con tu banco. Esta página se actualizará automáticamente."
+    "paymentProcessing": "Pago recibido — confirmando con tu banco. Esta página se actualizará automáticamente.",
+    "passengerLabel": "Pasajero: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Itinerario No Encontrado",

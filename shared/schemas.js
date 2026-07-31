@@ -262,7 +262,10 @@ export const schemas = {
   saveStripeSettings: z
     .object({
       secretKey: z.string().regex(/^sk_/, 'Must be a Stripe secret key (starts with "sk_")').optional(),
-      webhookSecret: z.string().regex(/^whsec_/, 'Must be a Stripe webhook signing secret (starts with "whsec_")').optional(),
+      webhookSecret: z
+        .string()
+        .regex(/^whsec_/, 'Must be a Stripe webhook signing secret (starts with "whsec_")')
+        .optional(),
     })
     .refine((d) => d.secretKey !== undefined || d.webhookSecret !== undefined, {
       message: 'Provide a secretKey and/or a webhookSecret',

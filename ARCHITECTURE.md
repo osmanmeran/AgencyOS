@@ -98,14 +98,14 @@ frontend's label/description lookup (`PERMISSION_MAP`) live outside it.
 - Because each tenant's Stripe account is fully independent (not a connected
   sub-account under one platform), there's no shared webhook endpoint or
   connected-account id to route on. Instead each workspace registers its
-  *own* webhook endpoint in its *own* Stripe Dashboard, pointed at
+  _own_ webhook endpoint in its _own_ Stripe Dashboard, pointed at
   `POST /api/webhooks/stripe/:tenantId` (the URL, with their tenant id baked
   in, is shown to them in Settings) and pastes back the resulting signing
   secret. `server/routes/stripeWebhook.js` resolves the tenant straight from
-  that URL path segment, then verifies the signature against *that tenant's
-  own* saved webhook secret (`verifyStripeSignatureForTenant`) — one
+  that URL path segment, then verifies the signature against _that tenant's
+  own_ saved webhook secret (`verifyStripeSignatureForTenant`) — one
   workspace's secret can never be used to spoof events for another.
-- The route is mounted with its own `express.raw()` parser *before* the
+- The route is mounted with its own `express.raw()` parser _before_ the
   global `express.json()`, `tenantMiddleware`, `csrfMiddleware`, and
   `authMiddleware` — Stripe's request carries none of the Host subdomain /
   session cookie those depend on, and signature verification needs the

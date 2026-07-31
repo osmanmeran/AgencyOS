@@ -59,6 +59,7 @@
   // Mirrors NON_REDIRECT_ROUTES in src/App.jsx.
   var NO_REDIRECT_PATHS = [
     '/mock-login',
+    '/signup',
     '/auth/microsoft/callback',
     '/accept-invite',
     '/forgot-password',

@@ -32,10 +32,9 @@ function getRedirectUri() {
  */
 export async function loginWithMicrosoft(returnUrl) {
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
-  const tenant = import.meta.env.VITE_MICROSOFT_TENANT_ID;
   const redirectUri = getRedirectUri();
 
-  if (!clientId || !tenant) {
+  if (!clientId) {
     throw new Error('Microsoft SSO is not configured.');
   }
 
@@ -64,7 +63,7 @@ export async function loginWithMicrosoft(returnUrl) {
     response_mode: 'query',
   });
 
-  window.location.href = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?${params}`;
+  window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}`;
 }
 
 /**
@@ -164,10 +163,12 @@ export async function handleMicrosoftCallback() {
   }
 
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
-  const tenant = import.meta.env.VITE_MICROSOFT_TENANT_ID;
   const redirectUri = getRedirectUri();
 
-  const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
+  // Multi-tenant app: exchange the code at the /common endpoint so users
+  // from any Microsoft org can authenticate (their home tenant is embedded
+  // in the resulting id_token - the server validates it against the workspace).
+  const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({

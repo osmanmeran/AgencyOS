@@ -25,7 +25,7 @@ const SECTIONS = [
     title: 'Suppliers & Pricing',
     steps: [
       'Suppliers → New Supplier: name, category/subcategory, city, contact details.',
-      "Open the supplier → Pricing tab to add pricing tiers (per-category, min/max participants → price).",
+      'Open the supplier → Pricing tab to add pricing tiers (per-category, min/max participants → price).',
       'Optional: use "Search Web" on the New Supplier form to auto-fill contact details from OpenStreetMap/Wikipedia/Yelp.',
     ],
     page: 'Suppliers',
@@ -36,7 +36,7 @@ const SECTIONS = [
     icon: Users,
     title: 'Clients & CRM',
     steps: [
-      'CRM → New Client: contact details, and a Company (searchable, created inline if it doesn\'t exist yet).',
+      "CRM → New Client: contact details, and a Company (searchable, created inline if it doesn't exist yet).",
       'Drag a client card across the Kanban pipeline: lead → contacted → proposal → negotiation → won/lost.',
       'From a client\'s page, "Grant Client Portal Access" lets them log in to view proposals/invoices/trips and browse the tour catalog.',
     ],
@@ -96,7 +96,7 @@ const SECTIONS = [
     title: 'Tasks & Reminders',
     steps: [
       'Task Board: a Kanban of to-dos/reminders/notes, assignable to any staff user, filterable to "My tasks."',
-      "Every new Trip auto-generates a few operational tasks (collect balance, send rooming list, issue tickets) tied to its departure date — no setup needed.",
+      'Every new Trip auto-generates a few operational tasks (collect balance, send rooming list, issue tickets) tied to its departure date — no setup needed.',
     ],
     page: 'TaskBoard',
     cta: 'Go to Task Board',
@@ -118,8 +118,8 @@ export default function GettingStarted() {
       <div>
         <h1 className="text-4xl font-bold text-foreground mb-2">Getting Started</h1>
         <p className="text-muted-foreground">
-          A quick tour of the core workflows. Each section links straight into the real page — the best way to learn
-          is to just try it on a test record.
+          A quick tour of the core workflows. Each section links straight into the real page — the best way to learn is
+          to just try it on a test record.
         </p>
       </div>
 

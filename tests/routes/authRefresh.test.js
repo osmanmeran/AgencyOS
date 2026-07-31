@@ -177,12 +177,12 @@ describe('POST /api/auth/refresh route', () => {
     expect(res.status).toBe(401);
   });
 
-  it('rejects a refresh attempt without a CSRF token (403)', async () => {
+  it('allows a refresh attempt without a CSRF token (exempt — refresh can fire before a csrf_token cookie exists)', async () => {
     const s = await login();
     const res = await fetch(`${baseUrl}/api/auth/refresh`, {
       method: 'POST',
       headers: { Cookie: s.cookieHeader },
     });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 });

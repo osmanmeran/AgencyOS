@@ -77,11 +77,7 @@ export default function PaymentLinkPanel({ invoice, client }) {
         </>
       ) : (
         <Button onClick={handleGenerate} disabled={state === 'loading'} className="w-full">
-          {state === 'loading' ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Link2 className="w-4 h-4 mr-2" />
-          )}
+          {state === 'loading' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link2 className="w-4 h-4 mr-2" />}
           {t('paymentLink.generate')}
         </Button>
       )}

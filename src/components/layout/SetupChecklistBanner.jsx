@@ -65,7 +65,9 @@ export default function SetupChecklistBanner({ userTier }) {
   const dismissMutation = useMutation({
     mutationFn: () => {
       const payload = { setup_wizard_dismissed: true };
-      return settings?.id ? db.entities.AppSettings.update(settings.id, payload) : db.entities.AppSettings.create(payload);
+      return settings?.id
+        ? db.entities.AppSettings.update(settings.id, payload)
+        : db.entities.AppSettings.create(payload);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appSettings'] }),
   });

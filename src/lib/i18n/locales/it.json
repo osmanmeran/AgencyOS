@@ -1354,9 +1354,10 @@
     "errorCancel": "Impossibile annullare la fattura",
     "successPaymentRecorded": "Pagamento registrato",
     "errorPaymentRecord": "Impossibile registrare il pagamento",
-    "serviceDetailsTitle": "Service Details",
-    "website": "Website",
-    "mapLocation": "Map location"
+    "serviceDetailsTitle": "Dettagli del Servizio",
+    "website": "Sito Web",
+    "mapLocation": "Vedi Mappa",
+    "passengerLabel": "Passeggero: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Torna ai Fornitori",
@@ -2171,7 +2172,8 @@
     "payNow": "Paga Ora",
     "errorPayNow": "Impossibile avviare il pagamento",
     "paymentCancelled": "Il pagamento è stato annullato — non è stato effettuato alcun addebito.",
-    "paymentProcessing": "Pagamento ricevuto — conferma in corso con la tua banca. Questa pagina si aggiornerà automaticamente."
+    "paymentProcessing": "Pagamento ricevuto — conferma in corso con la tua banca. Questa pagina si aggiornerà automaticamente.",
+    "passengerLabel": "Passeggero: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Itinerario Non Trovato",

@@ -142,9 +142,9 @@ export function recordInvoicePayment(tenantId, { invoiceId, amount, currency, tr
     upsertFts(db, paymentId, 'ClientPayment', paymentData);
 
     if (invoiceData.client_id) {
-      const clientRow = db.prepare("SELECT * FROM entities WHERE type = 'Client' AND id = ?").get(
-        invoiceData.client_id,
-      );
+      const clientRow = db
+        .prepare("SELECT * FROM entities WHERE type = 'Client' AND id = ?")
+        .get(invoiceData.client_id);
       if (clientRow) {
         const clientData = JSON.parse(clientRow.data);
         const updatedClient = {
@@ -165,9 +165,6 @@ export function recordInvoicePayment(tenantId, { invoiceId, amount, currency, tr
   });
 
   const result = run();
-  logger.info(
-    { tenantId, invoiceId, amount, transactionId },
-    'Invoice payment recorded from Stripe',
-  );
+  logger.info({ tenantId, invoiceId, amount, transactionId }, 'Invoice payment recorded from Stripe');
   return result;
 }

@@ -1354,9 +1354,10 @@
     "errorCancel": "Fatura iptal edilemedi",
     "successPaymentRecorded": "Ödeme kaydedildi",
     "errorPaymentRecord": "Ödeme kaydedilemedi",
-    "serviceDetailsTitle": "Service Details",
-    "website": "Website",
-    "mapLocation": "Map location"
+    "serviceDetailsTitle": "Hizmet Detayları",
+    "website": "Web Sitesi",
+    "mapLocation": "Haritada Gör",
+    "passengerLabel": "Yolcu: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Tedarikçilere Dön",
@@ -2171,7 +2172,8 @@
     "payNow": "Şimdi Öde",
     "errorPayNow": "Ödeme başlatılamadı",
     "paymentCancelled": "Ödeme iptal edildi — herhangi bir ücret alınmadı.",
-    "paymentProcessing": "Ödeme alındı — bankanızla doğrulanıyor. Bu sayfa otomatik olarak güncellenecek."
+    "paymentProcessing": "Ödeme alındı — bankanızla doğrulanıyor. Bu sayfa otomatik olarak güncellenecek.",
+    "passengerLabel": "Yolcu: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Gezi Planı Bulunamadı",

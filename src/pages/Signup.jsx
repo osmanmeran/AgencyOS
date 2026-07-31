@@ -92,7 +92,12 @@ export default function Signup() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error?.message || t('signup.errGenericSignup'));
+        const details = data.error?.details;
+        if (Array.isArray(details) && details.length) {
+          setError(details.map((d) => d.message).join('. '));
+        } else {
+          setError(data.error?.message || t('signup.errGenericSignup'));
+        }
         setLoading(false);
         return;
       }

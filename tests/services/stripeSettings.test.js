@@ -40,7 +40,10 @@ describe('Stripe bring-your-own-key settings', () => {
     calls.balanceRetrieve.length = 0;
     calls.constructEvent.length = 0;
     balanceShouldFail = false;
-    tenant = createTenant({ slug: `stripe-byok-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: 'BYOK Test Agency' });
+    tenant = createTenant({
+      slug: `stripe-byok-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: 'BYOK Test Agency',
+    });
     getDb(tenant.id).exec('DELETE FROM stripe_settings');
   });
 
@@ -95,11 +98,7 @@ describe('Stripe bring-your-own-key settings', () => {
 
   it('verifyStripeSignatureForTenant verifies against this tenant own webhook secret', async () => {
     await saveStripeSettings(tenant.id, { secretKey: 'sk_test_abcdef1234', webhookSecret: 'whsec_xyz' });
-    const event = verifyStripeSignatureForTenant(
-      tenant.id,
-      Buffer.from(JSON.stringify({ id: 'evt_1' })),
-      'good-sig',
-    );
+    const event = verifyStripeSignatureForTenant(tenant.id, Buffer.from(JSON.stringify({ id: 'evt_1' })), 'good-sig');
     expect(event.id).toBe('evt_1');
     expect(calls.constructEvent[0].secret).toBe('whsec_xyz');
     expect(() => verifyStripeSignatureForTenant(tenant.id, Buffer.from('{}'), 'bad-signature')).toThrow(

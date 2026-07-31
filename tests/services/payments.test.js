@@ -79,7 +79,14 @@ describe('payments service', () => {
 
     it('creates a Checkout Session on the workspace own Stripe account for the remaining balance', async () => {
       configureStripeKey();
-      const invoice = { id: 'inv1', invoice_number: 'INV-001', status: 'sent', amount_due: 125.5, total_amount: 125.5, currency: 'EUR' };
+      const invoice = {
+        id: 'inv1',
+        invoice_number: 'INV-001',
+        status: 'sent',
+        amount_due: 125.5,
+        total_amount: 125.5,
+        currency: 'EUR',
+      };
       const result = await createInvoiceCheckoutSession(tenant.id, invoice, {
         successUrl: 'https://app/success',
         cancelUrl: 'https://app/cancel',
@@ -95,7 +102,14 @@ describe('payments service', () => {
 
     it('converts a zero-decimal currency amount without multiplying by 100', async () => {
       configureStripeKey();
-      const invoice = { id: 'inv1', invoice_number: 'INV-JPY', status: 'sent', amount_due: 5000, total_amount: 5000, currency: 'JPY' };
+      const invoice = {
+        id: 'inv1',
+        invoice_number: 'INV-JPY',
+        status: 'sent',
+        amount_due: 5000,
+        total_amount: 5000,
+        currency: 'JPY',
+      };
       await createInvoiceCheckoutSession(tenant.id, invoice, { successUrl: 's', cancelUrl: 'c' });
       expect(calls.checkoutSessionsCreate[0].params.line_items[0].price_data.unit_amount).toBe(5000);
     });
@@ -131,7 +145,7 @@ describe('payments service', () => {
       expect(result.invoice.amount_due).toBe(120);
       expect(result.invoice.status).toBe('sent');
 
-      const invoiceRow = JSON.parse(db.prepare("SELECT data FROM entities WHERE id = ?").get(invoiceId).data);
+      const invoiceRow = JSON.parse(db.prepare('SELECT data FROM entities WHERE id = ?').get(invoiceId).data);
       expect(invoiceRow.amount_paid).toBe(80);
 
       const paymentRow = db.prepare("SELECT * FROM entities WHERE type = 'ClientPayment'").get();

@@ -1354,9 +1354,10 @@
     "errorCancel": "Rechnung konnte nicht storniert werden",
     "successPaymentRecorded": "Zahlung erfasst",
     "errorPaymentRecord": "Zahlung konnte nicht erfasst werden",
-    "serviceDetailsTitle": "Service Details",
+    "serviceDetailsTitle": "Leistungsdetails",
     "website": "Website",
-    "mapLocation": "Map location"
+    "mapLocation": "Standort auf Karte",
+    "passengerLabel": "Reisender: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Zurück zu Lieferanten",
@@ -2171,7 +2172,8 @@
     "payNow": "Jetzt bezahlen",
     "errorPayNow": "Zahlung konnte nicht gestartet werden",
     "paymentCancelled": "Die Zahlung wurde storniert — es wurde keine Belastung vorgenommen.",
-    "paymentProcessing": "Zahlung erhalten — wird bei Ihrer Bank bestätigt. Diese Seite wird automatisch aktualisiert."
+    "paymentProcessing": "Zahlung erhalten — wird bei Ihrer Bank bestätigt. Diese Seite wird automatisch aktualisiert.",
+    "passengerLabel": "Reisender: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Reiseplan Nicht Gefunden",

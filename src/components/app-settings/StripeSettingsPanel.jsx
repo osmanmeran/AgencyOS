@@ -111,11 +111,16 @@ export default function StripeSettingsPanel() {
                 <Label>Webhook URL</Label>
                 <p className="text-xs text-muted-foreground">
                   Create a webhook endpoint in your Stripe Dashboard pointed at this URL, listening for the{' '}
-                  <code className="font-mono">checkout.session.completed</code> event, then paste the signing secret
-                  it gives you below. This is what confirms a payment actually completed.
+                  <code className="font-mono">checkout.session.completed</code> event, then paste the signing secret it
+                  gives you below. This is what confirms a payment actually completed.
                 </p>
                 <div className="flex gap-2">
-                  <Input readOnly value={status.webhookUrl} className="text-xs bg-muted font-mono" onClick={(e) => e.target.select()} />
+                  <Input
+                    readOnly
+                    value={status.webhookUrl}
+                    className="text-xs bg-muted font-mono"
+                    onClick={(e) => e.target.select()}
+                  />
                   <Button onClick={handleCopyWebhookUrl} variant="outline" size="icon" className="shrink-0">
                     {copied ? (
                       <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-300" />

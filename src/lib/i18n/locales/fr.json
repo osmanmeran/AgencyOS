@@ -1354,9 +1354,10 @@
     "errorCancel": "Échec de l'annulation de la facture",
     "successPaymentRecorded": "Paiement enregistré",
     "errorPaymentRecord": "Échec de l'enregistrement du paiement",
-    "serviceDetailsTitle": "Service Details",
-    "website": "Website",
-    "mapLocation": "Map location"
+    "serviceDetailsTitle": "Détails des Services",
+    "website": "Site Web",
+    "mapLocation": "Voir sur la Carte",
+    "passengerLabel": "Passager : {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Retour aux Fournisseurs",
@@ -2171,7 +2172,8 @@
     "payNow": "Payer Maintenant",
     "errorPayNow": "Impossible de démarrer le paiement",
     "paymentCancelled": "Le paiement a été annulé — aucun montant n'a été débité.",
-    "paymentProcessing": "Paiement reçu — confirmation auprès de votre banque en cours. Cette page se mettra à jour automatiquement."
+    "paymentProcessing": "Paiement reçu — confirmation auprès de votre banque en cours. Cette page se mettra à jour automatiquement.",
+    "passengerLabel": "Passager : {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Itinéraire Introuvable",
