@@ -66,6 +66,8 @@ A full-stack travel agency operations management platform for tour operators and
 - **User Management** — CRUD with invite tokens, 4 permission tiers (admin/manager/agent/accounting)
 - **Permission Manager** — Granular custom permissions per user
 - **App Settings** — Branding, departments, invoice header, default currency
+- **Setup Guide** — A dismissible checklist (`/SetupWizard`, admin-only) for finishing a new workspace: branding, invoice details, Stripe payments, Outlook email, and inviting the team, each showing live completion status with a link into the real settings section. A Dashboard banner nudges toward it until it's dismissed or every step is done.
+- **Getting Started** — A staff-facing guide (`/GettingStarted`) covering the core day-to-day workflows (suppliers & pricing, clients, trips, proposals, invoices, tours, tasks, search), each section linking straight into the real page.
 - **Notifications** — In-app bell with WebSocket push
 - **File Uploads** — Documents with MIME validation
 

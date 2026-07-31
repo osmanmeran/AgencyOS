@@ -38,6 +38,7 @@ import PlaceRounded from '@mui/icons-material/PlaceRounded';
 import ReceiptLongRounded from '@mui/icons-material/ReceiptLongRounded';
 import RateReviewRounded from '@mui/icons-material/RateReviewRounded';
 import { useT } from '@/lib/i18n/I18nContext';
+import SetupChecklistBanner from '@/components/layout/SetupChecklistBanner';
 
 export default function Dashboard() {
   const { t } = useT();
@@ -137,6 +138,8 @@ export default function Dashboard() {
           {t('dashboard.subtitle')}
         </Typography>
       </Box>
+
+      <SetupChecklistBanner userTier={me?.user_tier} />
 
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, md: 4 }}>
