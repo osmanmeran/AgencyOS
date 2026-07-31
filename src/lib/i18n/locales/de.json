@@ -1323,9 +1323,10 @@
     "errorCancel": "Rechnung konnte nicht storniert werden",
     "successPaymentRecorded": "Zahlung erfasst",
     "errorPaymentRecord": "Zahlung konnte nicht erfasst werden",
-    "serviceDetailsTitle": "Service Details",
+    "serviceDetailsTitle": "Leistungsdetails",
     "website": "Website",
-    "mapLocation": "Map location"
+    "mapLocation": "Standort auf Karte",
+    "passengerLabel": "Reisender: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Zurück zu Lieferanten",
@@ -2113,7 +2114,8 @@
     "total": "Gesamt:",
     "amountPaid": "Bezahlter Betrag:",
     "amountDue": "Fälliger Betrag:",
-    "paymentTerms": "Zahlungsbedingungen:"
+    "paymentTerms": "Zahlungsbedingungen:",
+    "passengerLabel": "Reisender: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Reiseplan Nicht Gefunden",

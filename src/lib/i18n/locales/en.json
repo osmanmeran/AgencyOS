@@ -1350,7 +1350,8 @@
     "errorPaymentRecord": "Failed to record payment",
     "serviceDetailsTitle": "Service Details",
     "website": "Website",
-    "mapLocation": "Map location"
+    "mapLocation": "Map location",
+    "passengerLabel": "Passenger: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Back to Suppliers",
@@ -2215,7 +2216,8 @@
     "total": "Total:",
     "amountPaid": "Amount Paid:",
     "amountDue": "Amount Due:",
-    "paymentTerms": "Payment Terms:"
+    "paymentTerms": "Payment Terms:",
+    "passengerLabel": "Passenger: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Itinerary Not Found",

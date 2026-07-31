@@ -46,7 +46,13 @@ export default function MicrosoftCallback() {
             credentials: 'include',
           });
           const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data?.error?.message || 'Workspace creation failed.');
+          if (!res.ok) {
+            const details = data.error?.details;
+            if (Array.isArray(details) && details.length) {
+              throw new Error(details.map((d) => d.message).join('. '));
+            }
+            throw new Error(data?.error?.message || 'Workspace creation failed.');
+          }
           if (cancelled) return;
 
           setStep(t('auth.microsoftCallback.loginComplete'));

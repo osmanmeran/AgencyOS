@@ -9,6 +9,11 @@ const EXEMPT_PATHS = new Set([
   '/api/auth/login',
   '/api/auth/microsoft',
   '/api/auth/accept-invite',
+  // Refresh-token rotation is triggered transparently on 401 and can fire
+  // before any csrf_token cookie exists (no established session yet). The
+  // refresh_token cookie is httpOnly + SameSite=Strict, which already
+  // provides CSRF protection.
+  '/api/auth/refresh',
   // Session-establishing endpoint for self-serve signup (Phase 3): no CSRF
   // cookie exists yet at the point this runs, so there's nothing to
   // double-submit against.

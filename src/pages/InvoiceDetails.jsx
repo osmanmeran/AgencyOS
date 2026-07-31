@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { SkeletonCard } from '@/components/ui/skeletons';
 import { ArrowLeft, Download, Send, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/toast';
-import PaymentLinkPanel from '../components/invoices/PaymentLinkPanel';
 import PaymentReminderButton from '../components/invoices/PaymentReminderButton';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -90,6 +89,19 @@ export default function InvoiceDetails() {
       enabled: !!invoice?.trip_id,
     })
   );
+
+  const contactPassenger = useMemo(() => {
+    const pax = trip?.passengers || [];
+    return pax.find((p) => p.is_contact) || pax[0] || null;
+  }, [trip]);
+
+  const tripDateRange = useMemo(() => {
+    if (!trip?.start_date && !trip?.end_date) return '';
+    return [trip?.start_date, trip?.end_date]
+      .filter(Boolean)
+      .map((d) => format(new Date(d), 'MMM d, yyyy'))
+      .join(' – ');
+  }, [trip]);
 
   const { data: suppliers = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
@@ -257,17 +269,21 @@ export default function InvoiceDetails() {
       </div>
 
       {/* A4 Invoice Document */}
-      <div className="max-w-[210mm] mx-auto bg-card shadow-xl print:shadow-none min-h-[297mm] font-['BaselGrotesk',system-ui,sans-serif]">
-        <div className="p-[15mm] print:p-[15mm]">
+      <div className="max-w-[210mm] print:max-w-none mx-auto bg-card shadow-xl print:shadow-none min-h-[297mm] print:min-h-0 font-['BaselGrotesk',system-ui,sans-serif]">
+        <div className="p-[15mm] print:p-0">
           {/* Logo Header - full width */}
           {companyLogoUrl && (
-            <div className="mb-10 flex justify-center">
-              <img {...companyLogoImg} alt="Company Logo" className="max-h-[120px] w-auto object-contain" />
+            <div className="mb-10 print:mb-4 flex justify-center">
+              <img
+                {...companyLogoImg}
+                alt="Company Logo"
+                className="max-h-[120px] print:max-h-[60px] w-auto object-contain"
+              />
             </div>
           )}
 
           {/* Company + Invoice Title row */}
-          <div className="flex justify-between items-start mb-10">
+          <div className="flex justify-between items-start mb-10 print:mb-4">
             <div className="max-w-[60%]">
               <div className="text-lg font-medium text-foreground" style={{ fontWeight: 500 }}>
                 {invoiceHeader.company_name || settings?.app_name || ''}
@@ -306,7 +322,7 @@ export default function InvoiceDetails() {
           </div>
 
           {/* Bill To / Dates row */}
-          <div className="grid grid-cols-2 gap-10 mb-10">
+          <div className="grid grid-cols-2 gap-10 print:gap-6 mb-10 print:mb-4">
             <div>
               <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2" style={{ fontWeight: 300 }}>
                 {t('invoiceDetails.billToLabel')}
@@ -343,7 +359,7 @@ export default function InvoiceDetails() {
             </div>
             <div className="text-right">
               {trip && (
-                <div className="mb-3">
+                <div className="mb-3 print:mb-2">
                   <div
                     className="text-xs uppercase tracking-wider text-muted-foreground mb-1"
                     style={{ fontWeight: 300 }}
@@ -351,9 +367,16 @@ export default function InvoiceDetails() {
                     {t('invoiceDetails.reservationLabel')}
                   </div>
                   <div className="text-sm text-foreground">{trip.reference_number || trip.name}</div>
+                  {trip.destination && <div className="text-sm text-muted-foreground">{trip.destination}</div>}
+                  {tripDateRange && <div className="text-sm text-muted-foreground">{tripDateRange}</div>}
+                  {contactPassenger?.name && (
+                    <div className="text-sm text-muted-foreground">
+                      {t('invoiceDetails.passengerLabel', { name: contactPassenger.name })}
+                    </div>
+                  )}
                 </div>
               )}
-              <div className="mb-3">
+              <div className="mb-3 print:mb-2">
                 <div
                   className="text-xs uppercase tracking-wider text-muted-foreground mb-1"
                   style={{ fontWeight: 300 }}
@@ -375,7 +398,7 @@ export default function InvoiceDetails() {
           </div>
 
           {/* Line Items Table */}
-          <table className="w-full mb-8" style={{ borderCollapse: 'collapse' }}>
+          <table className="w-full mb-8 print:mb-4" style={{ borderCollapse: 'collapse' }}>
             <thead>
               <tr className="border-b-2 border-border">
                 <th
@@ -406,14 +429,17 @@ export default function InvoiceDetails() {
             </thead>
             <tbody>
               {invoice.line_items?.map((item, index) => (
-                <tr key={index} className="border-b border-border">
-                  <td className="py-3 text-sm text-foreground">{item.description}</td>
-                  <td className="py-3 text-sm text-muted-foreground text-center">{item.quantity}</td>
-                  <td className="py-3 text-sm text-muted-foreground text-right">
+                <tr key={index} className="border-b border-border print:break-inside-avoid">
+                  <td className="py-3 print:py-1.5 text-sm text-foreground">{item.description}</td>
+                  <td className="py-3 print:py-1.5 text-sm text-muted-foreground text-center">{item.quantity}</td>
+                  <td className="py-3 print:py-1.5 text-sm text-muted-foreground text-right">
                     {sc}
                     {item.unit_price.toFixed(2)}
                   </td>
-                  <td className="py-3 text-sm font-medium text-foreground text-right" style={{ fontWeight: 500 }}>
+                  <td
+                    className="py-3 print:py-1.5 text-sm font-medium text-foreground text-right"
+                    style={{ fontWeight: 500 }}
+                  >
                     {sc}
                     {item.amount.toFixed(2)}
                   </td>
@@ -432,21 +458,21 @@ export default function InvoiceDetails() {
           {/* Service details — supplier (hotel) info, map link and tour
               descriptions, sourced from the linked trip's services. */}
           {trip?.services?.length > 0 && (
-            <div className="mb-10">
+            <div className="mb-10 print:mb-4">
               <h2
-                className="text-sm font-medium text-foreground uppercase tracking-wider mb-4"
+                className="text-sm font-medium text-foreground uppercase tracking-wider mb-4 print:mb-2"
                 style={{ fontWeight: 500 }}
               >
                 {t('invoiceDetails.serviceDetailsTitle')}
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-4 print:space-y-2">
                 {trip.services.map((s, i) => {
                   const sup = s.supplier_id ? supplierMap[s.supplier_id] : null;
                   const supHidden = sup ? hiddenSupplierSet.has(sup.id) : false;
                   const supAddress = sup ? [sup.address, sup.city, sup.area].filter(Boolean).join(', ') : '';
                   const mapUrl = sup ? supplierMapsUrl(sup) : '';
                   return (
-                    <div key={i} className="border border-border rounded-lg p-4">
+                    <div key={i} className="border border-border rounded-lg p-4 print:p-2 print:break-inside-avoid">
                       <div className="flex justify-between items-start gap-3">
                         <div>
                           <div className="font-medium text-foreground">{s.name}</div>
@@ -459,13 +485,13 @@ export default function InvoiceDetails() {
                         )}
                       </div>
                       {s.description && (
-                        <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-sm text-muted-foreground mt-2 print:mt-1 whitespace-pre-wrap leading-relaxed">
                           {s.description}
                         </p>
                       )}
                       {s.location && <div className="text-sm text-muted-foreground mt-1">{s.location}</div>}
                       {sup && !supHidden && (
-                        <div className="mt-3 pt-3 border-t border-border text-sm text-muted-foreground space-y-1">
+                        <div className="mt-3 print:mt-2 pt-3 print:pt-2 border-t border-border text-sm text-muted-foreground space-y-1">
                           <div className="font-medium text-foreground">{sup.name}</div>
                           {supAddress && <div>{supAddress}</div>}
                           <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -500,8 +526,8 @@ export default function InvoiceDetails() {
           )}
 
           {/* Totals */}
-          <div className="flex justify-end mb-10">
-            <div className="w-[280px] space-y-2">
+          <div className="flex justify-end mb-10 print:mb-4">
+            <div className="w-[280px] space-y-2 print:break-inside-avoid">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>{t('invoiceDetails.subtotalLabel')}</span>
                 <span>
@@ -549,14 +575,9 @@ export default function InvoiceDetails() {
             </div>
           </div>
 
-          {/* Payment Link (screen only) */}
-          <div className="print:hidden mb-8">
-            <PaymentLinkPanel invoice={invoice} client={client} />
-          </div>
-
           {/* Footer - Bank Details, Payment Terms, Notes */}
           {(invoiceHeader.bank_details || invoice.payment_terms || invoice.notes) && (
-            <div className="border-t border-border pt-6 space-y-4 text-sm text-muted-foreground">
+            <div className="border-t border-border pt-6 print:pt-3 space-y-4 print:space-y-2 text-sm text-muted-foreground">
               {invoiceHeader.bank_details && (
                 <div>
                   <div

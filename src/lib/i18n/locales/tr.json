@@ -1323,9 +1323,10 @@
     "errorCancel": "Fatura iptal edilemedi",
     "successPaymentRecorded": "Ödeme kaydedildi",
     "errorPaymentRecord": "Ödeme kaydedilemedi",
-    "serviceDetailsTitle": "Service Details",
-    "website": "Website",
-    "mapLocation": "Map location"
+    "serviceDetailsTitle": "Hizmet Detayları",
+    "website": "Web Sitesi",
+    "mapLocation": "Haritada Gör",
+    "passengerLabel": "Yolcu: {name}"
   },
   "supplierDetails": {
     "backToSuppliers": "Tedarikçilere Dön",
@@ -2113,7 +2114,8 @@
     "total": "Toplam:",
     "amountPaid": "Ödenen Tutar:",
     "amountDue": "Kalan Tutar:",
-    "paymentTerms": "Ödeme Koşulları:"
+    "paymentTerms": "Ödeme Koşulları:",
+    "passengerLabel": "Yolcu: {name}"
   },
   "clientItinerary": {
     "notFoundTitle": "Gezi Planı Bulunamadı",
