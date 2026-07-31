@@ -1,5 +1,6 @@
 import { db } from '@/lib/DbContext';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useMyClient } from '@/hooks/useMyClient';
 
@@ -7,18 +8,21 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SkeletonCard } from '@/components/ui/skeletons';
-import { ArrowLeft, Download, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, CheckCircle, AlertCircle, CreditCard, Loader2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { format, parseISO, isBefore } from 'date-fns';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
+import { showError } from '@/lib/toast';
 
 export default function ClientInvoiceDetails() {
   const { t } = useT();
   const [searchParams] = useSearchParams();
   const invoiceId = searchParams.get('id');
+  const paymentResult = searchParams.get('payment');
   const client = useMyClient();
+  const [payingNow, setPayingNow] = useState(false);
 
   const { data: invoice, isLoading } = /** @type {any} */ (
     useQuery({
@@ -54,6 +58,17 @@ export default function ClientInvoiceDetails() {
     window.print();
   };
 
+  const handlePayNow = async () => {
+    setPayingNow(true);
+    try {
+      const { url } = await db.payments.createCheckoutSession(invoice.id);
+      window.location.href = url;
+    } catch (error) {
+      showError(t('clientInvoiceDetails.errorPayNow'), error.message);
+      setPayingNow(false);
+    }
+  };
+
   return (
     <div className="space-y-6 print:space-y-4">
       <div className="flex justify-between items-center print:hidden">
@@ -63,11 +78,38 @@ export default function ClientInvoiceDetails() {
             {t('clientInvoiceDetails.backToInvoices')}
           </Button>
         </Link>
-        <Button onClick={handlePrint} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          {t('clientInvoiceDetails.printPdf')}
-        </Button>
+        <div className="flex gap-2">
+          {!isPaid && invoice.status !== 'cancelled' && invoice.amount_due > 0 && (
+            <Button onClick={handlePayNow} disabled={payingNow} className="bg-green-600 hover:bg-green-700">
+              {payingNow ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4 mr-2" />
+              )}
+              {t('clientInvoiceDetails.payNow')}
+            </Button>
+          )}
+          <Button onClick={handlePrint} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            {t('clientInvoiceDetails.printPdf')}
+          </Button>
+        </div>
       </div>
+
+      {paymentResult === 'cancelled' && !isPaid && (
+        <div className="p-4 rounded-lg bg-muted border border-border print:hidden">
+          <span className="text-muted-foreground">{t('clientInvoiceDetails.paymentCancelled')}</span>
+        </div>
+      )}
+
+      {paymentResult === 'success' && !isPaid && (
+        <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 print:hidden">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-300" />
+            <span className="text-green-800 dark:text-green-300">{t('clientInvoiceDetails.paymentProcessing')}</span>
+          </div>
+        </div>
+      )}
 
       <Card className="p-8 bg-card shadow-lg print:shadow-none">
         <div className="flex justify-between items-start mb-8">

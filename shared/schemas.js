@@ -237,6 +237,10 @@ export const schemas = {
     to: z.string().length(3, 'Currency code must be 3 characters'),
   }),
 
+  createInvoiceCheckoutSession: z.object({
+    invoiceId: z.string().min(1, 'invoiceId is required'),
+  }),
+
   outlookConnect: z.object({
     token_data: z.object({
       access_token: z.string().min(1),

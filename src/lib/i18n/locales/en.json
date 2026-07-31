@@ -579,12 +579,12 @@
   },
   "paymentLink": {
     "title": "Online Payment",
-    "simulatedBadge": "Simulated",
-    "shareText": "Share this signed link with {client} to collect the payment of {amount} online.",
+    "shareText": "Share this secure Stripe payment link with {client} to collect the payment of {amount} online.",
     "defaultClient": "the client",
+    "generate": "Generate Payment Link",
     "linkCopied": "Link Copied!",
     "copyPaymentLink": "Copy Payment Link",
-    "footerTip": "Token includes signed payload (amount, ref) — tamper-proof. Connect a payment gateway (e.g. Stripe) to process real online payments."
+    "footerTip": "Payments are processed securely by Stripe and applied to this invoice automatically."
   },
   "saveAsTemplate": {
     "button": "Save as Template",
@@ -2201,6 +2201,10 @@
     "overdueMessage": "This invoice is overdue. Please make payment as soon as possible.",
     "paymentDueBy": "Payment due by {date}",
     "paidThankYou": "This invoice has been paid in full. Thank you!",
+    "payNow": "Pay Now",
+    "errorPayNow": "Couldn't start the payment",
+    "paymentCancelled": "Payment was cancelled — no charge was made.",
+    "paymentProcessing": "Payment received — confirming with your bank. This page will update automatically.",
     "billTo": "Bill To:",
     "taxIdLabel": "Tax ID:",
     "attn": "Attn:",

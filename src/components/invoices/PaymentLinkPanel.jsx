@@ -1,41 +1,43 @@
 import { useState } from 'react';
+import { db } from '@/lib/DbContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Link2, Copy, CheckCircle, CreditCard } from 'lucide-react';
+import { Link2, Copy, CheckCircle, CreditCard, Loader2, AlertCircle } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
 
-function signPaymentPayload(payload) {
-  const data = JSON.stringify(payload);
-  const timestamp = Date.now().toString(36);
-  const raw = data + '|' + timestamp;
-  const b64 = btoa(raw);
-  return b64 + '.' + timestamp;
-}
-
 /**
- * Generates a signed payment link for the invoice.
- * The token embeds amount, invoice id, and a timestamp so the payload
- * cannot be tampered with after the link is shared.
- * In production, the server verifies the token before processing payment.
+ * Generates a real Stripe Checkout link for the invoice's remaining balance
+ * (on the workspace's connected Stripe account) that staff can copy and send
+ * outside the Client Portal. Not generated eagerly on mount, since each click
+ * of "Generate" creates a live Stripe Checkout Session.
  */
 export default function PaymentLinkPanel({ invoice, client }) {
   const { t } = useT();
+  const [state, setState] = useState('idle'); // idle | loading | ready | error
+  const [link, setLink] = useState('');
+  const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  if (!invoice || invoice.status === 'paid' || invoice.status === 'cancelled') return null;
+  if (!invoice || invoice.status === 'paid' || invoice.status === 'cancelled' || !(invoice.amount_due > 0)) {
+    return null;
+  }
 
-  const payload = {
-    invoice: invoice.id,
-    amount: invoice.amount_due,
-    ref: invoice.invoice_number,
+  const handleGenerate = async () => {
+    setState('loading');
+    setError('');
+    try {
+      const { url } = await db.payments.createCheckoutSession(invoice.id);
+      setLink(url);
+      setState('ready');
+    } catch (err) {
+      setError(err.message);
+      setState('error');
+    }
   };
-  const token = signPaymentPayload(payload);
-  const paymentLink = `${window.location.origin}/pay?token=${token}`;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(paymentLink);
+    navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -47,9 +49,6 @@ export default function PaymentLinkPanel({ invoice, client }) {
           <CreditCard className="w-4 h-4 text-white" />
         </div>
         <h3 className="font-semibold text-foreground">{t('paymentLink.title')}</h3>
-        <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs">
-          {t('paymentLink.simulatedBadge')}
-        </Badge>
       </div>
 
       <p className="text-sm text-muted-foreground">
@@ -59,23 +58,40 @@ export default function PaymentLinkPanel({ invoice, client }) {
         })}
       </p>
 
-      <div className="flex gap-2">
-        <Input readOnly value={paymentLink} className="text-xs bg-card font-mono" onClick={(e) => e.target.select()} />
-        <Button onClick={handleCopy} variant="outline" size="icon" className="shrink-0">
-          {copied ? (
-            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-300" />
+      {state === 'ready' ? (
+        <>
+          <div className="flex gap-2">
+            <Input readOnly value={link} className="text-xs bg-card font-mono" onClick={(e) => e.target.select()} />
+            <Button onClick={handleCopy} variant="outline" size="icon" className="shrink-0">
+              {copied ? (
+                <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-300" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+          <Button onClick={handleCopy} className="w-full">
+            <Link2 className="w-4 h-4 mr-2" />
+            {copied ? t('paymentLink.linkCopied') : t('paymentLink.copyPaymentLink')}
+          </Button>
+        </>
+      ) : (
+        <Button onClick={handleGenerate} disabled={state === 'loading'} className="w-full">
+          {state === 'loading' ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
-            <Copy className="w-4 h-4" />
+            <Link2 className="w-4 h-4 mr-2" />
           )}
+          {t('paymentLink.generate')}
         </Button>
-      </div>
+      )}
 
-      <div className="flex gap-2 pt-1">
-        <Button onClick={handleCopy} className="flex-1">
-          <Link2 className="w-4 h-4 mr-2" />
-          {copied ? t('paymentLink.linkCopied') : t('paymentLink.copyPaymentLink')}
-        </Button>
-      </div>
+      {state === 'error' && (
+        <div className="flex items-start gap-2 text-sm text-red-700 dark:text-red-300">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       <p className="text-xs text-muted-foreground text-center">💡 {t('paymentLink.footerTip')}</p>
     </div>

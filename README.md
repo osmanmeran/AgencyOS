@@ -24,7 +24,7 @@ A full-stack travel agency operations management platform for tour operators and
 - **Invoices** — CRUD with line items, status tracking (draft/sent/paid/overdue/cancelled)
 - **Revenue Reports** — Charts and breakdowns
 - **Commission Reports** — Profit/commission calculation from trip data
-- **Client Payments** — Manual payment recording (no gateway integration)
+- **Client Payments** — Manual payment recording, plus real online payments via Stripe Connect: each workspace onboards its own Stripe Express account (Settings → Integrations), clients pay an invoice's remaining balance from the Client Portal ("Pay Now"), and staff can generate the same Stripe Checkout link to send outside the portal. A webhook confirms payment and updates the invoice/`ClientPayment`/client totals atomically — funds settle directly into the agency's own Stripe account, never the platform's
 
 ### Advanced Tools
 

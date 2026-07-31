@@ -84,6 +84,37 @@ frontend's label/description lookup (`PERMISSION_MAP`) live outside it.
   rather than going through the generic entity routes, so its own handlers
   do their own scoping (`requireClientContext`/`resolveReadClientContext`).
 
+## Online payments (Stripe Connect)
+
+- One platform Stripe account drives every workspace's own connected Express
+  account — there is no per-tenant secret key, only a connected account id.
+  Onboarding (`server/services/stripeConnect.js`) creates the Express account
+  and a hosted Account Link; the account id is stored twice: locally in the
+  tenant's own DB (`stripe_connect_account`, the source of truth for "can
+  this workspace accept payments right now") and mirrored onto the platform
+  `tenants.stripe_account_id` column purely so an incoming webhook can look
+  up which tenant it belongs to.
+- `POST /api/webhooks/stripe` (`server/routes/stripeWebhook.js`) is mounted
+  with its own `express.raw()` parser *before* the global `express.json()`,
+  `tenantMiddleware`, `csrfMiddleware`, and `authMiddleware` — Stripe's
+  request carries none of the Host subdomain / session cookie those depend
+  on, and signature verification needs the untouched raw body. Tenant
+  routing instead comes from the connected-account id on the event itself
+  (`event.account`), and each event id is recorded in a per-tenant
+  `stripe_webhook_events` table before processing, so a Stripe retry can't
+  double-credit a payment.
+- `server/services/payments.js`'s `recordInvoicePayment` is the atomic,
+  server-side replacement for `InvoiceDetails.jsx`'s old three-separate-calls
+  "Record Payment" flow: it updates the `Invoice`, inserts the `ClientPayment`,
+  and bumps the `Client`'s running totals inside one DB transaction, called
+  only from the webhook handler (there's no user/request context to
+  authorize against — Stripe calls it directly).
+- Both payment surfaces (Client Portal "Pay Now" and staff's "Send Payment
+  Link" in `InvoiceDetails.jsx`) hit the same `POST /api/payments/checkout-session`
+  route, which creates a Stripe Checkout Session as a **direct charge** on the
+  tenant's connected account (`{ stripeAccount: accountId }`) — funds settle
+  straight into the agency's own Stripe account, never the platform's.
+
 ## Authentication
 
 - **JWT** (`server/middleware/auth.js`) — signed with `JWT_SECRET` (falls

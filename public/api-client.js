@@ -422,6 +422,20 @@
         },
       },
     },
+    payments: {
+      createCheckoutSession: function (invoiceId) {
+        return api('/payments/checkout-session', { method: 'POST', body: JSON.stringify({ invoiceId: invoiceId }) });
+      },
+      connectStatus: function () {
+        return api('/payments/connect/status');
+      },
+      connectOnboard: function () {
+        return api('/payments/connect/onboard', { method: 'POST' });
+      },
+      connectSync: function () {
+        return api('/payments/connect/sync', { method: 'POST' });
+      },
+    },
     appLogs: {
       logUserInApp: function (pageName) {
         return api('/app-logs', { method: 'POST', body: JSON.stringify({ pageName: pageName }) });

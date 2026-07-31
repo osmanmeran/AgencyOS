@@ -39,6 +39,8 @@ import tenantRoutes from './routes/tenants.js';
 import platformRoutes from './routes/platform.js';
 import tripShareRoutes from './routes/tripShare.js';
 import publicItineraryRoutes from './routes/publicItinerary.js';
+import paymentRoutes from './routes/payments.js';
+import stripeWebhookRoutes from './routes/stripeWebhook.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -47,6 +49,14 @@ seedDatabase();
 
 const app = express();
 app.set('trust proxy', 1);
+
+// Stripe webhook: needs the *raw* request body for signature verification, and
+// Stripe's request carries no Host subdomain or session cookie for
+// tenantMiddleware/csrfMiddleware/authMiddleware to key off — so this route
+// runs before every one of those, rather than carving out an exception in each.
+// Tenant routing instead comes from the connected-account id on the event
+// itself (see routes/stripeWebhook.js).
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRoutes);
 
 app.use(
   helmet({
@@ -131,6 +141,7 @@ app.use('/api/notifications', mutationLimiter);
 app.use('/api/documents', mutationLimiter);
 app.use('/api/pdf', mutationLimiter);
 app.use('/api/testing', mutationLimiter);
+app.use('/api/payments', mutationLimiter);
 // Unauthenticated: rate-limit by IP against share-token guessing, but stay
 // generous enough for a family reopening the same link over a couple of weeks.
 const publicShareLimiter = rateLimit({
@@ -173,6 +184,7 @@ app.use('/api/tenants', tenantRoutes);
 // allow-list gated inside the router.
 app.use('/api/platform', platformRoutes);
 
+app.use('/api/payments', auditMiddleware, paymentRoutes);
 app.use('/api/trips', auditMiddleware, tripShareRoutes);
 // Public itinerary link: deliberately unauthenticated (see routes/publicItinerary.js)
 // — a passenger with no account opens this straight from a shared URL.
