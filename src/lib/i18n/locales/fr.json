@@ -2993,7 +2993,7 @@
       },
       "slaFlags": {
         "q": "Que signifient les indicateurs de SLA/escalade sur les tâches ?",
-        "a": "Chaque tâche a un délai de déclenchement d’escalade basé sur sa priorité (Critique 48 h, Haute 24 h, Moyenne 12 h, Basse 0 h avant l’échéance). Une fois ce délai passé et la tâche toujours ouverte, elle est marquée « escaladée ». Par ailleurs, une tâche est « bientôt due » dans les 24 heures précédant son échéance — c’est ce qui déclenche la bannière de priorité/le compte à rebours dans la vue de réservation. Les deux indicateurs sont calculés en direct, aucune action manuelle n’est nécessaire."
+        "a": "Chaque tâche a un délai de déclenchement d’escalade basé sur sa priorité (Critique 48 h, Haute 24 h, Moyenne 12 h, Basse 0 h avant l’échéance). Une fois ce délai passé et la tâche toujours ouverte, elle est marquée « escaladée ». Par ailleurs, une tâche est « bientôt due » dans les 24 heures précédant son échéance — c’est ce qui déclenche la bannière de priorité/le compte à rebours dans la vue de réservation. Les deux indicateurs sont calculés en direct. Une fois le délai de déclenchement d’escalade d’une tâche dépassé, le système envoie également une notification (dans l’application et par e-mail, si le destinataire l’a activé) à la personne assignée à la tâche et, si elle a un responsable configuré dans la Gestion des utilisateurs, à ce responsable — sinon, il notifie tous les Managers/Admins de l’espace de travail. Cette vérification s’exécute toutes les heures avec les autres rappels automatiques."
       },
       "rfpWizard": {
         "q": "Comment demander des devis à plusieurs fournisseurs à la fois ?",
@@ -3070,6 +3070,14 @@
       "workspaceFileBackupIsolation": {
         "q": "Nos données ou fichiers peuvent-ils un jour se mélanger avec ceux d’un autre espace de travail, y compris dans les envois ou les sauvegardes ?",
         "a": "Non. Les fichiers envoyés, les PDF générés et les sauvegardes sont tous isolés par espace de travail, tout comme la base de données. Les fichiers sont servis via une route authentifiée et vérifiée par permission plutôt qu’un dossier public partagé, et les sauvegardes (y compris toute copie externe) sont cloisonnées et restaurées par espace de travail."
+      },
+      "bookingTasksPanel": {
+        "q": "Où puis-je voir les tâches générées automatiquement pour une réservation ?",
+        "a": "Ouvrez la réservation et faites défiler jusqu’à la section « Tâches de réservation » — elle liste les tâches opérationnelles de cette réservation (celles générées automatiquement sont marquées « Auto ») avec priorité, échéance et les badges en retard/bientôt dues/escaladées le cas échéant. Cliquez sur le cercle pour marquer une tâche comme terminée, ou sur « Ajouter une tâche » pour en ajouter une manuelle propre à cette réservation. Vos propres tâches de réservation ouvertes apparaissent aussi dans le Tableau de bord sous « Mes tâches de réservation », les tâches en retard en premier."
+      },
+      "reportsTo": {
+        "q": "À quoi sert le champ « Rend compte à » pour un utilisateur ?",
+        "a": "Il est facultatif et se configure dans la Gestion des utilisateurs lors de l’ajout, de l’invitation ou de la modification d’un utilisateur. Lorsqu’une tâche assignée à cette personne s’escalade, la notification lui est envoyée spécifiquement plutôt qu’à tous les Managers/Admins de l’espace de travail. Si le champ est laissé vide (ou pointe vers quelqu’un qui n’est plus Manager/Admin), les escalades reviennent à notifier tous les Managers/Admins, comme auparavant."
       }
     }
   },

@@ -55,6 +55,8 @@ const FAQS = [
   { key: 'autoTasks', category: 'tasks' },
   { key: 'departureDateChange', category: 'tasks' },
   { key: 'slaFlags', category: 'tasks' },
+  { key: 'bookingTasksPanel', category: 'tasks' },
+  { key: 'reportsTo', category: 'permissions' },
   { key: 'rfpWizard', category: 'suppliers' },
   { key: 'commissionTracking', category: 'finance' },
   { key: 'quoteRequestOnline', category: 'general' },

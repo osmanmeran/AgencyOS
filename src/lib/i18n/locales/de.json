@@ -2993,7 +2993,7 @@
       },
       "slaFlags": {
         "q": "Was bedeuten die SLA-/Eskalationskennzeichen bei Aufgaben?",
-        "a": "Jede Aufgabe hat eine Eskalationsauslösezeit, die auf ihrer Priorität basiert (kritisch 48 Std., hoch 24 Std., mittel 12 Std., niedrig 0 Std. vor dem Fälligkeitsdatum). Sobald diese Zeit verstrichen ist und die Aufgabe noch offen ist, wird sie als „eskaliert“ markiert. Unabhängig davon gilt eine Aufgabe als „bald fällig“, wenn sie innerhalb von 24 Stunden vor ihrem Fälligkeitsdatum liegt — das steuert das Prioritätsbanner/den Countdown in der Buchungsansicht. Beide Kennzeichen werden live berechnet, es ist keine manuelle Aktion erforderlich."
+        "a": "Jede Aufgabe hat eine Eskalationsauslösezeit, die auf ihrer Priorität basiert (kritisch 48 Std., hoch 24 Std., mittel 12 Std., niedrig 0 Std. vor dem Fälligkeitsdatum). Sobald diese Zeit verstrichen ist und die Aufgabe noch offen ist, wird sie als „eskaliert“ markiert. Unabhängig davon gilt eine Aufgabe als „bald fällig“, wenn sie innerhalb von 24 Stunden vor ihrem Fälligkeitsdatum liegt — das steuert das Prioritätsbanner/den Countdown in der Buchungsansicht. Beide Kennzeichen werden live berechnet. Sobald die Eskalationsauslösezeit einer Aufgabe verstrichen ist, sendet das System außerdem eine Benachrichtigung (in der App und per E-Mail, falls der Empfänger dies aktiviert hat) an die zuständige Person der Aufgabe und, falls für sie in der Benutzerverwaltung ein Vorgesetzter hinterlegt ist, an diesen Vorgesetzten — andernfalls werden alle Manager/Admins des Workspace benachrichtigt. Diese Prüfung läuft stündlich zusammen mit den anderen Erinnerungsjobs."
       },
       "rfpWizard": {
         "q": "Wie fordere ich gleichzeitig Angebote von mehreren Lieferanten an?",
@@ -3070,6 +3070,14 @@
       "workspaceFileBackupIsolation": {
         "q": "Können unsere Daten oder Dateien jemals mit einem anderen Workspace vermischt werden, auch bei Uploads oder Backups?",
         "a": "Nein. Hochgeladene Dateien, erstellte PDFs und Backups sind alle pro Workspace isoliert, genau wie die Datenbank. Dateien werden über eine authentifizierte, berechtigungsgeprüfte Route bereitgestellt statt über einen gemeinsam genutzten öffentlichen Ordner, und Backups (einschließlich einer externen Kopie) sind pro Workspace abgegrenzt und werden pro Workspace wiederhergestellt."
+      },
+      "bookingTasksPanel": {
+        "q": "Wo sehe ich die automatisch erstellten Aufgaben einer Buchung?",
+        "a": "Öffnen Sie die Reservierung und scrollen Sie zum Abschnitt „Buchungsaufgaben“ — dort werden die operativen Aufgaben dieser Buchung aufgelistet (automatisch erstellte sind mit „Auto“ gekennzeichnet), inklusive Priorität, Fälligkeitsdatum und etwaigen Überfällig-/Bald-fällig-/Eskaliert-Badges. Klicken Sie auf den Kreis, um eine Aufgabe als erledigt zu markieren, oder auf „Aufgabe hinzufügen“, um eine manuelle Aufgabe für diese Buchung zu erstellen. Ihre eigenen offenen Buchungsaufgaben werden auch im Dashboard unter „Meine Buchungsaufgaben“ angezeigt, überfällige zuerst."
+      },
+      "reportsTo": {
+        "q": "Wofür dient das Feld „Berichtet an“ bei einem Benutzer?",
+        "a": "Es ist optional und wird in der Benutzerverwaltung beim Hinzufügen, Einladen oder Bearbeiten eines Benutzers festgelegt. Eskaliert eine dieser Person zugewiesene Aufgabe, geht die Benachrichtigung gezielt an sie statt an alle Manager/Admins des Workspace. Lassen Sie es leer (oder zeigt es auf jemanden, der kein Manager/Admin mehr ist), fallen Eskalationen wie zuvor auf die Benachrichtigung aller Manager/Admins zurück."
       }
     }
   },

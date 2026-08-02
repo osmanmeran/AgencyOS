@@ -3021,7 +3021,7 @@
       },
       "slaFlags": {
         "q": "What do the SLA / escalation flags mean on tasks?",
-        "a": "Each task has an escalation trigger time based on its priority (Critical 48h, High 24h, Medium 12h, Low 0 before the due date). Once that passes and the task is still open it is flagged \"escalated\". Separately, a task is \"due soon\" in the 24 hours before its due date — that drives the priority banner / countdown in the booking view. Both flags are computed live, so no manual action is needed."
+        "a": "Each task has an escalation trigger time based on its priority (Critical 48h, High 24h, Medium 12h, Low 0 before the due date). Once that passes and the task is still open it is flagged “escalated”. Separately, a task is “due soon” in the 24 hours before its due date — that drives the priority banner / countdown in the booking view. Both flags are computed live. When a task’s escalation trigger passes, the system also sends a notification (in-app plus email, if the recipient opted in) to the task’s assignee and, if they have a manager configured in User Management, to that manager — otherwise it notifies every Manager/Admin in the workspace. This check runs hourly alongside the other reminder jobs."
       },
       "rfpWizard": {
         "q": "How do I request quotes from multiple suppliers at once?",
@@ -3098,6 +3098,14 @@
       "workspaceFileBackupIsolation": {
         "q": "Can our data or files ever end up mixed with another workspace, even in uploads or backups?",
         "a": "No. Uploaded files, generated PDFs, and backups are all isolated per workspace, the same as the database. Files are served through an authenticated, permission-checked route rather than a shared public folder, and backups (including any off-box copy) are scoped and restored per workspace."
+      },
+      "bookingTasksPanel": {
+        "q": "Where do I see a booking's auto-generated tasks?",
+        "a": "Open the reservation and scroll to the “Booking Tasks” section — it lists that booking’s operational tasks (auto-generated ones are tagged “Auto”) with priority, due date, and any overdue/due-soon/escalated badges. Click the circle to mark a task complete, or “Add Task” to add a manual one scoped to that booking. Your own open booking tasks also show on the Dashboard under “My Booking Tasks”, sorted with overdue items first."
+      },
+      "reportsTo": {
+        "q": "What does “Reports to” do for a user?",
+        "a": "It’s optional and set in User Management when adding, inviting, or editing a user. When that person’s assigned task escalates, the notification goes to them specifically instead of the workspace’s full Manager/Admin broadcast. Leave it unset (or point it at someone no longer a Manager/Admin) and escalations fall back to notifying every Manager/Admin, same as before."
       }
     }
   },

@@ -2993,7 +2993,7 @@
       },
       "slaFlags": {
         "q": "Cosa significano i flag SLA/escalation sulle attività?",
-        "a": "Ogni attività ha un tempo di attivazione dell’escalation basato sulla sua priorità (Critica 48 h, Alta 24 h, Media 12 h, Bassa 0 h prima della scadenza). Una volta trascorso questo tempo e se l’attività è ancora aperta, viene contrassegnata come \"escalata\". Separatamente, un’attività è \"in scadenza\" nelle 24 ore precedenti la sua scadenza — questo determina il banner di priorità/il conto alla rovescia nella vista prenotazione. Entrambi i flag sono calcolati in tempo reale, quindi non è richiesta alcuna azione manuale."
+        "a": "Ogni attività ha un tempo di attivazione dell’escalation basato sulla sua priorità (Critica 48 h, Alta 24 h, Media 12 h, Bassa 0 h prima della scadenza). Una volta trascorso questo tempo e se l’attività è ancora aperta, viene contrassegnata come “escalata”. Separatamente, un’attività è “in scadenza” nelle 24 ore precedenti la sua scadenza — questo determina il banner di priorità/il conto alla rovescia nella vista prenotazione. Entrambi i flag sono calcolati in tempo reale. Quando il tempo di attivazione dell’escalation di un’attività viene superato, il sistema invia anche una notifica (in-app e via email, se il destinatario ha attivato questa opzione) all’assegnatario dell’attività e, se questi ha un responsabile configurato in Gestione Utenti, a tale responsabile — altrimenti notifica ogni Manager/Admin dell’area di lavoro. Questo controllo viene eseguito ogni ora insieme agli altri promemoria automatici."
       },
       "rfpWizard": {
         "q": "Come richiedo preventivi a più fornitori contemporaneamente?",
@@ -3070,6 +3070,14 @@
       "workspaceFileBackupIsolation": {
         "q": "I nostri dati o file possono mai mescolarsi con quelli di un altro spazio di lavoro, anche nei caricamenti o nei backup?",
         "a": "No. I file caricati, i PDF generati e i backup sono tutti isolati per spazio di lavoro, esattamente come il database. I file vengono serviti tramite una route autenticata e verificata per i permessi, anziché una cartella pubblica condivisa, e i backup (inclusa qualsiasi copia esterna) sono delimitati e ripristinati per spazio di lavoro."
+      },
+      "bookingTasksPanel": {
+        "q": "Dove posso vedere le attività generate automaticamente per una prenotazione?",
+        "a": "Apri la prenotazione e scorri fino alla sezione “Attività Prenotazione” — elenca le attività operative di quella prenotazione (quelle generate automaticamente sono contrassegnate come “Auto”) con priorità, scadenza ed eventuali badge di ritardo/scadenza imminente/escalation. Clicca sul cerchio per contrassegnare un’attività come completata, oppure “Aggiungi Attività” per aggiungerne una manuale associata a quella prenotazione. Le tue attività di prenotazione aperte compaiono anche nella Dashboard sotto “Le Mie Attività di Prenotazione”, ordinate con quelle in ritardo per prime."
+      },
+      "reportsTo": {
+        "q": "A cosa serve il campo “Riporta a” per un utente?",
+        "a": "È facoltativo e si imposta in Gestione Utenti quando aggiungi, inviti o modifichi un utente. Quando un’attività assegnata a quella persona va in escalation, la notifica viene inviata specificamente a lei invece che a tutti i Manager/Admin dell’area di lavoro. Se lo lasci vuoto (o lo punti a qualcuno che non è più Manager/Admin), le escalation tornano a notificare ogni Manager/Admin, come prima."
       }
     }
   },

@@ -2993,7 +2993,7 @@
       },
       "slaFlags": {
         "q": "Görevlerdeki SLA/eskalasyon işaretleri ne anlama gelir?",
-        "a": "Her görevin önceliğine dayalı bir eskalasyon tetikleme süresi vardır (Kritik son tarihten 48 sa. önce, Yüksek 24 sa., Orta 12 sa., Düşük 0 sa.). Bu süre geçtiğinde ve görev hâlâ açıksa \"eskale edildi\" olarak işaretlenir. Ayrı olarak, bir görev son tarihinden önceki 24 saat içinde \"yakında bitiyor\" olur — rezervasyon görünümündeki öncelik banner’ını/geri sayımı bu belirler. Her iki işaret de canlı olarak hesaplanır, manuel bir işlem gerekmez."
+        "a": "Her görevin önceliğine dayalı bir eskalasyon tetikleme süresi vardir (Kritik son tarihten 48 sa. önce, Yüksek 24 sa., Orta 12 sa., Düşük 0 sa.). Bu süre geçtiğinde ve görev hâlâ açıksa “eskale edildi” olarak işaretlenir. Ayrı olarak, bir görev son tarihinden önceki 24 saat içinde “yakında bitiyor” olur — rezervasyon görünümündeki öncelik banner’ını/geri sayımı bu belirler. Her iki işaret de canlı olarak hesaplanır. Bir görevin eskalasyon tetikleme süresi geçtiğinde, sistem ayrıca görevin atandığı kişiye — ve Kullanıcı Yönetimi’nde bir yöneticisi tanımlıysa o yöneticiye — bir bildirim gönderir (uygulama içi ve, alıcı bunu etkinleştirdiyse, e-posta ile); aksi halde çalışma alanındaki tüm Yönetici/Admin’lere bildirim gider. Bu kontrol, diğer hatırlatma işleriyle birlikte saatlik olarak çalışır."
       },
       "rfpWizard": {
         "q": "Aynı anda birden fazla tedarikçiden nasıl teklif talep ederim?",
@@ -3070,6 +3070,14 @@
       "workspaceFileBackupIsolation": {
         "q": "Verilerimiz veya dosyalarımız, yüklemelerde veya yedeklemelerde bile başka bir çalışma alanıyla karışabilir mi?",
         "a": "Hayır. Yüklenen dosyalar, oluşturulan PDF’ler ve yedeklemeler, veritabanı gibi çalışma alanı başına izole edilmiştir. Dosyalar, paylaşılan bir genel klasör yerine kimlik doğrulamalı, izin kontrollü bir rota üzerinden sunulur ve yedeklemeler (harici herhangi bir kopya dahil) çalışma alanı başına sınırlandırılır ve çalışma alanı başına geri yüklenir."
+      },
+      "bookingTasksPanel": {
+        "q": "Bir rezervasyonun otomatik oluşturulan görevlerini nerede görebilirim?",
+        "a": "Rezervasyonu açın ve “Rezervasyon Görevleri” bölümüne kaydırın — bu bölüm, o rezervasyonun operasyonel görevlerini listeler (otomatik oluşturulanlar “Otomatik” olarak etiketlenir) ve öncelik, son tarih ile varsa gecikmiş/yakında bitiyor/eskale edildi rozetlerini gösterir. Bir görevi tamamlandı olarak işaretlemek için daireye tıklayın veya o rezervasyona özel manuel bir görev eklemek için “Görev Ekle”yi kullanın. Kendi açık rezervasyon görevleriniz de Kontrol Paneli’nde “Rezervasyon Görevlerim” altında, gecikmiş olanlar en üstte olacak şekilde görüntülenir."
+      },
+      "reportsTo": {
+        "q": "Bir kullanıcı için “Bağlı olduğu yönetici” alanı ne işe yarar?",
+        "a": "İsteğe bağlıdır ve bir kullanıcı eklerken, davet ederken veya düzenlerken Kullanıcı Yönetimi’nde ayarlanır. O kişiye atanan bir görev eskale olduğunda, bildirim çalışma alanındaki tüm Yönetici/Admin’lere değil, özellikle o kişiye gider. Boş bırakırsanız (veya artık Yönetici/Admin olmayan birini gösteriyorsa), eskalasyonlar öncekiyle aynı şekilde tüm Yönetici/Admin’leri bilgilendirmeye geri döner."
       }
     }
   },

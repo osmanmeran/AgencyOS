@@ -2993,7 +2993,7 @@
       },
       "slaFlags": {
         "q": "¿Qué significan las marcas de SLA/escalado en las tareas?",
-        "a": "Cada tarea tiene un tiempo de disparo de escalado según su prioridad (Crítica 48 h, Alta 24 h, Media 12 h, Baja 0 h antes de la fecha límite). Una vez transcurrido ese tiempo y si la tarea sigue abierta, se marca como \"escalada\". Por separado, una tarea está \"próxima a vencer\" en las 24 horas anteriores a su fecha límite; eso es lo que impulsa el banner de prioridad/cuenta regresiva en la vista de la reserva. Ambas marcas se calculan en tiempo real, sin necesidad de ninguna acción manual."
+        "a": "Cada tarea tiene un tiempo de disparo de escalado según su prioridad (Crítica 48 h, Alta 24 h, Media 12 h, Baja 0 h antes de la fecha límite). Una vez transcurrido ese tiempo y si la tarea sigue abierta, se marca como “escalada”. Por separado, una tarea está “próxima a vencer” en las 24 horas anteriores a su fecha límite; eso es lo que impulsa el banner de prioridad/cuenta regresiva en la vista de la reserva. Ambas marcas se calculan en tiempo real. Cuando se supera el tiempo de disparo de escalado de una tarea, el sistema también envía una notificación (en la app y por correo electrónico, si el destinatario lo activó) a la persona asignada a la tarea y, si tiene un responsable configurado en Gestión de Usuarios, a ese responsable; en caso contrario, notifica a todos los Managers/Admins del espacio de trabajo. Esta comprobación se ejecuta cada hora junto con los demás recordatorios automáticos."
       },
       "rfpWizard": {
         "q": "¿Cómo solicito cotizaciones a varios proveedores a la vez?",
@@ -3070,6 +3070,14 @@
       "workspaceFileBackupIsolation": {
         "q": "¿Nuestros datos o archivos podrían mezclarse alguna vez con los de otro espacio de trabajo, incluso en las subidas o las copias de seguridad?",
         "a": "No. Los archivos subidos, los PDF generados y las copias de seguridad están todos aislados por espacio de trabajo, igual que la base de datos. Los archivos se sirven a través de una ruta autenticada y verificada por permisos, en lugar de una carpeta pública compartida, y las copias de seguridad (incluida cualquier copia externa) se acotan y se restauran por espacio de trabajo."
+      },
+      "bookingTasksPanel": {
+        "q": "¿Dónde veo las tareas generadas automáticamente de una reserva?",
+        "a": "Abre la reserva y desplázate hasta la sección “Tareas de la reserva”: muestra las tareas operativas de esa reserva (las generadas automáticamente están etiquetadas como “Auto”) con prioridad, fecha límite y las etiquetas de vencida/próxima a vencer/escalada que correspondan. Haz clic en el círculo para marcar una tarea como completada, o en “Añadir tarea” para crear una manual asociada a esa reserva. Tus propias tareas de reserva abiertas también aparecen en el Panel bajo “Mis tareas de reserva”, con las vencidas primero."
+      },
+      "reportsTo": {
+        "q": "¿Para qué sirve el campo “Reporta a” de un usuario?",
+        "a": "Es opcional y se configura en Gestión de Usuarios al añadir, invitar o editar un usuario. Cuando se escala una tarea asignada a esa persona, la notificación se envía específicamente a ella en lugar de a todos los Managers/Admins del espacio de trabajo. Si lo dejas sin definir (o apunta a alguien que ya no es Manager/Admin), las escaladas vuelven a notificar a todos los Managers/Admins, como antes."
       }
     }
   },
