@@ -39,6 +39,7 @@ export default function UserManagement() {
   const [editClientName, setEditClientName] = useState('');
   const [editPermissions, setEditPermissions] = useState([]);
   const [editDepartments, setEditDepartments] = useState([]);
+  const [editManagerId, setEditManagerId] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState({
     name: '',
@@ -47,6 +48,7 @@ export default function UserManagement() {
     user_tier: 'agent',
     client_id: '',
     client_name: '',
+    manager_id: '',
   });
   const [addPermissions, setAddPermissions] = useState([]);
   const [addDepartments, setAddDepartments] = useState([]);
@@ -64,6 +66,7 @@ export default function UserManagement() {
     user_tier: 'agent',
     client_id: '',
     client_name: '',
+    manager_id: '',
   });
   const [inviteResult, setInviteResult] = useState(null);
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -82,6 +85,10 @@ export default function UserManagement() {
       queryFn: () => db.entities.Client.list(),
     })
   );
+
+  // Candidates for "Reports to" — only admin/manager tier can receive
+  // targeted task-escalation notifications (server/services/tasks.js).
+  const managers = users.filter((u) => u.user_tier === 'admin' || u.user_tier === 'manager');
 
   const deptColor = (name) => {
     const idx = departmentsList.indexOf(name);
@@ -131,6 +138,7 @@ export default function UserManagement() {
     setEditDepartments(u.departments || []);
     setEditClientId(u.client_id || '');
     setEditClientName(allClients.find((c) => c.id === u.client_id)?.name || '');
+    setEditManagerId(u.manager_id || '');
   };
 
   const toggleEditPermission = (key) => {
@@ -156,6 +164,7 @@ export default function UserManagement() {
         custom_permissions: editPermissions,
         departments: editDepartments,
         client_id: editTier === 'client' ? editClientId : null,
+        manager_id: editManagerId || null,
       });
       setUsers(users.map((u) => (u.id === selectedUser.id ? { ...u, ...updated } : u)));
       setSelectedUser(null);
@@ -256,7 +265,15 @@ export default function UserManagement() {
       });
       setUsers([...users, created]);
       setShowAddForm(false);
-      setAddForm({ name: '', email: '', password: '', user_tier: 'agent', client_id: '', client_name: '' });
+      setAddForm({
+        name: '',
+        email: '',
+        password: '',
+        user_tier: 'agent',
+        client_id: '',
+        client_name: '',
+        manager_id: '',
+      });
       setAddPermissions([]);
       setAddDepartments([]);
       setSuccess(`User "${created.name}" created`);
@@ -282,7 +299,7 @@ export default function UserManagement() {
       const { client_name: _client_name, ...payload } = inviteForm;
       const result = await db.auth.invite(payload);
       setInviteResult(result);
-      setInviteForm({ email: '', name: '', user_tier: 'agent', client_id: '', client_name: '' });
+      setInviteForm({ email: '', name: '', user_tier: 'agent', client_id: '', client_name: '', manager_id: '' });
       setSuccess(`Invitation sent to ${result.email}`);
       setShowInvite(false);
       loadUsers();
@@ -485,6 +502,7 @@ export default function UserManagement() {
             inviteResult={inviteResult}
             setInviteResult={setInviteResult}
             inviteLoading={inviteLoading}
+            managers={managers}
           />
 
           {/* Add user */}
@@ -498,6 +516,7 @@ export default function UserManagement() {
             addDepartments={addDepartments}
             toggleAddDepartment={toggleAddDepartment}
             departmentsList={departmentsList}
+            managers={managers}
           />
 
           {/* Tier cards */}
@@ -534,6 +553,9 @@ export default function UserManagement() {
             toggleEditPermission={toggleEditPermission}
             editDepartments={editDepartments}
             toggleEditDepartment={toggleEditDepartment}
+            editManagerId={editManagerId}
+            setEditManagerId={setEditManagerId}
+            managers={managers}
             onSave={handleSaveUser}
             onResetPassword={setResetPwdUser}
             currentUser={currentUser}

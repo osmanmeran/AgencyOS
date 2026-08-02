@@ -3,10 +3,11 @@ import logger from '../lib/logger.js';
 import { createNotification } from './notifications.js';
 import { forEachTenant } from './tenants.js';
 import { escapeHtml } from './email.js';
+import { checkEscalations } from './tasks.js';
 
 let intervalHandle = null;
 
-/** Run an immediate reminder check, then repeat it every 60 minutes (due-soon/overdue invoices, trips starting tomorrow). Covers every workspace. */
+/** Run an immediate reminder check, then repeat it every 60 minutes (due-soon/overdue invoices, trips starting tomorrow, newly-escalated operational tasks). Covers every workspace. */
 export function startReminderService() {
   logger.info('Reminder service started');
 
@@ -15,6 +16,7 @@ export function startReminderService() {
       () => {
         checkPendingInvoices();
         checkUpcomingTrips();
+        checkEscalations();
       },
       { label: 'reminders' },
     ).catch((err) => logger.error({ err }, 'Reminder check error'));

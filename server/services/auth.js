@@ -46,6 +46,7 @@ export function safeUser(u) {
     departments: JSON.parse(u.departments || '[]'),
     client_id: u.client_id,
     linked_supplier_id: u.linked_supplier_id,
+    manager_id: u.manager_id || null,
     is_active: !!u.is_active,
     created_date: u.created_date,
   };
@@ -412,6 +413,7 @@ export function updateUser(id, fields) {
     client_id: 'client_id',
     linked_supplier_id: 'linked_supplier_id',
     email_notifications: 'email_notifications',
+    manager_id: 'manager_id',
   };
   const booleanFields = new Set(['is_active', 'email_notifications']);
 
@@ -470,7 +472,16 @@ export function getAllUsers() {
  * @returns {{id: string, email: string, name: string, token: string, expires: string}}
  * @throws {ConflictError} If the email is already registered.
  */
-export function inviteUser({ email, name, user_tier, custom_permissions, departments, client_id, invited_by }) {
+export function inviteUser({
+  email,
+  name,
+  user_tier,
+  custom_permissions,
+  departments,
+  client_id,
+  manager_id,
+  invited_by,
+}) {
   const db = getDb();
   email = normalizeEmail(email);
   const existing = db.prepare('SELECT id FROM users WHERE LOWER(email) = ?').get(email);
@@ -488,7 +499,7 @@ export function inviteUser({ email, name, user_tier, custom_permissions, departm
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   db.prepare(
-    'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, invite_token, invite_expires, client_id, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, invite_token, invite_expires, client_id, manager_id, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     id,
     email,
@@ -503,6 +514,7 @@ export function inviteUser({ email, name, user_tier, custom_permissions, departm
     token,
     expires,
     tier === 'client' ? client_id : null,
+    manager_id || null,
     now,
     now,
   );
@@ -562,6 +574,7 @@ export function createUser({
   is_active,
   client_id,
   linked_supplier_id,
+  manager_id,
 }) {
   const db = getDb();
   email = normalizeEmail(email);
@@ -583,7 +596,7 @@ export function createUser({
   const id = uid();
 
   db.prepare(
-    'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, client_id, linked_supplier_id, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO users (id, email, password, name, user_tier, role, language, custom_permissions, departments, is_active, client_id, linked_supplier_id, manager_id, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     id,
     email,
@@ -597,6 +610,7 @@ export function createUser({
     active,
     tier === 'client' ? client_id : null,
     tier === 'supplier' ? linked_supplier_id : null,
+    manager_id || null,
     now,
     now,
   );

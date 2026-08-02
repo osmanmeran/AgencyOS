@@ -170,6 +170,7 @@
     "subtitle": "Welcome back! Here's what's happening with your travel business.",
     "tasksToDo": "Tasks To Do",
     "myOpenTasks": "My Open Tasks",
+    "myBookingTasks": "My Booking Tasks",
     "allCaughtUp": "All caught up!",
     "moreCount": "+{count} more",
     "departingSoon": "Departing Soon",
@@ -432,7 +433,8 @@
     "label": "Priority",
     "low": "Low",
     "medium": "Medium",
-    "high": "High"
+    "high": "High",
+    "critical": "Critical"
   },
   "taskBoard": {
     "title": "Task Board",
@@ -1629,6 +1631,26 @@
     "assignToLabel": "Assign To (email)",
     "assignToPlaceholder": "team@member.com",
     "descriptionPlaceholder": "Additional details..."
+  },
+  "tripTasksPanel": {
+    "title": "Booking Tasks",
+    "subtitle": "Operational deadlines for this booking",
+    "addButton": "Add Task",
+    "noItemsFound": "No tasks for this booking yet",
+    "auto": "Auto",
+    "overdue": "Overdue",
+    "dueSoon": "Due soon",
+    "escalated": "Escalated",
+    "completedLabel": "Completed {date}",
+    "dialogTitle": "Add Booking Task",
+    "titleLabel": "Title *",
+    "titlePlaceholder": "Task title...",
+    "dueDateLabel": "Due Date",
+    "descriptionPlaceholder": "Additional details...",
+    "createSuccess": "Task added",
+    "createError": "Failed to add task",
+    "completeSuccess": "Task marked complete",
+    "completeError": "Failed to complete task"
   },
   "tripCostSummary": {
     "title": "Trip Cost Summary",
@@ -3285,6 +3307,9 @@
     "password": "Password",
     "password_2": "Password:",
     "departments": "Departments",
+    "reportsTo": "Reports to",
+    "reportsToNone": "— None —",
+    "reportsToHint": "Receives this person's escalated task notifications. Leave unset to notify every manager/admin instead.",
     "cancel": "Cancel",
     "name": "Name",
     "inviteLink": "Invite link:",

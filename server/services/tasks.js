@@ -2,6 +2,9 @@ import { getDb, uid } from '../db.js';
 import { findEntities, updateEntity } from './entities.js';
 import { NotFoundError, BadRequestError } from '../middleware/errors.js';
 import { logAudit, AUDIT_ACTIONS } from './audit.js';
+import { createNotification } from './notifications.js';
+import { escapeHtml } from './email.js';
+import logger from '../lib/logger.js';
 
 const TASK_TYPE = 'Task';
 const ACTIVE_STATUSES = ['pending', 'in_progress'];
@@ -336,4 +339,98 @@ export function listTasks({
 /** Convenience: tasks linked to a single booking (the Contextual Task Widget). */
 export function getTasksForBooking(bookingId, user) {
   return listTasks({ booking_id: bookingId, user });
+}
+
+/**
+ * Scan active tasks for escalation windows that have newly elapsed, persist
+ * `is_escalated` (previously write-only — nothing ever set it `true`), and
+ * notify the assignee plus every manager/admin in the current tenant.
+ *
+ * Selecting only rows where `is_escalated` isn't already `true` makes this
+ * naturally idempotent: once a task is flagged, later calls (this runs on
+ * every reminders-service tick) skip it, so there's no separate dedup window
+ * to maintain like the reminders.js notifications-table check.
+ *
+ * @returns {number} Count of tasks newly escalated in this pass.
+ */
+export function checkEscalations() {
+  const db = getDb();
+  const nowIso = new Date().toISOString();
+
+  const rows = db
+    .prepare(
+      `
+    SELECT id, data FROM entities WHERE type = ?
+    AND json_extract(data, '$.status') IN ('pending', 'in_progress')
+    AND json_extract(data, '$.escalation_trigger_time') IS NOT NULL
+    AND json_extract(data, '$.escalation_trigger_time') <= ?
+    AND (json_extract(data, '$.is_escalated') IS NULL OR json_extract(data, '$.is_escalated') = 0)
+  `,
+    )
+    .all(TASK_TYPE, nowIso);
+
+  for (const row of rows) {
+    const task = { id: row.id, ...JSON.parse(row.data) };
+    patchTask(task.id, { is_escalated: true });
+    notifyEscalation(db, task);
+  }
+
+  return rows.length;
+}
+
+/**
+ * Who to notify for an escalated task: always the assignee, plus either
+ * their specific `manager_id` (if set and still an active admin/manager —
+ * teams that configure "Reports to" in User Management get targeted
+ * escalation) or, as a fallback, every admin/manager in the tenant (teams
+ * that never set one keep the original broadcast behavior).
+ */
+function resolveEscalationRecipients(db, task) {
+  const recipientIds = new Set();
+  if (task.assigned_to_user_id) recipientIds.add(task.assigned_to_user_id);
+
+  let managerId = null;
+  if (task.assigned_to_user_id) {
+    const assignee = db.prepare('SELECT manager_id FROM users WHERE id = ?').get(task.assigned_to_user_id);
+    managerId = assignee?.manager_id || null;
+  }
+
+  if (managerId) {
+    const manager = db
+      .prepare(`SELECT id FROM users WHERE id = ? AND user_tier IN ('admin', 'manager') AND is_active = 1`)
+      .get(managerId);
+    if (manager) {
+      recipientIds.add(manager.id);
+      return recipientIds;
+    }
+    // manager_id is stale (deleted/demoted/deactivated) — fall through to the broadcast.
+  }
+
+  for (const m of db.prepare(`SELECT id FROM users WHERE user_tier IN ('admin', 'manager') AND is_active = 1`).all()) {
+    recipientIds.add(m.id);
+  }
+  return recipientIds;
+}
+
+function notifyEscalation(db, task) {
+  const recipientIds = resolveEscalationRecipients(db, task);
+  if (recipientIds.size === 0) return;
+
+  const title = `Task escalated: ${task.title}`;
+  const message = `"${task.title}"${task.due_date ? ` (due ${task.due_date})` : ''} is escalated and still ${(task.status || 'pending').replace('_', ' ')}.`;
+  const data = { entityId: task.id, bookingId: task.booking_id || null };
+  if (task.booking_id) data.url = `/ReservationDetails?id=${task.booking_id}`;
+
+  for (const userId of recipientIds) {
+    createNotification({
+      userId,
+      type: 'task_escalated',
+      title,
+      message,
+      data,
+      email: { subject: title, body: escapeHtml(message) },
+    });
+  }
+
+  logger.info({ taskId: task.id, recipients: recipientIds.size }, 'Task escalation notified');
 }

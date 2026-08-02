@@ -13,6 +13,7 @@ export default function AddUserForm({
   addDepartments,
   toggleAddDepartment,
   departmentsList,
+  managers,
 }) {
   const { t: _t } = useT();
   if (!showAddForm) return null;
@@ -72,6 +73,21 @@ export default function AddUserForm({
           <p className="text-xs text-muted-foreground mt-1">{_t('userManagement.this')}</p>
         </div>
       )}
+      <div className="mt-3 max-w-sm">
+        <label className="block text-sm font-medium text-foreground mb-1">{_t('userManagement.reportsTo')}</label>
+        <select
+          value={addForm.manager_id}
+          onChange={(e) => setAddForm({ ...addForm, manager_id: e.target.value })}
+          className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+        >
+          <option value="">{_t('userManagement.reportsToNone')}</option>
+          {managers.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name} ({TIER_LABELS[m.user_tier]?.label || m.user_tier})
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="mt-3">
         <p className="text-sm font-medium text-foreground mb-2">
           {_t('userManagement.custom')}{' '}

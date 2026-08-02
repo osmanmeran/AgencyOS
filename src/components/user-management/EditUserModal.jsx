@@ -21,6 +21,9 @@ export default function EditUserModal({
   toggleEditPermission,
   editDepartments,
   toggleEditDepartment,
+  editManagerId,
+  setEditManagerId,
+  managers,
   onSave,
   onResetPassword,
   currentUser,
@@ -98,6 +101,24 @@ export default function EditUserModal({
               />
               <span className="text-sm text-foreground">{_t('userManagement.account')}</span>
             </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">{_t('userManagement.reportsTo')}</label>
+            <select
+              value={editManagerId}
+              onChange={(e) => setEditManagerId(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+            >
+              <option value="">{_t('userManagement.reportsToNone')}</option>
+              {managers
+                .filter((m) => m.id !== selectedUser.id)
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({TIER_LABELS[m.user_tier]?.label || m.user_tier})
+                  </option>
+                ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">{_t('userManagement.reportsToHint')}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-foreground mb-2">

@@ -43,6 +43,11 @@ const db = globalThis.__B44_DB__ || {
     share: async () => ({ share_enabled: false, share_token: null, share_url: '' }),
     revokeShare: async () => ({ share_enabled: false, share_token: null }),
   },
+  tasks: {
+    list: async () => [],
+    create: async () => ({}),
+    complete: async () => ({}),
+  },
   integrations: {
     Core: {
       UploadFile: async () => ({ file_url: '' }),

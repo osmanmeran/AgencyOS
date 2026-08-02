@@ -86,6 +86,10 @@ export const schemas = {
       departments: z.array(z.string()).optional(),
       is_active: z.boolean().optional(),
       client_id: z.string().optional(),
+      // Who this user's escalations (server/services/tasks.js's
+      // checkEscalations) go to, in addition to the assignee. Nullable/optional:
+      // no manager set falls back to notifying every admin/manager in the tenant.
+      manager_id: z.string().nullable().optional(),
     })
     .refine((data) => data.user_tier !== 'client' || !!data.client_id, {
       message: 'client_id is required when user_tier is "client"',
@@ -105,6 +109,7 @@ export const schemas = {
       // tier isn't 'client', to clear a stale link on tier change) rather
       // than omitting the key.
       client_id: z.string().nullable().optional(),
+      manager_id: z.string().nullable().optional(),
       password: z
         .string()
         .min(8, 'Password must be at least 8 characters')
@@ -146,6 +151,7 @@ export const schemas = {
       custom_permissions: z.array(z.string()).optional(),
       departments: z.array(z.string()).optional(),
       client_id: z.string().optional(),
+      manager_id: z.string().nullable().optional(),
     })
     .refine((data) => data.user_tier !== 'client' || !!data.client_id, {
       message: 'client_id is required when inviting a client-tier user',

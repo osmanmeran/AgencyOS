@@ -37,6 +37,7 @@ import ChevronRight from '@mui/icons-material/ChevronRight';
 import PlaceRounded from '@mui/icons-material/PlaceRounded';
 import ReceiptLongRounded from '@mui/icons-material/ReceiptLongRounded';
 import RateReviewRounded from '@mui/icons-material/RateReviewRounded';
+import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
 import { useT } from '@/lib/i18n/I18nContext';
 import SetupChecklistBanner from '@/components/layout/SetupChecklistBanner';
 
@@ -62,7 +63,15 @@ export default function Dashboard() {
     })
   );
 
-  const isLoading = tripsLoading || tasksLoading;
+  const { data: myBookingTasks = /** @type {any} */ ([]), isLoading: bookingTasksLoading } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['myBookingTasks', me?.id],
+      queryFn: () => db.tasks.list({ assigned_to_user_id: me.id }),
+      enabled: !!me,
+    })
+  );
+
+  const isLoading = tripsLoading || tasksLoading || bookingTasksLoading;
 
   const openMyTasks = /** @type {any} */ (
     useMemo(() => {
@@ -71,6 +80,19 @@ export default function Dashboard() {
         (task) => task.status !== 'done' && (task.assigned_to === me.email || task.created_by_id === me.id),
       );
     }, [myTasks, me])
+  );
+
+  const openBookingTasks = /** @type {any} */ (
+    useMemo(() => {
+      return myBookingTasks
+        .filter((task) => task.status === 'pending' || task.status === 'in_progress')
+        .sort((a, b) => {
+          if (!!a.is_overdue !== !!b.is_overdue) return a.is_overdue ? -1 : 1;
+          if (!a.due_date) return 1;
+          if (!b.due_date) return -1;
+          return a.due_date.localeCompare(b.due_date);
+        });
+    }, [myBookingTasks])
   );
 
   const { upcomingArrivals, upcomingDepartures, pendingReservations, departingNext7 } = useMemo(() => {
@@ -412,6 +434,93 @@ export default function Dashboard() {
                   }}
                 >
                   {t('dashboard.moreCount', { count: openMyTasks.length - 6 })}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card sx={{ height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}
+                >
+                  <AssignmentRounded fontSize="small" sx={{ color: 'warning.main' }} />
+                  {t('dashboard.myBookingTasks')}
+                </Typography>
+                <Chip
+                  label={openBookingTasks.length}
+                  size="small"
+                  color="warning"
+                  sx={{ height: 22, fontWeight: 700 }}
+                />
+              </Box>
+              <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+                {openBookingTasks.length === 0 ? (
+                  <Box
+                    sx={{
+                      py: 2,
+                      textAlign: 'center',
+                      color: 'success.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 0.5,
+                    }}
+                  >
+                    <CheckCircleRounded fontSize="small" /> {t('dashboard.allCaughtUp')}
+                  </Box>
+                ) : (
+                  openBookingTasks.slice(0, 6).map((task) => (
+                    <Box
+                      key={task.id}
+                      component={Link}
+                      to={createPageUrl(`ReservationDetails?id=${task.booking_id}`)}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        '&:hover': { bgcolor: 'warning.light' },
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                          {task.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {task.due_date ? format(parseISO(task.due_date), 'MMM d, yyyy') : t('priority.label')}
+                        </Typography>
+                      </Box>
+                      {(task.is_overdue || task.is_escalated) && (
+                        <WarningAmberRounded fontSize="small" sx={{ color: 'error.main', ml: 1, flexShrink: 0 }} />
+                      )}
+                      <ArrowForwardRounded fontSize="small" sx={{ color: 'text.secondary', ml: 1, flexShrink: 0 }} />
+                    </Box>
+                  ))
+                )}
+              </Box>
+              {openBookingTasks.length > 6 && (
+                <Box
+                  component={Link}
+                  to={createPageUrl('Reservations')}
+                  sx={{
+                    display: 'block',
+                    mt: 1,
+                    fontSize: '0.75rem',
+                    color: 'warning.main',
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  {t('dashboard.moreCount', { count: openBookingTasks.length - 6 })}
                 </Box>
               )}
             </CardContent>

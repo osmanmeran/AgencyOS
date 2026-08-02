@@ -45,6 +45,7 @@ import OccupancyValidation from '@/components/reservation-details/OccupancyValid
 import ItineraryRecap from '@/components/reservation-details/ItineraryRecap';
 import ServicesSection from '@/components/reservation-details/ServicesSection';
 import NotesAndTerms from '@/components/reservation-details/NotesAndTerms';
+import TripTasksPanel from '@/components/reservation-details/TripTasksPanel';
 import { useT } from '@/lib/i18n/I18nContext';
 
 export default function ReservationDetails() {
@@ -742,6 +743,9 @@ export default function ReservationDetails() {
 
       {/* Lodging occupancy validation */}
       <OccupancyValidation trip={trip} />
+
+      {/* Operational booking tasks (auto-generated + manual) */}
+      <TripTasksPanel bookingId={trip.id} customerId={trip.client_id} supplierId={trip.supplier_id} />
 
       {/* Itinerary Recap */}
       {showItinerary && trip.start_date && trip.end_date && trip.services?.length > 0 && (

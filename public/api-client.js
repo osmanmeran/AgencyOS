@@ -360,6 +360,29 @@
         return api('/trips/' + id + '/share', { method: 'DELETE' });
       },
     },
+    // Operational Task engine (server/services/tasks.js) — distinct from the
+    // generic entities.Task CRUD: adds FK/SLA query filters and the audited
+    // /complete action.
+    tasks: {
+      list: function (params) {
+        var qs = [];
+        if (params) {
+          Object.keys(params).forEach(function (key) {
+            var value = params[key];
+            if (value !== undefined && value !== null && value !== '') {
+              qs.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+            }
+          });
+        }
+        return api('/tasks' + (qs.length ? '?' + qs.join('&') : ''));
+      },
+      create: function (data) {
+        return api('/tasks', { method: 'POST', body: JSON.stringify(data || {}) });
+      },
+      complete: function (id, note) {
+        return api('/tasks/' + id + '/complete', { method: 'PUT', body: JSON.stringify({ note: note }) });
+      },
+    },
     integrations: {
       Core: {
         UploadFile: function (data) {

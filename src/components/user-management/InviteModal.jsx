@@ -11,6 +11,7 @@ export default function InviteModal({
   inviteResult,
   setInviteResult,
   inviteLoading,
+  managers,
 }) {
   const { t: _t } = useT();
   if (!showInvite) return null;
@@ -113,6 +114,21 @@ export default function InviteModal({
                 <p className="text-xs text-muted-foreground mt-1">{_t('userManagement.the')}</p>
               </div>
             )}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">{_t('userManagement.reportsTo')}</label>
+              <select
+                value={inviteForm.manager_id}
+                onChange={(e) => setInviteForm({ ...inviteForm, manager_id: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+              >
+                <option value="">{_t('userManagement.reportsToNone')}</option>
+                {managers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({TIER_LABELS[m.user_tier]?.label || m.user_tier})
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
