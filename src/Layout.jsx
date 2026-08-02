@@ -62,6 +62,7 @@ import NotificationBell from './components/layout/NotificationBell';
 import ThemeToggle from './components/layout/ThemeToggle';
 import WorkspaceStatusBanner from './components/layout/WorkspaceStatusBanner';
 import { useT } from '@/lib/i18n/I18nContext';
+import { useCapacitorBackButton } from '@/lib/capacitorBackButton';
 
 const DRAWER_WIDTH = 260;
 const RAIL_WIDTH = 64;
@@ -397,6 +398,7 @@ export default function Layout({ children, currentPageName }) {
 
   useEntitySync();
   useReminderNotifications();
+  useCapacitorBackButton();
 
   useEffect(() => {
     db.auth

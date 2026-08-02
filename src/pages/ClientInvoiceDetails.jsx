@@ -15,6 +15,7 @@ import { format, parseISO, isBefore } from 'date-fns';
 import { useT } from '@/lib/i18n/I18nContext';
 import { getCurrencySymbol } from '@/lib/formatters';
 import { showError } from '@/lib/toast';
+import { printOrOpenInBrowser } from '@/lib/nativePrint';
 
 export default function ClientInvoiceDetails() {
   const { t } = useT();
@@ -76,7 +77,7 @@ export default function ClientInvoiceDetails() {
   const cs = getCurrencySymbol(invoice.currency || 'USD');
 
   const handlePrint = () => {
-    window.print();
+    printOrOpenInBrowser();
   };
 
   const handlePayNow = async () => {
