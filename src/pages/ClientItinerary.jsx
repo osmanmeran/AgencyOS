@@ -11,6 +11,7 @@ import TripMap from '@/components/client-trip/TripMap';
 import { useT } from '@/lib/i18n/I18nContext';
 import { assetImgProps } from '@/lib/assetUrl';
 import { hiddenSupplierIds } from '@/lib/supplierCategories';
+import { printOrOpenInBrowser } from '@/lib/nativePrint';
 
 export default function ClientItinerary() {
   const { t } = useT();
@@ -143,7 +144,7 @@ export default function ClientItinerary() {
               onClick={() => {
                 const prev = document.title;
                 document.title = trip?.name || 'Itinerary';
-                window.print();
+                printOrOpenInBrowser();
                 document.title = prev;
               }}
               className="text-xs text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-300 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
