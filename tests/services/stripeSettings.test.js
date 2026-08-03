@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getDb } from '../../server/db.js';
 import { createTenant } from '../../server/services/tenants.js';
+import { isEncrypted, decrypt } from '../../server/lib/encryption.js';
 
 // The Stripe SDK is mocked: these tests pin our own bring-your-own-key
 // storage/validation logic, not Stripe's HTTP client.
@@ -62,6 +63,25 @@ describe('Stripe bring-your-own-key settings', () => {
     expect(status.secretKeyMasked).toBe('sk_test…1234');
     expect(status.verifiedAt).toBeTruthy();
     expect(calls.balanceRetrieve).toEqual(['sk_test_abcdef1234']);
+  });
+
+  it('stores the secret key encrypted at rest, not as plaintext', async () => {
+    await saveStripeSettings(tenant.id, { secretKey: 'sk_test_abcdef1234', webhookSecret: 'whsec_xyz' });
+    const row = getDb(tenant.id).prepare('SELECT * FROM stripe_settings WHERE id = 1').get();
+    expect(row.secret_key).not.toBe('sk_test_abcdef1234');
+    expect(row.webhook_secret).not.toBe('whsec_xyz');
+    expect(isEncrypted(row.secret_key)).toBe(true);
+    expect(isEncrypted(row.webhook_secret)).toBe(true);
+    expect(decrypt(row.secret_key)).toBe('sk_test_abcdef1234');
+    expect(decrypt(row.webhook_secret)).toBe('whsec_xyz');
+  });
+
+  it('carries the existing encrypted secret key forward, still encrypted, when only the webhook secret is updated', async () => {
+    await saveStripeSettings(tenant.id, { secretKey: 'sk_test_abcdef1234' });
+    await saveStripeSettings(tenant.id, { webhookSecret: 'whsec_xyz' });
+    const row = getDb(tenant.id).prepare('SELECT * FROM stripe_settings WHERE id = 1').get();
+    expect(isEncrypted(row.secret_key)).toBe(true);
+    expect(decrypt(row.secret_key)).toBe('sk_test_abcdef1234');
   });
 
   it('rejects a secret key Stripe itself rejects, without saving it', async () => {

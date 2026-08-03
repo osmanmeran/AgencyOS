@@ -10,7 +10,13 @@ import Stripe from 'stripe';
 import { getDb } from '../db.js';
 import { BadRequestError, NotFoundError } from '../middleware/errors.js';
 import logger from '../lib/logger.js';
+import { encrypt, decrypt } from '../lib/encryption.js';
 
+// secret_key and webhook_secret are stored encrypted at rest (see
+// lib/encryption.js and migrations/029_encrypt_stripe_secrets.js) — readRow
+// returns the raw (encrypted) row; every call site below decrypts the two
+// secret fields immediately after reading, so plaintext only ever exists
+// in memory, never on disk.
 function readRow(db) {
   return db.prepare('SELECT * FROM stripe_settings WHERE id = 1').get() || null;
 }
@@ -24,10 +30,11 @@ function maskKey(key) {
 export function getPaymentSettingsStatus(tenantId) {
   const row = readRow(getDb(tenantId));
   if (!row) return { configured: false, webhookConfigured: false, secretKeyMasked: null, verifiedAt: null };
+  const secretKey = decrypt(row.secret_key);
   return {
-    configured: Boolean(row.secret_key),
+    configured: Boolean(secretKey),
     webhookConfigured: Boolean(row.webhook_secret),
-    secretKeyMasked: maskKey(row.secret_key),
+    secretKeyMasked: maskKey(secretKey),
     verifiedAt: row.verified_at || null,
   };
 }
@@ -57,18 +64,18 @@ export async function saveStripeSettings(tenantId, { secretKey, webhookSecret })
     verifiedAt = now;
   }
 
-  const nextSecretKey = secretKey !== undefined ? secretKey : (existing?.secret_key ?? null);
-  const nextWebhookSecret = webhookSecret !== undefined ? webhookSecret : (existing?.webhook_secret ?? null);
+  const nextSecretKey = secretKey !== undefined ? secretKey : (decrypt(existing?.secret_key) ?? null);
+  const nextWebhookSecret = webhookSecret !== undefined ? webhookSecret : (decrypt(existing?.webhook_secret) ?? null);
 
   if (existing) {
     db.prepare(
       'UPDATE stripe_settings SET secret_key = ?, webhook_secret = ?, verified_at = ?, updated_at = ? WHERE id = 1',
-    ).run(nextSecretKey, nextWebhookSecret, verifiedAt, now);
+    ).run(encrypt(nextSecretKey), encrypt(nextWebhookSecret), verifiedAt, now);
   } else {
     db.prepare(
       `INSERT INTO stripe_settings (id, secret_key, webhook_secret, verified_at, created_at, updated_at)
        VALUES (1, ?, ?, ?, ?, ?)`,
-    ).run(nextSecretKey, nextWebhookSecret, verifiedAt, now, now);
+    ).run(encrypt(nextSecretKey), encrypt(nextWebhookSecret), verifiedAt, now, now);
   }
 
   logger.info({ tenantId, webhookConfigured: Boolean(nextWebhookSecret) }, 'Stripe settings saved for tenant');
@@ -78,10 +85,11 @@ export async function saveStripeSettings(tenantId, { secretKey, webhookSecret })
 /** @throws {BadRequestError} If this workspace hasn't saved a Stripe secret key yet. */
 export function getStripeClientForTenant(tenantId) {
   const row = readRow(getDb(tenantId));
-  if (!row?.secret_key) {
+  const secretKey = row && decrypt(row.secret_key);
+  if (!secretKey) {
     throw new BadRequestError('Online payments are not configured for this workspace yet.', 'STRIPE_NOT_CONFIGURED');
   }
-  return new Stripe(row.secret_key, { timeout: 10000 });
+  return new Stripe(secretKey, { timeout: 10000 });
 }
 
 /**
@@ -92,12 +100,13 @@ export function getStripeClientForTenant(tenantId) {
  */
 export function verifyStripeSignatureForTenant(tenantId, rawBody, signatureHeader) {
   const row = readRow(getDb(tenantId));
-  if (!row?.webhook_secret) {
+  const webhookSecret = row && decrypt(row.webhook_secret);
+  if (!webhookSecret) {
     throw new NotFoundError('No webhook secret configured for this workspace');
   }
   const stripe = getStripeClientForTenant(tenantId);
   try {
-    return stripe.webhooks.constructEvent(rawBody, signatureHeader, row.webhook_secret);
+    return stripe.webhooks.constructEvent(rawBody, signatureHeader, webhookSecret);
   } catch (err) {
     throw new BadRequestError(`Webhook signature verification failed: ${err.message}`, 'INVALID_SIGNATURE');
   }
