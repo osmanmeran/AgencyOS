@@ -44,6 +44,22 @@
         "type": "string"
       }
     },
+    "task_templates": {
+      "type": "array",
+      "description": "Overrides server/services/tasks.js's DEFAULT_TASK_TEMPLATES for auto-generated booking tasks. Empty/absent falls back to the built-in defaults; a non-empty list fully replaces them (no merge).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "template_key": { "type": "string", "description": "Stable key; changing it orphans previously-generated tasks" },
+          "title": { "type": "string" },
+          "anchor": { "type": "string", "enum": ["created_date", "start_date", "end_date"], "default": "start_date" },
+          "offsetDays": { "type": "number", "description": "Signed days from the anchor date: negative = before, positive = after" },
+          "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+          "department": { "type": "string", "description": "Restrict to one AppSettings.departments value; '' = all departments" },
+          "description": { "type": "string", "description": "May use {client_name} {destination} {start_date} {end_date} {reference_number} placeholders" }
+        }
+      }
+    },
     "invoice_header": {
       "type": "object",
       "properties": {

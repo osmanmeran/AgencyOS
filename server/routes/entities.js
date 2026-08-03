@@ -122,9 +122,9 @@ router.put(
       { excludeUserId: req.user.id, tenantId: getTenantId() },
     );
     res.json(result);
-    // If a Trip's departure date changed, resync its auto-generated tasks'
-    // due dates (best-effort).
-    if (req.params.type === 'Trip' && req.body && 'start_date' in req.body) {
+    // If a Trip's departure or return date changed, resync its auto-generated
+    // tasks' due dates (best-effort) — some templates anchor to end_date.
+    if (req.params.type === 'Trip' && req.body && ('start_date' in req.body || 'end_date' in req.body)) {
       try {
         rescheduleTasksForBooking(req.params.id);
       } catch (err) {

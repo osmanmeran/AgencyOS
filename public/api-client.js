@@ -397,6 +397,9 @@
       complete: function (id, note) {
         return api('/tasks/' + id + '/complete', { method: 'PUT', body: JSON.stringify({ note: note }) });
       },
+      defaultTemplates: function () {
+        return api('/tasks/default-templates');
+      },
     },
     integrations: {
       Core: {

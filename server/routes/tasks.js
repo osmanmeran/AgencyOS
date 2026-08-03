@@ -3,7 +3,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { catchAsync } from '../middleware/errors.js';
 import { BadRequestError } from '../middleware/errors.js';
 import { createEntity, findEntityById } from '../services/entities.js';
-import { listTasks, completeTask } from '../services/tasks.js';
+import { listTasks, completeTask, DEFAULT_TASK_TEMPLATES } from '../services/tasks.js';
 import { broadcast } from '../lib/ws.js';
 import { getTenantId } from '../db.js';
 
@@ -52,6 +52,13 @@ router.get(
     res.json(result);
   }),
 );
+
+// GET /api/tasks/default-templates — the built-in template set, for Settings >
+// Task Templates to pre-populate its editor before an admin has customized
+// AppSettings.task_templates. Must be registered before GET /:id.
+router.get('/default-templates', (req, res) => {
+  res.json(DEFAULT_TASK_TEMPLATES);
+});
 
 // PUT /api/tasks/:id/complete — mark complete + audit the action.
 router.put(

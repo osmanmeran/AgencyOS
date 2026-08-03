@@ -11,38 +11,100 @@ const ACTIVE_STATUSES = ['pending', 'in_progress'];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * The operational tasks auto-generated for every booking, derived from the
- * Trip's departure date (`start_date`). `offsetDays` is subtracted from the
- * departure date to get the due date (`-30` => 30 days before departure).
+ * The operational tasks auto-generated for every booking. Each template is
+ * anchored to one of the Trip's dates (`anchor`) and offset by a signed
+ * number of days (`offsetDays`: negative = before the anchor, positive =
+ * after). `department` restricts the template to trips in that department
+ * (`AppSettings.departments`); '' / null applies to every department.
+ *
+ * This is also the fallback used when the workspace hasn't customized
+ * `AppSettings.task_templates` (see {@link getTaskTemplates}) — admins can
+ * add/edit/remove templates from Settings > Task Templates without touching
+ * code.
  */
-export const TASK_TEMPLATES = [
+export const DEFAULT_TASK_TEMPLATES = [
+  {
+    template_key: 'collect_deposit',
+    title: 'Collect Deposit',
+    anchor: 'created_date',
+    offsetDays: 3,
+    priority: 'high',
+    department: '',
+    description: 'Collect the initial deposit from {client_name} to confirm the booking.',
+  },
+  {
+    template_key: 'travel_insurance_window',
+    title: 'Follow Up on Travel Insurance',
+    anchor: 'created_date',
+    offsetDays: 14,
+    priority: 'medium',
+    department: '',
+    description:
+      'Follow up with {client_name} about purchasing travel insurance while "cancel for any reason" coverage is still available.',
+  },
+  {
+    template_key: 'visa_document_deadline',
+    title: 'Confirm Visa / Travel Documents',
+    anchor: 'start_date',
+    offsetDays: -45,
+    priority: 'high',
+    department: '',
+    description: 'Confirm {client_name} has valid visas/travel documents for {destination} — departure {start_date}.',
+  },
+  {
+    template_key: 'supplier_payment_due',
+    title: 'Pay Supplier Balance',
+    anchor: 'start_date',
+    offsetDays: -21,
+    priority: 'high',
+    department: '',
+    description:
+      "Pay the outstanding supplier balance for {client_name}'s {destination} booking before departure {start_date}.",
+  },
   {
     template_key: 'collect_final_balance',
     title: 'Collect Final Balance',
-    offsetDays: 30,
+    anchor: 'start_date',
+    offsetDays: -30,
     priority: 'high',
-    describe: (trip) =>
-      `Final balance collection for ${trip.client_name || 'client'}` +
-      (trip.reference_number ? ` (${trip.reference_number})` : '') +
-      ` — departure ${trip.start_date}.`,
+    department: '',
+    description: 'Final balance collection for {client_name} — departure {start_date}.',
   },
   {
     template_key: 'send_rooming_list',
     title: 'Send Rooming List to Hotel',
-    offsetDays: 14,
+    anchor: 'start_date',
+    offsetDays: -14,
     priority: 'medium',
-    describe: (trip) =>
-      `Prepare and send the rooming list to the hotel for ${trip.client_name || 'client'} ` +
-      `ahead of departure ${trip.start_date}.`,
+    department: '',
+    description: 'Prepare and send the rooming list to the hotel for {client_name} ahead of departure {start_date}.',
   },
   {
     template_key: 'issue_final_docs',
     title: 'Issue Tickets / Final Docs',
-    offsetDays: 7,
+    anchor: 'start_date',
+    offsetDays: -7,
     priority: 'critical',
-    describe: (trip) =>
-      `Issue final tickets / travel documents for ${trip.client_name || 'client'} ` +
-      `before departure ${trip.start_date}.`,
+    department: '',
+    description: 'Issue final tickets / travel documents for {client_name} before departure {start_date}.',
+  },
+  {
+    template_key: 'pre_departure_call',
+    title: 'Pre-Departure Confirmation Call',
+    anchor: 'start_date',
+    offsetDays: -3,
+    priority: 'medium',
+    department: '',
+    description: 'Call {client_name} to confirm final details ahead of departure {start_date}.',
+  },
+  {
+    template_key: 'post_trip_followup',
+    title: 'Post-Trip Follow-Up',
+    anchor: 'end_date',
+    offsetDays: 2,
+    priority: 'low',
+    department: '',
+    description: 'Follow up with {client_name} for feedback / a review after their trip to {destination}.',
   },
 ];
 
@@ -68,8 +130,18 @@ function addDaysYMD(ymd, deltaDays) {
   return dt.toISOString().slice(0, 10);
 }
 
+/** Resolve a template's anchor to a `YYYY-MM-DD` string on this trip, or null if that date isn't set yet. */
+function getAnchorDate(trip, anchor) {
+  if (anchor === 'end_date') return trip.end_date || null;
+  if (anchor === 'created_date') return trip.created_date ? trip.created_date.slice(0, 10) : null;
+  return trip.start_date || null; // default: 'start_date'
+}
+
+/** Due date for a template on this trip, or null if its anchor date isn't available. */
 function dueDateForTemplate(trip, tpl) {
-  return addDaysYMD(trip.start_date, -tpl.offsetDays);
+  const anchorDate = getAnchorDate(trip, tpl.anchor);
+  if (!anchorDate) return null;
+  return addDaysYMD(anchorDate, tpl.offsetDays);
 }
 
 function escalationTriggerFor(dueDateYmd, priority) {
@@ -78,13 +150,54 @@ function escalationTriggerFor(dueDateYmd, priority) {
   return new Date(new Date(`${dueDateYmd}T00:00:00Z`).getTime() - lead).toISOString();
 }
 
+/** Fill `{client_name}` / `{destination}` / `{start_date}` / `{end_date}` / `{reference_number}` placeholders in a template description. */
+function renderTemplateDescription(description, trip) {
+  if (!description) return '';
+  return description.replace(/\{(\w+)\}/g, (match, key) => {
+    if (key === 'client_name') return trip.client_name || 'client';
+    if (key === 'destination') return trip.destination || '';
+    if (key === 'start_date') return trip.start_date || '';
+    if (key === 'end_date') return trip.end_date || '';
+    if (key === 'reference_number') return trip.reference_number || '';
+    return match;
+  });
+}
+
 // --- low-level row access (system context: no per-row RLS, used by the engine) ---
 
 function fetchTrip(bookingId) {
   const db = getDb();
-  const row = db.prepare("SELECT id, data FROM entities WHERE type = 'Trip' AND id = ?").get(bookingId);
+  const row = db.prepare("SELECT id, data, created_date FROM entities WHERE type = 'Trip' AND id = ?").get(bookingId);
   if (!row) return null;
-  return { id: row.id, ...JSON.parse(row.data) };
+  return { id: row.id, ...JSON.parse(row.data), created_date: row.created_date };
+}
+
+/**
+ * The workspace's configured task templates (`AppSettings.task_templates`),
+ * or {@link DEFAULT_TASK_TEMPLATES} if the workspace hasn't customized them.
+ * A configured list fully replaces the defaults (no merging) — Settings >
+ * Task Templates pre-populates the form with the defaults so admins edit
+ * from a visible starting point rather than an empty list.
+ */
+function getTaskTemplates() {
+  const db = getDb();
+  try {
+    const row = db.prepare("SELECT data FROM entities WHERE type = 'AppSettings' LIMIT 1").get();
+    if (row) {
+      const settings = JSON.parse(row.data);
+      if (Array.isArray(settings.task_templates) && settings.task_templates.length > 0) {
+        return settings.task_templates;
+      }
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to load task_templates from AppSettings, using defaults');
+  }
+  return DEFAULT_TASK_TEMPLATES;
+}
+
+/** Templates applicable to this trip's department (or workspace-wide ones, `department` unset/''). */
+function templatesForTrip(trip) {
+  return getTaskTemplates().filter((tpl) => !tpl.department || tpl.department === trip.department);
 }
 
 function findTaskByTemplate(bookingId, templateKey) {
@@ -135,11 +248,12 @@ function patchTask(id, patch) {
 // --- public API ---
 
 /**
- * Auto-generate the three operational tasks for a booking, idempotently.
+ * Auto-generate this booking's operational tasks from the workspace's
+ * configured templates (see {@link getTaskTemplates}), idempotently.
  *
  * - If a task with the same `(booking_id, template_key)` already exists and is
  *   still active, its due date / SLA window are resynced to the current
- *   departure date (so editing the Trip updates the tasks).
+ *   trip dates (so editing the Trip updates the tasks).
  * - Completed/cancelled tasks are left alone (never resurrected).
  * - Tasks are attributed to `actor` (the booking's creator) via `created_by`,
  *   and pre-assigned to that user.
@@ -158,8 +272,9 @@ export function generateTasksForBooking(bookingId, actor = { id: 'system' }) {
   const db = getDb();
   const created = [];
   const tx = db.transaction(() => {
-    for (const tpl of TASK_TEMPLATES) {
+    for (const tpl of templatesForTrip(trip)) {
       const dueDate = dueDateForTemplate(trip, tpl);
+      if (!dueDate) continue; // e.g. an end_date-anchored template on a trip with no end_date yet
       const escalationTrigger = escalationTriggerFor(dueDate, tpl.priority);
       const existing = findTaskByTemplate(bookingId, tpl.template_key);
 
@@ -180,7 +295,7 @@ export function generateTasksForBooking(bookingId, actor = { id: 'system' }) {
           {
             template_key: tpl.template_key,
             title: tpl.title,
-            description: tpl.describe(trip),
+            description: renderTemplateDescription(tpl.description, trip),
             status: 'pending',
             priority: tpl.priority,
             due_date: dueDate,
@@ -203,9 +318,14 @@ export function generateTasksForBooking(bookingId, actor = { id: 'system' }) {
 
 /**
  * Recompute due dates + SLA windows for every *auto-generated* task of a
- * booking when its departure date changes. Manual tasks (no `template_key`)
- * keep their own due dates. Idempotent and best-effort: completed/cancelled
- * tasks are skipped.
+ * booking when its departure or return date changes. Manual tasks (no
+ * `template_key`) — and tasks whose template was since removed from
+ * `AppSettings.task_templates` — keep their own due dates. Idempotent and
+ * best-effort: completed/cancelled tasks are skipped.
+ *
+ * Looks up templates by key across the *full* configured list (not
+ * department-filtered) since the task already exists regardless of whether
+ * the trip's department later changed.
  *
  * @param {string} bookingId - Trip id.
  * @returns {{ rescheduled: number }}
@@ -214,25 +334,26 @@ export function rescheduleTasksForBooking(bookingId) {
   const trip = fetchTrip(bookingId);
   if (!trip || !trip.start_date) return { rescheduled: 0 };
 
+  const templates = getTaskTemplates();
   const db = getDb();
   const tasks = findTasksForBooking(bookingId);
+  let rescheduled = 0;
   const tx = db.transaction(() => {
     for (const task of tasks) {
       if (!ACTIVE_STATUSES.includes(task.status)) continue;
-      const tpl = TASK_TEMPLATES.find((t) => t.template_key === task.template_key);
-      if (!tpl) continue; // manual task — leave its due date untouched
+      const tpl = templates.find((t) => t.template_key === task.template_key);
+      if (!tpl) continue; // manual task, or its template was removed — leave its due date untouched
       const dueDate = dueDateForTemplate(trip, tpl);
+      if (!dueDate) continue;
       patchTask(task.id, {
         due_date: dueDate,
         escalation_trigger_time: escalationTriggerFor(dueDate, tpl.priority),
         is_escalated: false,
       });
+      rescheduled += 1;
     }
   });
   tx();
-  const rescheduled = tasks.filter(
-    (t) => ACTIVE_STATUSES.includes(t.status) && TASK_TEMPLATES.some((x) => x.template_key === t.template_key),
-  ).length;
   return { rescheduled };
 }
 

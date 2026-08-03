@@ -47,6 +47,7 @@ const db = globalThis.__B44_DB__ || {
     list: async () => [],
     create: async () => ({}),
     complete: async () => ({}),
+    defaultTemplates: async () => [],
   },
   integrations: {
     Core: {

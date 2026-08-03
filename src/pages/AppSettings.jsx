@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import StripeSettingsPanel from '@/components/app-settings/StripeSettingsPanel';
+import TaskTemplatesPanel from '@/components/app-settings/TaskTemplatesPanel';
 import {
   Settings,
   Globe,
@@ -33,6 +34,7 @@ import {
   ChevronDown,
   ChevronRight,
   KeyRound,
+  ClipboardList,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useT } from '@/lib/i18n/I18nContext';
@@ -476,6 +478,7 @@ export default function AppSettings() {
   const tabs = [
     { key: 'general', label: 'General', icon: Settings },
     { key: 'permissions', label: 'Permissions', icon: KeyRound },
+    { key: 'taskTemplates', label: 'Task Templates', icon: ClipboardList },
     { key: 'integrations', label: 'Integrations', icon: Mail },
   ];
 
@@ -1074,6 +1077,9 @@ export default function AppSettings() {
           </div>
         </div>
       )}
+
+      {/* ==================== TASK TEMPLATES TAB ==================== */}
+      {activeTab === 'taskTemplates' && <TaskTemplatesPanel />}
 
       {/* ==================== INTEGRATIONS TAB ==================== */}
       {activeTab === 'integrations' && (
