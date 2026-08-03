@@ -162,7 +162,8 @@
     "noUpcomingArrivals": "Keine bevorstehenden Ankünfte",
     "upcomingDepartures": "Bevorstehende Abreisen",
     "noUpcomingDepartures": "Keine bevorstehenden Abreisen",
-    "myOpenTasks": "Meine offenen Aufgaben"
+    "myOpenTasks": "Meine offenen Aufgaben",
+    "myBookingTasks": "Meine Buchungsaufgaben"
   },
   "reservations": {
     "title": "Reservierungen",
@@ -407,7 +408,8 @@
     "label": "Priorität",
     "low": "Niedrig",
     "medium": "Mittel",
-    "high": "Hoch"
+    "high": "Hoch",
+    "critical": "Kritisch"
   },
   "taskBoard": {
     "title": "Aufgabenboard",
@@ -3351,7 +3353,10 @@
     "re": "Re-enter the password",
     "you_2": "You need the Manage Users permission to access this page.",
     "edit_2": "Edit User:",
-    "no": "No users found"
+    "no": "No users found",
+    "reportsTo": "Berichtet an",
+    "reportsToNone": "— Keine —",
+    "reportsToHint": "Erhält die Eskalationsbenachrichtigungen für die Aufgaben dieser Person. Leer lassen, um stattdessen alle Manager/Admins zu benachrichtigen."
   },
   "signup": {
     "title": "Workspace erstellen",
@@ -3478,5 +3483,25 @@
     "notesLabel": "Hinweise:",
     "viewItinerary": "Vollständige Reiseroute online ansehen →",
     "termsAndConditions": "Allgemeine Geschäftsbedingungen"
+  },
+  "tripTasksPanel": {
+    "title": "Buchungsaufgaben",
+    "subtitle": "Operative Fristen für diese Buchung",
+    "addButton": "Aufgabe hinzufügen",
+    "noItemsFound": "Noch keine Aufgaben für diese Buchung",
+    "auto": "Auto",
+    "overdue": "Überfällig",
+    "dueSoon": "Bald fällig",
+    "escalated": "Eskaliert",
+    "completedLabel": "Erledigt am {date}",
+    "dialogTitle": "Buchungsaufgabe hinzufügen",
+    "titleLabel": "Titel *",
+    "titlePlaceholder": "Aufgabentitel...",
+    "dueDateLabel": "Fälligkeitsdatum",
+    "descriptionPlaceholder": "Weitere Details...",
+    "createSuccess": "Aufgabe hinzugefügt",
+    "createError": "Aufgabe konnte nicht hinzugefügt werden",
+    "completeSuccess": "Aufgabe als erledigt markiert",
+    "completeError": "Aufgabe konnte nicht abgeschlossen werden"
   }
 }

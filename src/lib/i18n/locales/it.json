@@ -162,7 +162,8 @@
     "noUpcomingArrivals": "Nessun arrivo previsto",
     "upcomingDepartures": "Prossime Partenze",
     "noUpcomingDepartures": "Nessuna partenza prevista",
-    "myOpenTasks": "Le mie attività aperte"
+    "myOpenTasks": "Le mie attività aperte",
+    "myBookingTasks": "Le mie attività di prenotazione"
   },
   "reservations": {
     "title": "Prenotazioni",
@@ -407,7 +408,8 @@
     "label": "Priorità",
     "low": "Bassa",
     "medium": "Media",
-    "high": "Alta"
+    "high": "Alta",
+    "critical": "Critica"
   },
   "taskBoard": {
     "title": "Bacheca Attività",
@@ -3351,7 +3353,10 @@
     "re": "Re-enter the password",
     "you_2": "You need the Manage Users permission to access this page.",
     "edit_2": "Edit User:",
-    "no": "No users found"
+    "no": "No users found",
+    "reportsTo": "Riporta a",
+    "reportsToNone": "— Nessuno —",
+    "reportsToHint": "Riceve le notifiche di escalation delle attività di questa persona. Lascia vuoto per notificare invece ogni manager/admin."
   },
   "signup": {
     "title": "Crea il tuo spazio di lavoro",
@@ -3478,5 +3483,25 @@
     "notesLabel": "Note:",
     "viewItinerary": "Visualizza l’itinerario completo online →",
     "termsAndConditions": "Termini e condizioni"
+  },
+  "tripTasksPanel": {
+    "title": "Attività Prenotazione",
+    "subtitle": "Scadenze operative per questa prenotazione",
+    "addButton": "Aggiungi Attività",
+    "noItemsFound": "Nessuna attività per questa prenotazione",
+    "auto": "Auto",
+    "overdue": "In ritardo",
+    "dueSoon": "In scadenza",
+    "escalated": "Escalation",
+    "completedLabel": "Completata il {date}",
+    "dialogTitle": "Aggiungi Attività Prenotazione",
+    "titleLabel": "Titolo *",
+    "titlePlaceholder": "Titolo dell'attività...",
+    "dueDateLabel": "Data di Scadenza",
+    "descriptionPlaceholder": "Dettagli aggiuntivi...",
+    "createSuccess": "Attività aggiunta",
+    "createError": "Impossibile aggiungere l'attività",
+    "completeSuccess": "Attività contrassegnata come completata",
+    "completeError": "Impossibile completare l'attività"
   }
 }

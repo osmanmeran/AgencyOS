@@ -162,7 +162,8 @@
     "noUpcomingArrivals": "No hay llegadas próximas",
     "upcomingDepartures": "Próximas Salidas",
     "noUpcomingDepartures": "No hay salidas próximas",
-    "myOpenTasks": "Mis tareas abiertas"
+    "myOpenTasks": "Mis tareas abiertas",
+    "myBookingTasks": "Mis tareas de reserva"
   },
   "reservations": {
     "title": "Reservas",
@@ -407,7 +408,8 @@
     "label": "Prioridad",
     "low": "Baja",
     "medium": "Media",
-    "high": "Alta"
+    "high": "Alta",
+    "critical": "Crítica"
   },
   "taskBoard": {
     "title": "Tablero de Tareas",
@@ -3351,7 +3353,10 @@
     "re": "Re-enter the password",
     "you_2": "You need the Manage Users permission to access this page.",
     "edit_2": "Edit User:",
-    "no": "No users found"
+    "no": "No users found",
+    "reportsTo": "Reporta a",
+    "reportsToNone": "— Ninguno —",
+    "reportsToHint": "Recibe las notificaciones de escalado de tareas de esta persona. Déjalo sin definir para notificar a todos los managers/admins en su lugar."
   },
   "signup": {
     "title": "Crea tu espacio de trabajo",
@@ -3478,5 +3483,25 @@
     "notesLabel": "Notas:",
     "viewItinerary": "Ver el itinerario completo en línea →",
     "termsAndConditions": "Términos y condiciones"
+  },
+  "tripTasksPanel": {
+    "title": "Tareas de la Reserva",
+    "subtitle": "Plazos operativos para esta reserva",
+    "addButton": "Añadir Tarea",
+    "noItemsFound": "Aún no hay tareas para esta reserva",
+    "auto": "Auto",
+    "overdue": "Vencida",
+    "dueSoon": "Próxima a vencer",
+    "escalated": "Escalada",
+    "completedLabel": "Completada el {date}",
+    "dialogTitle": "Añadir Tarea de Reserva",
+    "titleLabel": "Título *",
+    "titlePlaceholder": "Título de la tarea...",
+    "dueDateLabel": "Fecha de Vencimiento",
+    "descriptionPlaceholder": "Detalles adicionales...",
+    "createSuccess": "Tarea añadida",
+    "createError": "No se pudo añadir la tarea",
+    "completeSuccess": "Tarea marcada como completada",
+    "completeError": "No se pudo completar la tarea"
   }
 }
