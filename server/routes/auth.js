@@ -31,6 +31,8 @@ import {
   createUser,
   inviteUser,
   acceptInvite,
+  requestPasswordReset,
+  resetPassword,
 } from '../services/auth.js';
 import { getTenantById } from '../services/tenants.js';
 import { workspaceUrl } from '../middleware/tenant.js';
@@ -289,6 +291,37 @@ router.post(
     if (tenant?.slug) setActiveTenantCookie(res, tenant.slug);
     else clearActiveTenantCookie(res);
     res.json({ token, user });
+  }),
+);
+
+// Self-service password reset. Both endpoints are unauthenticated and public
+// by necessity (there's no session yet), and respond identically whether or
+// not the email is registered/eligible — see requestPasswordReset's doc
+// comment — so this can't be used to enumerate which emails exist.
+router.post(
+  '/forgot-password',
+  validate(schemas.forgotPassword),
+  catchAsync(async (req, res) => {
+    const result = requestPasswordReset(req.body.email);
+    if (result) {
+      const resetUrl = `${workspaceUrl(req)}/reset-password?token=${result.token}`;
+      sendEmail({
+        to: result.email,
+        subject: 'Reset your Marvelops TravelPro password',
+        template: 'password_reset',
+        templateData: { name: result.name, resetUrl },
+      }).catch((err) => logger.warn({ err: err.message }, 'Failed to send password reset email'));
+    }
+    res.json({ message: 'If that email is registered, a reset link has been sent.' });
+  }),
+);
+
+router.post(
+  '/reset-password',
+  validate(schemas.resetPassword),
+  catchAsync(async (req, res) => {
+    resetPassword(req.body);
+    res.json({ success: true });
   }),
 );
 

@@ -81,7 +81,30 @@
       "passwordPlaceholder": "Şifrenizi girin",
       "signIn": "Giriş Yap",
       "errLoginFailedPeriod": "Giriş başarısız.",
-      "errLoginFailed": "Giriş başarısız"
+      "errLoginFailed": "Giriş başarısız",
+      "forgotPassword": "Şifrenizi mi unuttunuz?"
+    },
+    "forgotPassword": {
+      "title": "Şifrenizi sıfırlayın",
+      "subtitle": "E-postanızı girin, size bir sıfırlama bağlantısı gönderelim",
+      "sending": "Gönderiliyor...",
+      "submit": "Sıfırlama Bağlantısı Gönder",
+      "checkEmailBody": "Bu e-posta kayıtlıysa, bir sıfırlama bağlantısı yolda. 1 saat içinde geçerliliğini yitirir.",
+      "backToLogin": "Girişe dön",
+      "errGeneric": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+    },
+    "resetPassword": {
+      "title": "Yeni bir şifre seçin",
+      "subtitle": "Hesabınız için yeni bir şifre girin",
+      "invalidLinkTitle": "Geçersiz Bağlantı",
+      "invalidLinkBody": "Bu şifre sıfırlama bağlantısında gerekli token eksik.",
+      "newPasswordLabel": "Yeni Şifre",
+      "submitting": "Kaydediliyor...",
+      "submit": "Şifreyi Sıfırla",
+      "successTitle": "Şifre Güncellendi",
+      "successBody": "Şifreniz değiştirildi. Artık yeni şifrenizle giriş yapabilirsiniz.",
+      "goToLogin": "Girişe Git",
+      "errGeneric": "Şifre sıfırlanamadı. Bağlantının süresi dolmuş olabilir."
     },
     "microsoftCallback": {
       "verifyingCode": "Yetkilendirme kodu doğrulanıyor...",
@@ -153,7 +176,15 @@
     "quickActions": "Hızlı İşlemler",
     "tripCalendar": "Seyahat Takvimi",
     "today": "Bugün",
-    "weekdays": ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"],
+    "weekdays": [
+      "Paz",
+      "Pzt",
+      "Sal",
+      "Çar",
+      "Per",
+      "Cum",
+      "Cmt"
+    ],
     "confirmedArrivalsMonth": "Onaylanan Varışlar — {month}",
     "noConfirmedArrivalsMonth": "Bu ay onaylanan varış yok",
     "confirmedArrivalSingular": "{count} onaylanan varış",
@@ -556,12 +587,12 @@
   },
   "paymentLink": {
     "title": "Çevrimiçi Ödeme",
-    "simulatedBadge": "Simüle Edildi",
-    "shareText": "Çevrimiçi ödemeyi tahsil etmek için bu imzalı bağlantıyı {client} ile paylaşın: {amount}.",
+    "shareText": "Çevrimiçi ödemeyi tahsil etmek için bu güvenli Stripe ödeme bağlantısını {client} ile paylaşın: {amount}.",
     "defaultClient": "müşteri",
+    "generate": "Ödeme Bağlantısı Oluştur",
     "linkCopied": "Bağlantı Kopyalandı!",
     "copyPaymentLink": "Ödeme Bağlantısını Kopyala",
-    "footerTip": "Jeton, imzalanmış bir yük içerir (tutar, referans) — kurcalamaya karşı korumalıdır. Gerçek çevrimiçi ödemeleri işlemek için bir ödeme ağ geçidi (örn. Stripe) bağlayın."
+    "footerTip": "Ödemeler Stripe tarafından güvenli şekilde işlenir ve otomatik olarak bu faturaya uygulanır."
   },
   "saveAsTemplate": {
     "button": "Şablon Olarak Kaydet",
@@ -2094,6 +2125,29 @@
     "paidInFull": "Tamamen ödendi",
     "dueAmount": "Kalan: {amount}"
   },
+  "clientPayments": {
+    "title": "Ödemelerim",
+    "subtitle": "Ödeme geçmişiniz ve makbuzlarınız",
+    "totalPaid": "Toplam Ödenen",
+    "noPaymentsTitle": "Henüz ödeme yok",
+    "noPaymentsBody": "Bir ödeme yaptığınızda ödeme geçmişiniz burada görünecek.",
+    "reference": "Referans:",
+    "viewInvoice": "Faturayı Görüntüle",
+    "status": {
+      "completed": "Tamamlandı",
+      "pending": "Beklemede",
+      "failed": "Başarısız",
+      "refunded": "İade Edildi"
+    },
+    "method": {
+      "credit_card": "Kart",
+      "bank_transfer": "Banka Havalesi",
+      "paypal": "PayPal",
+      "check": "Çek",
+      "cash": "Nakit",
+      "other": "Diğer"
+    }
+  },
   "clientInvoiceDetails": {
     "notFound": "Fatura bulunamadı",
     "backToInvoices": "Faturalara Dön",
@@ -2117,6 +2171,10 @@
     "amountPaid": "Ödenen Tutar:",
     "amountDue": "Kalan Tutar:",
     "paymentTerms": "Ödeme Koşulları:",
+    "payNow": "Şimdi Öde",
+    "errorPayNow": "Ödeme başlatılamadı",
+    "paymentCancelled": "Ödeme iptal edildi — herhangi bir ücret alınmadı.",
+    "paymentProcessing": "Ödeme alındı — bankanızla doğrulanıyor. Bu sayfa otomatik olarak güncellenecek.",
     "passengerLabel": "Yolcu: {name}"
   },
   "clientItinerary": {

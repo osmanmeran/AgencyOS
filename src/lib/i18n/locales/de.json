@@ -81,7 +81,30 @@
       "passwordPlaceholder": "Passwort eingeben",
       "signIn": "Anmelden",
       "errLoginFailedPeriod": "Anmeldung fehlgeschlagen.",
-      "errLoginFailed": "Anmeldung fehlgeschlagen"
+      "errLoginFailed": "Anmeldung fehlgeschlagen",
+      "forgotPassword": "Passwort vergessen?"
+    },
+    "forgotPassword": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen",
+      "sending": "Wird gesendet...",
+      "submit": "Link zum Zurücksetzen senden",
+      "checkEmailBody": "Wenn diese E-Mail-Adresse registriert ist, ist ein Link zum Zurücksetzen unterwegs. Er läuft in 1 Stunde ab.",
+      "backToLogin": "Zurück zur Anmeldung",
+      "errGeneric": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+    },
+    "resetPassword": {
+      "title": "Neues Passwort wählen",
+      "subtitle": "Geben Sie ein neues Passwort für Ihr Konto ein",
+      "invalidLinkTitle": "Ungültiger Link",
+      "invalidLinkBody": "Diesem Link zum Zurücksetzen des Passworts fehlt das erforderliche Token.",
+      "newPasswordLabel": "Neues Passwort",
+      "submitting": "Wird gespeichert...",
+      "submit": "Passwort zurücksetzen",
+      "successTitle": "Passwort aktualisiert",
+      "successBody": "Ihr Passwort wurde geändert. Sie können sich jetzt mit Ihrem neuen Passwort anmelden.",
+      "goToLogin": "Zur Anmeldung",
+      "errGeneric": "Passwort konnte nicht zurückgesetzt werden. Der Link ist möglicherweise abgelaufen."
     },
     "microsoftCallback": {
       "verifyingCode": "Autorisierungscode wird überprüft...",
@@ -153,7 +176,15 @@
     "quickActions": "Schnellzugriff",
     "tripCalendar": "Reisekalender",
     "today": "Heute",
-    "weekdays": ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
+    "weekdays": [
+      "So",
+      "Mo",
+      "Di",
+      "Mi",
+      "Do",
+      "Fr",
+      "Sa"
+    ],
     "confirmedArrivalsMonth": "Bestätigte Ankünfte — {month}",
     "noConfirmedArrivalsMonth": "Keine bestätigten Ankünfte in diesem Monat",
     "confirmedArrivalSingular": "{count} bestätigte Ankunft",
@@ -556,12 +587,12 @@
   },
   "paymentLink": {
     "title": "Online-Zahlung",
-    "simulatedBadge": "Simuliert",
-    "shareText": "Teilen Sie diesen signierten Link mit {client}, um die Zahlung von {amount} online einzuziehen.",
+    "shareText": "Teilen Sie diesen sicheren Stripe-Zahlungslink mit {client}, um die Zahlung von {amount} online einzuziehen.",
     "defaultClient": "dem Kunden",
+    "generate": "Zahlungslink erstellen",
     "linkCopied": "Link Kopiert!",
     "copyPaymentLink": "Zahlungslink Kopieren",
-    "footerTip": "Das Token enthält eine signierte Nutzlast (Betrag, Referenz) — fälschungssicher. Verbinden Sie ein Zahlungsgateway (z. B. Stripe), um echte Online-Zahlungen zu verarbeiten."
+    "footerTip": "Zahlungen werden sicher von Stripe verarbeitet und automatisch dieser Rechnung zugeordnet."
   },
   "saveAsTemplate": {
     "button": "Als Vorlage Speichern",
@@ -2094,6 +2125,29 @@
     "paidInFull": "Vollständig bezahlt",
     "dueAmount": "Fällig: {amount}"
   },
+  "clientPayments": {
+    "title": "Meine Zahlungen",
+    "subtitle": "Ihr Zahlungsverlauf und Belege",
+    "totalPaid": "Gesamt bezahlt",
+    "noPaymentsTitle": "Noch keine Zahlungen",
+    "noPaymentsBody": "Ihr Zahlungsverlauf wird hier angezeigt, sobald Sie eine Zahlung vornehmen.",
+    "reference": "Referenz:",
+    "viewInvoice": "Rechnung ansehen",
+    "status": {
+      "completed": "Abgeschlossen",
+      "pending": "Ausstehend",
+      "failed": "Fehlgeschlagen",
+      "refunded": "Erstattet"
+    },
+    "method": {
+      "credit_card": "Karte",
+      "bank_transfer": "Banküberweisung",
+      "paypal": "PayPal",
+      "check": "Scheck",
+      "cash": "Bar",
+      "other": "Sonstiges"
+    }
+  },
   "clientInvoiceDetails": {
     "notFound": "Rechnung nicht gefunden",
     "backToInvoices": "Zurück zu Rechnungen",
@@ -2117,6 +2171,10 @@
     "amountPaid": "Bezahlter Betrag:",
     "amountDue": "Fälliger Betrag:",
     "paymentTerms": "Zahlungsbedingungen:",
+    "payNow": "Jetzt bezahlen",
+    "errorPayNow": "Zahlung konnte nicht gestartet werden",
+    "paymentCancelled": "Die Zahlung wurde storniert — es wurde keine Belastung vorgenommen.",
+    "paymentProcessing": "Zahlung erhalten — wird bei Ihrer Bank bestätigt. Diese Seite wird automatisch aktualisiert.",
     "passengerLabel": "Reisender: {name}"
   },
   "clientItinerary": {

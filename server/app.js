@@ -130,6 +130,7 @@ const standardLimiter = rateLimit({
 
 app.use('/api/auth/login', strictLimiter);
 app.use('/api/auth/microsoft', strictLimiter);
+app.use('/api/auth/forgot-password', strictLimiter);
 // Self-serve workspace signup is abuse-sensitive: keep it on the strict limiter.
 app.use('/api/tenants/signup', strictLimiter);
 app.use('/api/notifications', mutationLimiter);

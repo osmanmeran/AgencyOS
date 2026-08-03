@@ -18,6 +18,10 @@ const EXEMPT_PATHS = new Set([
   // cookie exists yet at the point this runs, so there's nothing to
   // double-submit against.
   '/api/tenants/signup',
+  // Password reset: both run before any session/CSRF cookie exists (the
+  // requester isn't logged in yet, that's the whole point).
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
 ]);
 
 /**

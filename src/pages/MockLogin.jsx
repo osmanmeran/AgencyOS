@@ -95,7 +95,12 @@ export default function MockLogin() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('common.password')}</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-muted-foreground">{t('common.password')}</label>
+              <a href="/forgot-password" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                {t('auth.login.forgotPassword')}
+              </a>
+            </div>
             <input
               type="password"
               value={adminPassword}

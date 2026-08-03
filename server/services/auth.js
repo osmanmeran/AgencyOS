@@ -560,6 +560,76 @@ export function locateInvite(token) {
 }
 
 /**
+ * Issues a 1-hour password-reset token for `email`, scoped to the current
+ * tenant only (the workspace already selected for this request — same
+ * "current tenant first" precedent as {@link authenticateLocal}'s candidate
+ * ordering). Unlike login, there's no password here to disambiguate a
+ * same-email match across several workspaces, so — rather than guess or
+ * email every matching workspace — this only ever resets the account in the
+ * workspace the request actually came from.
+ *
+ * Returns `null` (no token minted, caller sends no email) for an unknown or
+ * inactive email, or one with no usable local password (`microsoft_id` set —
+ * {@link authenticateLocal} already refuses password login for those, so
+ * resetting one would be a dead end). The route must respond identically
+ * either way, so a reset request can't be used to test which emails exist.
+ * @returns {{email: string, name: string, token: string}|null}
+ */
+export function requestPasswordReset(email) {
+  const db = getDb();
+  const normalized = normalizeEmail(email);
+  const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalized);
+  if (!user || !user.is_active || user.microsoft_id) return null;
+
+  const token = uid() + uid();
+  const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  db.prepare('UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE id = ?').run(
+    token,
+    expires,
+    user.id,
+  );
+  return { email: user.email, name: user.name, token };
+}
+
+/** Locate a password-reset request by token across all workspaces (mirrors {@link locateInvite}). */
+export function locatePasswordReset(token) {
+  if (!token) return null;
+  const tenantIds = [DEFAULT_TENANT_ID, ...listTenants().map((t) => t.id)];
+  for (const tenantId of tenantIds) {
+    const db = getDb(tenantId);
+    const user = db.prepare('SELECT * FROM users WHERE password_reset_token = ?').get(token);
+    if (user) return { tenantId, db, user };
+  }
+  return null;
+}
+
+/**
+ * Completes a password reset: validates the token, sets the new password,
+ * clears the token, and revokes every refresh token the account currently
+ * holds — a reset is a natural point to end any other active session (e.g.
+ * if the reset was prompted by a compromised password).
+ * @returns {{tenantId: string}}
+ * @throws {BadRequestError} If the token is invalid or expired.
+ */
+export function resetPassword({ token, newPassword }) {
+  const located = locatePasswordReset(token);
+  if (!located) throw new BadRequestError('Invalid or expired reset link', 'RESET_INVALID');
+  const { db, tenantId, user } = located;
+  if (user.password_reset_expires && new Date(user.password_reset_expires) < new Date()) {
+    throw new BadRequestError('Reset link has expired', 'RESET_EXPIRED');
+  }
+
+  const hashed = bcrypt.hashSync(newPassword, 10);
+  const now = new Date().toISOString();
+  db.prepare(
+    'UPDATE users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL, updated_date = ? WHERE id = ?',
+  ).run(hashed, now, user.id);
+
+  runWithTenant(tenantId, () => revokeAllUserRefreshTokens(user.id));
+  return { tenantId };
+}
+
+/**
  * Directly create an already-active user (admin-created, no invite flow).
  * @returns {object} The raw new user row.
  * @throws {ConflictError} If the email is already registered.

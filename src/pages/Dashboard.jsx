@@ -840,7 +840,7 @@ export default function Dashboard() {
       </Grid>
 
       {/* Quick Links */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
         {[
           { label: t('nav.reservations'), to: 'Reservations', icon: <FlightTakeoffRounded />, color: 'primary' },
           { label: t('proposals.title'), to: 'Proposals', icon: <RateReviewRounded />, color: 'success' },
