@@ -55,13 +55,6 @@ export default defineConfig({
           )
             return 'maps';
           if (id.includes('node_modules/framer-motion')) return 'motion';
-          if (id.includes('node_modules/react-quill') || id.includes('node_modules/quill')) return 'editor';
-          if (
-            id.includes('node_modules/jspdf') ||
-            id.includes('node_modules/pdfkit') ||
-            id.includes('node_modules/html2canvas')
-          )
-            return 'pdf';
           if (id.includes('node_modules/@radix-ui')) return 'radix';
           // React + its first-party ecosystem live in their own base chunk so
           // other split chunks depend on this instead of the catch-all

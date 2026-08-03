@@ -291,7 +291,18 @@ export default function ClientCRM() {
                   </div>
                   <div className="space-y-2">
                     {cards.map((client) => (
-                      <div key={client.id} onClick={() => setSelectedClientId(client.id)}>
+                      <div
+                        key={client.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedClientId(client.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedClientId(client.id);
+                          }
+                        }}
+                      >
                         <DealCard client={client} />
                       </div>
                     ))}

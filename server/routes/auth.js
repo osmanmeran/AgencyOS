@@ -262,7 +262,7 @@ router.post(
   requireTier('admin'),
   validate(schemas.inviteUser),
   catchAsync(async (req, res) => {
-    const result = inviteUser({ ...req.body, invited_by: req.user.id });
+    const result = inviteUser(req.body);
 
     const inviter = getUserById(req.user.id);
     const inviterName = inviter?.name || req.user.email;
@@ -405,75 +405,81 @@ router.post(
     const email = client.data.email;
     if (!email) throw new BadRequestError('Client must have an email address to grant portal access');
 
-    // 1. Find or create the client-tier login account.
+    // 1-3 run atomically: account provisioning, Company creation, and the
+    // client's portal_access flag must all land together or not at all.
     let tempPassword = null;
-    const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
-    if (existing) {
-      if (existing.user_tier !== 'client') {
-        throw new ConflictError('This email already belongs to a staff account; use a different contact email');
-      }
-      if (existing.client_id && existing.client_id !== clientId) {
-        throw new ConflictError('This email is already linked to a different client');
-      }
-      updateUser(existing.id, { is_active: true, client_id: clientId });
-    } else {
-      tempPassword = generateTempPassword();
-      createUser({
-        email,
-        password: tempPassword,
-        name: client.data.name || String(email).split('@')[0],
-        user_tier: 'client',
-        client_id: clientId,
-      });
-    }
-
-    // 2. Ensure a Company exists and is linked to the client.
-    let companyId = client.data.company_id;
-    let companyRow = companyId
-      ? db.prepare("SELECT * FROM entities WHERE type = 'Company' AND id = ?").get(companyId)
-      : null;
-    if (!companyRow && client.data.company) {
-      companyRow = db
-        .prepare("SELECT * FROM entities WHERE type = 'Company' AND LOWER(json_extract(data, '$.name')) = ?")
-        .get(String(client.data.company).toLowerCase());
-      if (companyRow) companyId = companyRow.id;
-    }
+    let companyId = null;
     let companyCreated = false;
-    if (!companyRow) {
-      companyId = uid();
-      const companyData = {
-        name: client.data.company || client.data.name || 'Company',
-        status: 'active',
-        email: client.data.email || '',
-        phone: client.data.phone || '',
-        address: client.data.address || '',
-        city: client.data.city || '',
-        country: client.data.country || '',
-        invoice_address: client.data.invoice_address || '',
-        tax_id: client.data.tax_id || '',
-        website: client.data.website || '',
-        created_by: req.user.id,
-      };
-      const now = new Date().toISOString();
-      db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
-        companyId,
-        'Company',
-        JSON.stringify(companyData),
-        now,
-        now,
-      );
-      upsertFtsInline(db, companyId, 'Company', companyData);
-      companyCreated = true;
-    }
+    const grant = db.transaction(() => {
+      // 1. Find or create the client-tier login account.
+      const existing = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(String(email).toLowerCase());
+      if (existing) {
+        if (existing.user_tier !== 'client') {
+          throw new ConflictError('This email already belongs to a staff account; use a different contact email');
+        }
+        if (existing.client_id && existing.client_id !== clientId) {
+          throw new ConflictError('This email is already linked to a different client');
+        }
+        updateUser(existing.id, { is_active: true, client_id: clientId });
+      } else {
+        tempPassword = generateTempPassword();
+        createUser({
+          email,
+          password: tempPassword,
+          name: client.data.name || String(email).split('@')[0],
+          user_tier: 'client',
+          client_id: clientId,
+        });
+      }
 
-    // 3. Mark the client as portal-enabled and link the company.
-    const newClientData = { ...client.data, portal_access: true, company_id: companyId };
-    if (!newClientData.company && client.data.name) newClientData.company = client.data.name;
-    db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
-      JSON.stringify(newClientData),
-      new Date().toISOString(),
-      clientId,
-    );
+      // 2. Ensure a Company exists and is linked to the client.
+      companyId = client.data.company_id;
+      let companyRow = companyId
+        ? db.prepare("SELECT * FROM entities WHERE type = 'Company' AND id = ?").get(companyId)
+        : null;
+      if (!companyRow && client.data.company) {
+        companyRow = db
+          .prepare("SELECT * FROM entities WHERE type = 'Company' AND LOWER(json_extract(data, '$.name')) = ?")
+          .get(String(client.data.company).toLowerCase());
+        if (companyRow) companyId = companyRow.id;
+      }
+      if (!companyRow) {
+        companyId = uid();
+        const companyData = {
+          name: client.data.company || client.data.name || 'Company',
+          status: 'active',
+          email: client.data.email || '',
+          phone: client.data.phone || '',
+          address: client.data.address || '',
+          city: client.data.city || '',
+          country: client.data.country || '',
+          invoice_address: client.data.invoice_address || '',
+          tax_id: client.data.tax_id || '',
+          website: client.data.website || '',
+          created_by: req.user.id,
+        };
+        const now = new Date().toISOString();
+        db.prepare('INSERT INTO entities (id, type, data, created_date, updated_date) VALUES (?, ?, ?, ?, ?)').run(
+          companyId,
+          'Company',
+          JSON.stringify(companyData),
+          now,
+          now,
+        );
+        upsertFtsInline(db, companyId, 'Company', companyData);
+        companyCreated = true;
+      }
+
+      // 3. Mark the client as portal-enabled and link the company.
+      const newClientData = { ...client.data, portal_access: true, company_id: companyId };
+      if (!newClientData.company && client.data.name) newClientData.company = client.data.name;
+      db.prepare('UPDATE entities SET data = ?, updated_date = ? WHERE id = ?').run(
+        JSON.stringify(newClientData),
+        new Date().toISOString(),
+        clientId,
+      );
+    });
+    grant();
 
     logAudit({
       userId: req.user.id,

@@ -138,7 +138,7 @@ router.post('/ocr/extract', async (req, res) => {
     const data = JSON.parse(result.stdout);
     try {
       fs.unlinkSync(resolved);
-    } catch (e) {}
+    } catch {}
     res.json(data);
   } catch (e) {
     if (e.message === 'Failed to parse OCR output' || e instanceof SyntaxError) {
@@ -192,7 +192,7 @@ router.post('/ocr/parse-text', async (req, res) => {
     if (tmpFile) {
       try {
         fs.unlinkSync(tmpFile);
-      } catch (e) {}
+      } catch {}
     }
   }
 });

@@ -131,6 +131,12 @@ const standardLimiter = rateLimit({
 app.use('/api/auth/login', strictLimiter);
 app.use('/api/auth/microsoft', strictLimiter);
 app.use('/api/auth/forgot-password', strictLimiter);
+// accept-invite and reset-password resolve their token by looping getDb()
+// over every tenant (no global token->tenant index), so an unauthenticated
+// caller hammering either one can churn the tenant-connection LRU cache
+// platform-wide, not just abuse-guess a single tenant's tokens.
+app.use('/api/auth/accept-invite', strictLimiter);
+app.use('/api/auth/reset-password', strictLimiter);
 // Self-serve workspace signup is abuse-sensitive: keep it on the strict limiter.
 app.use('/api/tenants/signup', strictLimiter);
 app.use('/api/notifications', mutationLimiter);
@@ -192,7 +198,7 @@ app.get('/api/health', (req, res) => {
 
   try {
     getDb().prepare('SELECT 1').get();
-  } catch (err) {
+  } catch {
     checks.database = 'error';
     healthy = false;
   }
@@ -201,7 +207,7 @@ app.get('/api/health', (req, res) => {
   try {
     pendingMigrations = migrationStatus(getDb()).filter((m) => !m.applied).length;
     if (pendingMigrations > 0) checks.migrations = 'pending';
-  } catch (err) {
+  } catch {
     checks.migrations = 'error';
     healthy = false;
   }
@@ -211,7 +217,7 @@ app.get('/api/health', (req, res) => {
     const stats = fs.statfsSync(getDataDir());
     freeBytes = stats.bfree * stats.bsize;
     if (freeBytes < 100 * 1024 * 1024) checks.disk = 'low';
-  } catch (err) {
+  } catch {
     checks.disk = 'unknown';
   }
 

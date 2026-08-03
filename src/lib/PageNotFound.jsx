@@ -9,19 +9,17 @@ export default function PageNotFound({}) {
   const location = useLocation();
   const pageName = location.pathname.substring(1);
 
-  const { data: authData, isFetched } = /** @type {any} */ (
-    useQuery({
-      queryKey: ['user'],
-      queryFn: async () => {
-        try {
-          const user = await db.auth.me();
-          return { user, isAuthenticated: true };
-        } catch (error) {
-          return { user: null, isAuthenticated: false };
-        }
-      },
-    })
-  );
+  useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      try {
+        const user = await db.auth.me();
+        return { user, isAuthenticated: true };
+      } catch {
+        return { user: null, isAuthenticated: false };
+      }
+    },
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-muted">

@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  AppError, BadRequestError, UnauthorizedError, ForbiddenError,
-  NotFoundError, ConflictError, catchAsync
+  AppError,
+  BadRequestError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+  catchAsync,
 } from '../../server/middleware/errors.js';
 
 describe('Error classes', () => {
@@ -65,7 +70,7 @@ describe('catchAsync', () => {
 
   it('should call next with no error on success', async () => {
     let called = false;
-    const fn = catchAsync(async (req, res, next) => {
+    const fn = catchAsync(async () => {
       called = true;
     });
 

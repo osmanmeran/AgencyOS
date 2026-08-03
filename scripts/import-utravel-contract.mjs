@@ -30,7 +30,7 @@ function findOrCreateSupplier(suppliers, name, categoryId, extra) {
   return created;
 }
 
-const db = getDb();
+getDb();
 
 const categories = findEntities('SupplierCategory', { user: sysUser });
 const CAT_HOTELS = findCategoryId(categories, /hotel/i);

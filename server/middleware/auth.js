@@ -69,7 +69,7 @@ export function authMiddleware(req, res, next) {
   let decoded;
   try {
     decoded = jwt.verify(token, getJwtSecret());
-  } catch (err) {
+  } catch {
     return sendError(res, 401, 'INVALID_TOKEN', 'Invalid or expired token');
   }
 

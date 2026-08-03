@@ -15,7 +15,7 @@ router.use(authMiddleware);
 router.post(
   '/booking',
   catchAsync(async (req, res) => {
-    const { clientName, reference, destination, dates, details } = req.body;
+    const { clientName, reference } = req.body;
     if (!clientName || !reference)
       return sendError(res, 400, 'VALIDATION_ERROR', 'clientName and reference are required');
     const { filename } = await generateBookingConfirmation(req.body);

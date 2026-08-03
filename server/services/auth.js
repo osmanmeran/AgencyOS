@@ -1,8 +1,7 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
 import { getDb, uid, getTenantId, DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
-import { getJwtSecret, generateToken, ACCESS_TOKEN_MAX_AGE_MS, REFRESH_TOKEN_MAX_AGE_MS } from '../middleware/auth.js';
+import { generateToken, ACCESS_TOKEN_MAX_AGE_MS, REFRESH_TOKEN_MAX_AGE_MS } from '../middleware/auth.js';
 import { ForbiddenError, ConflictError, UnauthorizedError, BadRequestError } from '../middleware/errors.js';
 import { MICROSOFT_CLIENT_ID, verifyMicrosoftIdToken } from './microsoft.js';
 import { listTenants, getTenantById } from './tenants.js';
@@ -472,16 +471,7 @@ export function getAllUsers() {
  * @returns {{id: string, email: string, name: string, token: string, expires: string}}
  * @throws {ConflictError} If the email is already registered.
  */
-export function inviteUser({
-  email,
-  name,
-  user_tier,
-  custom_permissions,
-  departments,
-  client_id,
-  manager_id,
-  invited_by,
-}) {
+export function inviteUser({ email, name, user_tier, custom_permissions, departments, client_id, manager_id }) {
   const db = getDb();
   email = normalizeEmail(email);
   const existing = db.prepare('SELECT id FROM users WHERE LOWER(email) = ?').get(email);

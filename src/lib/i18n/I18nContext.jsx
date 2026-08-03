@@ -1,6 +1,6 @@
 import { db } from '@/lib/DbContext';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 // English is the fallback dictionary and is always needed, so it's eagerly
 // bundled. Every other locale lives in its own JSON file and is code-split via
@@ -16,7 +16,7 @@ function loaderFor(lang) {
   return localeLoaders[`./locales/${lang}.json`];
 }
 
-const I18nContext = createContext({ t: (key, params) => key, language: 'en', setLanguage: (lang) => {} });
+const I18nContext = createContext({ t: (key, _params) => key, language: 'en', setLanguage: (_lang) => {} });
 
 function getNestedValue(obj, keyPath) {
   return keyPath.split('.').reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : null), obj);

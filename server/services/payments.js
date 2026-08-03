@@ -38,6 +38,13 @@ function toStripeAmount(amountMajorUnits, currency) {
   return Math.round(rounded * 100);
 }
 
+// Inverse of toStripeAmount, for reading amounts back out of Stripe objects
+// (e.g. session.amount_total) in the webhook handler.
+export function fromStripeAmount(stripeAmount, currency) {
+  if (ZERO_DECIMAL_CURRENCIES.has(String(currency).toLowerCase())) return stripeAmount;
+  return stripeAmount / 100;
+}
+
 /**
  * Creates a Stripe Checkout Session for the remaining balance of an invoice,
  * on the tenant's own Stripe account. The caller (route layer) is

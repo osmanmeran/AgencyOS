@@ -1,6 +1,5 @@
 import { getDb, uid } from '../db.js';
 import { findEntities, updateEntity } from './entities.js';
-import { NotFoundError, BadRequestError } from '../middleware/errors.js';
 import { logAudit, AUDIT_ACTIONS } from './audit.js';
 import { createNotification } from './notifications.js';
 import { escapeHtml } from './email.js';

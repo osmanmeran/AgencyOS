@@ -1,8 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fs from 'fs';
-import {
-  generateBookingConfirmation, generateProposal, generateInvoice,
-} from '../../server/services/pdf.js';
+import { generateBookingConfirmation, generateProposal, generateInvoice } from '../../server/services/pdf.js';
 
 describe('PDF Service', () => {
   it('should generate a booking confirmation PDF', async () => {

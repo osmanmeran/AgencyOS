@@ -7,7 +7,6 @@ import { catchAsync, sendError } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
 import {
   getExchangeRate,
-  logEmail,
   getOutlookStatus,
   connectOutlook,
   disconnectOutlook,
@@ -16,7 +15,7 @@ import {
   refreshRates,
   getStoredRates,
 } from '../services/integrations.js';
-import { sendEmail, isSmtpConfigured, renderTemplate } from '../services/email.js';
+import { sendEmail, isSmtpConfigured } from '../services/email.js';
 import { sanitizeFilename } from '../lib/sanitizeFilename.js';
 import { ALLOWED_MIME_TYPES } from '../lib/mimeTypes.js';
 

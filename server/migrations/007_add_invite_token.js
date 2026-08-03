@@ -11,7 +11,7 @@ export function up(db) {
   }
 }
 
-export function down(db) {
+export function down() {
   // SQLite does not support DROP COLUMN in older versions
   // These columns will remain but won't be used
 }

@@ -1,5 +1,4 @@
 import { describe, it, expect, afterAll } from 'vitest';
-import { getDb } from '../../server/db.js';
 import {
   assertValidEntityType,
   createEntity,

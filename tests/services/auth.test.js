@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { getDb, runWithTenant } from '../../server/db.js';
 import { createTenant } from '../../server/services/tenants.js';
@@ -10,7 +10,6 @@ import {
   updateUser,
   deleteUser,
   getAllUsers,
-  VALID_TIERS,
   requestPasswordReset,
   locatePasswordReset,
   resetPassword,

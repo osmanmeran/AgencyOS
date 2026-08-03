@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { getDb, uid } from '../../server/db.js';
+import { getDb } from '../../server/db.js';
 import {
   saveDocument,
   getDocuments,

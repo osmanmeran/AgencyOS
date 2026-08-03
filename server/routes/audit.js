@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/permissions.js';
 import { catchAsync } from '../middleware/errors.js';
-import { getAuditLogs, logAudit, AUDIT_ACTIONS } from '../services/audit.js';
+import { getAuditLogs, logAudit } from '../services/audit.js';
 
 const router = Router();
 

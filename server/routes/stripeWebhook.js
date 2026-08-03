@@ -16,7 +16,7 @@ import { Router } from 'express';
 import { getDb, runWithTenant, DEFAULT_TENANT_ID } from '../db.js';
 import { getTenantById } from '../services/tenants.js';
 import { verifyStripeSignatureForTenant } from '../services/stripeSettings.js';
-import { recordInvoicePayment } from '../services/payments.js';
+import { recordInvoicePayment, fromStripeAmount } from '../services/payments.js';
 import { broadcast } from '../lib/ws.js';
 import logger from '../lib/logger.js';
 
@@ -50,7 +50,7 @@ async function handleCheckoutCompleted(tenantId, session) {
   // settling; only credit the invoice once Stripe confirms funds are in.
   if (session.payment_status !== 'paid') return;
 
-  const amount = (session.amount_total ?? 0) / 100;
+  const amount = fromStripeAmount(session.amount_total ?? 0, session.currency);
   const result = recordInvoicePayment(tenantId, {
     invoiceId,
     amount,

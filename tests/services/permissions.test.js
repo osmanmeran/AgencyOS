@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { getDb } from '../../server/db.js';
 import { getUserPermissions, hasPermission, getEffectiveTierPermissions } from '../../server/permissions.js';
 

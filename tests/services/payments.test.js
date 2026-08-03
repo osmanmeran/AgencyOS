@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getDb, uid } from '../../server/db.js';
 import { createTenant } from '../../server/services/tenants.js';
 

@@ -29,7 +29,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
-import { migratePlatform, PLATFORM_MIGRATIONS_DIR } from '../server/migrations/runner.js';
+import { migratePlatform } from '../server/migrations/runner.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');

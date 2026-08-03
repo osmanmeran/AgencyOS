@@ -73,5 +73,5 @@ if (hasSsl) {
   server = http.createServer(app);
 }
 
-const wss = createWebSocketServer(server);
+createWebSocketServer(server);
 server.listen(PORT, BIND_ADDRESS, onServerStart);

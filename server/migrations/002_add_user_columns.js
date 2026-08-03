@@ -13,6 +13,6 @@ export function up(db) {
   }
 }
 
-export function down(db) {
+export function down() {
   console.warn('[Migration 002] Skipping down — SQLite cannot drop columns safely.');
 }

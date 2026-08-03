@@ -281,7 +281,7 @@ export function closeTenantDb(tenantId) {
 }
 
 export function closeDb() {
-  for (const [key, database] of dbCache) {
+  for (const [, database] of dbCache) {
     try {
       database.pragma('wal_checkpoint(TRUNCATE)');
     } catch {

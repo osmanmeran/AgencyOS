@@ -164,6 +164,31 @@ describe('POST /api/webhooks/stripe/:tenantId', () => {
     expect(JSON.parse(payment.data).transaction_id).toBe('pi_1');
   });
 
+  it('records the full amount for a zero-decimal currency (JPY) instead of dividing by 100', async () => {
+    configureStripeKey();
+    const res = await post(tenant.id, {
+      id: 'evt_checkout_jpy',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_jpy',
+          payment_status: 'paid',
+          // Stripe reports zero-decimal currencies in whole units already —
+          // 5000 here means ¥5000, not ¥50.
+          amount_total: 5000,
+          currency: 'jpy',
+          payment_intent: 'pi_jpy',
+          client_reference_id: invoiceId,
+          metadata: { tenant_id: tenant.id, invoice_id: invoiceId },
+        },
+      },
+    });
+    expect(res.status).toBe(200);
+
+    const invoiceRow = JSON.parse(db.prepare('SELECT data FROM entities WHERE id = ?').get(invoiceId).data);
+    expect(invoiceRow.amount_paid).toBe(5000);
+  });
+
   it('does not double-credit a duplicate/retried event id', async () => {
     configureStripeKey();
     const event = {

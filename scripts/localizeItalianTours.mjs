@@ -60,15 +60,6 @@ function getTour(name) {
     .get(name);
 }
 
-function hasIt(name) {
-  const row = getTour(name);
-  if (!row) return false;
-  const data = JSON.parse(row.data);
-  const d = data.description;
-  if (d && typeof d === 'object') return !!d.it;
-  return false;
-}
-
 // 1) Backfill en+it on existing tours.
 let localized = 0;
 for (const [name, itText] of Object.entries(ITALIAN)) {

@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import { getDb, getPlatformDb, getDbPath } from '../../server/db.js';
-import { getTenantBySlug } from '../../server/services/tenants.js';
 import app from '../../server/app.js';
 
 // Single-domain (cookie) mode: when APP_ROOT_DOMAIN is unset (e.g. a default

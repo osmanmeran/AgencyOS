@@ -46,10 +46,10 @@ export async function loginWithMicrosoft(returnUrl) {
   for (const [k, v] of Object.entries(msStore)) {
     try {
       sessionStorage.setItem(k, v);
-    } catch (e) {}
+    } catch {}
     try {
       localStorage.setItem(k, v);
-    } catch (e) {}
+    } catch {}
   }
 
   const params = new URLSearchParams({
@@ -98,10 +98,10 @@ export async function signupWithMicrosoft(returnUrl, signupData) {
   for (const [k, v] of Object.entries(msStore)) {
     try {
       sessionStorage.setItem(k, v);
-    } catch (e) {}
+    } catch {}
     try {
       localStorage.setItem(k, v);
-    } catch (e) {}
+    } catch {}
   }
 
   const params = new URLSearchParams({
@@ -148,10 +148,10 @@ export async function handleMicrosoftCallback() {
   for (const k of ['ms_state', 'ms_code_verifier', 'ms_return_url']) {
     try {
       sessionStorage.removeItem(k);
-    } catch (e) {}
+    } catch {}
     try {
       localStorage.removeItem(k);
-    } catch (e) {}
+    } catch {}
   }
 
   if (!savedState || state !== savedState) {
@@ -218,7 +218,7 @@ export async function exchangeIdTokenWithServer(idToken) {
 
   try {
     localStorage.setItem('marvelops_current_user', JSON.stringify(data.user));
-  } catch (e) {}
+  } catch {}
 
   return data.user;
 }
