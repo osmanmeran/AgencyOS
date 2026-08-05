@@ -167,6 +167,7 @@
     "title": "Panel",
     "subtitle": "Tekrar hoş geldiniz! Seyahat işletmenizde neler oluyor.",
     "tasksToDo": "Yapılacak Görevler",
+    "myTasks": "Görevlerim",
     "allCaughtUp": "Her şey tamam!",
     "moreCount": "+{count} daha",
     "departingSoon": "Yakında Kalkacaklar",
@@ -184,9 +185,7 @@
     "upcomingArrivals": "Yaklaşan Varışlar",
     "noUpcomingArrivals": "Yaklaşan varış yok",
     "upcomingDepartures": "Yaklaşan Kalkışlar",
-    "noUpcomingDepartures": "Yaklaşan kalkış yok",
-    "myOpenTasks": "Açık Görevlerim",
-    "myBookingTasks": "Rezervasyon Görevlerim"
+    "noUpcomingDepartures": "Yaklaşan kalkış yok"
   },
   "reservations": {
     "title": "Rezervasyonlar",
@@ -1625,10 +1624,13 @@
     "titlePlaceholder": "Görev başlığı...",
     "typeLabel": "Tür",
     "dueDateLabel": "Bitiş Tarihi",
-    "assignToLabel": "Ata (e-posta)",
-    "assignToPlaceholder": "takim@uye.com",
+    "assignToLabel": "Ata",
     "descriptionPlaceholder": "Ek detaylar...",
-    "filterInProgress": "Devam Ediyor"
+    "filterInProgress": "Devam Ediyor",
+    "unassigned": "Atanmamış",
+    "createError": "Öğe eklenemedi",
+    "updateError": "Öğe güncellenemedi",
+    "deleteError": "Öğe silinemedi"
   },
   "tripCostSummary": {
     "title": "Seyahat Maliyet Özeti",

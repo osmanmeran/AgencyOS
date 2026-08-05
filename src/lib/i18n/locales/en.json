@@ -192,8 +192,7 @@
     "title": "Dashboard",
     "subtitle": "Welcome back! Here's what's happening with your travel business.",
     "tasksToDo": "Tasks To Do",
-    "myOpenTasks": "My Open Tasks",
-    "myBookingTasks": "My Booking Tasks",
+    "myTasks": "My Tasks",
     "allCaughtUp": "All caught up!",
     "moreCount": "+{count} more",
     "departingSoon": "Departing Soon",
@@ -1651,9 +1650,12 @@
     "titlePlaceholder": "Task title...",
     "typeLabel": "Type",
     "dueDateLabel": "Due Date",
-    "assignToLabel": "Assign To (email)",
-    "assignToPlaceholder": "team@member.com",
-    "descriptionPlaceholder": "Additional details..."
+    "assignToLabel": "Assign To",
+    "unassigned": "Unassigned",
+    "descriptionPlaceholder": "Additional details...",
+    "createError": "Failed to add item",
+    "updateError": "Failed to update item",
+    "deleteError": "Failed to delete item"
   },
   "tripTasksPanel": {
     "title": "Booking Tasks",

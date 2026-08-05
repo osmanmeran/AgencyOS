@@ -30,7 +30,7 @@ router.post(
 
 // GET /api/tasks — contextual list with FK + SLA filters.
 //   ?booking_id=   ?customer_id=   ?supplier_id=   ?assigned_to_user_id=
-//   ?status=       ?priority=       ?overdue=1      ?escalated=1
+//   ?status=       ?priority=       ?type=          ?overdue=1      ?escalated=1
 //   ?sort=         ?limit=          ?offset=
 router.get(
   '/',
@@ -42,6 +42,7 @@ router.get(
       assigned_to_user_id: req.query.assigned_to_user_id,
       status: req.query.status,
       priority: req.query.priority,
+      type: req.query.type,
       overdue: req.query.overdue === '1' || req.query.overdue === 'true',
       escalated: req.query.escalated === '1' || req.query.escalated === 'true',
       sort: req.query.sort,

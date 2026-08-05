@@ -44,7 +44,6 @@ const ENTITIES = [
   'BookingTemplate',
   'Client',
   'ClientPayment',
-  'ClientTask',
   'Company',
   'EmailLog',
   'Invoice',

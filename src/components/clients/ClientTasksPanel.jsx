@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, CheckCircle2, Circle, Bell, StickyNote, ClipboardList, Trash2, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import { showError } from '@/lib/toast';
 import { useT } from '@/lib/i18n/I18nContext';
 
 const TYPE_ICONS = {
@@ -41,29 +42,41 @@ const PRIORITY_COLORS = {
   low: 'bg-muted text-muted-foreground',
   medium: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
   high: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
+  critical: 'bg-red-600 text-white dark:bg-red-700',
 };
 
+const EMPTY_FORM = {
+  title: '',
+  description: '',
+  type: 'task',
+  due_date: '',
+  priority: 'medium',
+  assigned_to_user_id: '',
+};
+
+/**
+ * Client-scoped personal tasks/reminders/notes — backed by the Task entity
+ * (server/services/tasks.js), filtered to manual entries (no `template_key`)
+ * so the auto-generated, SLA-tracked booking tasks shown in
+ * TripTasksPanel/Dashboard's "My Tasks" don't get mixed in here without
+ * their SLA badges.
+ */
 export default function ClientTasksPanel({ clientId }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('all');
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    type: 'task',
-    due_date: '',
-    priority: 'medium',
-    assigned_to: '',
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
   const queryClient = useQueryClient();
 
-  const { data: tasks = /** @type {any} */ ([]) } = /** @type {any} */ (
+  const { data: allTasks = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['clientTasks', clientId],
-      queryFn: () => db.entities.ClientTask.filter({ client_id: clientId }, '-created_date'),
+      queryFn: () => db.tasks.list({ customer_id: clientId, sort: '-created_date' }),
       enabled: !!clientId,
     })
   );
+
+  const tasks = useMemo(() => allTasks.filter((task) => !task.template_key), [allTasks]);
 
   const { data: staffUsers = /** @type {any} */ ([]) } = useQuery({
     queryKey: ['staffUsers'],
@@ -74,35 +87,43 @@ export default function ClientTasksPanel({ clientId }) {
     useMemo(() => {
       const map = {};
       staffUsers.forEach((u) => {
-        map[u.email] = u.name || u.email;
+        map[u.id] = u.name || u.email;
       });
       return map;
     }, [staffUsers])
   );
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['clientTasks', clientId] });
+
   const createMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: (/** @type {any} */ data) => db.entities.ClientTask.create({ ...data, client_id: clientId }),
+      mutationFn: (/** @type {any} */ data) =>
+        db.tasks.create({ ...data, assigned_to_user_id: data.assigned_to_user_id || undefined, customer_id: clientId }),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['clientTasks', clientId] });
+        invalidate();
         setOpen(false);
-        setForm({ title: '', description: '', type: 'task', due_date: '', priority: 'medium', assigned_to: '' });
+        setForm(EMPTY_FORM);
       },
+      onError: (/** @type {any} */ err) => showError(t('clientTasksPanel.createError'), err.message),
     })
   );
 
   const toggleMutation = /** @type {any} */ (
     useMutation({
       mutationFn: (/** @type {any} */ task) =>
-        db.entities.ClientTask.update(task.id, { status: task.status === 'done' ? 'pending' : 'done' }),
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clientTasks', clientId] }),
+        task.status === 'completed'
+          ? db.entities.Task.update(task.id, { status: 'pending', completed_at: null })
+          : db.tasks.complete(task.id),
+      onSuccess: invalidate,
+      onError: (/** @type {any} */ err) => showError(t('clientTasksPanel.updateError'), err.message),
     })
   );
 
   const deleteMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: (/** @type {any} */ id) => db.entities.ClientTask.delete(id),
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clientTasks', clientId] }),
+      mutationFn: (/** @type {any} */ id) => db.entities.Task.delete(id),
+      onSuccess: invalidate,
+      onError: (/** @type {any} */ err) => showError(t('clientTasksPanel.deleteError'), err.message),
     })
   );
 
@@ -114,7 +135,7 @@ export default function ClientTasksPanel({ clientId }) {
             t.type === filter ||
             (filter === 'pending' && t.status === 'pending') ||
             (filter === 'in_progress' && t.status === 'in_progress') ||
-            (filter === 'done' && t.status === 'done'),
+            (filter === 'done' && t.status === 'completed'),
         );
 
   const pending = tasks.filter((t) => t.status === 'pending').length;
@@ -155,7 +176,7 @@ export default function ClientTasksPanel({ clientId }) {
             const cfg = TYPE_ICONS[task.type] || TYPE_ICONS.task;
             const labelKey = TYPE_LABEL_KEYS[task.type] || TYPE_LABEL_KEYS.task;
             const Icon = cfg.icon;
-            const isDone = task.status === 'done';
+            const isDone = task.status === 'completed';
             return (
               <Card key={task.id} className={`p-4 bg-card border transition-all ${isDone ? 'opacity-60' : ''}`}>
                 <div className="flex items-start gap-3">
@@ -177,7 +198,7 @@ export default function ClientTasksPanel({ clientId }) {
                         <Icon className="w-3 h-3 mr-1" />
                         {t(labelKey)}
                       </Badge>
-                      <Badge className={`text-xs ${PRIORITY_COLORS[task.priority]}`}>
+                      <Badge className={`text-xs ${PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.medium}`}>
                         {t(`priority.${task.priority}`)}
                       </Badge>
                     </div>
@@ -189,10 +210,10 @@ export default function ClientTasksPanel({ clientId }) {
                           {format(new Date(task.due_date), 'MMM d, yyyy')}
                         </span>
                       )}
-                      {task.assigned_to && (
+                      {task.assigned_to_user_id && (
                         <span>
                           {t('clientTasksPanel.assignedLabel', {
-                            name: assigneeName[task.assigned_to] || task.assigned_to,
+                            name: assigneeName[task.assigned_to_user_id] || task.assigned_to_user_id,
                           })}
                         </span>
                       )}
@@ -270,11 +291,26 @@ export default function ClientTasksPanel({ clientId }) {
               </div>
               <div className="space-y-1">
                 <Label>{t('clientTasksPanel.assignToLabel')}</Label>
-                <Input
-                  value={form.assigned_to}
-                  onChange={(e) => setForm((f) => ({ ...f, assigned_to: e.target.value }))}
-                  placeholder={t('clientTasksPanel.assignToPlaceholder')}
-                />
+                <Select
+                  value={form.assigned_to_user_id || '__unassigned__'}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, assigned_to_user_id: v === '__unassigned__' ? '' : v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unassigned__">{t('clientTasksPanel.unassigned')}</SelectItem>
+                    {staffUsers
+                      .filter((u) => u.is_active && ['admin', 'manager', 'agent'].includes(u.user_tier))
+                      .map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name || u.email}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="col-span-2 space-y-1">
                 <Label>{t('common.description')}</Label>

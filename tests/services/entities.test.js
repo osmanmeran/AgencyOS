@@ -10,6 +10,7 @@ import {
   mapRecord,
   updateEntity,
   createEntity,
+  deleteEntity,
 } from '../../server/services/entities.js';
 
 describe('Entities Service', () => {
@@ -196,6 +197,50 @@ describe('Entities Service', () => {
       expect(created.app_name).toBe('Test Agency');
       const updated = updateEntity('AppSettings', created.id, { app_name: 'Renamed' }, admin);
       expect(updated.app_name).toBe('Renamed');
+    });
+  });
+
+  describe('Task ownership permission bypass', () => {
+    it('lets an agent (no modify_trips/delete_trips) complete and delete their own assigned task', () => {
+      const manager = { user_tier: 'manager', id: 'mgr1', custom_permissions: [] };
+      const agent = { user_tier: 'agent', id: 'agent-owner', custom_permissions: [] };
+      // agent lacks modify_trips/delete_trips, but create_trips is enough to create the task itself
+      const task = createEntity('Task', { title: 'My task', assigned_to_user_id: 'agent-owner' }, agent);
+
+      const updated = updateEntity('Task', task.id, { status: 'completed' }, agent);
+      expect(updated.status).toBe('completed');
+
+      expect(() => deleteEntity('Task', task.id, agent)).not.toThrow();
+      expect(() => updateEntity('Task', 'nonexistent-id', { status: 'completed' }, manager)).toThrow(
+        'Record not found',
+      );
+    });
+
+    it('still blocks an agent from updating/deleting a task assigned to someone else', () => {
+      const admin = { user_tier: 'admin', id: 'admin1', custom_permissions: [] };
+      const agent = { user_tier: 'agent', id: 'agent-bystander', custom_permissions: [] };
+      const task = createEntity('Task', { title: "Someone else's task", assigned_to_user_id: 'other-user' }, admin);
+
+      expect(() => updateEntity('Task', task.id, { status: 'completed' }, agent)).toThrow(
+        'Missing required permission',
+      );
+      expect(() => deleteEntity('Task', task.id, agent)).toThrow('Missing required permission');
+    });
+
+    it('lets a manager (has modify_trips) update any task regardless of ownership', () => {
+      const admin = { user_tier: 'admin', id: 'admin2', custom_permissions: [] };
+      const manager = { user_tier: 'manager', id: 'mgr2', custom_permissions: [] };
+      const task = createEntity('Task', { title: 'Unowned task', assigned_to_user_id: 'someone-else' }, admin);
+
+      const updated = updateEntity('Task', task.id, { status: 'in_progress' }, manager);
+      expect(updated.status).toBe('in_progress');
+    });
+
+    it('lets an admin (has delete_trips) delete any task regardless of ownership', () => {
+      const admin = { user_tier: 'admin', id: 'admin3', custom_permissions: [] };
+      const task = createEntity('Task', { title: 'Unowned task 2', assigned_to_user_id: 'someone-else' }, admin);
+
+      expect(() => deleteEntity('Task', task.id, admin)).not.toThrow();
     });
   });
 

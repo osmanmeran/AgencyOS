@@ -167,6 +167,7 @@
     "title": "Dashboard",
     "subtitle": "Bentornato! Ecco cosa sta succedendo nella tua agenzia di viaggi.",
     "tasksToDo": "Attività da Fare",
+    "myTasks": "Le mie attività",
     "allCaughtUp": "Tutto in ordine!",
     "moreCount": "+{count} altri",
     "departingSoon": "Partenze Imminenti",
@@ -184,9 +185,7 @@
     "upcomingArrivals": "Prossimi Arrivi",
     "noUpcomingArrivals": "Nessun arrivo previsto",
     "upcomingDepartures": "Prossime Partenze",
-    "noUpcomingDepartures": "Nessuna partenza prevista",
-    "myOpenTasks": "Le mie attività aperte",
-    "myBookingTasks": "Le mie attività di prenotazione"
+    "noUpcomingDepartures": "Nessuna partenza prevista"
   },
   "reservations": {
     "title": "Prenotazioni",
@@ -1625,10 +1624,13 @@
     "titlePlaceholder": "Titolo dell'attività...",
     "typeLabel": "Tipo",
     "dueDateLabel": "Data di Scadenza",
-    "assignToLabel": "Assegna a (email)",
-    "assignToPlaceholder": "team@membro.com",
+    "assignToLabel": "Assegna a",
     "descriptionPlaceholder": "Dettagli aggiuntivi...",
-    "filterInProgress": "In corso"
+    "filterInProgress": "In corso",
+    "unassigned": "Non assegnato",
+    "createError": "Impossibile aggiungere l'elemento",
+    "updateError": "Impossibile aggiornare l'elemento",
+    "deleteError": "Impossibile eliminare l'elemento"
   },
   "tripCostSummary": {
     "title": "Riepilogo Costi del Viaggio",

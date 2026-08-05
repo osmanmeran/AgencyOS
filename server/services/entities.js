@@ -2,7 +2,7 @@ import { getDb, uid, getEntities, hasFts } from '../db.js';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../middleware/errors.js';
 import { hasPermission } from '../permissions.js';
 
-export const USER_SCOPED_TYPES = ['Message', 'ClientTask', 'EmailLog'];
+export const USER_SCOPED_TYPES = ['Message', 'EmailLog'];
 export const CLIENT_SCOPED_TYPES = ['Trip', 'Proposal', 'Invoice', 'ClientPayment', 'QuoteRequest'];
 
 const ENTITY_PERMISSION_MAP = {
@@ -196,7 +196,13 @@ function staffCanReadType(user, entityType) {
 // an update body that touches supplier_id must still match their own.
 const SUPPLIER_PORTAL_WRITE_TYPES = ['BookingRequest', 'SupplierService'];
 
-function requireEntityPermission(user, entityType, action, body) {
+// updateEntity/deleteEntity call this *before* fetching the row (permission
+// is checked before existence is confirmed, so an unauthorized caller can't
+// distinguish "forbidden" from "doesn't exist" for a record it can't touch
+// anyway). Task's ownership bypass below needs the row regardless, so it
+// does its own narrow lookup by `id` rather than changing that order for
+// every entity type.
+function requireEntityPermission(user, entityType, action, id, body) {
   if (user?.linked_supplier_id && SUPPLIER_PORTAL_WRITE_TYPES.includes(entityType)) {
     if (action === 'create' && body?.supplier_id !== user.linked_supplier_id) {
       throw new ForbiddenError('supplier_id must match your linked supplier');
@@ -205,6 +211,22 @@ function requireEntityPermission(user, entityType, action, body) {
       throw new ForbiddenError('supplier_id must match your linked supplier');
     }
     return;
+  }
+
+  // Task: the assignee or creator may update/delete their own task (mark it
+  // complete, edit it, cancel it) without needing modify_trips/delete_trips —
+  // those permissions gate managing *other* people's tasks (reassigning,
+  // bulk cleanup), not working your own to-do list. Without this, an agent
+  // (who has create_trips but not modify_trips by default) could create a
+  // task-generating trip yet be unable to ever complete the tasks it
+  // auto-assigned to them.
+  if (entityType === 'Task' && (action === 'update' || action === 'delete') && id && user?.id) {
+    const db = getDb();
+    const row = db.prepare("SELECT data FROM entities WHERE type = 'Task' AND id = ?").get(id);
+    if (row) {
+      const data = JSON.parse(row.data);
+      if (data.assigned_to_user_id === user.id || data.created_by === user.id) return;
+    }
   }
 
   const mapping = ENTITY_PERMISSION_MAP[entityType];
@@ -667,7 +689,7 @@ export function findEntityById(type, id, user) {
  */
 export function createEntity(type, body, user) {
   assertValidEntityType(type);
-  requireEntityPermission(user, type, 'create', body);
+  requireEntityPermission(user, type, 'create', undefined, body);
   const now = new Date().toISOString();
   const id = uid();
   const data = sanitizeEntityData({ ...body });
@@ -697,7 +719,7 @@ export function createEntity(type, body, user) {
  */
 export function updateEntity(type, id, body, user) {
   assertValidEntityType(type);
-  requireEntityPermission(user, type, 'update', body);
+  requireEntityPermission(user, type, 'update', id, body);
   const db = getDb();
   const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
   if (!existing) throw new NotFoundError('Record not found');
@@ -727,7 +749,7 @@ export function updateEntity(type, id, body, user) {
  */
 export function deleteEntity(type, id, user) {
   assertValidEntityType(type);
-  requireEntityPermission(user, type, 'delete');
+  requireEntityPermission(user, type, 'delete', id);
   const db = getDb();
   const existing = db.prepare('SELECT * FROM entities WHERE type = ? AND id = ?').get(type, id);
   if (!existing) throw new NotFoundError('Record not found');

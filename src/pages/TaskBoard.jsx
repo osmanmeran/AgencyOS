@@ -1,7 +1,21 @@
 import { useState, useMemo, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, User as UserIcon, Filter, ClipboardList, Bell, StickyNote, Loader2 } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  User as UserIcon,
+  Filter,
+  ClipboardList,
+  Bell,
+  StickyNote,
+  Loader2,
+  Sparkles,
+  AlertTriangle,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '../utils';
 import { useT } from '@/lib/i18n/I18nContext';
 import { db } from '@/lib/DbContext';
 import { showSuccess, showError } from '@/lib/toast';
@@ -17,13 +31,23 @@ import { Badge } from '@/components/ui/badge';
 const COLUMNS = [
   { id: 'pending', titleKey: 'common.pending' },
   { id: 'in_progress', titleKey: 'taskBoard.columnInProgress' },
-  { id: 'done', titleKey: 'taskBoard.columnDone' },
+  { id: 'completed', titleKey: 'taskBoard.columnDone' },
 ];
 
 const TYPE_META = {
   task: { labelKey: 'clientTasksPanel.filterTask', Icon: ClipboardList },
   reminder: { labelKey: 'clientTasksPanel.filterReminder', Icon: Bell },
   note: { labelKey: 'clientTasksPanel.filterNote', Icon: StickyNote },
+};
+
+const EMPTY_NEW_TASK = {
+  title: '',
+  description: '',
+  type: 'task',
+  client_id: '',
+  due_date: '',
+  priority: 'medium',
+  assigned_to_user_id: '',
 };
 
 export default function TaskBoard() {
@@ -34,20 +58,12 @@ export default function TaskBoard() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [myTasksOnly, setMyTasksOnly] = useState(false);
-  const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    type: 'task',
-    client_id: '',
-    due_date: '',
-    priority: 'medium',
-    assigned_to: '',
-  });
+  const [newTask, setNewTask] = useState(EMPTY_NEW_TASK);
 
-  const { data: clientTasks = /** @type {any} */ ([]) } = /** @type {any} */ (
+  const { data: allTasks = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
-      queryKey: ['clientTasks'],
-      queryFn: () => db.entities.ClientTask.list(),
+      queryKey: ['allTasks'],
+      queryFn: () => db.tasks.list(),
     })
   );
   const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
@@ -72,21 +88,15 @@ export default function TaskBoard() {
     })
   );
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['allTasks'] });
+
   const createMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: /** @type {any} */ (data) => db.entities.ClientTask.create(data),
+      mutationFn: /** @type {any} */ (data) => db.tasks.create({ ...data, customer_id: data.client_id || undefined }),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+        invalidate();
         setNewTaskOpen(false);
-        setNewTask({
-          title: '',
-          description: '',
-          type: 'task',
-          client_id: '',
-          due_date: '',
-          priority: 'medium',
-          assigned_to: currentUser?.email || '',
-        });
+        setNewTask({ ...EMPTY_NEW_TASK, assigned_to_user_id: currentUser?.id || '' });
         showSuccess(t('taskBoard.createSuccess'));
       },
       onError: () => showError(t('taskBoard.createError')),
@@ -95,9 +105,9 @@ export default function TaskBoard() {
 
   const updateMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: (/** @type {any} */ payload) => db.entities.ClientTask.update(payload.id, payload.data),
+      mutationFn: (/** @type {any} */ payload) => db.entities.Task.update(payload.id, payload.data),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+        invalidate();
         setEditOpen(false);
         setEditingTask(null);
         showSuccess(t('taskBoard.updateSuccess'));
@@ -108,9 +118,9 @@ export default function TaskBoard() {
 
   const deleteMutation = /** @type {any} */ (
     useMutation({
-      mutationFn: /** @type {any} */ (id) => db.entities.ClientTask.delete(id),
+      mutationFn: /** @type {any} */ (id) => db.entities.Task.delete(id),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['clientTasks'] });
+        invalidate();
         setEditOpen(false);
         setEditingTask(null);
         showSuccess(t('taskBoard.deleteSuccess'));
@@ -122,7 +132,7 @@ export default function TaskBoard() {
   const assigneeName = useMemo(() => {
     const map = {};
     staffUsers.forEach((u) => {
-      map[u.email] = u.name || u.email;
+      map[u.id] = u.name || u.email;
     });
     return map;
   }, [staffUsers]);
@@ -136,14 +146,15 @@ export default function TaskBoard() {
   }, [clients]);
 
   const visibleTasks = useMemo(() => {
-    if (!myTasksOnly || !currentUser) return clientTasks;
-    return clientTasks.filter(
-      (task) => task.assigned_to === currentUser.email || task.created_by_id === currentUser.id,
-    );
-  }, [clientTasks, myTasksOnly, currentUser]);
+    // Cancelled tasks are effectively archived — never shown on the board
+    // (there's no column for them, and they'd otherwise fall into "Pending").
+    const active = allTasks.filter((task) => task.status !== 'cancelled');
+    if (!myTasksOnly || !currentUser) return active;
+    return active.filter((task) => task.assigned_to_user_id === currentUser.id || task.created_by === currentUser.id);
+  }, [allTasks, myTasksOnly, currentUser]);
 
   const grouped = useMemo(() => {
-    const g = { pending: [], in_progress: [], done: [] };
+    const g = { pending: [], in_progress: [], completed: [] };
     visibleTasks.forEach((task) => {
       (g[task.status] || g.pending).push(task);
     });
@@ -160,10 +171,10 @@ export default function TaskBoard() {
     if (!destination) return;
     const taskId = draggableId;
     const newStatus = destination.droppableId;
-    const task = clientTasks.find((tt) => String(tt.id) === String(taskId));
+    const task = allTasks.find((tt) => String(tt.id) === String(taskId));
     if (!task || task.status === newStatus) return;
     const data = { ...task, status: newStatus };
-    if (newStatus === 'done') data.completed_at = new Date().toISOString();
+    if (newStatus === 'completed') data.completed_at = new Date().toISOString();
     else data.completed_at = '';
     updateMutation.mutate({ id: taskId, data });
   }
@@ -221,7 +232,7 @@ export default function TaskBoard() {
         setNewTask={setNewTask}
         clients={clients}
         staffUsers={staffUsers}
-        currentUserEmail={currentUser?.email || ''}
+        currentUserId={currentUser?.id || ''}
         onCreate={(data) => createMutation.mutate(data)}
         creating={createMutation.isPending}
         t={t}
@@ -327,10 +338,32 @@ function TaskCardView({ task, index, clientName, assigneeName, onEdit, onDelete,
             </div>
           </div>
 
-          <p className="text-sm font-medium text-foreground mt-1 break-words">{task.title}</p>
+          {task.booking_id ? (
+            <Link
+              to={createPageUrl(`ReservationDetails?id=${task.booking_id}`)}
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm font-medium text-foreground mt-1 break-words hover:underline block"
+            >
+              {task.title}
+            </Link>
+          ) : (
+            <p className="text-sm font-medium text-foreground mt-1 break-words">{task.title}</p>
+          )}
           {task.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>}
 
           <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            {task.template_key && (
+              <Badge variant="outline" className="text-[10px] gap-1">
+                <Sparkles className="w-2.5 h-2.5" />
+                {t('tripTasksPanel.auto')}
+              </Badge>
+            )}
+            {task.is_escalated && (
+              <Badge className="text-[10px] bg-red-600 text-white gap-1">
+                <AlertTriangle className="w-2.5 h-2.5" />
+                {t('tripTasksPanel.escalated')}
+              </Badge>
+            )}
             {task.priority && (
               <Badge variant="outline" className="text-[10px] capitalize">
                 {t(`priority.${task.priority}`)}
@@ -341,17 +374,17 @@ function TaskCardView({ task, index, clientName, assigneeName, onEdit, onDelete,
                 {task.due_date}
               </Badge>
             )}
-            {clientName[task.client_id] && (
+            {clientName[task.customer_id] && (
               <Badge variant="secondary" className="text-[10px]">
-                {clientName[task.client_id]}
+                {clientName[task.customer_id]}
               </Badge>
             )}
           </div>
 
-          {task.assigned_to && (
+          {task.assigned_to_user_id && (
             <div className="flex items-center gap-1 mt-2 text-[11px] text-muted-foreground">
               <UserIcon className="w-3 h-3" />
-              <span>{assigneeName[task.assigned_to] || task.assigned_to}</span>
+              <span>{assigneeName[task.assigned_to_user_id] || task.assigned_to_user_id}</span>
             </div>
           )}
         </div>
@@ -367,7 +400,7 @@ function NewTaskDialog({
   setNewTask,
   clients,
   staffUsers,
-  currentUserEmail,
+  currentUserId,
   onCreate,
   creating,
   t,
@@ -419,6 +452,7 @@ function NewTaskDialog({
                   <SelectItem value="low">{t('priority.low')}</SelectItem>
                   <SelectItem value="medium">{t('priority.medium')}</SelectItem>
                   <SelectItem value="high">{t('priority.high')}</SelectItem>
+                  <SelectItem value="critical">{t('priority.critical')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -455,8 +489,8 @@ function NewTaskDialog({
           <div>
             <Label>{t('taskBoard.assigneeLabel')}</Label>
             <Select
-              value={newTask.assigned_to || currentUserEmail || 'none'}
-              onValueChange={(v) => setNewTask({ ...newTask, assigned_to: v === 'none' ? '' : v })}
+              value={newTask.assigned_to_user_id || currentUserId || 'none'}
+              onValueChange={(v) => setNewTask({ ...newTask, assigned_to_user_id: v === 'none' ? '' : v })}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('taskBoard.selectAssigneePlaceholder')} />
@@ -464,7 +498,7 @@ function NewTaskDialog({
               <SelectContent>
                 <SelectItem value="none">{t('taskBoard.unassigned')}</SelectItem>
                 {staffUsers.map((u) => (
-                  <SelectItem key={u.id} value={u.email}>
+                  <SelectItem key={u.id} value={u.id}>
                     {u.name || u.email}
                   </SelectItem>
                 ))}
@@ -491,10 +525,10 @@ function EditTaskDialog({ open, onOpenChange, task, clients, staffUsers, onSave,
     title: task.title || '',
     description: task.description || '',
     type: task.type || 'task',
-    client_id: task.client_id || '',
+    client_id: task.customer_id || '',
     due_date: task.due_date || '',
     priority: task.priority || 'medium',
-    assigned_to: task.assigned_to || '',
+    assigned_to_user_id: task.assigned_to_user_id || '',
     status: task.status || 'pending',
     completed_at: task.completed_at || '',
   }));
@@ -504,30 +538,41 @@ function EditTaskDialog({ open, onOpenChange, task, clients, staffUsers, onSave,
       title: task.title || '',
       description: task.description || '',
       type: task.type || 'task',
-      client_id: task.client_id || '',
+      client_id: task.customer_id || '',
       due_date: task.due_date || '',
       priority: task.priority || 'medium',
-      assigned_to: task.assigned_to || '',
+      assigned_to_user_id: task.assigned_to_user_id || '',
       status: task.status || 'pending',
       completed_at: task.completed_at || '',
     });
   }, [task]);
 
   function handleSave() {
-    const data = { ...form };
-    if (form.status === 'done' && task.status !== 'done') {
+    const { client_id, ...rest } = form;
+    const data = { ...rest, customer_id: client_id || null };
+    if (form.status === 'completed' && task.status !== 'completed') {
       data.completed_at = new Date().toISOString();
-    } else if (form.status !== 'done') {
+    } else if (form.status !== 'completed') {
       data.completed_at = '';
     }
     onSave(data);
   }
 
+  const isAuto = !!task.template_key;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('taskBoard.editTaskDialogTitle')}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {t('taskBoard.editTaskDialogTitle')}
+            {isAuto && (
+              <Badge variant="outline" className="text-[10px] gap-1">
+                <Sparkles className="w-2.5 h-2.5" />
+                {t('tripTasksPanel.auto')}
+              </Badge>
+            )}
+          </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <div>
@@ -562,6 +607,7 @@ function EditTaskDialog({ open, onOpenChange, task, clients, staffUsers, onSave,
                   <SelectItem value="low">{t('priority.low')}</SelectItem>
                   <SelectItem value="medium">{t('priority.medium')}</SelectItem>
                   <SelectItem value="high">{t('priority.high')}</SelectItem>
+                  <SelectItem value="critical">{t('priority.critical')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -599,8 +645,8 @@ function EditTaskDialog({ open, onOpenChange, task, clients, staffUsers, onSave,
             <div>
               <Label>{t('taskBoard.assigneeLabel')}</Label>
               <Select
-                value={form.assigned_to || 'none'}
-                onValueChange={(v) => setForm({ ...form, assigned_to: v === 'none' ? '' : v })}
+                value={form.assigned_to_user_id || 'none'}
+                onValueChange={(v) => setForm({ ...form, assigned_to_user_id: v === 'none' ? '' : v })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t('taskBoard.selectAssigneePlaceholder')} />
@@ -608,7 +654,7 @@ function EditTaskDialog({ open, onOpenChange, task, clients, staffUsers, onSave,
                 <SelectContent>
                   <SelectItem value="none">{t('taskBoard.unassigned')}</SelectItem>
                   {staffUsers.map((u) => (
-                    <SelectItem key={u.id} value={u.email}>
+                    <SelectItem key={u.id} value={u.id}>
                       {u.name || u.email}
                     </SelectItem>
                   ))}
@@ -624,7 +670,7 @@ function EditTaskDialog({ open, onOpenChange, task, clients, staffUsers, onSave,
                 <SelectContent>
                   <SelectItem value="pending">{t('common.pending')}</SelectItem>
                   <SelectItem value="in_progress">{t('taskBoard.columnInProgress')}</SelectItem>
-                  <SelectItem value="done">{t('taskBoard.columnDone')}</SelectItem>
+                  <SelectItem value="completed">{t('taskBoard.columnDone')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

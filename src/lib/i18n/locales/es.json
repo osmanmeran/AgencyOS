@@ -167,6 +167,7 @@
     "title": "Panel",
     "subtitle": "¡Bienvenido! Aquí está lo que está pasando con tu negocio de viajes.",
     "tasksToDo": "Tareas Pendientes",
+    "myTasks": "Mis tareas",
     "allCaughtUp": "¡Todo al día!",
     "moreCount": "+{count} más",
     "departingSoon": "Salidas Próximas",
@@ -184,9 +185,7 @@
     "upcomingArrivals": "Próximas Llegadas",
     "noUpcomingArrivals": "No hay llegadas próximas",
     "upcomingDepartures": "Próximas Salidas",
-    "noUpcomingDepartures": "No hay salidas próximas",
-    "myOpenTasks": "Mis tareas abiertas",
-    "myBookingTasks": "Mis tareas de reserva"
+    "noUpcomingDepartures": "No hay salidas próximas"
   },
   "reservations": {
     "title": "Reservas",
@@ -1625,10 +1624,13 @@
     "titlePlaceholder": "Título de la tarea...",
     "typeLabel": "Tipo",
     "dueDateLabel": "Fecha de Vencimiento",
-    "assignToLabel": "Asignar a (correo)",
-    "assignToPlaceholder": "equipo@miembro.com",
+    "assignToLabel": "Asignar a",
     "descriptionPlaceholder": "Detalles adicionales...",
-    "filterInProgress": "En curso"
+    "filterInProgress": "En curso",
+    "unassigned": "Sin asignar",
+    "createError": "No se pudo añadir el elemento",
+    "updateError": "No se pudo actualizar el elemento",
+    "deleteError": "No se pudo eliminar el elemento"
   },
   "tripCostSummary": {
     "title": "Resumen de Costos del Viaje",

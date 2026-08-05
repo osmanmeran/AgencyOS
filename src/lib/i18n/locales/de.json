@@ -167,6 +167,7 @@
     "title": "Dashboard",
     "subtitle": "Willkommen zurück! Hier ist, was in Ihrem Reisebüro passiert.",
     "tasksToDo": "Zu erledigende Aufgaben",
+    "myTasks": "Meine Aufgaben",
     "allCaughtUp": "Alles erledigt!",
     "moreCount": "+{count} weitere",
     "departingSoon": "Bald abreisend",
@@ -184,9 +185,7 @@
     "upcomingArrivals": "Bevorstehende Ankünfte",
     "noUpcomingArrivals": "Keine bevorstehenden Ankünfte",
     "upcomingDepartures": "Bevorstehende Abreisen",
-    "noUpcomingDepartures": "Keine bevorstehenden Abreisen",
-    "myOpenTasks": "Meine offenen Aufgaben",
-    "myBookingTasks": "Meine Buchungsaufgaben"
+    "noUpcomingDepartures": "Keine bevorstehenden Abreisen"
   },
   "reservations": {
     "title": "Reservierungen",
@@ -1625,10 +1624,13 @@
     "titlePlaceholder": "Aufgabentitel...",
     "typeLabel": "Typ",
     "dueDateLabel": "Fälligkeitsdatum",
-    "assignToLabel": "Zuweisen an (E-Mail)",
-    "assignToPlaceholder": "team@mitglied.com",
+    "assignToLabel": "Zuweisen an",
     "descriptionPlaceholder": "Weitere Details...",
-    "filterInProgress": "In Bearbeitung"
+    "filterInProgress": "In Bearbeitung",
+    "unassigned": "Nicht zugewiesen",
+    "createError": "Element konnte nicht hinzugefügt werden",
+    "updateError": "Element konnte nicht aktualisiert werden",
+    "deleteError": "Element konnte nicht gelöscht werden"
   },
   "tripCostSummary": {
     "title": "Reisekosten-Übersicht",

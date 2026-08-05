@@ -1,7 +1,7 @@
 {
   "name": "Task",
   "type": "object",
-  "description": "Contextual operational to-do used across travel operations. Tasks are polymorphic: they may be linked to a Booking (Trip), a Customer (Client), and/or a Supplier, and can be assigned to a user or a team queue. Auto-generated tasks (final balance, rooming list, issue docs) are tied to a Trip's departure date via `template_key`.",
+  "description": "Contextual to-do used across travel operations, from auto-generated operational tasks to personal reminders/notes. Tasks are polymorphic: they may be linked to a Booking (Trip), a Customer (Client), and/or a Supplier, and can be assigned to a user or a team queue. Auto-generated tasks (final balance, rooming list, issue docs, ...) are tied to a Trip's date via `template_key` (see server/services/tasks.js's DEFAULT_TASK_TEMPLATES / AppSettings.task_templates). Absorbed the older, simpler ClientTask entity (client-scoped task/reminder/note) in a data migration — see server/migrations for the exact mapping.",
   "properties": {
     "title": {
       "type": "string",
@@ -15,6 +15,12 @@
       "type": "string",
       "enum": ["pending", "in_progress", "completed", "cancelled"],
       "default": "pending"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["task", "reminder", "note"],
+      "default": "task",
+      "description": "Kind of to-do: an actionable task, a time-based reminder, or a free-form note. Auto-generated operational tasks are always 'task'."
     },
     "priority": {
       "type": "string",

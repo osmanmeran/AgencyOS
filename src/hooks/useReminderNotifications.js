@@ -15,7 +15,7 @@ export function useReminderNotifications() {
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['reminderNotifications'],
-    queryFn: () => db.entities.ClientTask.list(),
+    queryFn: () => db.tasks.list({ type: 'reminder' }),
     enabled: !!me,
     refetchInterval: POLL_MS,
   });
@@ -24,10 +24,13 @@ export function useReminderNotifications() {
     if (!me || !tasks.length) return;
     const now = Date.now();
     tasks.forEach((task) => {
-      if (task.type !== 'reminder') return;
-      if (task.status === 'done') return;
-      if (task.assigned_to && task.assigned_to !== me.email) return;
-      if (task.created_by_id && task.created_by_id !== me.id) return;
+      if (task.status === 'completed' || task.status === 'cancelled') return;
+      // Task isn't user-scoped like the old ClientTask was — everyone with
+      // view_all_trips sees every reminder — so "is this mine" has to be
+      // enforced here: assigned reminders are mine only if assigned to me;
+      // unassigned ones are mine only if I created them.
+      const isMine = task.assigned_to_user_id ? task.assigned_to_user_id === me.id : task.created_by === me.id;
+      if (!isMine) return;
       if (!task.due_date) return;
       const due = new Date(task.due_date).getTime();
       if (due <= now && !shown.current.has(task.id)) {

@@ -167,6 +167,7 @@
     "title": "Tableau de bord",
     "subtitle": "Bienvenue ! Voici ce qui se passe avec votre agence de voyage.",
     "tasksToDo": "Tâches à Faire",
+    "myTasks": "Mes tâches",
     "allCaughtUp": "Tout est à jour !",
     "moreCount": "+{count} de plus",
     "departingSoon": "Départs Prochains",
@@ -184,9 +185,7 @@
     "upcomingArrivals": "Arrivées à Venir",
     "noUpcomingArrivals": "Aucune arrivée à venir",
     "upcomingDepartures": "Départs à Venir",
-    "noUpcomingDepartures": "Aucun départ à venir",
-    "myOpenTasks": "Mes tâches ouvertes",
-    "myBookingTasks": "Mes tâches de réservation"
+    "noUpcomingDepartures": "Aucun départ à venir"
   },
   "reservations": {
     "title": "Réservations",
@@ -1625,10 +1624,13 @@
     "titlePlaceholder": "Titre de la tâche...",
     "typeLabel": "Type",
     "dueDateLabel": "Date d'Échéance",
-    "assignToLabel": "Assigner à (e-mail)",
-    "assignToPlaceholder": "equipe@membre.com",
+    "assignToLabel": "Assigner à",
     "descriptionPlaceholder": "Détails supplémentaires...",
-    "filterInProgress": "En cours"
+    "filterInProgress": "En cours",
+    "unassigned": "Non assigné",
+    "createError": "Échec de l'ajout de l'élément",
+    "updateError": "Échec de la mise à jour de l'élément",
+    "deleteError": "Échec de la suppression de l'élément"
   },
   "tripCostSummary": {
     "title": "Résumé des Coûts du Voyage",

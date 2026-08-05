@@ -27,9 +27,6 @@ import {
   Clock,
   Send,
   MessageSquare,
-  CheckCircle2,
-  Circle,
-  Plus,
   ChevronRight,
   Globe,
 } from 'lucide-react';
@@ -37,6 +34,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import { format } from 'date-fns';
 import EmailComposer from './EmailComposer';
+import ClientTasksPanel from '@/components/clients/ClientTasksPanel';
 import { colleaguesOf } from '../../lib/companySearch';
 import CompanyPicker from './CompanyPicker';
 import { useT } from '@/lib/i18n/I18nContext';
@@ -112,12 +110,18 @@ export default function ClientPanel({ client, onClientUpdated }) {
     })
   );
 
-  const { data: tasks = /** @type {any} */ ([]) } = /** @type {any} */ (
+  // Same query key/shape as ClientTasksPanel's own internal query, so this
+  // (used only for the tab badge count) shares its cache entry rather than
+  // firing a second fetch.
+  const { data: allClientTasks = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['clientTasks', client.id],
-      queryFn: () => db.entities.ClientTask.filter({ client_id: client.id }, '-created_date'),
+      queryFn: () => db.tasks.list({ customer_id: client.id, sort: '-created_date' }),
     })
   );
+  const pendingTaskCount = allClientTasks.filter(
+    (task) => !task.template_key && task.status !== 'completed' && task.status !== 'cancelled',
+  ).length;
 
   // Shares the ['clients'] cache with the CRM list, so this is usually instant.
   const { data: allClients = /** @type {any} */ ([]) } = /** @type {any} */ (
@@ -140,22 +144,6 @@ export default function ClientPanel({ client, onClientUpdated }) {
     })
   );
 
-  const taskMutation = /** @type {any} */ (
-    useMutation({
-      mutationFn: (/** @type {any} */ data) => db.entities.ClientTask.create(data),
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clientTasks', client.id] }),
-    })
-  );
-
-  const toggleTaskMutation = /** @type {any} */ (
-    useMutation({
-      mutationFn: (/** @type {any} */ { id, /** @type {any} */ data }) => db.entities.ClientTask.update(id, data),
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clientTasks', client.id] }),
-    })
-  );
-
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-
   const startEdit = () => {
     setEditForm({ ...client });
     setEditing(true);
@@ -175,14 +163,6 @@ export default function ClientPanel({ client, onClientUpdated }) {
     ...trips.map((trip) => ({ type: 'trip', date: trip.created_date, item: trip })),
     ...emailLogs.map((e) => ({ type: 'email', date: e.created_date, item: e })),
   ].sort((a, b) => +new Date(b.date) - +new Date(a.date));
-
-  const pendingTasks = tasks.filter((task) => task.status !== 'done');
-
-  const handleAddTask = () => {
-    if (!newTaskTitle.trim()) return;
-    taskMutation.mutate({ client_id: client.id, title: newTaskTitle.trim(), type: 'task', status: 'pending' });
-    setNewTaskTitle('');
-  };
 
   return (
     <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col h-full overflow-hidden">
@@ -346,7 +326,7 @@ export default function ClientPanel({ client, onClientUpdated }) {
               {t('clientPanel.detailsTab')}
             </TabsTrigger>
             <TabsTrigger value="tasks" className="text-xs data-[state=active]:bg-card">
-              {t('clientPanel.tasksTab')} {pendingTasks.length > 0 && `(${pendingTasks.length})`}
+              {t('clientPanel.tasksTab')} {pendingTaskCount > 0 && `(${pendingTaskCount})`}
             </TabsTrigger>
             <TabsTrigger value="proposals" className="text-xs data-[state=active]:bg-card">
               {t('clientPanel.proposalsTab', { count: proposals.length })}
@@ -641,65 +621,8 @@ export default function ClientPanel({ client, onClientUpdated }) {
           </TabsContent>
 
           {/* TASKS */}
-          <TabsContent value="tasks" className="px-6 py-4 flex-1 overflow-y-auto space-y-4">
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder={t('clientPanel.addTaskPlaceholder')}
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                className="h-8 text-sm flex-1"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-              />
-              <Button size="sm" className="h-8" onClick={handleAddTask} disabled={!newTaskTitle.trim()}>
-                <Plus className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-            {tasks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <CheckCircle2 className="w-10 h-10 mb-2 opacity-20" />
-                <p className="text-sm">{t('clientPanel.noTasksYet')}</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted transition-colors group"
-                  >
-                    <button
-                      onClick={() =>
-                        toggleTaskMutation.mutate({
-                          id: task.id,
-                          data: { status: task.status === 'done' ? 'pending' : 'done' },
-                        })
-                      }
-                      className="flex-shrink-0"
-                    >
-                      {task.status === 'done' ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-500 dark:text-green-300" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-muted-foreground group-hover:text-blue-400 transition-colors" />
-                      )}
-                    </button>
-                    <span
-                      className={`flex-1 text-sm ${task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'}`}
-                    >
-                      {task.title}
-                    </span>
-                    {task.priority === 'high' && (
-                      <Badge className="text-[9px] bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                        {t('priority.high')}
-                      </Badge>
-                    )}
-                    {task.due_date && (
-                      <span className="text-[10px] text-muted-foreground">
-                        {format(new Date(task.due_date), 'MMM d')}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+          <TabsContent value="tasks" className="px-6 py-4 flex-1 overflow-y-auto">
+            <ClientTasksPanel clientId={client.id} />
           </TabsContent>
 
           {/* PROPOSALS, INVOICES, TRIPS (same as before) */}

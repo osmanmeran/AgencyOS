@@ -414,6 +414,7 @@ export function listTasks({
   assigned_to_user_id,
   status,
   priority,
+  type,
   overdue,
   escalated,
   sort,
@@ -428,6 +429,7 @@ export function listTasks({
   if (assigned_to_user_id) filter.assigned_to_user_id = assigned_to_user_id;
   if (status) filter.status = status;
   if (priority) filter.priority = priority;
+  if (type) filter.type = type;
 
   // Derived filters need the full set first; otherwise honor SQL pagination.
   const needsPostFilter = overdue || escalated;
