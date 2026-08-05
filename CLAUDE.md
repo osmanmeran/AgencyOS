@@ -8,7 +8,7 @@ auth, WebSocket real-time sync. See `README.md` for features/setup and
 ## Commands
 
 - `npm run dev` — Vite dev server; `npm run server` — Express backend
-- `npm test` — Vitest (52 files, ~409 tests, backend-only)
+- `npm test` — Vitest (63 files, 493 tests; `backend` + `frontend` projects)
 - `npm run lint` / `npm run typecheck` — both run in CI alongside test + build
 - `npm run db:migrate` / `db:migrate:status` — migrations (`server/migrations/*.js`, filename order)
 
