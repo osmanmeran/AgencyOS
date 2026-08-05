@@ -10,6 +10,7 @@ import logger from './lib/logger.js';
 import { createWebSocketServer, sendToUser } from './lib/ws.js';
 import { setBroadcastFn } from './services/notifications.js';
 import { getTenantId } from './db.js';
+import { checkTenantZeroRegistered } from './lib/startupChecks.js';
 import { startReminderService } from './services/reminders.js';
 import { startReportScheduler } from './services/reportScheduler.js';
 import { startBackupScheduler } from './services/backupScheduler.js';
@@ -55,6 +56,7 @@ const getLocalIp = () => {
 const onServerStart = () => {
   const ip = getLocalIp();
   logger.info({ port: PORT, https: hasSsl, mode: process.env.NODE_ENV || 'development', ip }, 'Server started');
+  checkTenantZeroRegistered();
   startReminderService();
   startReportScheduler();
   startBackupScheduler();
