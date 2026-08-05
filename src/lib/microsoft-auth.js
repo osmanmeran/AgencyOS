@@ -25,6 +25,18 @@ function getRedirectUri() {
 }
 
 /**
+ * Authority segment for the (existing-workspace) login flow. Defaults to
+ * `common` for backward compatibility, but a single-tenant app registration
+ * can't use `/common` at all (AADSTS50194) — set VITE_MICROSOFT_TENANT_ID to
+ * that tenant's ID or verified domain to authenticate against its
+ * tenant-specific endpoint instead. Signup intentionally stays on `common`
+ * since a new agency's tenant isn't known until after they authenticate.
+ */
+function getLoginAuthority() {
+  return import.meta.env.VITE_MICROSOFT_TENANT_ID || 'common';
+}
+
+/**
  * Kicks off the Microsoft OAuth2 PKCE login flow: stashes state/verifier/
  * return URL for the callback step, then redirects the browser to the
  * Microsoft authorize endpoint.
@@ -63,7 +75,7 @@ export async function loginWithMicrosoft(returnUrl) {
     response_mode: 'query',
   });
 
-  window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}`;
+  window.location.href = `https://login.microsoftonline.com/${getLoginAuthority()}/oauth2/v2.0/authorize?${params}`;
 }
 
 /**
@@ -165,10 +177,13 @@ export async function handleMicrosoftCallback() {
   const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
   const redirectUri = getRedirectUri();
 
-  // Multi-tenant app: exchange the code at the /common endpoint so users
-  // from any Microsoft org can authenticate (their home tenant is embedded
-  // in the resulting id_token - the server validates it against the workspace).
-  const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+  // The token exchange authority must match the one used at the authorize
+  // step: signup always went through /common (unknown tenant ahead of time),
+  // while login went through getLoginAuthority() (see loginWithMicrosoft).
+  const mode = sessionStorage.getItem('ms_mode') || localStorage.getItem('ms_mode');
+  const authority = mode === 'signup' ? 'common' : getLoginAuthority();
+
+  const tokenRes = await fetch(`https://login.microsoftonline.com/${authority}/oauth2/v2.0/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
