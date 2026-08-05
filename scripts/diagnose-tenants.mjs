@@ -103,17 +103,23 @@ function main() {
   if (fs.existsSync(tenantsDir)) {
     for (const entry of fs.readdirSync(tenantsDir).sort()) {
       const file = path.join(tenantsDir, entry, 'marvelops.db');
-      if (fs.existsSync(file)) onDisk.push({ id: entry, file });
+      if (fs.existsSync(file)) onDisk.push({ id: entry, label: entry, file });
     }
   }
-  if (fs.existsSync(legacyPath)) onDisk.push({ id: '(legacy, unadopted)', file: legacyPath });
+  // The legacy file IS tenant zero's database: tenantDbPath() in server/db.js
+  // falls back to it when the adopted path is absent. It must therefore match
+  // registry id "0", or a correctly-registered deployment reads as an orphan.
+  const adoptedZero = onDisk.some((d) => d.id === DEFAULT_TENANT_ID);
+  if (fs.existsSync(legacyPath) && !adoptedZero) {
+    onDisk.push({ id: DEFAULT_TENANT_ID, label: `${DEFAULT_TENANT_ID} (legacy path, not adopted)`, file: legacyPath });
+  }
 
   if (onDisk.length === 0) {
     console.log('   None found.');
   } else {
-    for (const { id, file } of onDisk) {
+    for (const { label, file } of onDisk) {
       const sizeMb = (fs.statSync(file).size / 1024 / 1024).toFixed(2);
-      console.log(`   - tenant id ${id} (${sizeMb} MB)`);
+      console.log(`   - tenant id ${label} (${sizeMb} MB)`);
       console.log(`     ${file}`);
       const db = openReadOnly(file);
       if (db) {
@@ -135,7 +141,7 @@ function main() {
     console.log('   failed login and investigate from there.');
   } else {
     for (const o of orphans) {
-      console.log(`   ORPHAN: a database exists for tenant "${o.id}" with no row in platform.db.`);
+      console.log(`   ORPHAN: a database exists for tenant "${o.label}" with no row in platform.db.`);
     }
     if (zeroOnDisk && !registeredIds.has(DEFAULT_TENANT_ID)) {
       console.log('');
@@ -143,12 +149,13 @@ function main() {
       console.log('   finds your user there, but getTenantById("0") returns nothing, so');
       console.log('   authenticateMicrosoft throws "Workspace not found." before issuing a');
       console.log('   session. The business data is intact — only the registry row is absent.');
-    }
-    if (fs.existsSync(legacyPath) && !fs.existsSync(path.join(tenantsDir, '0', 'marvelops.db'))) {
       console.log('');
-      console.log('   The database is still at the pre-SaaS location and was never adopted.');
-      console.log('   Fix with (dry run first, it prints its plan and changes nothing):');
-      console.log('     node scripts/adopt-tenant-zero.mjs --slug marveltour --name "Marvel Tour"');
+      console.log('   Fix by writing that row (dry run first — it changes nothing):');
+      console.log('     node scripts/register-tenant-zero.mjs --slug marveltour --name "Marvel Tour"');
+      console.log('');
+      console.log('   Moving the database is NOT required: tenantDbPath() already falls back to');
+      console.log('   the legacy path for tenant zero. adopt-tenant-zero.mjs would also work, but');
+      console.log('   it relocates a live database to do a job one INSERT can do.');
     }
   }
 
