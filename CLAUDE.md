@@ -38,6 +38,23 @@ auth, WebSocket real-time sync. See `README.md` for features/setup and
   `platform.db` (the tenant registry) backs `/api/platform/*`, gated by the
   `PLATFORM_ADMIN_EMAILS` allow-list — distinct from the per-workspace
   `admin` tier, which has no cross-tenant access.
+- **Tenant zero is registered, not adopted** (and production is deliberately
+  in that state). Its database can live at either `data/tenants/0/marvelops.db`
+  or the pre-SaaS `data/marvelops.db`; `tenantDbPath()` in `server/db.js`
+  prefers the former and falls back to the latter, so both work. Either way it
+  needs a row in `platform.db` — without one, SSO login finds the user, then
+  dies on `getTenantById()` with "Workspace not found." while every other part
+  of the app looks fine. `checkTenantZeroRegistered()`
+  (`server/lib/startupChecks.js`, called from `server.js`) logs that at boot.
+  To fix it, prefer `scripts/register-tenant-zero.mjs`, which writes only the
+  registry row; `adopt-tenant-zero.mjs` additionally _moves_ the live database,
+  which is not what resolves the error.
+- **The two Azure tenant env vars hold different formats on purpose** — don't
+  "fix" one to match the other. `VITE_MICROSOFT_TENANT_ID` goes in the browser
+  authorize URL, where Azure accepts a verified domain or a GUID.
+  `MICROSOFT_TENANT_ID` (and the `tenants.azure_tenant_id` column) is compared
+  server-side against the id token's `tid` claim, which is _always_ a GUID — a
+  domain there rejects every login with a misleading "not your organization".
 
 ---
 
@@ -389,3 +406,56 @@ audit fix` (no `--force`, no major bumps) resolved 7 of them in place:
 - Platform admin routes (`routes/platform.js`) are allow-list gated
   (`PLATFORM_ADMIN_EMAILS`, distinct from workspace `admin` tier) and every
   mutation is audit-logged.
+
+---
+
+# Ops notes — Microsoft SSO lockout (2026-08-05/06)
+
+Production locked every user out of Microsoft sign-in. Three independent
+faults stacked, which is worth knowing because fixing any one of them alone
+left the symptom unchanged and made it look like the fix hadn't worked.
+
+1. **Azure rejected the `/common` endpoint** (`AADSTS50194`). The app
+   registration is single-tenant, and single-tenant apps created after
+   2018-10-15 cannot use `/common` at all. `loginWithMicrosoft` and the
+   matching token exchange now resolve their authority from
+   `VITE_MICROSOFT_TENANT_ID` (`src/lib/microsoft-auth.js`), falling back to
+   `common`. `signupWithMicrosoft` deliberately stays on `common` — self-serve
+   signup cannot know the new agency's tenant until after they authenticate,
+   so `handleMicrosoftCallback` picks the authority off `ms_mode` to keep the
+   exchange matched to the authorize step. No server change was needed:
+   `verifyMicrosoftIdToken` already derives the tenant from the token's `tid`.
+
+   Making the registration multi-tenant instead would have been the other
+   fix, but it needs Azure tenant-admin rights on `marveltour.com.tr` that
+   we do not have — as does consenting `Application.ReadWrite.All` in Graph
+   Explorer. Assume that route is closed unless told otherwise.
+
+2. **The fix wasn't deployed.** Railway builds from git; the change sat
+   uncommitted while the env var was set, so the deployed bundle still had
+   `/common` hardcoded and the new variable had no code reading it. Worth
+   checking `git status` before concluding an env-var change didn't work.
+
+3. **The tenant registry was empty.** The SaaS layer shipped without its
+   one-off registration step ever running against production, so `platform.db`
+   had no row at all. See the tenant-zero bullet above; this is the state
+   `checkTenantZeroRegistered()` now reports at boot.
+
+Added along the way, all inert unless invoked:
+
+- `scripts/diagnose-tenants.mjs` — read-only; reports the registry against
+  what is on disk and names the mismatch. Safe against production.
+- `scripts/register-tenant-zero.mjs` — writes just the registry row. Refuses a
+  non-GUID `azure_tenant_id` for the reason in the env-var bullet above.
+- `scripts/unlock-local-login.mjs` — break-glass for an SSO-only admin locked
+  out with no password login. Clears `microsoft_id` (what makes
+  `authenticateLocal` reject SSO accounts) and mints a reset link so the
+  operator chooses their own password; it never generates or prints one. The
+  link is minted directly rather than emailed because `sendEmail` degrades to
+  logging when SMTP is unset **and** persists an empty body for template
+  emails, which would leave the token unrecoverable.
+
+Still open: `SMTP_*` is unset (placeholders removed 2026-08-06), so all
+outbound email silently logs instead of sending — no password resets, invites,
+or reminders reach anyone until a real host is configured. Until then,
+`unlock-local-login.mjs --reset-link` is the only account-recovery path.
