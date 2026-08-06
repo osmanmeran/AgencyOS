@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
-import * as migration from '../../server/migrations/031_backfill_task_status.js';
+import * as migration from '../../server/migrations/032_backfill_task_status.js';
 
 function makeDb() {
   const db = new Database(':memory:');
@@ -28,7 +28,7 @@ function data(db, id) {
   return JSON.parse(db.prepare('SELECT data FROM entities WHERE id = ?').get(id).data);
 }
 
-describe('migration 031: backfill Task status', () => {
+describe('migration 032: backfill Task status', () => {
   /** @type {any} */
   let db;
   beforeEach(() => {
