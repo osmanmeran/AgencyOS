@@ -4,6 +4,7 @@ import { getDb, uid, getTenantId, DEFAULT_TENANT_ID, runWithTenant } from '../db
 import { generateToken, ACCESS_TOKEN_MAX_AGE_MS, REFRESH_TOKEN_MAX_AGE_MS } from '../middleware/auth.js';
 import { ForbiddenError, ConflictError, UnauthorizedError, BadRequestError } from '../middleware/errors.js';
 import { MICROSOFT_CLIENT_ID, verifyMicrosoftIdToken } from './microsoft.js';
+import { verifyGoogleIdToken, exchangeGoogleCode } from './google.js';
 import { listTenants, getTenantById } from './tenants.js';
 import { ACTIVE_TENANT_COOKIE } from '../middleware/tenant.js';
 import logger from '../lib/logger.js';
@@ -373,6 +374,76 @@ export async function authenticateMicrosoft(idToken) {
   }
 
   return { user: safeUser(rawUser), tenantId, slug: tenant.slug || null };
+}
+
+/** Locate a user by Google identity across all tenants (mirrors {@link locateUserByMicrosoft}). */
+export function locateUserByGoogle(googleId, email) {
+  const normalized = normalizeEmail(email);
+  const tenantIds = [DEFAULT_TENANT_ID, ...listTenants().map((t) => t.id)];
+  for (const tenantId of tenantIds) {
+    const db = getDb(tenantId);
+    let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(googleId);
+    if (!user && normalized) user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(normalized);
+    if (user) return { tenantId, db, user };
+  }
+  return null;
+}
+
+/**
+ * Sign in with Google: exchange the authorization code, verify the resulting id
+ * token, and resolve it to an **existing** user.
+ *
+ * Unlike {@link authenticateMicrosoft} this never provisions. Microsoft can
+ * safely create accounts because `tid` proves the user belongs to the
+ * workspace's Azure directory; a Google token carries no such claim, so an
+ * unrecognized email is rejected rather than turned into an account. That also
+ * means there is no tenant-level Google config — the workspace is wherever the
+ * user row already lives.
+ *
+ * On first use the verified `google_id` is stored on the matched row, so later
+ * logins hit the id lookup instead of the email fallback. A password, if the
+ * account has one, keeps working: linking Google adds a sign-in method rather
+ * than replacing one.
+ * @returns {{user: object, tenantId: string, slug: string|null}}
+ * @throws {UnauthorizedError|ForbiddenError} On an invalid token, unknown email, or inactive account.
+ */
+export async function authenticateGoogle({ code, codeVerifier, redirectUri }) {
+  const idToken = await exchangeGoogleCode({ code, codeVerifier, redirectUri });
+  const { googleId, email } = await verifyGoogleIdToken(idToken);
+
+  const located = locateUserByGoogle(googleId, email);
+  if (!located) {
+    // Deliberately the same message whether the email is unknown or simply has
+    // no account here, so this can't be used to probe which emails exist.
+    logger.warn({ email }, 'Google sign-in rejected: no matching user');
+    throw new ForbiddenError(
+      'No account here uses that Google address. Ask an administrator to create one.',
+      'NO_ACCOUNT',
+    );
+  }
+
+  const { tenantId, db, user } = located;
+  if (!user.is_active) {
+    throw new ForbiddenError('Account pending approval. Contact an administrator.', 'ACCOUNT_PENDING');
+  }
+
+  // Refuse to hand one Google identity an account already bound to another.
+  if (user.google_id && user.google_id !== googleId) {
+    logger.warn({ userId: user.id }, 'Google sign-in rejected: account bound to a different Google identity');
+    throw new ForbiddenError('That account is linked to a different Google identity.');
+  }
+
+  if (!user.google_id) {
+    db.prepare('UPDATE users SET google_id = ?, updated_date = ? WHERE id = ?').run(
+      googleId,
+      new Date().toISOString(),
+      user.id,
+    );
+  }
+
+  const tenant = getTenantById(tenantId);
+  const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+  return { user: safeUser(fresh), tenantId, slug: tenant?.slug || null };
 }
 
 /** @returns {object|null} The raw `users` row (not sanitized), or null if not found. */

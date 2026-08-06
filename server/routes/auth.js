@@ -16,6 +16,7 @@ import { validate, schemas } from '../middleware/validate.js';
 import {
   authenticateLocal,
   authenticateMicrosoft,
+  authenticateGoogle,
   safeUser,
   issueSession,
   rotateRefreshToken,
@@ -108,6 +109,39 @@ router.post(
     let result;
     try {
       result = await authenticateMicrosoft(req.body.idToken);
+    } catch (err) {
+      logAudit({ action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
+      throw err;
+    }
+    const { user, tenantId, slug } = result;
+    const token = runWithTenant(tenantId, () =>
+      issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }),
+    ).accessToken;
+    if (slug) setActiveTenantCookie(res, slug);
+    else clearActiveTenantCookie(res);
+    logAudit({
+      userId: user.id,
+      userName: user.email,
+      action: AUDIT_ACTIONS.LOGIN,
+      entityType: 'auth',
+      entityId: user.id,
+      ip: req.ip,
+    });
+    res.json({ token, user });
+  }),
+);
+
+// Google sign-in. Mirrors /microsoft, except the browser posts the
+// authorization code instead of an id token — the exchange needs the client
+// secret and so must happen here. Google sign-in only ever matches an existing
+// account; it never provisions one (see authenticateGoogle).
+router.post(
+  '/google',
+  validate(schemas.googleAuth),
+  catchAsync(async (req, res) => {
+    let result;
+    try {
+      result = await authenticateGoogle(req.body);
     } catch (err) {
       logAudit({ action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
       throw err;
