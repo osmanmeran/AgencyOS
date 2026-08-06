@@ -40,7 +40,9 @@
     "selectAll": "Tout Sélectionner",
     "selectedCount": "{count} {label} sélectionné(s)",
     "none": "Aucun",
-    "description": "Description"
+    "description": "Description",
+    "confirmDeleteTitle": "Supprimer cet élément ?",
+    "confirmDeleteBody": "« {name} » sera définitivement supprimé. Cette action est irréversible."
   },
   "units": {
     "perPerson": "Par Personne",
@@ -459,7 +461,8 @@
     "unassigned": "Non assigné",
     "noClient": "Aucun client",
     "statusLabel": "Statut",
-    "myTasks": "Mes tâches"
+    "myTasks": "Mes tâches",
+    "olderCompletedHidden": "{count} tâches terminées plus anciennes ne sont pas affichées"
   },
   "bookingTemplates": {
     "accessDeniedBody": "Vous n'avez pas la permission de gérer les modèles de réservation",
@@ -3034,12 +3037,12 @@
         "a": "Allez dans « Calendrier » dans la barre de navigation. La grille mensuelle affiche tous les voyages avec un code couleur selon leur statut (planification/confirmé/en cours/terminé/annulé). Cliquez sur une date pour voir le détail du jour dans le panneau latéral. Utilisez les flèches pour naviguer entre les mois."
       },
       "taskBoardWork": {
-        "q": "Comment fonctionne le tableau des tâches ?",
-        "a": "Allez dans « Tâches » dans la barre de navigation. Le tableau Kanban comporte trois colonnes : En attente, En cours et Terminé. Faites glisser les cartes entre les colonnes ou cliquez sur « Nouvelle tâche » pour en créer une. Chaque tâche peut avoir un client, une priorité (basse/moyenne/haute) et une date d’échéance."
+        "q": "Comment fonctionne le Tableau des tâches ?",
+        "a": "Ouvrez « Tâches » dans la navigation supérieure. Le tableau Kanban comporte trois colonnes : En attente, En cours et Terminé. Il affiche toutes les tâches de l’espace de travail — celles que vous créez et celles générées automatiquement par les réservations (marquées « Auto »). Faites glisser les cartes d’une colonne à l’autre pour changer leur statut, ou cliquez sur « Nouvelle tâche » en précisant le client, la priorité (basse/moyenne/haute/critique), l’échéance et la personne responsable. Les tâches ouvertes sont triées par échéance et affichent les badges En retard et Escaladée ; la suppression demande une confirmation. La colonne Terminé n’affiche que les tâches récemment achevées."
       },
       "autoTasks": {
-        "q": "Des tâches sont-elles créées automatiquement quand je crée une réservation ?",
-        "a": "Oui. L’enregistrement d’un nouveau Voyage génère automatiquement trois tâches opérationnelles liées à sa date de départ : Encaisser le solde final (échéance J-30, priorité Haute), Envoyer la liste des chambres à l’hôtel (échéance J-14, Moyenne), et Émettre les billets/documents finaux (échéance J-7, Critique). Elles sont liées à la réservation et au client, et attribuées à la personne ayant créé la réservation. Si ces tâches existent déjà, elles sont resynchronisées plutôt que dupliquées."
+        "q": "Des tâches sont-elles créées automatiquement lorsque je crée une réservation ?",
+        "a": "Oui. À l’enregistrement d’un Voyage, une tâche opérationnelle est générée pour chaque modèle de tâche de l’espace de travail. Les neuf modèles par défaut couvrent tout le cycle de la réservation : Encaisser l’acompte (3 jours après la réservation, Haute), Relancer sur l’assurance voyage (14 jours après, Moyenne), Vérifier les visas / documents de voyage (45 jours avant le départ, Haute), Régler le solde fournisseur (21 jours avant, Haute), Encaisser le solde final (30 jours avant, Haute), Envoyer le rooming list à l’hôtel (14 jours avant, Moyenne), Émettre les billets / documents finaux (7 jours avant, Critique), Appel de confirmation avant le départ (3 jours avant, Moyenne) et Suivi après le voyage (2 jours après le retour, Basse). Elles sont liées à la réservation et au client et attribuées à la personne qui a créé la réservation ; si une tâche existe déjà, elle est resynchronisée plutôt que dupliquée. Un administrateur peut ajouter, modifier ou supprimer des modèles dans Paramètres > Modèles de tâches."
       },
       "departureDateChange": {
         "q": "Que se passe-t-il pour les tâches si je change la date de départ d’un voyage ?",
@@ -3127,7 +3130,7 @@
       },
       "bookingTasksPanel": {
         "q": "Où puis-je voir les tâches générées automatiquement pour une réservation ?",
-        "a": "Ouvrez la réservation et faites défiler jusqu’à la section « Tâches de réservation » — elle liste les tâches opérationnelles de cette réservation (celles générées automatiquement sont marquées « Auto ») avec priorité, échéance et les badges en retard/bientôt dues/escaladées le cas échéant. Cliquez sur le cercle pour marquer une tâche comme terminée, ou sur « Ajouter une tâche » pour en ajouter une manuelle propre à cette réservation. Vos propres tâches de réservation ouvertes apparaissent aussi dans le Tableau de bord sous « Mes tâches de réservation », les tâches en retard en premier."
+        "a": "Ouvrez la réservation et descendez jusqu’à la section « Tâches de réservation » : elle liste les tâches opérationnelles de cette réservation (celles générées automatiquement portent le badge « Auto ») avec la priorité, l’échéance et les badges en retard/bientôt due/escaladée. Cliquez sur le cercle pour terminer une tâche, ou sur « Ajouter une tâche » pour en créer une manuelle rattachée à cette réservation. Vos tâches ouvertes apparaissent aussi sur le Tableau de bord sous « Mes tâches », et toutes les tâches de l’espace de travail figurent sur le Tableau des tâches."
       },
       "reportsTo": {
         "q": "À quoi sert le champ « Rend compte à » pour un utilisateur ?",

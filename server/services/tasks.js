@@ -398,11 +398,27 @@ export function enrichTask(task, now = Date.now()) {
 }
 
 /**
+ * Turn a filter value into a `findEntities` condition, accepting a
+ * comma-separated list (`status=pending,in_progress`) as an `$in` match so a
+ * caller can pull several statuses in one query instead of one request per
+ * column. Both `findEntities` paths (SQL and JS) already understand `$in`.
+ */
+function toFilterCondition(value) {
+  if (typeof value !== 'string' || !value.includes(',')) return value;
+  const values = value
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return values.length > 1 ? { $in: values } : values[0];
+}
+
+/**
  * List tasks with the contextual filters the UI needs.
  *
  * Direct equality filters (`booking_id`, `customer_id`, `supplier_id`,
- * `assigned_to_user_id`, `status`, `priority`) are pushed into SQL via
- * `findEntities`. `overdue` / `escalated` are derived flags, so they are
+ * `assigned_to_user_id`, `status`, `priority`, `type`) are pushed into SQL via
+ * `findEntities`; `status`, `priority` and `type` also accept a
+ * comma-separated list. `overdue` / `escalated` are derived flags, so they are
  * computed after fetch (and force a full fetch before any pagination).
  *
  * @returns {object[] | {data: object[], total: number}}
@@ -427,9 +443,9 @@ export function listTasks({
   if (customer_id) filter.customer_id = customer_id;
   if (supplier_id) filter.supplier_id = supplier_id;
   if (assigned_to_user_id) filter.assigned_to_user_id = assigned_to_user_id;
-  if (status) filter.status = status;
-  if (priority) filter.priority = priority;
-  if (type) filter.type = type;
+  if (status) filter.status = toFilterCondition(status);
+  if (priority) filter.priority = toFilterCondition(priority);
+  if (type) filter.type = toFilterCondition(type);
 
   // Derived filters need the full set first; otherwise honor SQL pagination.
   const needsPostFilter = overdue || escalated;

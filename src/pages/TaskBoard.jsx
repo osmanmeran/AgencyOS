@@ -13,13 +13,25 @@ import {
   Loader2,
   Sparkles,
   AlertTriangle,
+  CalendarClock,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { useT } from '@/lib/i18n/I18nContext';
 import { db } from '@/lib/DbContext';
+import { activeTasksQuery, completedTasksQuery, invalidateTasks, setTaskStatus } from '@/lib/taskQueries';
 import { showSuccess, showError } from '@/lib/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -33,6 +45,23 @@ const COLUMNS = [
   { id: 'in_progress', titleKey: 'taskBoard.columnInProgress' },
   { id: 'completed', titleKey: 'taskBoard.columnDone' },
 ];
+
+/**
+ * How many completed tasks the "Done" column loads. Every booking auto-
+ * generates up to nine operational tasks (server/services/tasks.js), so a
+ * workspace accumulates completed rows far faster than active ones — without
+ * a cap the board would fetch its entire task history on every visit. Older
+ * completed tasks stay reachable from the client/booking task panels.
+ */
+const COMPLETED_PAGE_SIZE = 50;
+
+/** Sort open tasks by what needs attention first: due soonest, undated last. */
+function compareByUrgency(a, b) {
+  if (!a.due_date && !b.due_date) return 0;
+  if (!a.due_date) return 1;
+  if (!b.due_date) return -1;
+  return a.due_date.localeCompare(b.due_date);
+}
 
 const TYPE_META = {
   task: { labelKey: 'clientTasksPanel.filterTask', Icon: ClipboardList },
@@ -57,15 +86,21 @@ export default function TaskBoard() {
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [deletingTask, setDeletingTask] = useState(null);
   const [myTasksOnly, setMyTasksOnly] = useState(false);
   const [newTask, setNewTask] = useState(EMPTY_NEW_TASK);
 
-  const { data: allTasks = /** @type {any} */ ([]) } = /** @type {any} */ (
-    useQuery({
-      queryKey: ['allTasks'],
-      queryFn: () => db.tasks.list(),
-    })
+  // Two scoped queries rather than one unbounded list: the active columns need
+  // every open task, but "Done" only ever shows a recent page (see
+  // COMPLETED_PAGE_SIZE). Both are filtered and sorted server-side.
+  const { data: activeTasks = /** @type {any} */ ([]) } = /** @type {any} */ (useQuery(activeTasksQuery()));
+  const { data: completedPage = /** @type {any} */ ({ data: [], total: 0 }) } = /** @type {any} */ (
+    useQuery(completedTasksQuery(COMPLETED_PAGE_SIZE))
   );
+
+  const completedTasks = completedPage.data || [];
+  const hiddenCompletedCount = Math.max(0, (completedPage.total || 0) - completedTasks.length);
+  const allTasks = useMemo(() => [...activeTasks, ...completedTasks], [activeTasks, completedTasks]);
   const { data: clients = /** @type {any} */ ([]) } = /** @type {any} */ (
     useQuery({
       queryKey: ['clients'],
@@ -88,7 +123,7 @@ export default function TaskBoard() {
     })
   );
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['allTasks'] });
+  const invalidate = () => invalidateTasks(queryClient);
 
   const createMutation = /** @type {any} */ (
     useMutation({
@@ -116,6 +151,14 @@ export default function TaskBoard() {
     })
   );
 
+  const statusMutation = /** @type {any} */ (
+    useMutation({
+      mutationFn: (/** @type {any} */ { id, status }) => setTaskStatus(id, status),
+      onSuccess: invalidate,
+      onError: () => showError(t('taskBoard.updateError')),
+    })
+  );
+
   const deleteMutation = /** @type {any} */ (
     useMutation({
       mutationFn: /** @type {any} */ (id) => db.entities.Task.delete(id),
@@ -123,6 +166,7 @@ export default function TaskBoard() {
         invalidate();
         setEditOpen(false);
         setEditingTask(null);
+        setDeletingTask(null);
         showSuccess(t('taskBoard.deleteSuccess'));
       },
       onError: () => showError(t('taskBoard.deleteError')),
@@ -158,6 +202,11 @@ export default function TaskBoard() {
     visibleTasks.forEach((task) => {
       (g[task.status] || g.pending).push(task);
     });
+    // The two active columns are what people work off, so surface what needs
+    // attention first: overdue, then soonest due, then undated.
+    for (const status of ['pending', 'in_progress']) {
+      g[status].sort(compareByUrgency);
+    }
     return g;
   }, [visibleTasks]);
 
@@ -169,14 +218,13 @@ export default function TaskBoard() {
   function handleDragEnd(result) {
     const { draggableId, destination } = result;
     if (!destination) return;
-    const taskId = draggableId;
     const newStatus = destination.droppableId;
-    const task = allTasks.find((tt) => String(tt.id) === String(taskId));
+    const task = allTasks.find((tt) => String(tt.id) === String(draggableId));
     if (!task || task.status === newStatus) return;
-    const data = { ...task, status: newStatus };
-    if (newStatus === 'completed') data.completed_at = new Date().toISOString();
-    else data.completed_at = '';
-    updateMutation.mutate({ id: taskId, data });
+    // Send only the status change. Echoing the whole task back would write the
+    // server-computed SLA flags (is_overdue/is_due_soon/is_escalated) into
+    // storage; the API strips them, but there's no reason to send them.
+    statusMutation.mutate({ id: task.id, status: newStatus });
   }
 
   return (
@@ -217,7 +265,8 @@ export default function TaskBoard() {
               clientName={clientName}
               assigneeName={assigneeName}
               onEdit={openEdit}
-              onDelete={(task) => deleteMutation.mutate(task.id)}
+              onDelete={setDeletingTask}
+              hiddenCount={col.id === 'completed' ? hiddenCompletedCount : 0}
               TYPE_META={TYPE_META}
               t={t}
             />
@@ -246,17 +295,39 @@ export default function TaskBoard() {
           clients={clients}
           staffUsers={staffUsers}
           onSave={(data) => updateMutation.mutate({ id: editingTask.id, data })}
-          onDelete={() => deleteMutation.mutate(editingTask.id)}
+          onDelete={() => setDeletingTask(editingTask)}
           saving={updateMutation.isPending}
           deleting={deleteMutation.isPending}
           t={t}
         />
       )}
+
+      <AlertDialog open={!!deletingTask} onOpenChange={(open) => !open && setDeletingTask(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('common.confirmDeleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('common.confirmDeleteBody', { name: deletingTask?.title || '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deletingTask.id)}
+              disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleteMutation.isPending && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
-function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, TYPE_META, t }) {
+function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, hiddenCount, TYPE_META, t }) {
   return (
     <Droppable droppableId={id}>
       {(provided, snapshot) => (
@@ -285,6 +356,11 @@ function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, 
             ))}
             {provided.placeholder}
           </div>
+          {hiddenCount > 0 && (
+            <p className="text-xs text-muted-foreground mt-3 text-center">
+              {t('taskBoard.olderCompletedHidden', { count: hiddenCount })}
+            </p>
+          )}
         </div>
       )}
     </Droppable>
@@ -364,13 +440,22 @@ function TaskCardView({ task, index, clientName, assigneeName, onEdit, onDelete,
                 {t('tripTasksPanel.escalated')}
               </Badge>
             )}
+            {task.is_overdue && (
+              <Badge className="text-[10px] bg-amber-600 text-white gap-1">
+                <CalendarClock className="w-2.5 h-2.5" />
+                {t('tripTasksPanel.overdue')}
+              </Badge>
+            )}
             {task.priority && (
               <Badge variant="outline" className="text-[10px] capitalize">
                 {t(`priority.${task.priority}`)}
               </Badge>
             )}
             {task.due_date && (
-              <Badge variant="outline" className="text-[10px]">
+              <Badge
+                variant="outline"
+                className={`text-[10px] ${task.is_overdue ? 'border-amber-600 text-amber-700 dark:text-amber-400' : ''}`}
+              >
                 {task.due_date}
               </Badge>
             )}

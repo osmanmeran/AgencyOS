@@ -40,7 +40,9 @@
     "selectAll": "Seleccionar Todo",
     "selectedCount": "{count} {label} seleccionado(s)",
     "none": "Ninguno",
-    "description": "Descripción"
+    "description": "Descripción",
+    "confirmDeleteTitle": "¿Eliminar este elemento?",
+    "confirmDeleteBody": "«{name}» se eliminará permanentemente. Esta acción no se puede deshacer."
   },
   "units": {
     "perPerson": "Por Persona",
@@ -459,7 +461,8 @@
     "unassigned": "Sin asignar",
     "noClient": "Sin cliente",
     "statusLabel": "Estado",
-    "myTasks": "Mis tareas"
+    "myTasks": "Mis tareas",
+    "olderCompletedHidden": "{count} tareas completadas más antiguas no se muestran"
   },
   "bookingTemplates": {
     "accessDeniedBody": "No tienes permiso para gestionar plantillas de reserva",
@@ -3034,12 +3037,12 @@
         "a": "Ve a \"Calendario\" en el menú superior. La cuadrícula mensual muestra todos los viajes con colores según su estado (planificación/confirmado/en curso/completado/cancelado). Haz clic en cualquier fecha para ver los detalles del día en el panel lateral. Usa las flechas para navegar entre meses."
       },
       "taskBoardWork": {
-        "q": "¿Cómo funciona el tablero de tareas?",
-        "a": "Ve a \"Tareas\" en el menú superior. El tablero Kanban tiene tres columnas: Pendiente, En curso y Completada. Arrastra las tarjetas entre columnas o haz clic en \"Nueva tarea\" para crear una. Cada tarea puede tener un cliente, una prioridad (baja/media/alta) y una fecha límite."
+        "q": "¿Cómo funciona el Tablero de tareas?",
+        "a": "Ve a \"Tareas\" en la navegación superior. El tablero Kanban tiene tres columnas: Pendiente, En curso y Hecho. Muestra todas las tareas del espacio de trabajo: las que creas tú y las que generan automáticamente las reservas (etiquetadas \"Auto\"). Arrastra las tarjetas entre columnas para cambiar el estado, o haz clic en \"Nueva tarea\" indicando cliente, prioridad (baja/media/alta/crítica), fecha de vencimiento y responsable. Las tareas abiertas se ordenan por vencimiento y muestran las etiquetas Vencida y Escalada; al eliminar una tarea se pide confirmación. La columna Hecho solo muestra las tareas completadas recientemente."
       },
       "autoTasks": {
-        "q": "¿Se crean tareas automáticamente al crear una reserva?",
-        "a": "Sí. Al guardar un nuevo Viaje se generan automáticamente tres tareas operativas vinculadas a su fecha de salida: Cobrar saldo final (vence 30 días antes, prioridad Alta), Enviar lista de habitaciones al hotel (vence 14 días antes, Media) y Emitir billetes/documentos finales (vence 7 días antes, Crítica). Quedan vinculadas a la reserva y al cliente, y asignadas a quien creó la reserva. Si esas tareas ya existen, se resincronizan en lugar de duplicarse."
+        "q": "¿Se crean tareas automáticamente cuando creo una reserva?",
+        "a": "Sí. Al guardar un Viaje se genera una tarea operativa por cada plantilla de tareas del espacio de trabajo. Las nueve plantillas predeterminadas cubren todo el ciclo de la reserva: Cobrar el depósito (3 días después de la reserva, Alta), Seguimiento del seguro de viaje (14 días después, Media), Confirmar visados / documentos de viaje (45 días antes de la salida, Alta), Pagar el saldo al proveedor (21 días antes, Alta), Cobrar el saldo final (30 días antes, Alta), Enviar el rooming list al hotel (14 días antes, Media), Emitir billetes / documentos finales (7 días antes, Crítica), Llamada de confirmación previa a la salida (3 días antes, Media) y Seguimiento posterior al viaje (2 días después del regreso, Baja). Se vinculan a la reserva y al cliente y se asignan a quien creó la reserva; si una tarea ya existe se resincroniza en lugar de duplicarse. Un administrador puede añadir, editar o eliminar plantillas en Configuración > Plantillas de tareas."
       },
       "departureDateChange": {
         "q": "¿Qué ocurre con las tareas si cambio la fecha de salida de un viaje?",
@@ -3127,7 +3130,7 @@
       },
       "bookingTasksPanel": {
         "q": "¿Dónde veo las tareas generadas automáticamente de una reserva?",
-        "a": "Abre la reserva y desplázate hasta la sección “Tareas de la reserva”: muestra las tareas operativas de esa reserva (las generadas automáticamente están etiquetadas como “Auto”) con prioridad, fecha límite y las etiquetas de vencida/próxima a vencer/escalada que correspondan. Haz clic en el círculo para marcar una tarea como completada, o en “Añadir tarea” para crear una manual asociada a esa reserva. Tus propias tareas de reserva abiertas también aparecen en el Panel bajo “Mis tareas de reserva”, con las vencidas primero."
+        "a": "Abre la reserva y baja hasta la sección \"Tareas de la reserva\": lista las tareas operativas de esa reserva (las automáticas llevan la etiqueta \"Auto\") con prioridad, fecha de vencimiento y las etiquetas de vencida/próxima/escalada. Haz clic en el círculo para completar una tarea, o en \"Añadir tarea\" para crear una manual asociada a esa reserva. Tus tareas abiertas también aparecen en el Panel bajo \"Mis tareas\", y todas las tareas del espacio de trabajo están en el Tablero de tareas."
       },
       "reportsTo": {
         "q": "¿Para qué sirve el campo “Reporta a” de un usuario?",

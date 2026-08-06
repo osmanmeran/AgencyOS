@@ -40,7 +40,9 @@
     "selectAll": "Tümünü Seç",
     "selectedCount": "{count} {label} seçildi",
     "none": "Yok",
-    "description": "Açıklama"
+    "description": "Açıklama",
+    "confirmDeleteTitle": "Bu öğe silinsin mi?",
+    "confirmDeleteBody": "\"{name}\" kalıcı olarak silinecek. Bu işlem geri alınamaz."
   },
   "units": {
     "perPerson": "Kişi Başı",
@@ -459,7 +461,8 @@
     "unassigned": "Atanmamış",
     "noClient": "Müşteri yok",
     "statusLabel": "Durum",
-    "myTasks": "Görevlerim"
+    "myTasks": "Görevlerim",
+    "olderCompletedHidden": "{count} eski tamamlanmış görev gösterilmiyor"
   },
   "bookingTemplates": {
     "accessDeniedBody": "Rezervasyon şablonlarını yönetme izniniz yok",
@@ -3034,12 +3037,12 @@
         "a": "Üst menüden \"Takvim\"e gidin. Aylık ızgara, tüm seyahatleri duruma göre renk kodlu olarak gösterir (planlama/onaylandı/devam ediyor/tamamlandı/iptal edildi). Yan paneldeki gün detaylarını görmek için herhangi bir tarihe tıklayın. Aylar arasında gezinmek için okları kullanın."
       },
       "taskBoardWork": {
-        "q": "Görev panosu nasıl çalışır?",
-        "a": "Üst menüden \"Görevler\"e gidin. Kanban panosunda üç sütun vardır: Beklemede, Devam Ediyor ve Tamamlandı. Kartları sütunlar arasında sürükleyin veya bir tane oluşturmak için \"Yeni Görev\"e tıklayın. Her görevin bir müşterisi, önceliği (düşük/orta/yüksek) ve bitiş tarihi olabilir."
+        "q": "Görev Panosu nasıl çalışır?",
+        "a": "Üst menüden \"Görevler\"e gidin. Kanban panosunda üç sütun vardır: Beklemede, Devam Ediyor ve Tamamlandı. Pano, çalışma alanındaki tüm görevleri gösterir — kendi oluşturduklarınızı ve rezervasyonların otomatik ürettiklerini (\"Otomatik\" etiketli). Durumu değiştirmek için kartları sütunlar arasında sürükleyin veya \"Yeni Görev\" ile müşteri, öncelik (düşük/orta/yüksek/kritik), bitiş tarihi ve sorumlu belirterek yeni bir görev oluşturun. Açık görevler bitiş tarihine göre sıralanır ve Gecikmiş ile Eskalasyon rozetlerini gösterir; görev silmeden önce onay istenir. Tamamlandı sütununda yalnızca yakın zamanda tamamlananlar görünür."
       },
       "autoTasks": {
-        "q": "Bir rezervasyon oluşturduğumda görevler otomatik olarak oluşturulur mu?",
-        "a": "Evet. Yeni bir Seyahat kaydedildiğinde, kalkış tarihine bağlı üç operasyonel görev otomatik olarak oluşturulur: Kalan Bakiyeyi Tahsil Et (30 gün önce son tarih, Yüksek öncelik), Oda Listesini Otele Gönder (14 gün önce son tarih, Orta) ve Bilet/Son Belgeleri Düzenle (7 gün önce son tarih, Kritik). Bunlar rezervasyona ve müşteriye bağlanır ve rezervasyonu oluşturan kişiye atanır. Bu görevler zaten mevcutsa, çoğaltılmak yerine yeniden eşitlenir."
+        "q": "Rezervasyon oluşturduğumda görevler otomatik olarak oluşturulur mu?",
+        "a": "Evet. Bir Gezi kaydettiğinizde çalışma alanının her görev şablonu için bir operasyonel görev oluşturulur. Dokuz varsayılan şablon rezervasyonun tüm yaşam döngüsünü kapsar: Ön Ödeme Tahsilatı (rezervasyondan 3 gün sonra, Yüksek), Seyahat Sigortası Takibi (14 gün sonra, Orta), Vize / Seyahat Belgelerini Doğrula (hareketten 45 gün önce, Yüksek), Tedarikçi Bakiyesini Öde (21 gün önce, Yüksek), Son Bakiyeyi Tahsil Et (30 gün önce, Yüksek), Otele Oda Listesi Gönder (14 gün önce, Orta), Bilet / Son Belgeleri Düzenle (7 gün önce, Kritik), Hareket Öncesi Teyit Araması (3 gün önce, Orta) ve Gezi Sonrası Takip (dönüşten 2 gün sonra, Düşük). Görevler rezervasyona ve müşteriye bağlanır ve rezervasyonu oluşturan kişiye atanır; görev zaten varsa çoğaltılmaz, yeniden senkronize edilir. Bir yönetici şablonları Ayarlar > Görev Şablonları bölümünden ekleyebilir, düzenleyebilir veya kaldırabilir."
       },
       "departureDateChange": {
         "q": "Bir seyahatin kalkış tarihini değiştirirsem görevlere ne olur?",
@@ -3126,8 +3129,8 @@
         "a": "Hayır. Yüklenen dosyalar, oluşturulan PDF’ler ve yedeklemeler, veritabanı gibi çalışma alanı başına izole edilmiştir. Dosyalar, paylaşılan bir genel klasör yerine kimlik doğrulamalı, izin kontrollü bir rota üzerinden sunulur ve yedeklemeler (harici herhangi bir kopya dahil) çalışma alanı başına sınırlandırılır ve çalışma alanı başına geri yüklenir."
       },
       "bookingTasksPanel": {
-        "q": "Bir rezervasyonun otomatik oluşturulan görevlerini nerede görebilirim?",
-        "a": "Rezervasyonu açın ve “Rezervasyon Görevleri” bölümüne kaydırın — bu bölüm, o rezervasyonun operasyonel görevlerini listeler (otomatik oluşturulanlar “Otomatik” olarak etiketlenir) ve öncelik, son tarih ile varsa gecikmiş/yakında bitiyor/eskale edildi rozetlerini gösterir. Bir görevi tamamlandı olarak işaretlemek için daireye tıklayın veya o rezervasyona özel manuel bir görev eklemek için “Görev Ekle”yi kullanın. Kendi açık rezervasyon görevleriniz de Kontrol Paneli’nde “Rezervasyon Görevlerim” altında, gecikmiş olanlar en üstte olacak şekilde görüntülenir."
+        "q": "Bir rezervasyonun otomatik oluşturulan görevlerini nerede görürüm?",
+        "a": "Rezervasyonu açın ve \"Rezervasyon Görevleri\" bölümüne inin — o rezervasyonun operasyonel görevlerini (otomatik olanlar \"Otomatik\" etiketlidir) öncelik, bitiş tarihi ve varsa gecikmiş/yaklaşan/eskalasyon rozetleriyle listeler. Bir görevi tamamlamak için dairesine tıklayın, o rezervasyona özel manuel görev eklemek için \"Görev Ekle\"yi kullanın. Kendi açık görevleriniz Panoda \"Görevlerim\" başlığı altında da görünür; çalışma alanındaki tüm görevler ise Görev Panosunda yer alır."
       },
       "reportsTo": {
         "q": "Bir kullanıcı için “Bağlı olduğu yönetici” alanı ne işe yarar?",

@@ -360,6 +360,31 @@ export function sanitizeEntityData(data) {
   return safe;
 }
 
+/**
+ * Fields a type computes on read and must never accept back on write.
+ *
+ * `listTasks`/`enrichTask` (services/tasks.js) attach live SLA flags to every
+ * Task it returns, so a client that echoes a whole task object back into
+ * `PUT /api/entities/Task/:id` (which the Task Board's drag-and-drop used to
+ * do) would freeze a derived value into storage. `is_escalated` is the
+ * damaging one: `enrichTask` treats a stored `true` as authoritative, so a
+ * task persisted that way stays escalated forever regardless of its due date.
+ * The engine's own writers (`patchTask`, `insertTask`) bypass this layer with
+ * direct SQL, so stripping here doesn't affect them.
+ */
+const DERIVED_ENTITY_FIELDS = {
+  Task: ['is_overdue', 'is_due_soon', 'is_escalated'],
+};
+
+/** Drop {@link DERIVED_ENTITY_FIELDS} for `type` from a write payload. */
+function stripDerivedFields(type, data) {
+  const derived = DERIVED_ENTITY_FIELDS[type];
+  if (!derived || !data || typeof data !== 'object' || Array.isArray(data)) return data;
+  const clean = { ...data };
+  for (const key of derived) delete clean[key];
+  return clean;
+}
+
 /** @throws {BadRequestError} If `type` isn't a registered entity type. */
 export function assertValidEntityType(type) {
   const entities = getEntities();
@@ -692,7 +717,7 @@ export function createEntity(type, body, user) {
   requireEntityPermission(user, type, 'create', undefined, body);
   const now = new Date().toISOString();
   const id = uid();
-  const data = sanitizeEntityData({ ...body });
+  const data = sanitizeEntityData({ ...stripDerivedFields(type, body) });
   data.created_by = user.id;
   delete data.id;
 
@@ -730,7 +755,7 @@ export function updateEntity(type, id, body, user) {
   }
 
   const now = new Date().toISOString();
-  const newData = sanitizeEntityData({ ...existingData, ...body });
+  const newData = sanitizeEntityData({ ...existingData, ...stripDerivedFields(type, body) });
   delete newData.id;
 
   const update = db.transaction(() => {

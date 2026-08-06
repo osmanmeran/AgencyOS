@@ -65,7 +65,9 @@
     "selectAll": "Select All",
     "selectedCount": "{count} {label} selected",
     "none": "None",
-    "description": "Description"
+    "description": "Description",
+    "confirmDeleteTitle": "Delete this item?",
+    "confirmDeleteBody": "\"{name}\" will be permanently deleted. This can’t be undone."
   },
   "units": {
     "perPerson": "Per Person",
@@ -484,7 +486,8 @@
     "updateSuccess": "Task updated",
     "updateError": "Failed to update task",
     "deleteSuccess": "Task deleted",
-    "deleteError": "Failed to delete task"
+    "deleteError": "Failed to delete task",
+    "olderCompletedHidden": "{count} older completed tasks not shown"
   },
   "bookingTemplates": {
     "accessDeniedBody": "You don't have permission to manage booking templates",
@@ -3085,11 +3088,11 @@
       },
       "taskBoardWork": {
         "q": "How does the Task Board work?",
-        "a": "Go to \"Tasks\" in the top nav. The Kanban board has three columns: Pending, In Progress, and Done. Drag cards between columns or click \"New Task\" to create one. Each task can have a client, priority (low/medium/high), and due date."
+        "a": "Go to \"Tasks\" in the top nav. The Kanban board has three columns: Pending, In Progress, and Done. It shows every task in the workspace — ones you create and ones bookings generate automatically (tagged \"Auto\"). Drag cards between columns to change status, or click \"New Task\" to create one with a client, priority (low/medium/high/critical), due date, and assignee. Open tasks sort by due date and show Overdue and Escalated badges; deleting a task asks for confirmation. The Done column shows only recently completed tasks."
       },
       "autoTasks": {
         "q": "Are tasks created automatically when I create a booking?",
-        "a": "Yes. Saving a new Trip auto-generates three operational tasks tied to its departure date: Collect Final Balance (due 30 days before, High priority), Send Rooming List to Hotel (due 14 days before, Medium), and Issue Tickets / Final Docs (due 7 days before, Critical). They are linked to the booking and customer and assigned to the booking’s creator. If those tasks already exist they are resynced rather than duplicated."
+        "a": "Yes. Saving a Trip auto-generates an operational task for each of the workspace’s task templates. The nine defaults cover the booking lifecycle: Collect Deposit (3 days after booking, High), Follow Up on Travel Insurance (14 days after, Medium), Confirm Visa / Travel Documents (45 days before departure, High), Pay Supplier Balance (21 days before, High), Collect Final Balance (30 days before, High), Send Rooming List to Hotel (14 days before, Medium), Issue Tickets / Final Docs (7 days before, Critical), Pre-Departure Confirmation Call (3 days before, Medium), and Post-Trip Follow-Up (2 days after return, Low). They are linked to the booking and customer and assigned to the booking’s creator; if a task already exists it is resynced rather than duplicated. An admin can add, edit, or remove templates in Settings > Task Templates."
       },
       "departureDateChange": {
         "q": "What happens to tasks if I change a trip’s departure date?",
@@ -3177,7 +3180,7 @@
       },
       "bookingTasksPanel": {
         "q": "Where do I see a booking's auto-generated tasks?",
-        "a": "Open the reservation and scroll to the “Booking Tasks” section — it lists that booking’s operational tasks (auto-generated ones are tagged “Auto”) with priority, due date, and any overdue/due-soon/escalated badges. Click the circle to mark a task complete, or “Add Task” to add a manual one scoped to that booking. Your own open booking tasks also show on the Dashboard under “My Booking Tasks”, sorted with overdue items first."
+        "a": "Open the reservation and scroll to the “Booking Tasks” section — it lists that booking’s operational tasks (auto-generated ones are tagged “Auto”) with priority, due date, and any overdue/due-soon/escalated badges. Click the circle to mark a task complete, or “Add Task” to add a manual one scoped to that booking. Your own open tasks also show on the Dashboard under “My Tasks”, and every task in the workspace appears on the Task Board."
       },
       "reportsTo": {
         "q": "What does “Reports to” do for a user?",

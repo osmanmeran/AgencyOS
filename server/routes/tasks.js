@@ -13,13 +13,19 @@ router.use(authMiddleware);
 
 // POST /api/tasks — create a manual (or any) task. Delegates to the generic
 // entity writer so permissions (create_trips) + created_by stamping apply.
+//
+// `status` defaults to 'pending': the create dialogs don't ask for one, and a
+// task stored without it is invisible to every status-filtered query (the
+// Task Board's columns, the client panel's pending count, `checkEscalations`).
 router.post(
   '/',
   catchAsync(async (req, res) => {
     if (!req.body || !req.body.title || !String(req.body.title).trim()) {
       throw new BadRequestError('Task title is required');
     }
-    const result = createEntity('Task', req.body, req.user);
+    const body = { ...req.body };
+    if (!body.status) body.status = 'pending';
+    const result = createEntity('Task', body, req.user);
     broadcast(
       { type: 'entity_change', action: 'create', entityType: 'Task', entityId: result.id },
       { excludeUserId: req.user.id, tenantId: getTenantId() },

@@ -11,6 +11,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Plus, CheckCircle2, Circle, Bell, StickyNote, ClipboardList, Trash2, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { showError } from '@/lib/toast';
@@ -65,6 +75,7 @@ export default function ClientTasksPanel({ clientId }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [deletingTask, setDeletingTask] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const queryClient = useQueryClient();
 
@@ -122,7 +133,10 @@ export default function ClientTasksPanel({ clientId }) {
   const deleteMutation = /** @type {any} */ (
     useMutation({
       mutationFn: (/** @type {any} */ id) => db.entities.Task.delete(id),
-      onSuccess: invalidate,
+      onSuccess: () => {
+        invalidate();
+        setDeletingTask(null);
+      },
       onError: (/** @type {any} */ err) => showError(t('clientTasksPanel.deleteError'), err.message),
     })
   );
@@ -221,7 +235,8 @@ export default function ClientTasksPanel({ clientId }) {
                     </div>
                   </div>
                   <button
-                    onClick={() => deleteMutation.mutate(task.id)}
+                    onClick={() => setDeletingTask(task)}
+                    aria-label={t('common.delete')}
                     className="text-muted-foreground hover:text-red-500 dark:hover:text-red-300 flex-shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -232,6 +247,27 @@ export default function ClientTasksPanel({ clientId }) {
           })}
         </div>
       )}
+
+      <AlertDialog open={!!deletingTask} onOpenChange={(isOpen) => !isOpen && setDeletingTask(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('common.confirmDeleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('common.confirmDeleteBody', { name: deletingTask?.title || '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deletingTask.id)}
+              disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

@@ -13,9 +13,11 @@ export function useReminderNotifications() {
     queryFn: () => db.auth.me(),
   });
 
+  // Only open reminders can produce a toast, so don't pull the closed ones
+  // over the wire every five minutes — the workspace accumulates those forever.
   const { data: tasks = [] } = useQuery({
     queryKey: ['reminderNotifications'],
-    queryFn: () => db.tasks.list({ type: 'reminder' }),
+    queryFn: () => db.tasks.list({ type: 'reminder', status: 'pending,in_progress' }),
     enabled: !!me,
     refetchInterval: POLL_MS,
   });
@@ -24,7 +26,6 @@ export function useReminderNotifications() {
     if (!me || !tasks.length) return;
     const now = Date.now();
     tasks.forEach((task) => {
-      if (task.status === 'completed' || task.status === 'cancelled') return;
       // Task isn't user-scoped like the old ClientTask was — everyone with
       // view_all_trips sees every reminder — so "is this mine" has to be
       // enforced here: assigned reminders are mine only if assigned to me;

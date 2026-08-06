@@ -40,7 +40,9 @@
     "selectAll": "Seleziona Tutto",
     "selectedCount": "{count} {label} selezionato/i",
     "none": "Nessuno",
-    "description": "Descrizione"
+    "description": "Descrizione",
+    "confirmDeleteTitle": "Eliminare questo elemento?",
+    "confirmDeleteBody": "«{name}» verrà eliminato definitivamente. L’operazione non può essere annullata."
   },
   "units": {
     "perPerson": "A Persona",
@@ -459,7 +461,8 @@
     "unassigned": "Non assegnato",
     "noClient": "Nessun cliente",
     "statusLabel": "Stato",
-    "myTasks": "Le mie attività"
+    "myTasks": "Le mie attività",
+    "olderCompletedHidden": "{count} attività completate meno recenti non mostrate"
   },
   "bookingTemplates": {
     "accessDeniedBody": "Non hai il permesso di gestire i modelli di prenotazione",
@@ -3034,12 +3037,12 @@
         "a": "Vai su \"Calendario\" nel menu in alto. La griglia mensile mostra tutti i viaggi con codice colore per stato (pianificazione/confermato/in corso/completato/annullato). Clicca su una data per vedere i dettagli del giorno nel pannello laterale. Usa le frecce per navigare tra i mesi."
       },
       "taskBoardWork": {
-        "q": "Come funziona la bacheca delle attività?",
-        "a": "Vai su \"Attività\" nel menu in alto. La bacheca Kanban ha tre colonne: In sospeso, In corso e Completato. Trascina le schede tra le colonne o clicca su \"Nuova attività\" per crearne una. Ogni attività può avere un cliente, una priorità (bassa/media/alta) e una scadenza."
+        "q": "Come funziona la Bacheca attività?",
+        "a": "Apri \"Attività\" nella barra di navigazione. La bacheca Kanban ha tre colonne: In sospeso, In corso e Completate. Mostra tutte le attività dello spazio di lavoro — quelle che crei tu e quelle generate automaticamente dalle prenotazioni (contrassegnate \"Auto\"). Trascina le schede tra le colonne per cambiare stato, oppure fai clic su \"Nuova attività\" indicando cliente, priorità (bassa/media/alta/critica), scadenza e assegnatario. Le attività aperte sono ordinate per scadenza e mostrano i badge Scaduta ed Escalation; l’eliminazione richiede una conferma. La colonna Completate mostra solo le attività concluse di recente."
       },
       "autoTasks": {
         "q": "Le attività vengono create automaticamente quando creo una prenotazione?",
-        "a": "Sì. Salvando un nuovo Viaggio vengono generate automaticamente tre attività operative legate alla data di partenza: Incassare il saldo finale (scadenza 30 giorni prima, priorità Alta), Inviare la lista camere all’hotel (scadenza 14 giorni prima, Media) ed Emettere biglietti/documenti finali (scadenza 7 giorni prima, Critica). Sono collegate alla prenotazione e al cliente e assegnate a chi ha creato la prenotazione. Se queste attività esistono già, vengono risincronizzate invece di essere duplicate."
+        "a": "Sì. Salvando un Viaggio viene generata un’attività operativa per ogni modello di attività dello spazio di lavoro. I nove modelli predefiniti coprono l’intero ciclo della prenotazione: Incassare l’acconto (3 giorni dopo la prenotazione, Alta), Ricontattare per l’assicurazione di viaggio (14 giorni dopo, Media), Verificare visti / documenti di viaggio (45 giorni prima della partenza, Alta), Pagare il saldo al fornitore (21 giorni prima, Alta), Incassare il saldo finale (30 giorni prima, Alta), Inviare la rooming list all’hotel (14 giorni prima, Media), Emettere biglietti / documenti finali (7 giorni prima, Critica), Chiamata di conferma pre-partenza (3 giorni prima, Media) e Follow-up post-viaggio (2 giorni dopo il rientro, Bassa). Sono collegate alla prenotazione e al cliente e assegnate a chi ha creato la prenotazione; se un’attività esiste già viene risincronizzata anziché duplicata. Un amministratore può aggiungere, modificare o rimuovere i modelli in Impostazioni > Modelli di attività."
       },
       "departureDateChange": {
         "q": "Cosa succede alle attività se cambio la data di partenza di un viaggio?",
@@ -3126,8 +3129,8 @@
         "a": "No. I file caricati, i PDF generati e i backup sono tutti isolati per spazio di lavoro, esattamente come il database. I file vengono serviti tramite una route autenticata e verificata per i permessi, anziché una cartella pubblica condivisa, e i backup (inclusa qualsiasi copia esterna) sono delimitati e ripristinati per spazio di lavoro."
       },
       "bookingTasksPanel": {
-        "q": "Dove posso vedere le attività generate automaticamente per una prenotazione?",
-        "a": "Apri la prenotazione e scorri fino alla sezione “Attività Prenotazione” — elenca le attività operative di quella prenotazione (quelle generate automaticamente sono contrassegnate come “Auto”) con priorità, scadenza ed eventuali badge di ritardo/scadenza imminente/escalation. Clicca sul cerchio per contrassegnare un’attività come completata, oppure “Aggiungi Attività” per aggiungerne una manuale associata a quella prenotazione. Le tue attività di prenotazione aperte compaiono anche nella Dashboard sotto “Le Mie Attività di Prenotazione”, ordinate con quelle in ritardo per prime."
+        "q": "Dove vedo le attività generate automaticamente per una prenotazione?",
+        "a": "Apri la prenotazione e scorri fino alla sezione \"Attività prenotazione\" — elenca le attività operative di quella prenotazione (quelle automatiche sono contrassegnate \"Auto\") con priorità, scadenza ed eventuali badge scaduta/in scadenza/escalation. Fai clic sul cerchio per completare un’attività oppure su \"Aggiungi attività\" per crearne una manuale legata a quella prenotazione. Le tue attività aperte compaiono anche nella Dashboard sotto \"Le mie attività\", mentre tutte le attività dello spazio di lavoro sono nella Bacheca attività."
       },
       "reportsTo": {
         "q": "A cosa serve il campo “Riporta a” per un utente?",

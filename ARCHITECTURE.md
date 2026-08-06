@@ -77,9 +77,9 @@ frontend's label/description lookup (`PERMISSION_MAP`) live outside it.
 - `ENTITY_PERMISSION_MAP` maps each entity `type` to the permission key
   required for `create`/`read`/`update`/`delete` via the generic CRUD routes.
 - `CLIENT_SCOPED_TYPES` (`Trip`, `Proposal`, `Invoice`, `ClientPayment`,
-  `QuoteRequest`) and `USER_SCOPED_TYPES` (`Message`, `ClientTask`,
-  `EmailLog`) additionally restrict a `client`-tier or regular user to only
-  their own records, independent of the permission-key check above.
+  `QuoteRequest`) and `USER_SCOPED_TYPES` (`Message`, `EmailLog`)
+  additionally restrict a `client`-tier or regular user to only their own
+  records, independent of the permission-key check above.
 - The B2B client portal (`server/routes/b2b.js`) writes directly to the DB
   rather than going through the generic entity routes, so its own handlers
   do their own scoping (`requireClientContext`/`resolveReadClientContext`).

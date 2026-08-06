@@ -11,6 +11,7 @@ import {
   updateEntity,
   createEntity,
   deleteEntity,
+  findEntityById,
 } from '../../server/services/entities.js';
 
 describe('Entities Service', () => {
@@ -241,6 +242,59 @@ describe('Entities Service', () => {
       const task = createEntity('Task', { title: 'Unowned task 2', assigned_to_user_id: 'someone-else' }, admin);
 
       expect(() => deleteEntity('Task', task.id, admin)).not.toThrow();
+    });
+  });
+
+  describe('derived Task field stripping', () => {
+    const admin = { user_tier: 'admin', id: 'admin-derived', custom_permissions: [] };
+
+    it('drops server-computed SLA flags from a create payload', () => {
+      const task = createEntity(
+        'Task',
+        { title: 'New task', is_overdue: true, is_due_soon: true, is_escalated: true },
+        admin,
+      );
+      const stored = findEntityById('Task', task.id, admin);
+      expect(stored.is_overdue).toBeUndefined();
+      expect(stored.is_due_soon).toBeUndefined();
+      expect(stored.is_escalated).toBeUndefined();
+      expect(stored.title).toBe('New task');
+    });
+
+    it('ignores SLA flags echoed back on update, keeping the escalation engine authoritative', () => {
+      const task = createEntity('Task', { title: 'Board task', status: 'pending' }, admin);
+      // What the Task Board's drag-and-drop used to send: a whole enriched task
+      // object, SLA flags included. Only the real edit must land.
+      const updated = updateEntity(
+        'Task',
+        task.id,
+        { ...task, status: 'in_progress', is_overdue: true, is_due_soon: true, is_escalated: true },
+        admin,
+      );
+      expect(updated.status).toBe('in_progress');
+      expect(updated.is_overdue).toBeUndefined();
+      expect(updated.is_due_soon).toBeUndefined();
+      expect(updated.is_escalated).toBeUndefined();
+    });
+
+    it('leaves an already-persisted is_escalated intact (the engine writes it, clients cannot)', () => {
+      const task = createEntity('Task', { title: 'Escalated task' }, admin);
+      // checkEscalations() persists the flag with direct SQL, bypassing this layer.
+      const db = getDb();
+      const row = db.prepare('SELECT data FROM entities WHERE id = ?').get(task.id);
+      db.prepare('UPDATE entities SET data = ? WHERE id = ?').run(
+        JSON.stringify({ ...JSON.parse(row.data), is_escalated: true }),
+        task.id,
+      );
+
+      const updated = updateEntity('Task', task.id, { title: 'Renamed', is_escalated: false }, admin);
+      expect(updated.title).toBe('Renamed');
+      expect(updated.is_escalated).toBe(true);
+    });
+
+    it('does not strip these fields from other entity types', () => {
+      const client = createEntity('Client', { name: 'Acme', is_overdue: true }, admin);
+      expect(client.is_overdue).toBe(true);
     });
   });
 

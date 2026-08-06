@@ -1,4 +1,5 @@
 import { db } from '@/lib/DbContext';
+import { activeTasksQuery } from '@/lib/taskQueries';
 
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -56,13 +57,10 @@ export default function Dashboard() {
   );
 
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => db.auth.me() });
-  // Same queryKey TaskBoard.jsx uses for its unfiltered task list, so
-  // navigating between the two shares a cache entry instead of refetching.
-  const { data: allTasks = /** @type {any} */ ([]), isLoading: tasksLoading } = /** @type {any} */ (
-    useQuery({
-      queryKey: ['allTasks'],
-      queryFn: () => db.tasks.list(),
-    })
+  // The shared open-tasks query (src/lib/taskQueries.js) — the same cache entry
+  // TaskBoard's active columns use, so navigating between the two doesn't refetch.
+  const { data: openTasks = /** @type {any} */ ([]), isLoading: tasksLoading } = /** @type {any} */ (
+    useQuery(activeTasksQuery())
   );
 
   const isLoading = tripsLoading || tasksLoading;
@@ -70,8 +68,7 @@ export default function Dashboard() {
   const openMyTasks = /** @type {any} */ (
     useMemo(() => {
       if (!me) return [];
-      return allTasks
-        .filter((task) => task.status === 'pending' || task.status === 'in_progress')
+      return openTasks
         .filter((task) => task.assigned_to_user_id === me.id || task.created_by === me.id)
         .sort((a, b) => {
           if (!!a.is_overdue !== !!b.is_overdue) return a.is_overdue ? -1 : 1;
@@ -79,7 +76,7 @@ export default function Dashboard() {
           if (!b.due_date) return -1;
           return a.due_date.localeCompare(b.due_date);
         });
-    }, [allTasks, me])
+    }, [openTasks, me])
   );
 
   const { upcomingArrivals, upcomingDepartures, pendingReservations, departingNext7 } = useMemo(() => {

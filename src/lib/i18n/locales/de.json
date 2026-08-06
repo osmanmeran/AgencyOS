@@ -40,7 +40,9 @@
     "selectAll": "Alle Auswählen",
     "selectedCount": "{count} {label} ausgewählt",
     "none": "Keine",
-    "description": "Beschreibung"
+    "description": "Beschreibung",
+    "confirmDeleteTitle": "Dieses Element löschen?",
+    "confirmDeleteBody": "„{name}“ wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden."
   },
   "units": {
     "perPerson": "Pro Person",
@@ -459,7 +461,8 @@
     "unassigned": "Nicht zugewiesen",
     "noClient": "Kein Kunde",
     "statusLabel": "Status",
-    "myTasks": "Meine Aufgaben"
+    "myTasks": "Meine Aufgaben",
+    "olderCompletedHidden": "{count} ältere erledigte Aufgaben werden nicht angezeigt"
   },
   "bookingTemplates": {
     "accessDeniedBody": "Sie haben keine Berechtigung, Buchungsvorlagen zu verwalten",
@@ -3034,12 +3037,12 @@
         "a": "Gehen Sie in der oberen Navigation zu „Kalender“. Das Monatsraster zeigt alle Reisen farblich nach Status gekennzeichnet (geplant/bestätigt/laufend/abgeschlossen/storniert). Klicken Sie auf ein Datum, um Tagesdetails im Seitenbereich zu sehen. Verwenden Sie die Pfeile, um zwischen Monaten zu navigieren."
       },
       "taskBoardWork": {
-        "q": "Wie funktioniert das Aufgabenboard?",
-        "a": "Gehen Sie in der oberen Navigation zu „Aufgaben“. Das Kanban-Board hat drei Spalten: Ausstehend, In Bearbeitung und Erledigt. Ziehen Sie Karten zwischen den Spalten oder klicken Sie auf „Neue Aufgabe“, um eine zu erstellen. Jede Aufgabe kann einen Kunden, eine Priorität (niedrig/mittel/hoch) und ein Fälligkeitsdatum haben."
+        "q": "Wie funktioniert das Aufgaben-Board?",
+        "a": "Öffnen Sie „Aufgaben“ in der oberen Navigation. Das Kanban-Board hat drei Spalten: Ausstehend, In Bearbeitung und Erledigt. Es zeigt alle Aufgaben des Arbeitsbereichs — selbst erstellte und automatisch aus Buchungen erzeugte (mit „Auto“ gekennzeichnet). Ziehen Sie Karten zwischen den Spalten, um den Status zu ändern, oder klicken Sie auf „Neue Aufgabe“ und legen Kunde, Priorität (niedrig/mittel/hoch/kritisch), Fälligkeitsdatum und zuständige Person fest. Offene Aufgaben sind nach Fälligkeit sortiert und zeigen die Kennzeichen „Überfällig“ und „Eskaliert“; vor dem Löschen wird eine Bestätigung verlangt. Die Spalte „Erledigt“ zeigt nur kürzlich abgeschlossene Aufgaben."
       },
       "autoTasks": {
         "q": "Werden Aufgaben automatisch erstellt, wenn ich eine Buchung anlege?",
-        "a": "Ja. Beim Speichern einer neuen Reise werden automatisch drei operative Aufgaben erstellt, die an das Abreisedatum gekoppelt sind: Restzahlung einziehen (fällig 30 Tage vorher, hohe Priorität), Zimmerliste ans Hotel senden (fällig 14 Tage vorher, mittel) und Tickets/Enddokumente ausstellen (fällig 7 Tage vorher, kritisch). Sie sind mit der Buchung und dem Kunden verknüpft und dem Ersteller der Buchung zugewiesen. Falls diese Aufgaben bereits existieren, werden sie synchronisiert statt dupliziert."
+        "a": "Ja. Beim Speichern einer Reise wird für jede Aufgabenvorlage des Arbeitsbereichs eine operative Aufgabe erzeugt. Die neun Standardvorlagen decken den gesamten Buchungsverlauf ab: Anzahlung einziehen (3 Tage nach Buchung, Hoch), Reiseversicherung nachfassen (14 Tage danach, Mittel), Visum / Reisedokumente prüfen (45 Tage vor Abreise, Hoch), Lieferantensaldo bezahlen (21 Tage vorher, Hoch), Restzahlung einziehen (30 Tage vorher, Hoch), Zimmerliste an das Hotel senden (14 Tage vorher, Mittel), Tickets / finale Unterlagen ausstellen (7 Tage vorher, Kritisch), Bestätigungsanruf vor Abreise (3 Tage vorher, Mittel) und Nachfassen nach der Reise (2 Tage nach Rückkehr, Niedrig). Sie sind mit Buchung und Kunde verknüpft und der erstellenden Person zugewiesen; existiert eine Aufgabe bereits, wird sie neu synchronisiert statt dupliziert. Admins können Vorlagen unter Einstellungen > Aufgabenvorlagen hinzufügen, ändern oder entfernen."
       },
       "departureDateChange": {
         "q": "Was passiert mit den Aufgaben, wenn ich das Abreisedatum einer Reise ändere?",
@@ -3126,8 +3129,8 @@
         "a": "Nein. Hochgeladene Dateien, erstellte PDFs und Backups sind alle pro Workspace isoliert, genau wie die Datenbank. Dateien werden über eine authentifizierte, berechtigungsgeprüfte Route bereitgestellt statt über einen gemeinsam genutzten öffentlichen Ordner, und Backups (einschließlich einer externen Kopie) sind pro Workspace abgegrenzt und werden pro Workspace wiederhergestellt."
       },
       "bookingTasksPanel": {
-        "q": "Wo sehe ich die automatisch erstellten Aufgaben einer Buchung?",
-        "a": "Öffnen Sie die Reservierung und scrollen Sie zum Abschnitt „Buchungsaufgaben“ — dort werden die operativen Aufgaben dieser Buchung aufgelistet (automatisch erstellte sind mit „Auto“ gekennzeichnet), inklusive Priorität, Fälligkeitsdatum und etwaigen Überfällig-/Bald-fällig-/Eskaliert-Badges. Klicken Sie auf den Kreis, um eine Aufgabe als erledigt zu markieren, oder auf „Aufgabe hinzufügen“, um eine manuelle Aufgabe für diese Buchung zu erstellen. Ihre eigenen offenen Buchungsaufgaben werden auch im Dashboard unter „Meine Buchungsaufgaben“ angezeigt, überfällige zuerst."
+        "q": "Wo sehe ich die automatisch erzeugten Aufgaben einer Buchung?",
+        "a": "Öffnen Sie die Reservierung und scrollen Sie zum Abschnitt „Buchungsaufgaben“ — dort stehen die operativen Aufgaben dieser Buchung (automatisch erzeugte sind mit „Auto“ gekennzeichnet) mit Priorität, Fälligkeitsdatum und den Kennzeichen überfällig/bald fällig/eskaliert. Klicken Sie auf den Kreis, um eine Aufgabe abzuschließen, oder auf „Aufgabe hinzufügen“ für eine manuelle Aufgabe zu dieser Buchung. Ihre eigenen offenen Aufgaben erscheinen außerdem im Dashboard unter „Meine Aufgaben“, und alle Aufgaben des Arbeitsbereichs finden Sie im Aufgaben-Board."
       },
       "reportsTo": {
         "q": "Wofür dient das Feld „Berichtet an“ bei einem Benutzer?",

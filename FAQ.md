@@ -3,16 +3,22 @@
 ## Tasks & the "To Do" board
 
 **Where is the Task Board?**
-Open **Task Board** from the navigation (route `/TaskBoard`). It's a Kanban board of tasks, reminders, and notes across all clients.
+Open **Task Board** from the navigation (route `/TaskBoard`). It's a Kanban board over every task in the workspace — the ones you create by hand _and_ the ones bookings generate automatically.
 
 **What are the columns?**
-`Pending` → `In Progress` → `Done`. Drag a card between columns to change its status. Moving a card to **Done** stamps `completed_at`; moving it out clears it.
+`Pending` → `In Progress` → `Done`. Drag a card between columns to change its status. Dropping a card on **Done** goes through the audited complete endpoint (stamps `completed_at`, writes an audit entry); dragging it back out clears the stamp. Cancelled tasks are archived — the board doesn't show them.
 
 **How do I create / edit a task?**
-Click **New Task** to open the dialog (title, description, type, client, due date, priority, assignee). Click the pencil icon on any card to edit or delete it.
+Click **New Task** to open the dialog (title, description, type, client, due date, priority, assignee). Click the pencil icon on any card to edit it. Deleting (from the card or the edit dialog) asks for confirmation first.
+
+**What do the badges on a card mean?**
+**Auto** — generated from a booking template rather than typed by hand (the title links to the booking). **Escalated** — its SLA window elapsed while the task was still open. **Overdue** — the due date has passed. Open cards sort by due date, soonest first, with undated ones last.
+
+**Why does the Done column say some tasks aren't shown?**
+It loads only the most recently updated page of completed tasks (50). Every booking auto-generates up to nine tasks, so a workspace's completed history grows quickly and fetching all of it would slow the board down. Older completed tasks stay visible from the client and booking task panels.
 
 **What does "Assignee" mean?**
-The assignee is a staff user (picked from `db.auth.users()`). It's stored as the user's email in `assigned_to`, which also drives row-level security — an assigned user and the task's creator can both see and edit the task. Unassigned tasks are visible to users with unconditional read access to the `ClientTask` type (admins/managers) and to the creator.
+The assignee is a staff user (picked from `db.auth.users()`), stored by user id in `assigned_to_user_id`. It also drives permissions: the assignee and the task's creator can update and delete their own task even without `modify_trips`/`delete_trips`; anyone else needs those permissions.
 
 **What does "My tasks" do?**
 The toggle in the top-right filters the board to tasks **assigned to you or created by you**.
@@ -22,23 +28,22 @@ Yes. A global hook (`useReminderNotifications`, mounted in the app shell) polls 
 
 **Where else can I see tasks?**
 
-- Each client's **Tasks** panel on the CRM client page (`ClientTasksPanel`) now shows an **In Progress** filter and resolves assignee emails to names.
-- The trip detail page has a **Tasks** tab showing the linked client's tasks.
-- The **Dashboard** has a **My Open Tasks** widget linking to the board.
+- Each client's **Tasks** panel on the CRM client page (`ClientTasksPanel`) — manual entries only, with an **In Progress** filter and assignee names resolved.
+- The booking detail page's **Booking Tasks** panel, showing that booking's operational tasks with their SLA state.
+- The **Dashboard**'s **My Tasks** widget, linking to the board.
 
 ## Contextual Tasks (booking-linked, SLA-aware)
 
-**What's the difference between the Task Board and Contextual Tasks?**
-The **Task Board** (`ClientTask`) is a lightweight personal/client to-do list (tasks, reminders, notes) you create by hand. **Contextual Tasks** (`Task`) are operational to-dos automatically generated from a **Trip** and tied to that booking, a customer, and/or a supplier — built for collaborative ops with SLA tracking. They're two separate entity types.
+**Are Task Board tasks and booking tasks two different things?**
+No — they're one `Task` entity and one board (they used to be two, `ClientTask` and `Task`; that split was merged away). What differs is where a task came from: a task with a `template_key` was generated from a booking and carries the SLA machinery below; one without it is something a person typed. The client Tasks panel filters to the latter so the CRM view stays a personal to-do list.
 
 **Are tasks created automatically when I make a booking?**
-Yes. Saving a new **Trip** generates three tasks keyed to its departure date (`start_date`):
+Yes. Saving a **Trip** generates a task per applicable template. The nine defaults span the booking lifecycle — **Collect Deposit** (+3d after booking, High), **Follow Up on Travel Insurance** (+14d, Medium), **Confirm Visa / Travel Documents** (−45d, High), **Pay Supplier Balance** (−21d, High), **Collect Final Balance** (−30d, High), **Send Rooming List to Hotel** (−14d, Medium), **Issue Tickets / Final Docs** (−7d, Critical), **Pre-Departure Confirmation Call** (−3d, Medium), and **Post-Trip Follow-Up** (+2d after return, Low) — each anchored to the trip's creation, departure, or return date.
 
-- **Collect Final Balance** — due 30 days before departure (priority High)
-- **Send Rooming List to Hotel** — due 14 days before (priority Medium)
-- **Issue Tickets / Final Docs** — due 7 days before (priority Critical)
+They're linked via `booking_id`/`customer_id` and assigned to the Trip's creator. If the booking already has a task for a template, it's resynced (not duplicated), and completed/cancelled ones are never resurrected.
 
-They're linked via `booking_id`/`customer_id` and assigned to the Trip's creator. If the booking already has these tasks, they're resynced (not duplicated).
+**Can we change which tasks get generated?**
+Yes — an admin edits them in **Settings → Task Templates** (title, description with `{client_name}`/`{destination}`/`{start_date}` placeholders, anchor date, day offset, priority, and an optional department restriction). A saved list fully replaces the defaults; the editor pre-fills with the defaults so you're editing a visible starting point.
 
 **What happens if I change the departure date?**
 `rescheduleTasksForBooking` recomputes every auto-task's due date (and SLA window) from the new departure. Manually created tasks (no template) keep their own dates.
@@ -47,10 +52,13 @@ They're linked via `booking_id`/`customer_id` and assigned to the Trip's creator
 Each task has an `escalation_trigger_time` — a priority-based lead before the due date (Critical 48h, High 24h, Medium 12h, Low 0). Once that time passes and the task is still open, it's flagged `is_escalated`. Separately, `is_due_soon` is true when the due date is within 24 hours — that's what the priority banner / countdown uses. Both flags are computed live by `GET /api/tasks`, so no background job is required.
 
 **How do I complete a task?**
-`PUT /api/tasks/:id/complete` sets `status=completed`, stamps `completed_at`, and writes an audit entry. The booking-detail Contextual Task Widget will call this; until it ships you can hit the endpoint directly.
+Tick it off in the Booking Tasks or client Tasks panel, or drag its card to **Done** on the board. All three call `PUT /api/tasks/:id/complete`, which sets `status=completed`, stamps `completed_at`, clears the escalation flag, and writes an audit entry.
 
 **How do I fetch a trip's tasks for the widget?**
-`GET /api/tasks?booking_id=<tripId>` returns that booking's tasks with the SLA flags. Add `&overdue=1` or `&escalated=1` to filter, and `?status=` / `?priority=` / `?assigned_to_user_id=` for the others.
+`GET /api/tasks?booking_id=<tripId>` returns that booking's tasks with the SLA flags. Add `&overdue=1` or `&escalated=1` to filter, and `?status=` / `?priority=` / `?assigned_to_user_id=` for the others. `status`, `priority` and `type` also take a comma-separated list (`?status=pending,in_progress`), and `?limit=`/`?offset=` paginate.
+
+**Why can't I set `is_escalated` / `is_overdue` through the entity API?**
+Those are computed per request from the due date and SLA window, so the write path strips them — otherwise saving a task you'd just read back would freeze a momentary value into storage and, in `is_escalated`'s case, leave it stuck on forever. Only the escalation job writes `is_escalated`.
 
 **I'm on Linux/Railway and imports broke / casing issues?**
 The app deploys from `main` to Railway (Linux, case-sensitive filesystem). Keep file/import casing exact. Locally on macOS the filesystem is case-insensitive, so a casing mismatch only fails at deploy — a case-mismatch import scan was run and came back clean.
