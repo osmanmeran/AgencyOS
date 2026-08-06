@@ -8,6 +8,11 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const EXEMPT_PATHS = new Set([
   '/api/auth/login',
   '/api/auth/microsoft',
+  // Same reasoning as /microsoft. The request additionally carries a PKCE
+  // code_verifier that only the browser which started the flow holds, and the
+  // callback has already checked `state`, so a forged cross-site POST cannot
+  // produce one that Google will honour.
+  '/api/auth/google',
   '/api/auth/accept-invite',
   // Refresh-token rotation is triggered transparently on 401 and can fire
   // before any csrf_token cookie exists (no established session yet). The

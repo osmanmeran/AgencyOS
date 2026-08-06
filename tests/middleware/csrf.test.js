@@ -14,6 +14,8 @@ function makeApp() {
   app.get('/api/thing', (req, res) => res.json({ ok: true }));
   app.post('/api/thing', (req, res) => res.json({ ok: true }));
   app.post('/api/auth/login', (req, res) => res.json({ ok: true }));
+  app.post('/api/auth/microsoft', (req, res) => res.json({ ok: true }));
+  app.post('/api/auth/google', (req, res) => res.json({ ok: true }));
   app.use(errorHandler);
   return app;
 }
@@ -45,6 +47,18 @@ describe('csrfMiddleware', () => {
     const res = await fetch(`${baseUrl}/api/auth/login`, { method: 'POST' });
     expect(res.status).toBe(200);
   });
+
+  // Every SSO provider's session-establishing endpoint must be exempt: no
+  // csrf_token cookie exists yet when it runs, so a double-submit check can
+  // only ever fail. Google's was missed when the provider was added, which
+  // made sign-in fail with "Missing or invalid CSRF token".
+  it.each(['/api/auth/microsoft', '/api/auth/google'])(
+    'allows the session-establishing endpoint %s without a token',
+    async (path) => {
+      const res = await fetch(`${baseUrl}${path}`, { method: 'POST' });
+      expect(res.status).toBe(200);
+    },
+  );
 
   it('rejects a mutation with no cookie or header', async () => {
     const res = await fetch(`${baseUrl}/api/thing`, { method: 'POST' });
