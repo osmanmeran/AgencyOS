@@ -24,6 +24,7 @@ import ErrorBoundary from '@/lib/ErrorBoundary';
 import MockLogin from '@/pages/MockLogin';
 import Signup from '@/pages/Signup';
 import MicrosoftCallback from '@/pages/MicrosoftCallback';
+import GoogleCallback from '@/pages/GoogleCallback';
 import OutlookCallback from '@/pages/OutlookCallback';
 import ClientItinerary from '@/pages/ClientItinerary';
 import PublicItinerary from '@/pages/PublicItinerary';
@@ -59,6 +60,7 @@ const NON_REDIRECT_ROUTES = [
   '/mock-login',
   '/signup',
   '/auth/microsoft/callback',
+  '/auth/google/callback',
   '/accept-invite',
   '/forgot-password',
   '/reset-password',
@@ -109,6 +111,7 @@ const AuthenticatedApp = () => {
           '/forgot-password',
           '/reset-password',
           '/auth/microsoft/callback',
+          '/auth/google/callback',
         ].includes(window.location.pathname) ||
         isNonRedirectPath(window.location.pathname)
       ) {
@@ -209,6 +212,7 @@ const AuthenticatedApp = () => {
         <Route path="/mock-login" element={<MockLogin />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/auth/microsoft/callback" element={<MicrosoftCallback />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

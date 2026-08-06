@@ -17,6 +17,14 @@ export const schemas = {
     idToken: z.string().min(1, 'idToken is required'),
   }),
 
+  // Google sends the authorization code rather than an id token: the exchange
+  // needs the client secret, so it happens server-side (see services/google.js).
+  googleAuth: z.object({
+    code: z.string().min(1, 'code is required'),
+    codeVerifier: z.string().min(1, 'codeVerifier is required'),
+    redirectUri: z.string().url('redirectUri must be a valid URL'),
+  }),
+
   // Self-serve workspace signup (Phase 3). The slug is re-validated server-side
   // against the reserved-word list; this regex is just a fast first pass.
   // Either an admin password OR a Microsoft id token provisions the first admin.
