@@ -459,3 +459,68 @@ Still open: `SMTP_*` is unset (placeholders removed 2026-08-06), so all
 outbound email silently logs instead of sending — no password resets, invites,
 or reminders reach anyone until a real host is configured. Until then,
 `unlock-local-login.mjs --reset-link` is the only account-recovery path.
+
+---
+
+# Ops notes — the deploy branch is a moving part (2026-08-08)
+
+**Railway's deploy branch is configured in the dashboard, not in this repo,
+and it has not always been `main`.** During the Google SSO work it pointed at
+`saas-standalone`; `main` sat unused for days. A push to `main` therefore
+deployed nothing at all, silently — the service stayed Online, the app stayed
+healthy, and only the _absence_ of a new deployment gave it away. It is back
+on `main` now (2026-08-08), and `main` was made a superset of every branch
+before the switch, so nothing regressed.
+
+Do not infer the deploy branch from this file. Check it, especially when a
+push appears to have no effect:
+
+- `railway status` — the **deployment ID** changes on every real deploy. An
+  unchanged id after a push is the tell.
+- `railway logs | grep -iE "migrat|server started"` — a fresh boot logs its
+  pre-migration backup and either `Applying: <file>` or
+  `All migrations already applied`. A migration name here that doesn't exist
+  on the branch you just pushed means you are looking at a different branch's
+  build — that is exactly how the `saas-standalone` split was found.
+- `railway ssh 'echo $RAILWAY_GIT_BRANCH'` when SSH is available.
+
+Two consequences worth keeping in mind:
+
+- **Migration numbers collide across long-lived branches.** `031` was taken
+  twice — `031_google_sso.js` on `saas-standalone` and a task-status backfill
+  on `main` — the same footgun as the 027/028 renumber recorded above. Nothing
+  breaks (the runner keys on filename, extension stripped, so both apply), but
+  renumber before merging while the migration has not yet run anywhere: once
+  production records a name, renaming it makes that database see the new name
+  as pending. Idempotent migrations survive this; others would not.
+- **Environment variables live on the service, not the branch.** Switching
+  the deploy branch carries none of them, and a second service
+  (`marvelops-testing-setup`) shares nothing with production. A feature can be
+  fully merged and still invisible because its variable was never set — Google
+  SSO shipped its code and migration long before it ever rendered, because
+  `VITE_GOOGLE_CLIENT_ID` was unset and Vite compiles `import.meta.env` in at
+  **build** time, so the button was simply absent from the bundle.
+
+## Google SSO configuration (live since 2026-08-08)
+
+Three variables, all on the Railway service: `VITE_GOOGLE_CLIENT_ID` and
+`GOOGLE_CLIENT_ID` (the same public value) and `GOOGLE_CLIENT_SECRET`. The
+secret must never take a `VITE_` prefix — that would publish it in the browser
+bundle. Setting the `VITE_` one requires a rebuild, not a restart.
+
+To tell a bad credential apart from a bad login attempt without attempting a
+real sign-in, exchange a deliberately fake code from inside the container so
+the secret never leaves it:
+
+```
+railway ssh "node -e 'fetch(\"https://oauth2.googleapis.com/token\",{method:\"POST\",body:new URLSearchParams({client_id:process.env.GOOGLE_CLIENT_ID,client_secret:process.env.GOOGLE_CLIENT_SECRET,code:\"probe\",grant_type:\"authorization_code\",redirect_uri:\"https://marvelops-production.up.railway.app/auth/google/callback\"})}).then(r=>r.text().then(t=>console.log(r.status,t)))'"
+```
+
+`401 invalid_client` means the id/secret pair is wrong (Google names which
+half). `400 invalid_grant` is the healthy answer — credentials accepted, only
+the fake code rejected. That one call distinguishes a credential problem from
+every other failure in the flow.
+
+Remember that **Google sign-in never provisions**: an email with no existing
+user row is rejected outright, which looks identical to a misconfiguration.
+Check the user row before suspecting the OAuth setup.
