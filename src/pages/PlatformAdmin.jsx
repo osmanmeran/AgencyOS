@@ -140,96 +140,101 @@ export default function PlatformAdmin() {
       )}
 
       <div className="mt-8 overflow-hidden rounded-xl border border-border bg-card">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-muted/40 text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">{t('platformAdmin.colWorkspace')}</th>
-              <th className="px-4 py-3 font-medium">{t('platformAdmin.colAddress')}</th>
-              <th className="px-4 py-3 font-medium">{t('platformAdmin.colStatus')}</th>
-              <th className="px-4 py-3 font-medium">{t('platformAdmin.colTrialEnds')}</th>
-              <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colUsers')}</th>
-              <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colRecords')}</th>
-              <th className="px-4 py-3 font-medium">{t('platformAdmin.colCreated')}</th>
-              <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colActions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {workspaces.length === 0 && (
+        {/* Eight columns ending in per-workspace action buttons: without this
+            scroll container the card's overflow-hidden makes them unreachable
+            on narrow screens. */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm min-w-[900px]">
+            <thead className="border-b border-border bg-muted/40 text-muted-foreground">
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
-                  {t('platformAdmin.noWorkspaces')}
-                </td>
+                <th className="px-4 py-3 font-medium">{t('platformAdmin.colWorkspace')}</th>
+                <th className="px-4 py-3 font-medium">{t('platformAdmin.colAddress')}</th>
+                <th className="px-4 py-3 font-medium">{t('platformAdmin.colStatus')}</th>
+                <th className="px-4 py-3 font-medium">{t('platformAdmin.colTrialEnds')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colUsers')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colRecords')}</th>
+                <th className="px-4 py-3 font-medium">{t('platformAdmin.colCreated')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('platformAdmin.colActions')}</th>
               </tr>
-            )}
-            {workspaces.map((w) => (
-              <tr key={w.id} className="border-b border-border last:border-0">
-                <td className="px-4 py-3 font-medium text-foreground">{w.name}</td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  <code className="rounded bg-muted px-1.5 py-0.5">{w.slug}</code>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor(w.status)}`}>
-                    {t(`workspaceStatus.${w.status}`)}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  <TrialCell trialEndsAt={w.trialEndsAt} status={w.status} t={t} language={language} />
-                </td>
-                <td className="px-4 py-3 text-right text-foreground">{w.userCount}</td>
-                <td className="px-4 py-3 text-right text-foreground">{w.entityCount}</td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {w.createdDate ? new Date(w.createdDate).toLocaleDateString(language) : '—'}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <ActionButton disabled={busyId === w.id} onClick={() => rename(w)}>
-                      {t('platformAdmin.actionRename')}
-                    </ActionButton>
-                    {w.status === 'suspended' ? (
-                      <>
-                        <ActionButton
-                          disabled={busyId === w.id}
-                          onClick={() => runAction(w.id, '/status', { status: 'active' })}
-                        >
-                          {t('platformAdmin.actionReactivate')}
-                        </ActionButton>
-                        <ActionButton disabled={busyId === w.id} variant="danger" onClick={() => destroy(w)}>
-                          {t('platformAdmin.actionDelete')}
-                        </ActionButton>
-                      </>
-                    ) : (
-                      <>
-                        {w.status === 'trial' && (
-                          <>
-                            <ActionButton
-                              disabled={busyId === w.id}
-                              onClick={() => runAction(w.id, '/extend-trial', {})}
-                            >
-                              {t('platformAdmin.actionExtendTrial')}
-                            </ActionButton>
-                            <ActionButton
-                              disabled={busyId === w.id}
-                              onClick={() => runAction(w.id, '/status', { status: 'active' })}
-                            >
-                              {t('platformAdmin.actionMarkPaid')}
-                            </ActionButton>
-                          </>
-                        )}
-                        <ActionButton
-                          disabled={busyId === w.id}
-                          variant="danger"
-                          onClick={() => runAction(w.id, '/status', { status: 'suspended' })}
-                        >
-                          {t('platformAdmin.actionSuspend')}
-                        </ActionButton>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {workspaces.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
+                    {t('platformAdmin.noWorkspaces')}
+                  </td>
+                </tr>
+              )}
+              {workspaces.map((w) => (
+                <tr key={w.id} className="border-b border-border last:border-0">
+                  <td className="px-4 py-3 font-medium text-foreground">{w.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    <code className="rounded bg-muted px-1.5 py-0.5">{w.slug}</code>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor(w.status)}`}>
+                      {t(`workspaceStatus.${w.status}`)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    <TrialCell trialEndsAt={w.trialEndsAt} status={w.status} t={t} language={language} />
+                  </td>
+                  <td className="px-4 py-3 text-right text-foreground">{w.userCount}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{w.entityCount}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {w.createdDate ? new Date(w.createdDate).toLocaleDateString(language) : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <ActionButton disabled={busyId === w.id} onClick={() => rename(w)}>
+                        {t('platformAdmin.actionRename')}
+                      </ActionButton>
+                      {w.status === 'suspended' ? (
+                        <>
+                          <ActionButton
+                            disabled={busyId === w.id}
+                            onClick={() => runAction(w.id, '/status', { status: 'active' })}
+                          >
+                            {t('platformAdmin.actionReactivate')}
+                          </ActionButton>
+                          <ActionButton disabled={busyId === w.id} variant="danger" onClick={() => destroy(w)}>
+                            {t('platformAdmin.actionDelete')}
+                          </ActionButton>
+                        </>
+                      ) : (
+                        <>
+                          {w.status === 'trial' && (
+                            <>
+                              <ActionButton
+                                disabled={busyId === w.id}
+                                onClick={() => runAction(w.id, '/extend-trial', {})}
+                              >
+                                {t('platformAdmin.actionExtendTrial')}
+                              </ActionButton>
+                              <ActionButton
+                                disabled={busyId === w.id}
+                                onClick={() => runAction(w.id, '/status', { status: 'active' })}
+                              >
+                                {t('platformAdmin.actionMarkPaid')}
+                              </ActionButton>
+                            </>
+                          )}
+                          <ActionButton
+                            disabled={busyId === w.id}
+                            variant="danger"
+                            onClick={() => runAction(w.id, '/status', { status: 'suspended' })}
+                          >
+                            {t('platformAdmin.actionSuspend')}
+                          </ActionButton>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

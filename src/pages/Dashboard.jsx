@@ -437,7 +437,19 @@ export default function Dashboard() {
       {/* Trip Calendar */}
       <Card>
         <CardContent sx={{ p: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          {/* flexWrap + a narrower month label on mobile: the title plus the
+              month navigator is wider than a phone viewport, and the card clips
+              rather than scrolls, so Saturday used to fall off the edge. */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 1,
+              mb: 2,
+            }}
+          >
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CalendarMonthRounded sx={{ color: 'primary.main' }} />
               {t('dashboard.tripCalendar')}
@@ -449,7 +461,7 @@ export default function Dashboard() {
               >
                 <ChevronLeft />
               </IconButton>
-              <Typography variant="subtitle2" sx={{ minWidth: 150, textAlign: 'center' }}>
+              <Typography variant="subtitle2" sx={{ minWidth: { xs: 110, sm: 150 }, textAlign: 'center' }}>
                 {format(currentMonth, 'MMMM yyyy')}
               </Typography>
               <IconButton
