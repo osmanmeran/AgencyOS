@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "react-antd-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/osmanmeran/react-antd-admin", "run", "dev"],
+      "port": 8889
     }
   ]
 }
