@@ -3101,6 +3101,10 @@
         "q": "La nostra agenzia può accedere con i propri account Microsoft/Office 365?",
         "a": "Sì. Ogni spazio di lavoro può collegare il proprio tenant Azure AD per il single sign-on Microsoft, così il tuo team accede con gli account Microsoft della tua organizzazione anziché con uno condiviso. Il tuo amministratore imposta il tenant Microsoft dello spazio di lavoro; se non ne è configurato uno, la piattaforma utilizza l’app Microsoft predefinita."
       },
+      "workspaceGoogleSso": {
+        "q": "Possiamo accedere con Google?",
+        "a": "Sì, una volta che un amministratore lo ha configurato: nella pagina di accesso compare un pulsante Google accanto a quello Microsoft. Collegare Google aggiunge un metodo di accesso anziché sostituirne uno: lo stesso account può usare Google, Microsoft o una password. Una differenza importante rispetto a Microsoft: l’accesso con Google non crea mai account. Nello spazio di lavoro deve già esistere un utente con lo stesso indirizzo email, e Google deve segnalare quell’indirizzo come verificato. Quindi, se Google rifiuta l’accesso, di solito è perché non esiste ancora un utente per quell’email, non perché l’accesso sia guasto."
+      },
       "workspaceCreate": {
         "q": "Come viene creato un nuovo spazio di lavoro?",
         "a": "I nuovi spazi di lavoro vengono creati in due modi. (1) Self-service: se la tua istanza ha la registrazione aperta abilitata, vai alla pagina di registrazione, scegli un indirizzo univoco per lo spazio di lavoro (es. \"acme\"), inserisci il nome della tua agenzia e un’email/password amministratore, e il tuo spazio di lavoro isolato viene fornito immediatamente con il proprio sottodominio. (2) Fornito da un amministratore: altrimenti, contatta il tuo account manager o l’assistenza, che configurerà per te uno spazio di lavoro aggiuntivo per l’agenzia."

@@ -3151,6 +3151,10 @@
         "q": "Can our agency sign in with our own Microsoft / Office 365 accounts?",
         "a": "Yes. Each workspace can connect its own Azure AD tenant for Microsoft single sign-on, so your team logs in with your organization’s Microsoft accounts rather than a shared one. Your administrator sets the workspace’s Microsoft tenant; if none is configured, the platform falls back to the default Microsoft app."
       },
+      "workspaceGoogleSso": {
+        "q": "Can we sign in with Google?",
+        "a": "Yes, once an administrator has configured it — a Google button appears on the sign-in page next to Microsoft. Linking Google adds a sign-in method rather than replacing one: the same account can use Google, Microsoft, or a password. One important difference from Microsoft: Google sign-in never creates accounts. You must already have a user in the workspace with the same email address, and Google must report that address as verified. So if Google rejects you, the usual cause is that no user exists for that email yet — not that sign-in is broken."
+      },
       "workspaceCreate": {
         "q": "How is a new workspace created?",
         "a": "New workspaces are created in two ways. (1) Self-serve: if your instance has open sign-up enabled, go to the sign-up page, choose a unique workspace address (e.g. \"acme\"), enter your agency name and an admin email/password, and your isolated workspace is provisioned instantly with its own subdomain. (2) Admin-provisioned: otherwise, reach out to your account manager or support and they will set up an additional agency workspace for you."

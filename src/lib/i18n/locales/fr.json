@@ -3101,6 +3101,10 @@
         "q": "Notre agence peut-elle se connecter avec nos propres comptes Microsoft/Office 365 ?",
         "a": "Oui. Chaque espace de travail peut connecter son propre tenant Azure AD pour l’authentification unique Microsoft, de sorte que votre équipe se connecte avec les comptes Microsoft de votre organisation plutôt qu’avec un compte partagé. Votre administrateur configure le tenant Microsoft de l’espace de travail ; si aucun n’est configuré, la plateforme utilise l’application Microsoft par défaut."
       },
+      "workspaceGoogleSso": {
+        "q": "Pouvons-nous nous connecter avec Google ?",
+        "a": "Oui, une fois qu’un administrateur l’a configuré : un bouton Google apparaît sur la page de connexion, à côté de celui de Microsoft. Lier Google ajoute une méthode de connexion au lieu d’en remplacer une : le même compte peut utiliser Google, Microsoft ou un mot de passe. Une différence importante avec Microsoft : la connexion Google ne crée jamais de comptes. Un utilisateur portant la même adresse e-mail doit déjà exister dans l’espace de travail, et Google doit signaler cette adresse comme vérifiée. Si Google vous refuse, c’est donc généralement qu’aucun utilisateur n’existe encore pour cette adresse, et non que la connexion est cassée."
+      },
       "workspaceCreate": {
         "q": "Comment un nouvel espace de travail est-il créé ?",
         "a": "Les nouveaux espaces de travail sont créés de deux façons. (1) En libre-service : si votre instance a l’inscription ouverte activée, allez sur la page d’inscription, choisissez une adresse d’espace de travail unique (par ex. « acme »), saisissez le nom de votre agence ainsi qu’un e-mail/mot de passe administrateur, et votre espace de travail isolé est provisionné instantanément avec son propre sous-domaine. (2) Provisionné par un administrateur : sinon, contactez votre gestionnaire de compte ou le support, qui configurera un espace de travail d’agence supplémentaire pour vous."

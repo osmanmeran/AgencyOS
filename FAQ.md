@@ -61,7 +61,10 @@ Tick it off in the Booking Tasks or client Tasks panel, or drag its card to **Do
 Those are computed per request from the due date and SLA window, so the write path strips them — otherwise saving a task you'd just read back would freeze a momentary value into storage and, in `is_escalated`'s case, leave it stuck on forever. Only the escalation job writes `is_escalated`.
 
 **I'm on Linux/Railway and imports broke / casing issues?**
-The app deploys from `main` to Railway (Linux, case-sensitive filesystem). Keep file/import casing exact. Locally on macOS the filesystem is case-insensitive, so a casing mismatch only fails at deploy — a case-mismatch import scan was run and came back clean.
+Railway runs Linux, with a case-sensitive filesystem. Keep file/import casing exact. Locally on macOS the filesystem is case-insensitive, so a casing mismatch only fails at deploy — a case-mismatch import scan was run and came back clean.
+
+**Which branch does Railway deploy?**
+`main` today — but that is configured in the Railway dashboard, not in this repo, and it has not always been `main` (it pointed at `saas-standalone` for several days in August 2026, during which pushes to `main` deployed nothing and said nothing). Never assume it from the docs: `railway status` shows a **deployment ID** that changes on every real deploy, and `railway logs` shows each boot's migrations. See CLAUDE.md's "the deploy branch is a moving part" note for the full diagnosis.
 
 ## Workspaces & Tenants (multi-tenant SaaS)
 
@@ -76,6 +79,9 @@ Self-serve, if `ALLOW_PUBLIC_SIGNUP=true`: `POST /api/tenants/signup` takes an a
 
 **Can each agency use its own Microsoft 365 login?**
 Yes. A workspace admin sets the workspace's Azure AD tenant id from **Workspace Settings** — no server env var change needed. Empty/unset falls back to the server-wide `MICROSOFT_TENANT_ID`.
+
+**Can users sign in with Google?**
+Yes, where it's configured (`VITE_GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` on the service; live in production since 2026-08-08). A user row can hold `microsoft_id` and `google_id` at once, so linking Google adds a sign-in method rather than replacing one. Unlike Microsoft, **Google never provisions**: Microsoft can safely create accounts because the token's `tid` proves the user belongs to the workspace's Azure directory, while a Google token carries no equivalent claim — so an unrecognized email is rejected instead of turned into an account. That also means there's no per-workspace Google setting matching `tenants.azure_tenant_id`. `email_verified` is enforced and is load-bearing: accounts are matched to Google identities by email, so an unverified address would let anyone who registers a Google account asserting it sign in as that user. The button is gated at **build** time on `VITE_GOOGLE_CLIENT_ID`, so an unset variable removes it from the bundle entirely rather than showing a broken control. See CLAUDE.md for the credential probe that separates a bad client secret from every other failure.
 
 **What happens when a trial expires or a workspace is suspended?**
 `tenantAccessState()` blocks `/api` access (error codes `WORKSPACE_SUSPENDED` / `TRIAL_EXPIRED`), except for auth/health/tenant/platform endpoints so a blocked workspace can still sign in and see its own status. Users see a status banner once suspended or within 7 days of trial expiry. A platform admin can suspend/reactivate/mark-paid/extend-trial from the Platform Admin dashboard (gated by `PLATFORM_ADMIN_EMAILS`).

@@ -3101,6 +3101,10 @@
         "q": "Kann sich unser Unternehmen mit unseren eigenen Microsoft-/Office-365-Konten anmelden?",
         "a": "Ja. Jeder Workspace kann seinen eigenen Azure-AD-Mandanten für die Microsoft-Einmalanmeldung verbinden, sodass sich Ihr Team mit den Microsoft-Konten Ihrer Organisation statt mit einem gemeinsam genutzten Konto anmeldet. Ihr Administrator legt den Microsoft-Mandanten des Workspace fest; ist keiner konfiguriert, greift die Plattform auf die Standard-Microsoft-App zurück."
       },
+      "workspaceGoogleSso": {
+        "q": "Können wir uns mit Google anmelden?",
+        "a": "Ja, sobald ein Administrator es eingerichtet hat — auf der Anmeldeseite erscheint dann neben Microsoft eine Google-Schaltfläche. Google zu verknüpfen ergänzt eine Anmeldemethode, statt eine zu ersetzen: dasselbe Konto kann Google, Microsoft oder ein Passwort verwenden. Ein wichtiger Unterschied zu Microsoft: Die Google-Anmeldung legt niemals Konten an. Im Arbeitsbereich muss bereits ein Benutzer mit derselben E-Mail-Adresse vorhanden sein, und Google muss diese Adresse als verifiziert melden. Wenn Google Sie also ablehnt, liegt es in der Regel daran, dass für diese Adresse noch kein Benutzer existiert — nicht daran, dass die Anmeldung defekt ist."
+      },
       "workspaceCreate": {
         "q": "Wie wird ein neuer Workspace erstellt?",
         "a": "Neue Workspaces werden auf zwei Arten erstellt. (1) Self-Service: Wenn Ihre Instanz die offene Registrierung aktiviert hat, gehen Sie zur Registrierungsseite, wählen eine eindeutige Workspace-Adresse (z. B. „acme“), geben Ihren Unternehmensnamen sowie eine Admin-E-Mail/ein Passwort ein, und Ihr isolierter Workspace wird sofort mit eigener Subdomain bereitgestellt. (2) Von einem Admin bereitgestellt: Andernfalls wenden Sie sich an Ihren Kundenbetreuer oder den Support, der einen zusätzlichen Unternehmens-Workspace für Sie einrichtet."

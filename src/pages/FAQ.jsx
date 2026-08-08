@@ -69,6 +69,7 @@ const FAQS = [
   { key: 'workspaceOpen', category: 'saas' },
   { key: 'workspaceDataSeparate', category: 'saas' },
   { key: 'workspaceMicrosoftSso', category: 'saas' },
+  { key: 'workspaceGoogleSso', category: 'saas' },
   { key: 'workspaceCreate', category: 'saas' },
   { key: 'workspaceOneLogin', category: 'saas' },
   { key: 'workspaceSelfServe', category: 'saas' },

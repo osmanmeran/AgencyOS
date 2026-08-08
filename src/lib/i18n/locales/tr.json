@@ -3101,6 +3101,10 @@
         "q": "Acentemiz kendi Microsoft/Office 365 hesaplarımızla giriş yapabilir mi?",
         "a": "Evet. Her çalışma alanı, Microsoft tek oturum açma için kendi Azure AD kiracısını bağlayabilir, böylece ekibiniz paylaşılan bir hesap yerine kuruluşunuzun Microsoft hesaplarıyla giriş yapar. Yöneticiniz çalışma alanının Microsoft kiracısını ayarlar; hiçbiri yapılandırılmamışsa platform varsayılan Microsoft uygulamasına döner."
       },
+      "workspaceGoogleSso": {
+        "q": "Google ile giriş yapabilir miyiz?",
+        "a": "Evet, bir yönetici yapılandırdıktan sonra — giriş sayfasında Microsoft’un yanında bir Google düğmesi belirir. Google’ı bağlamak mevcut bir yöntemin yerini almaz, yeni bir giriş yöntemi ekler: aynı hesap Google, Microsoft veya parola ile giriş yapabilir. Microsoft’tan önemli bir farkı var: Google ile giriş asla hesap oluşturmaz. Çalışma alanında aynı e-posta adresine sahip bir kullanıcının önceden bulunması ve Google’ın bu adresi doğrulanmış olarak bildirmesi gerekir. Bu nedenle Google sizi reddediyorsa, bunun olağan nedeni girişin bozuk olması değil, o e-posta için henüz bir kullanıcı bulunmamasıdır."
+      },
       "workspaceCreate": {
         "q": "Yeni bir çalışma alanı nasıl oluşturulur?",
         "a": "Yeni çalışma alanları iki şekilde oluşturulur. (1) Kendin yap: örneğinizde açık kayıt etkinse, kayıt sayfasına gidin, benzersiz bir çalışma alanı adresi seçin (örn. \"acme\"), acente adınızı ve bir admin e-posta/şifresini girin; izole çalışma alanınız kendi alt alan adıyla anında hazır hale getirilir. (2) Admin tarafından sağlanır: aksi takdirde, hesap yöneticinizle veya destek ekibiyle iletişime geçin; sizin için ek bir acente çalışma alanı kuracaklardır."

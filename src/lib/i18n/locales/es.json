@@ -3101,6 +3101,10 @@
         "q": "¿Puede nuestra agencia iniciar sesión con nuestras propias cuentas de Microsoft/Office 365?",
         "a": "Sí. Cada espacio de trabajo puede conectar su propio tenant de Azure AD para el inicio de sesión único de Microsoft, de modo que tu equipo inicia sesión con las cuentas de Microsoft de tu organización en lugar de una compartida. Tu administrador configura el tenant de Microsoft del espacio de trabajo; si no hay ninguno configurado, la plataforma recurre a la app de Microsoft predeterminada."
       },
+      "workspaceGoogleSso": {
+        "q": "¿Podemos iniciar sesión con Google?",
+        "a": "Sí, una vez que un administrador lo haya configurado: en la página de inicio de sesión aparecerá un botón de Google junto al de Microsoft. Vincular Google añade un método de acceso en lugar de sustituir otro: la misma cuenta puede usar Google, Microsoft o una contraseña. Una diferencia importante con Microsoft: el inicio de sesión con Google nunca crea cuentas. Ya debe existir un usuario en el espacio de trabajo con la misma dirección de correo, y Google debe indicar que esa dirección está verificada. Por eso, si Google te rechaza, lo habitual es que aún no exista un usuario para ese correo, no que el acceso esté roto."
+      },
       "workspaceCreate": {
         "q": "¿Cómo se crea un nuevo espacio de trabajo?",
         "a": "Los nuevos espacios de trabajo se crean de dos formas. (1) Autoservicio: si tu instancia tiene el registro abierto habilitado, ve a la página de registro, elige una dirección de espacio de trabajo única (p. ej., \"acme\"), introduce el nombre de tu agencia y un correo/contraseña de administrador, y tu espacio de trabajo aislado se aprovisiona al instante con su propio subdominio. (2) Aprovisionado por un administrador: si no, ponte en contacto con tu gestor de cuenta o soporte y te configurarán un espacio de trabajo de agencia adicional."
