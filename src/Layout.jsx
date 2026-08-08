@@ -60,6 +60,7 @@ import UserMenu from './components/layout/UserMenu';
 import GlobalSearch from './components/layout/GlobalSearch';
 import NotificationBell from './components/layout/NotificationBell';
 import ThemeToggle from './components/layout/ThemeToggle';
+import PageTabs from './components/layout/PageTabs';
 import WorkspaceStatusBanner from './components/layout/WorkspaceStatusBanner';
 import { useT } from '@/lib/i18n/I18nContext';
 import { useCapacitorBackButton } from '@/lib/capacitorBackButton';
@@ -632,6 +633,9 @@ export default function Layout({ children, currentPageName }) {
               <UserMenu />
             </Toolbar>
           </AppBar>
+
+          {/* Open-pages strip — staff shell only; the portals are single-purpose */}
+          {!isClientPortal && <PageTabs currentPageName={currentPageName} />}
 
           {/* Staff "view portal as a client" banner */}
           {actAsClientId && isClientPortal && user && user.user_tier !== 'client' && (

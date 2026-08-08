@@ -591,6 +591,14 @@
     "dark": "Dark",
     "system": "System"
   },
+  "pageTabs": {
+    "label": "Open pages",
+    "actions": "Tab actions",
+    "close": "Close {label}",
+    "closeCurrent": "Close current tab",
+    "closeOthers": "Close other tabs",
+    "closeAll": "Close all tabs"
+  },
   "pdfDownload": {
     "bookingConfirmation": "Booking Confirmation",
     "proposal": "Proposal",
