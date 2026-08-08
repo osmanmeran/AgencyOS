@@ -87,9 +87,11 @@ export default function SetupChecklistBanner({ userTier }) {
 
   return (
     <Card sx={{ borderLeft: '4px solid', borderColor: 'primary.main', bgcolor: 'action.hover' }}>
-      <CardContent sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+      {/* Wraps on narrow screens: without flexWrap the text column is squeezed
+          to one word per line to make room for the button and dismiss icon. */}
+      <CardContent sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
         <RocketLaunchRounded color="primary" />
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, minWidth: 200 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             Finish setting up your workspace
           </Typography>

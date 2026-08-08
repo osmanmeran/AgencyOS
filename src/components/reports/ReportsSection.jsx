@@ -320,7 +320,9 @@ export default function ReportsSection() {
               <SelectItem value="12">Last 12 months</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex items-center gap-2">
+          {/* The two date inputs plus the "to" separator exceed a phone's width;
+              without flex-wrap here the end-date input runs off the card edge. */}
+          <div className="flex flex-wrap items-center gap-2">
             <Calendar className="w-4 h-4 text-muted-foreground" />
             <Input
               type="date"

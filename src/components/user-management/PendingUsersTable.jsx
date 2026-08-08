@@ -13,49 +13,53 @@ export default function PendingUsersTable({ users, onApprove, onDeny }) {
           ({pending.length} {_t('userManagement.users')}
         </span>
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-amber-100/50 dark:bg-amber-900/50">
-            <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">
-              {_t('userManagement.name')}
-            </th>
-            <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">
-              {_t('userManagement.email')}
-            </th>
-            <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">
-              {_t('userManagement.signed')}
-            </th>
-            <th className="text-right px-4 py-2 font-medium text-amber-700 dark:text-amber-300">
-              {_t('userManagement.actions')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {pending.map((u) => (
-            <tr key={u.id} className="border-b border-amber-100 hover:bg-amber-50/50 dark:hover:bg-amber-950/50">
-              <td className="px-4 py-2.5 font-medium text-amber-900 dark:text-amber-300">{u.name}</td>
-              <td className="px-4 py-2.5 text-amber-700 dark:text-amber-300">{u.email}</td>
-              <td className="px-4 py-2.5 text-amber-600 dark:text-amber-300 text-xs">
-                {u.created_date ? new Date(u.created_date).toLocaleDateString(language) : '-'}
-              </td>
-              <td className="px-4 py-2.5 text-right">
-                <button
-                  onClick={() => onApprove(u)}
-                  className="px-3 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 mr-1"
-                >
-                  {_t('userManagement.approve')}
-                </button>
-                <button
-                  onClick={() => onDeny(u)}
-                  className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                >
-                  {_t('userManagement.deny')}
-                </button>
-              </td>
+      {/* Scroll container: the card above clips with overflow-hidden, so without
+          this the Approve/Deny buttons are cut off and unreachable on mobile. */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[560px]">
+          <thead>
+            <tr className="bg-amber-100/50 dark:bg-amber-900/50">
+              <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">
+                {_t('userManagement.name')}
+              </th>
+              <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">
+                {_t('userManagement.email')}
+              </th>
+              <th className="text-left px-4 py-2 font-medium text-amber-700 dark:text-amber-300">
+                {_t('userManagement.signed')}
+              </th>
+              <th className="text-right px-4 py-2 font-medium text-amber-700 dark:text-amber-300">
+                {_t('userManagement.actions')}
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {pending.map((u) => (
+              <tr key={u.id} className="border-b border-amber-100 hover:bg-amber-50/50 dark:hover:bg-amber-950/50">
+                <td className="px-4 py-2.5 font-medium text-amber-900 dark:text-amber-300">{u.name}</td>
+                <td className="px-4 py-2.5 text-amber-700 dark:text-amber-300">{u.email}</td>
+                <td className="px-4 py-2.5 text-amber-600 dark:text-amber-300 text-xs">
+                  {u.created_date ? new Date(u.created_date).toLocaleDateString(language) : '-'}
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <button
+                    onClick={() => onApprove(u)}
+                    className="px-3 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 mr-1"
+                  >
+                    {_t('userManagement.approve')}
+                  </button>
+                  <button
+                    onClick={() => onDeny(u)}
+                    className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                  >
+                    {_t('userManagement.deny')}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

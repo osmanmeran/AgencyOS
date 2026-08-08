@@ -3408,6 +3408,7 @@
     "at": "At least 8 chars, uppercase, lowercase, number",
     "re": "Re-enter the password",
     "you_2": "You need the Manage Users permission to access this page.",
+    "youMarker": "(vous)",
     "edit_2": "Edit User:",
     "no": "No users found",
     "reportsTo": "Rend compte à",
