@@ -340,6 +340,27 @@ audit fix` (no `--force`, no major bumps) resolved 7 of them in place:
      (latest published) still caps its peer range at `eslint ^9.7`, with no
      v10-compatible release yet, so there is no forward-only fix available.
      Left both as-is; no dependency changes.
+   - **Superseded on 2026-08-09.** Neither of those two findings appears in
+     `npm audit` anymore (`react-router-dom` 7.18.2 and `brace-expansion`
+     1.1.18 / 5.0.9 are all outside their advisory ranges now), so don't go
+     looking for them. An entirely different set had taken their place, found
+     via Dependabot's "3 vulnerabilities" notice on a push to `main`:
+     `npm audit fix` (no `--force`, lockfile-only, no `package.json` change)
+     took `dompurify` 3.4.12 → 3.4.13, `js-yaml` 4.3.0 → 4.3.1 and `nanoid`
+     3.3.16 → 3.3.18. Reachability, since the raw severities overstate it:
+     `dompurify` is the only one that is a real dependency of the app
+     (`src/lib/sanitize.js`), but its advisory (GHSA-55q2-fjhq-7xh7) needs
+     `IN_PLACE: true` **plus** a hook that removes an element, and both call
+     sites are a plain default-config `DOMPurify.sanitize(html)` — taken
+     anyway because a same-minor patch bump costs nothing. `js-yaml` (via
+     `eslint`) and `nanoid` (via `postcss`) are dev/build-time only and never
+     see attacker input.
+   - Still open, deliberately: `uuid` <11.1.1 (missing buffer bounds check in
+     v3/v5/v6 when `buf` is passed) via `@capacitor/cli` → `xcode`. The only
+     fix is `npm audit fix --force`, which **downgrades `@capacitor/cli` 8.5.0
+     → 8.4.2** while `@capacitor/android`/`@capacitor/core` stay at `^8.5.0` —
+     a version skew in the mobile build toolchain to patch a dev-only
+     dependency. Not worth it; expect Dependabot to keep flagging it.
 
 ## 🟡 Security hardening (next)
 
