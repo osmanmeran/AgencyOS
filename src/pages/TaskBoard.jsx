@@ -107,6 +107,15 @@ export default function TaskBoard() {
       queryFn: () => db.entities.Client.list(),
     })
   );
+  // Cards lead with the reservation they belong to; tasks only carry a
+  // `booking_id`, so resolve the names here (shared cache key with the rest
+  // of the app's trip lists).
+  const { data: trips = /** @type {any} */ ([]) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['trips'],
+      queryFn: () => db.entities.Trip.list(),
+    })
+  );
   const { data: currentUser } = /** @type {any} */ (
     useQuery({
       queryKey: ['me'],
@@ -189,6 +198,14 @@ export default function TaskBoard() {
     return map;
   }, [clients]);
 
+  const reservationName = useMemo(() => {
+    const map = {};
+    trips.forEach((tr) => {
+      map[tr.id] = tr.name || tr.reference_number;
+    });
+    return map;
+  }, [trips]);
+
   const visibleTasks = useMemo(() => {
     // Cancelled tasks are effectively archived — never shown on the board
     // (there's no column for them, and they'd otherwise fall into "Pending").
@@ -233,8 +250,8 @@ export default function TaskBoard() {
         <div className="flex items-center gap-2">
           <ClipboardList className="w-6 h-6 text-foreground" />
           <div>
-            <h1 className="text-xl font-semibold text-foreground">{t('taskBoard.title')}</h1>
-            <p className="text-sm text-muted-foreground">{t('taskBoard.subtitle')}</p>
+            <h1 className="text-2xl font-semibold text-foreground">{t('taskBoard.title')}</h1>
+            <p className="text-base text-muted-foreground">{t('taskBoard.subtitle')}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -264,6 +281,7 @@ export default function TaskBoard() {
               tasks={grouped[col.id]}
               clientName={clientName}
               assigneeName={assigneeName}
+              reservationName={reservationName}
               onEdit={openEdit}
               onDelete={setDeletingTask}
               hiddenCount={col.id === 'completed' ? hiddenCompletedCount : 0}
@@ -327,7 +345,19 @@ export default function TaskBoard() {
   );
 }
 
-function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, hiddenCount, TYPE_META, t }) {
+function Column({
+  id,
+  title,
+  tasks,
+  clientName,
+  assigneeName,
+  reservationName,
+  onEdit,
+  onDelete,
+  hiddenCount,
+  TYPE_META,
+  t,
+}) {
   return (
     <Droppable droppableId={id}>
       {(provided, snapshot) => (
@@ -337,8 +367,8 @@ function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, 
           className={`bg-muted/40 rounded-xl p-3 min-h-[200px] transition-colors ${snapshot.isDraggingOver ? 'ring-2 ring-primary/50' : ''}`}
         >
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-foreground">{title}</h2>
-            <span className="text-xs text-muted-foreground bg-background rounded-full px-2 py-0.5">{tasks.length}</span>
+            <h2 className="text-base font-semibold text-foreground">{title}</h2>
+            <span className="text-sm text-muted-foreground bg-background rounded-full px-2 py-0.5">{tasks.length}</span>
           </div>
           <div className="flex flex-col gap-2">
             {tasks.map((task, index) => (
@@ -348,6 +378,7 @@ function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, 
                 index={index}
                 clientName={clientName}
                 assigneeName={assigneeName}
+                reservationName={reservationName}
                 onEdit={() => onEdit(task)}
                 onDelete={() => onDelete(task)}
                 TYPE_META={TYPE_META}
@@ -357,7 +388,7 @@ function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, 
             {provided.placeholder}
           </div>
           {hiddenCount > 0 && (
-            <p className="text-xs text-muted-foreground mt-3 text-center">
+            <p className="text-sm text-muted-foreground mt-3 text-center">
               {t('taskBoard.olderCompletedHidden', { count: hiddenCount })}
             </p>
           )}
@@ -367,9 +398,10 @@ function Column({ id, title, tasks, clientName, assigneeName, onEdit, onDelete, 
   );
 }
 
-function TaskCardView({ task, index, clientName, assigneeName, onEdit, onDelete, TYPE_META, t }) {
+function TaskCardView({ task, index, clientName, assigneeName, reservationName, onEdit, onDelete, TYPE_META, t }) {
   const meta = TYPE_META[task.type] || TYPE_META.task;
   const TypeIcon = meta.Icon;
+  const reservation = task.booking_id ? reservationName[task.booking_id] : '';
 
   return (
     <Draggable draggableId={String(task.id)} index={index}>
@@ -384,8 +416,8 @@ function TaskCardView({ task, index, clientName, assigneeName, onEdit, onDelete,
           }`}
         >
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <TypeIcon className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <TypeIcon className="w-4 h-4" />
               <span>{t(meta.labelKey)}</span>
             </div>
             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -398,7 +430,7 @@ function TaskCardView({ task, index, clientName, assigneeName, onEdit, onDelete,
                 className="p-1 text-muted-foreground hover:text-foreground"
                 aria-label={t('taskBoard.editTask')}
               >
-                <Pencil className="w-3.5 h-3.5" />
+                <Pencil className="w-4 h-4" />
               </button>
               <button
                 type="button"
@@ -409,66 +441,84 @@ function TaskCardView({ task, index, clientName, assigneeName, onEdit, onDelete,
                 className="p-1 text-muted-foreground hover:text-destructive"
                 aria-label={t('common.delete')}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {task.booking_id ? (
+          {/* The reservation leads the card: on an operations board the booking
+              is what identifies the work, and the task title ("Collect
+              passports") repeats across every reservation. */}
+          {reservation && (
             <Link
               to={createPageUrl(`ReservationDetails?id=${task.booking_id}`)}
               onClick={(e) => e.stopPropagation()}
-              className="text-sm font-medium text-foreground mt-1 break-words hover:underline block"
+              className="text-base font-semibold text-foreground mt-1.5 break-words hover:underline block"
+            >
+              {reservation}
+            </Link>
+          )}
+          {task.booking_id && !reservation ? (
+            <Link
+              to={createPageUrl(`ReservationDetails?id=${task.booking_id}`)}
+              onClick={(e) => e.stopPropagation()}
+              className="text-base font-medium text-foreground mt-1.5 break-words hover:underline block"
             >
               {task.title}
             </Link>
           ) : (
-            <p className="text-sm font-medium text-foreground mt-1 break-words">{task.title}</p>
+            <p
+              className={`mt-1 break-words ${
+                reservation ? 'text-sm text-muted-foreground' : 'text-base font-medium text-foreground'
+              }`}
+            >
+              {task.title}
+            </p>
           )}
-          {task.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>}
+          {task.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{task.description}</p>}
 
           <div className="flex flex-wrap items-center gap-1.5 mt-2">
             {task.template_key && (
-              <Badge variant="outline" className="text-[10px] gap-1">
-                <Sparkles className="w-2.5 h-2.5" />
+              <Badge variant="outline" className="text-xs gap-1">
+                <Sparkles className="w-3 h-3" />
                 {t('tripTasksPanel.auto')}
               </Badge>
             )}
             {task.is_escalated && (
-              <Badge className="text-[10px] bg-red-600 text-white gap-1">
-                <AlertTriangle className="w-2.5 h-2.5" />
+              <Badge className="text-xs bg-red-600 text-white gap-1">
+                <AlertTriangle className="w-3 h-3" />
                 {t('tripTasksPanel.escalated')}
               </Badge>
             )}
             {task.is_overdue && (
-              <Badge className="text-[10px] bg-amber-600 text-white gap-1">
-                <CalendarClock className="w-2.5 h-2.5" />
+              <Badge className="text-xs bg-amber-600 text-white gap-1">
+                <CalendarClock className="w-3 h-3" />
                 {t('tripTasksPanel.overdue')}
               </Badge>
             )}
             {task.priority && (
-              <Badge variant="outline" className="text-[10px] capitalize">
+              <Badge variant="outline" className="text-xs capitalize">
                 {t(`priority.${task.priority}`)}
               </Badge>
             )}
             {task.due_date && (
               <Badge
                 variant="outline"
-                className={`text-[10px] ${task.is_overdue ? 'border-amber-600 text-amber-700 dark:text-amber-400' : ''}`}
+                className={`text-xs ${task.is_overdue ? 'border-amber-600 text-amber-700 dark:text-amber-400' : ''}`}
               >
                 {task.due_date}
               </Badge>
             )}
             {clientName[task.customer_id] && (
-              <Badge variant="secondary" className="text-[10px]">
+              <Badge variant="secondary" className="text-xs">
                 {clientName[task.customer_id]}
               </Badge>
             )}
           </div>
 
           {task.assigned_to_user_id && (
-            <div className="flex items-center gap-1 mt-2 text-[11px] text-muted-foreground">
-              <UserIcon className="w-3 h-3" />
+            <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
+              <UserIcon className="w-3.5 h-3.5" />
               <span>{assigneeName[task.assigned_to_user_id] || task.assigned_to_user_id}</span>
             </div>
           )}

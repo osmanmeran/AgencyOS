@@ -79,6 +79,17 @@ export default function Dashboard() {
     }, [openTasks, me])
   );
 
+  // My Tasks leads each row with the reservation the task belongs to; tasks
+  // only carry a `booking_id`, and the trips this resolves against are already
+  // loaded above, so this costs no extra request.
+  const reservationName = useMemo(() => {
+    const map = {};
+    trips.forEach((trip) => {
+      map[trip.id] = trip.name || trip.reference_number;
+    });
+    return map;
+  }, [trips]);
+
   const { upcomingArrivals, upcomingDepartures, pendingReservations, departingNext7 } = useMemo(() => {
     const upcomingArrivals = trips
       .filter((trip) => {
@@ -166,7 +177,7 @@ export default function Dashboard() {
                   sx={{ height: 22, fontWeight: 700 }}
                 />
               </Box>
-              <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+              <Box sx={{ maxHeight: 240, overflow: 'auto' }}>
                 {pendingReservations.length === 0 ? (
                   <Box
                     sx={{
@@ -200,10 +211,10 @@ export default function Dashboard() {
                       }}
                     >
                       <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                        <Typography variant="body1" sx={{ fontWeight: 600 }} noWrap>
                           {trip.name}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap>
+                        <Typography variant="body2" color="text.secondary" noWrap>
                           {trip.client_name || '—'}
                         </Typography>
                       </Box>
@@ -219,7 +230,7 @@ export default function Dashboard() {
                   sx={{
                     display: 'block',
                     mt: 1,
-                    fontSize: '0.75rem',
+                    fontSize: '0.875rem',
                     color: 'warning.main',
                     textDecoration: 'none',
                     '&:hover': { textDecoration: 'underline' },
@@ -247,9 +258,9 @@ export default function Dashboard() {
                   {t('dashboard.next7Days')}
                 </Typography>
               </Box>
-              <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+              <Box sx={{ maxHeight: 240, overflow: 'auto' }}>
                 {departingNext7.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                  <Typography variant="body1" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
                     {t('dashboard.noDeparturesWeek')}
                   </Typography>
                 ) : (
@@ -271,24 +282,24 @@ export default function Dashboard() {
                       }}
                     >
                       <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                        <Typography variant="body1" sx={{ fontWeight: 600 }} noWrap>
                           {trip.name}
                         </Typography>
                         <Typography
-                          variant="caption"
+                          variant="body2"
                           color="text.secondary"
                           noWrap
                           sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                         >
-                          <PlaceRounded sx={{ fontSize: 12 }} /> {trip.destination}
+                          <PlaceRounded sx={{ fontSize: 14 }} /> {trip.destination}
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 1 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 600 }} color="primary.main">
+                        <Typography variant="body2" sx={{ fontWeight: 600 }} color="primary.main">
                           {format(parseISO(trip.start_date), 'MMM d')}
                         </Typography>
                         {trip.passengers?.length > 0 && (
-                          <Typography variant="caption" sx={{ display: 'block' }} color="text.secondary">
+                          <Typography variant="body2" sx={{ display: 'block' }} color="text.secondary">
                             {t('dashboard.paxCount', { count: trip.passengers.length })}
                           </Typography>
                         )}
@@ -301,48 +312,8 @@ export default function Dashboard() {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-            <CardContent sx={{ p: 2.5 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', mb: 1.5 }}
-              >
-                <CheckCircleRounded fontSize="small" sx={{ color: 'primary.main' }} />
-                {t('dashboard.quickActions')}
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {[
-                  { label: t('reservations.newReservation'), to: 'CreateReservation', color: 'primary' },
-                  { label: t('proposals.newProposal'), to: 'CreateProposal', color: 'success' },
-                  { label: t('invoices.newInvoice'), to: 'CreateInvoice', color: 'warning' },
-                ].map((action) => (
-                  <Box
-                    key={action.to}
-                    component={Link}
-                    to={createPageUrl(action.to)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      p: 1,
-                      borderRadius: '8px',
-                      textDecoration: 'none',
-                      color: 'inherit',
-                      '&:hover': { bgcolor: `${action.color}.light` },
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {action.label}
-                    </Typography>
-                    <ArrowForwardRounded fontSize="small" sx={{ color: 'text.secondary' }} />
-                  </Box>
-                ))}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Quick Actions lived here; its links are the top bar's New
+            Reservation / New Proposal buttons. */}
 
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
@@ -357,7 +328,9 @@ export default function Dashboard() {
                 </Typography>
                 <Chip label={openMyTasks.length} size="small" color="warning" sx={{ height: 22, fontWeight: 700 }} />
               </Box>
-              <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+              {/* Taller than the sibling cards' 200: these rows carry two lines
+                  at the larger type, and 200 clipped the fourth mid-row. */}
+              <Box sx={{ maxHeight: 240, overflow: 'auto' }}>
                 {openMyTasks.length === 0 ? (
                   <Box
                     sx={{
@@ -373,44 +346,53 @@ export default function Dashboard() {
                     <CheckCircleRounded fontSize="small" /> {t('dashboard.allCaughtUp')}
                   </Box>
                 ) : (
-                  openMyTasks.slice(0, 6).map((task) => (
-                    <Box
-                      key={task.id}
-                      component={Link}
-                      to={
-                        task.booking_id
-                          ? createPageUrl(`ReservationDetails?id=${task.booking_id}`)
-                          : createPageUrl('TaskBoard')
-                      }
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        p: 1,
-                        borderRadius: '8px',
-                        textDecoration: 'none',
-                        color: 'inherit',
-                        '&:hover': { bgcolor: 'warning.light' },
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                          {task.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap>
-                          {task.due_date
-                            ? format(parseISO(task.due_date), 'MMM d, yyyy')
-                            : t(`clientTasksPanel.filter${task.type?.[0]?.toUpperCase()}${task.type?.slice(1)}`) ||
-                              task.type}
-                        </Typography>
+                  openMyTasks.slice(0, 6).map((task) => {
+                    const reservation = task.booking_id ? reservationName[task.booking_id] : '';
+                    const when = task.due_date
+                      ? format(parseISO(task.due_date), 'MMM d, yyyy')
+                      : t(`clientTasksPanel.filter${task.type?.[0]?.toUpperCase()}${task.type?.slice(1)}`) || task.type;
+                    return (
+                      <Box
+                        key={task.id}
+                        component={Link}
+                        to={
+                          task.booking_id
+                            ? createPageUrl(`ReservationDetails?id=${task.booking_id}`)
+                            : createPageUrl('TaskBoard')
+                        }
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 1,
+                          borderRadius: '8px',
+                          textDecoration: 'none',
+                          color: 'inherit',
+                          '&:hover': { bgcolor: 'warning.light' },
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          {/* Reservation first: the auto-generated titles repeat
+                              across bookings, so the booking is what tells two
+                              rows apart. */}
+                          <Typography variant="body1" sx={{ fontWeight: 600 }} noWrap>
+                            {reservation || task.title}
+                          </Typography>
+                          {/* Date first so the truncation eats the task title,
+                              not the due date — the date is short and fixed
+                              width, the title is neither. */}
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {reservation ? `${when} · ${task.title}` : when}
+                          </Typography>
+                        </Box>
+                        {(task.is_overdue || task.is_escalated) && (
+                          <WarningAmberRounded fontSize="small" sx={{ color: 'error.main', ml: 1, flexShrink: 0 }} />
+                        )}
+                        <ArrowForwardRounded fontSize="small" sx={{ color: 'text.secondary', ml: 1, flexShrink: 0 }} />
                       </Box>
-                      {(task.is_overdue || task.is_escalated) && (
-                        <WarningAmberRounded fontSize="small" sx={{ color: 'error.main', ml: 1, flexShrink: 0 }} />
-                      )}
-                      <ArrowForwardRounded fontSize="small" sx={{ color: 'text.secondary', ml: 1, flexShrink: 0 }} />
-                    </Box>
-                  ))
+                    );
+                  })
                 )}
               </Box>
               {openMyTasks.length > 6 && (
@@ -420,7 +402,7 @@ export default function Dashboard() {
                   sx={{
                     display: 'block',
                     mt: 1,
-                    fontSize: '0.75rem',
+                    fontSize: '0.875rem',
                     color: 'warning.main',
                     textDecoration: 'none',
                     '&:hover': { textDecoration: 'underline' },
