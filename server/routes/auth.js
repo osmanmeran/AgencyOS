@@ -13,6 +13,7 @@ import {
   UnauthorizedError,
 } from '../middleware/errors.js';
 import { validate, schemas } from '../middleware/validate.js';
+import { exchangeMicrosoftCode } from '../services/microsoft.js';
 import {
   authenticateLocal,
   authenticateMicrosoft,
@@ -109,6 +110,40 @@ router.post(
     let result;
     try {
       result = await authenticateMicrosoft(req.body.idToken);
+    } catch (err) {
+      logAudit({ action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
+      throw err;
+    }
+    const { user, tenantId, slug } = result;
+    const token = runWithTenant(tenantId, () =>
+      issueSession(res, user, { userAgent: req.get('user-agent'), ip: req.ip }),
+    ).accessToken;
+    if (slug) setActiveTenantCookie(res, slug);
+    else clearActiveTenantCookie(res);
+    logAudit({
+      userId: user.id,
+      userName: user.email,
+      action: AUDIT_ACTIONS.LOGIN,
+      entityType: 'auth',
+      entityId: user.id,
+      ip: req.ip,
+    });
+    res.json({ token, user });
+  }),
+);
+
+// Microsoft sign-in for callers that hold an authorization code rather than an
+// id token — i.e. the mobile app, which completes the flow in a Custom Tab and
+// cannot redeem the code itself (see exchangeMicrosoftCode for why). Identical
+// to /microsoft once the code has been traded for a token.
+router.post(
+  '/microsoft/code',
+  validate(schemas.googleAuth), // same {code, codeVerifier, redirectUri} shape
+  catchAsync(async (req, res) => {
+    let result;
+    try {
+      const idToken = await exchangeMicrosoftCode(req.body);
+      result = await authenticateMicrosoft(idToken);
     } catch (err) {
       logAudit({ action: AUDIT_ACTIONS.LOGIN_FAILED, entityType: 'auth', ip: req.ip });
       throw err;

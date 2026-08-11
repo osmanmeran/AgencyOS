@@ -53,3 +53,76 @@ export async function verifyMicrosoftIdToken(idToken) {
   const name = payload.name || email.split('@')[0];
   return { microsoftId, email, name, tid };
 }
+
+const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID || '';
+
+/**
+ * Exchange an authorization code for a Microsoft id token.
+ *
+ * The web client does this leg itself, in the browser. The mobile app cannot:
+ * the app registration's redirect URI is of platform type "Single-page
+ * application", and Azure will only redeem a code issued to a SPA client for a
+ * request that carries an `Origin` header (AADSTS9002327) — which a native HTTP
+ * client does not send. Doing it here keeps the app working against the
+ * existing registration, with no new Azure platform to register (see the ops
+ * notes in CLAUDE.md: we do not have tenant-admin rights to add one).
+ *
+ * No client secret is involved. The registration is a public client, so PKCE
+ * (`codeVerifier`) is what makes an intercepted code unusable.
+ *
+ * The authority must match the one the caller used at the authorize step. Both
+ * sides read it from their own tenant setting, so those must name the same
+ * tenant — a GUID here and the verified domain there is fine, Azure accepts
+ * either form, but two different tenants is not.
+ * @returns {Promise<string>} The raw id token.
+ */
+export async function exchangeMicrosoftCode({ code, codeVerifier, redirectUri }) {
+  if (!MICROSOFT_CLIENT_ID) {
+    throw new UnauthorizedError('Microsoft SSO is not configured.');
+  }
+
+  const authority = MICROSOFT_TENANT_ID || 'common';
+  let origin;
+  try {
+    origin = new URL(redirectUri).origin;
+  } catch {
+    throw new UnauthorizedError('Invalid redirect URI.');
+  }
+
+  let res;
+  try {
+    res = await fetch(`https://login.microsoftonline.com/${authority}/oauth2/v2.0/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        // Required for a SPA-type redirect URI; see the note above. The value
+        // is the origin of the redirect the code was issued for, which is what
+        // a browser completing the same flow would have sent.
+        Origin: origin,
+      },
+      body: new URLSearchParams({
+        client_id: MICROSOFT_CLIENT_ID,
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        code_verifier: codeVerifier,
+      }),
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Microsoft token exchange request failed');
+    throw new UnauthorizedError('Could not reach Microsoft to complete sign-in.');
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.id_token) {
+    // AADSTS codes name the exact misconfiguration and can echo the redirect
+    // URI back; log them for the operator, keep them out of the response.
+    logger.error(
+      { status: res.status, error: data.error, description: data.error_description },
+      'Microsoft token exchange rejected',
+    );
+    throw new UnauthorizedError('Microsoft sign-in could not be completed.');
+  }
+
+  return data.id_token;
+}
