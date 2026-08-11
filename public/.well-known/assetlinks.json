@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.marvelops.app",
+      "sha256_cert_fingerprints": [
+        "DD:39:F6:EA:E3:6E:B0:FC:FA:44:BF:DF:B2:C9:A8:05:A2:D8:C4:26:9E:C8:DD:90:F7:03:F1:1C:BE:8D:3F:21"
+      ]
+    }
+  }
+]
