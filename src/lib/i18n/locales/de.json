@@ -2042,6 +2042,7 @@
     "featuredTours": "Empfohlene Touren",
     "noToursYet": "Noch keine Touren verfügbar",
     "fromLabel": "ab",
+    "passengersLabel": "Passagiere",
     "tourDate": "Reisedatum",
     "tourDestination": "Reiseziel",
     "tourDestinationPlaceholder": "Stadt, Region oder Tourname…",

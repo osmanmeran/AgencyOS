@@ -2042,6 +2042,7 @@
     "featuredTours": "Circuits à la une",
     "noToursYet": "Aucun circuit disponible pour l'instant",
     "fromLabel": "à partir de",
+    "passengersLabel": "Passagers",
     "tourDate": "Date de voyage",
     "tourDestination": "Destination",
     "tourDestinationPlaceholder": "Ville, région ou nom du circuit…",
