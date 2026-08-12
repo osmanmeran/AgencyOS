@@ -243,8 +243,17 @@ router.put(
   authMiddleware,
   validate(schemas.updateMe),
   catchAsync(async (req, res) => {
-    const { name, phone, language, default_currency, avatar_url, email_notifications, current_password, new_password } =
-      req.body;
+    const {
+      name,
+      phone,
+      language,
+      default_currency,
+      portal_currency,
+      avatar_url,
+      email_notifications,
+      current_password,
+      new_password,
+    } = req.body;
     const updates = {};
 
     if (new_password) {
@@ -260,6 +269,8 @@ router.put(
     if (phone !== undefined) updates.phone = phone;
     if (language !== undefined) updates.language = language;
     if (default_currency !== undefined) updates.default_currency = default_currency;
+    // '' clears the portal's currency override (back to the client's billing currency).
+    if (portal_currency !== undefined) updates.portal_currency = portal_currency || null;
     if (avatar_url !== undefined) updates.avatar_url = avatar_url;
     if (email_notifications !== undefined) updates.email_notifications = email_notifications;
 

@@ -40,6 +40,9 @@ export function safeUser(u) {
     role: u.role,
     language: u.language,
     default_currency: u.default_currency || 'USD',
+    // Null (not 'USD') when the user never picked one — the client portal
+    // falls back to the staff-set Client.preferred_currency in that case.
+    portal_currency: u.portal_currency || null,
     avatar_url: u.avatar_url || null,
     email_notifications: !!u.email_notifications,
     custom_permissions: JSON.parse(u.custom_permissions || '[]'),
@@ -479,6 +482,7 @@ export function updateUser(id, fields) {
     language: 'language',
     is_active: 'is_active',
     default_currency: 'default_currency',
+    portal_currency: 'portal_currency',
     avatar_url: 'avatar_url',
     client_id: 'client_id',
     linked_supplier_id: 'linked_supplier_id',

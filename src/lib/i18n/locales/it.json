@@ -2006,6 +2006,13 @@
     "saveSettings": "Salva impostazioni",
     "accessDenied": "Non hai il permesso di accedere alle impostazioni."
   },
+  "portalSettings": {
+    "title": "Impostazioni",
+    "language": "Lingua",
+    "currency": "Valuta",
+    "currencyHint": "I prezzi del portale sono mostrati in questa valuta.",
+    "saveFailed": "Impossibile salvare la preferenza. Riprova."
+  },
   "clientPortal": {
     "welcomeSetupTitle": "Benvenuto!",
     "welcomeSetupBody": "Il tuo account cliente è in fase di configurazione. Contatta il tuo agente di viaggio per accedere.",

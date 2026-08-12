@@ -2006,6 +2006,13 @@
     "saveSettings": "Ayarları Kaydet",
     "accessDenied": "Uygulama ayarlarına erişim izniniz yok."
   },
+  "portalSettings": {
+    "title": "Ayarlar",
+    "language": "Dil",
+    "currency": "Para Birimi",
+    "currencyHint": "Portaldaki fiyatlar bu para biriminde gösterilir.",
+    "saveFailed": "Tercihiniz kaydedilemedi. Lütfen tekrar deneyin."
+  },
   "clientPortal": {
     "welcomeSetupTitle": "Hoş geldiniz!",
     "welcomeSetupBody": "Müşteri hesabınız hazırlanıyor. Erişim için lütfen seyahat acentenizle iletişime geçin.",

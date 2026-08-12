@@ -2006,6 +2006,13 @@
     "saveSettings": "Einstellungen speichern",
     "accessDenied": "Sie haben keine Berechtigung auf die Einstellungen zuzugreifen."
   },
+  "portalSettings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "currency": "Währung",
+    "currencyHint": "Alle Preise im Portal werden in dieser Währung angezeigt.",
+    "saveFailed": "Ihre Einstellung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+  },
   "clientPortal": {
     "welcomeSetupTitle": "Willkommen!",
     "welcomeSetupBody": "Ihr Kundenkonto wird eingerichtet. Bitte wenden Sie sich an Ihren Reisebüromitarbeiter für den Zugang.",

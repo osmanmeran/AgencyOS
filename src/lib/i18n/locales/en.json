@@ -2087,6 +2087,13 @@
     "saveSettings": "Save Settings",
     "accessDenied": "You do not have permission to access app settings."
   },
+  "portalSettings": {
+    "title": "Settings",
+    "language": "Language",
+    "currency": "Currency",
+    "currencyHint": "Prices across the portal are shown in this currency.",
+    "saveFailed": "Could not save your preference. Please try again."
+  },
   "clientPortal": {
     "welcomeSetupTitle": "Welcome!",
     "welcomeSetupBody": "Your client account is being set up. Please contact your travel agent for access.",

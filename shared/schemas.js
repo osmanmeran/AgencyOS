@@ -139,6 +139,13 @@ export const schemas = {
     phone: z.string().optional(),
     language: z.string().optional(),
     default_currency: z.string().optional(),
+    // Client-portal display currency. An empty string clears the preference
+    // and hands the portal back to the staff-set Client.preferred_currency.
+    portal_currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/, 'Currency must be a 3-letter ISO code')
+      .optional()
+      .or(z.literal('')),
     avatar_url: z.string().url().optional().or(z.literal('')),
     email_notifications: z.boolean().optional(),
     current_password: z.string().optional(),

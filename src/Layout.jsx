@@ -61,6 +61,7 @@ import GlobalSearch from './components/layout/GlobalSearch';
 import NotificationBell from './components/layout/NotificationBell';
 import ThemeToggle from './components/layout/ThemeToggle';
 import PageTabs from './components/layout/PageTabs';
+import PortalSettingsMenu from './components/layout/PortalSettingsMenu';
 import WorkspaceStatusBanner from './components/layout/WorkspaceStatusBanner';
 import { useT } from '@/lib/i18n/I18nContext';
 import { useCapacitorBackButton } from '@/lib/capacitorBackButton';
@@ -628,6 +629,9 @@ export default function Layout({ children, currentPageName }) {
               <Box sx={{ display: { xs: 'none', md: 'block' } }}>
                 <GlobalSearch />
               </Box>
+              {/* Portal clients have no Settings page — language and display
+                  currency live here so they can change both themselves. */}
+              {isClientPortal && <PortalSettingsMenu />}
               <ThemeToggle />
               <NotificationBell />
               <UserMenu />

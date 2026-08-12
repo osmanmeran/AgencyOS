@@ -326,6 +326,39 @@ export default function ClientPortal() {
     })
   );
 
+  // Currency every price on this page is shown in: the client's own portal
+  // pick when they've made one (the server already converted the catalog to
+  // it), else their billing currency.
+  const displayCurrency = catalog?.currency || client?.preferred_currency || 'USD';
+
+  // Tours are priced by staff in their own currency, which need not be the
+  // client's. The catalog is converted server-side but GuidedTour rows are
+  // read straight from the entity API, so convert them here — otherwise a
+  // client viewing in GBP sees an $80 tour labelled "£80.00", and the cart
+  // (which does convert) disagrees with the card they clicked.
+  const tourCurrencies = React.useMemo(() => [...new Set(tours.map((tour) => tour.currency || 'USD'))].sort(), [tours]);
+  const { data: tourRates = /** @type {any} */ ({}) } = /** @type {any} */ (
+    useQuery({
+      queryKey: ['tourRates', displayCurrency, tourCurrencies.join(',')],
+      queryFn: async () => {
+        const entries = await Promise.all(
+          tourCurrencies.map(async (cur) => {
+            if (cur === displayCurrency) return [cur, 1];
+            try {
+              return [cur, (await db.integrations.Core.GetExchangeRate(cur, displayCurrency))?.rate || null];
+            } catch {
+              // No rate: the price stays in the tour's own currency below,
+              // labelled as such, rather than being silently mislabelled.
+              return [cur, null];
+            }
+          }),
+        );
+        return Object.fromEntries(entries);
+      },
+      enabled: tourCurrencies.length > 0,
+    })
+  );
+
   // Destination suggestions are restricted to locations that actually have
   // hotel inventory (not free text) — matches how the guided hotel search in
   // ClientQuoteBuilder's picker groups results by city/area.
@@ -384,23 +417,41 @@ export default function ClientPortal() {
   // Tours flagged as featured by staff — always shown on the home page.
   const featuredTours = React.useMemo(() => tours.filter((tour) => tour.featured), [tours]);
 
+  /**
+   * A tour's price in the currency it will actually be shown/carted in.
+   * Falls back to the tour's own currency when no rate is available, so the
+   * symbol always matches the number next to it.
+   */
+  const tourMoney = (tour) => {
+    const tourCurrency = tour.currency || 'USD';
+    const rate = tourRates[tourCurrency];
+    const converted = rate != null;
+    return {
+      currency: converted ? displayCurrency : tourCurrency,
+      symbol: sym(converted ? displayCurrency : tourCurrency),
+      scale: (v) => (v == null ? v : Math.round(v * (converted ? rate : 1) * 100) / 100),
+    };
+  };
+
   // Rendered price block for a tour, including an active special offer.
   // `pax` selects the matching pricing tier; falls back to the "from" (cheapest)
   // price when no participant count is provided.
   const renderTourPrice = (tour, pax) => {
-    const base = tourPriceForPax(tour, pax) ?? tourStartingPrice(tour);
-    if (base == null) return null;
+    const raw = tourPriceForPax(tour, pax) ?? tourStartingPrice(tour);
+    if (raw == null) return null;
+    const money = tourMoney(tour);
+    const base = money.scale(raw);
     const offer = activeDiscount(tour);
     if (offer) {
       const discounted = Math.round(base * (1 - offer.percent / 100) * 100) / 100;
       return (
         <div className="flex items-center gap-2 mt-3">
           <span className="text-base font-bold text-green-700 dark:text-green-300">
-            {currencySymbol}
+            {money.symbol}
             {discounted.toFixed(2)}
           </span>
           <span className="text-sm text-muted-foreground line-through">
-            {currencySymbol}
+            {money.symbol}
             {base.toFixed(2)}
           </span>
           <Badge className="bg-red-500 text-white">{offer.percent}% OFF</Badge>
@@ -410,7 +461,7 @@ export default function ClientPortal() {
     return (
       <div className="mt-3 flex items-baseline gap-1">
         <span className="text-base font-bold text-foreground">
-          {currencySymbol}
+          {money.symbol}
           {base.toFixed(2)}
         </span>
         <span className="text-xs text-muted-foreground">
@@ -425,23 +476,13 @@ export default function ClientPortal() {
   // keep their own currency (set by staff) which can differ from the
   // client's preferred display currency every other cart line is shown in
   // — convert here the same way ClientQuoteBuilder's own addTour does, so
-  // the builder never silently sums mismatched currencies together.
-  const addTourToCart = async (/** @type {any} */ tour, /** @type {number=} */ pax) => {
+  // the builder never silently sums mismatched currencies together. Uses the
+  // same rate the card was priced with (`tourMoney`), so what the client
+  // clicked is exactly what lands in the cart.
+  const addTourToCart = (/** @type {any} */ tour, /** @type {number=} */ pax) => {
     const start = tourPriceForPax(tour, pax) ?? tourStartingPrice(tour);
     const disc = activeDiscount(tour);
-    const tourCurrency = tour.currency || 'USD';
-    const displayCurrency = catalog?.currency || client?.preferred_currency || 'USD';
-    let rate = 1;
-    let converted = tourCurrency === displayCurrency;
-    if (!converted) {
-      try {
-        rate = (await db.integrations.Core.GetExchangeRate(tourCurrency, displayCurrency))?.rate || 1;
-        converted = true;
-      } catch {
-        converted = false;
-      }
-    }
-    const scale = (v) => (v == null ? v : Math.round(v * rate * 100) / 100);
+    const money = tourMoney(tour);
     const original = start != null ? start : 0;
     const display = disc ? disc.discounted : original;
     const saved = addToCart({
@@ -451,9 +492,9 @@ export default function ClientPortal() {
       tourMode: tour.mode,
       unit: 'per_person',
       tour_pax: Number(pax) || 0,
-      tour_original_price: converted ? scale(original) : original,
-      tour_display_price: converted ? scale(display) : display,
-      tour_display_currency: converted ? displayCurrency : tourCurrency,
+      tour_original_price: money.scale(original),
+      tour_display_price: money.scale(display),
+      tour_display_currency: money.currency,
       tour_discount_percent: disc ? disc.percent : 0,
     });
     if (!saved) {
@@ -516,7 +557,7 @@ export default function ClientPortal() {
     );
   }
 
-  const currencySymbol = sym(catalog?.currency || client.preferred_currency || 'USD');
+  const currencySymbol = sym(displayCurrency);
   const totalPaid = payments.filter((p) => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
 
   return (

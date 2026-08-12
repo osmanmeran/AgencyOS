@@ -2006,6 +2006,13 @@
     "saveSettings": "Enregistrer les paramètres",
     "accessDenied": "Vous n'avez pas la permission d'accéder aux paramètres."
   },
+  "portalSettings": {
+    "title": "Paramètres",
+    "language": "Langue",
+    "currency": "Devise",
+    "currencyHint": "Les prix du portail sont affichés dans cette devise.",
+    "saveFailed": "Impossible d'enregistrer votre préférence. Veuillez réessayer."
+  },
   "clientPortal": {
     "welcomeSetupTitle": "Bienvenue !",
     "welcomeSetupBody": "Votre compte client est en cours de configuration. Contactez votre agent de voyage pour y accéder.",

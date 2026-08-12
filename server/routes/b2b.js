@@ -193,6 +193,26 @@ function resolveReadClientContext(req) {
   throw new ForbiddenError('This account is not linked to a client');
 }
 
+/**
+ * Display currency for the portal, in precedence order:
+ *   1. the portal user's own pick (top-bar settings menu, `users.portal_currency`)
+ *   2. the staff-set billing currency on the client record
+ *   3. null — leave every catalog line in its supplier's own currency
+ *
+ * Only a real client-portal account (one with a `client_id`) gets to override:
+ * a staff member using "view portal as this client" should see the currency
+ * *that client* sees, not whatever they last picked while previewing someone
+ * else. Changing this never touches `Client.preferred_currency`, which stays
+ * the billing currency invoices are issued in.
+ */
+function displayCurrencyFor(db, user, client) {
+  if (user.client_id) {
+    const row = db.prepare('SELECT portal_currency FROM users WHERE id = ?').get(user.id);
+    if (row?.portal_currency) return row.portal_currency;
+  }
+  return client.preferred_currency || null;
+}
+
 // Notify every active staff member who can act on quote requests that a new
 // one came in. In-app + WebSocket via createNotification, plus email for those
 // who opted in. Best-effort: a notification failure must never fail the submit.
@@ -313,7 +333,7 @@ router.get(
     const db = getDb();
     const client = withCompanyBilling(db, resolveReadClientContext(req));
     const markupPct = client.default_markup || 0;
-    const displayCurrency = client.preferred_currency || null;
+    const displayCurrency = displayCurrencyFor(db, req.user, client);
 
     let items = getActiveCatalogItems(db, markupPct);
     if (displayCurrency) ({ items } = await convertItemsToCurrency(items, displayCurrency));
@@ -339,7 +359,9 @@ router.post(
     const db = getDb();
     const client = withCompanyBilling(db, requireClientContext(req.user));
     const markupPct = client.default_markup || 0;
-    const displayCurrency = client.preferred_currency || null;
+    // Same currency the client was quoted in on screen, so the submitted
+    // request matches the prices they actually saw while building it.
+    const displayCurrency = displayCurrencyFor(db, req.user, client);
 
     // Batch-load all pricing and supplier entities to avoid N+1 queries
     const pricingIds = [...new Set(req.body.items.map((i) => i.pricing_id))];
