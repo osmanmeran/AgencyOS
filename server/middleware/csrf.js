@@ -8,6 +8,9 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const EXEMPT_PATHS = new Set([
   '/api/auth/login',
   '/api/auth/microsoft',
+  // Same reasoning as /microsoft: the mobile app posts a PKCE-protected
+  // authorization code before any session (and so any csrf_token) exists.
+  '/api/auth/microsoft/code',
   // Same reasoning as /microsoft. The request additionally carries a PKCE
   // code_verifier that only the browser which started the flow holds, and the
   // callback has already checked `state`, so a forged cross-site POST cannot
