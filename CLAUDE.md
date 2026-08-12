@@ -361,6 +361,20 @@ audit fix` (no `--force`, no major bumps) resolved 7 of them in place:
      → 8.4.2** while `@capacitor/android`/`@capacitor/core` stay at `^8.5.0` —
      a version skew in the mobile build toolchain to patch a dev-only
      dependency. Not worth it; expect Dependabot to keep flagging it.
+     Re-checked 2026-08-12 (Dependabot alert 39, `GHSA-w5hq-g745-h8pq`), still
+     the only open alert and still unfixable forward: `@capacitor/cli@8.5.0`
+     _is_ `latest` and still depends on `xcode@^3.0.1`, and `xcode@3.0.1` is
+     the newest stable release and pins `uuid@^7.0.3` — no `^7` release can
+     reach 11.1.1, so there is no patched `xcode` to float to. The reason
+     `--force` lands on 8.4.2 specifically: that version has **no `xcode`
+     dependency at all** (it was introduced in 8.4.3+), so the "fix" drops the
+     chain by dropping the feature. Reachability is weaker than the severity
+     suggests — `xcode` only runs during `cap sync`/`cap add ios` on a dev
+     machine, and **this repo has `android/` but no `ios/` directory** and no
+     `cap` scripts in `package.json`, so that path is never executed here.
+     Note also that `npm audit` reports this as "3 moderate" because it counts
+     each hop (`uuid`, `xcode`, `@capacitor/cli`); Dependabot's "1 moderate"
+     is the same single advisory, not a separate finding.
 
 ## 🟡 Security hardening (next)
 
