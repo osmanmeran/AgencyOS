@@ -1,6 +1,11 @@
 # Marvelops TravelPro
 
-A full-stack travel agency operations management platform for tour operators and travel agents.
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](package.json)
+[![React](https://img.shields.io/badge/React-18-blue.svg)](package.json)
+[![Vite](https://img.shields.io/badge/Vite-6-purple.svg)](package.json)
+
+A full-stack, multi-tenant travel agency operations management & ERP platform for tour operators and travel agents.
 
 ## Tech Stack
 
@@ -356,3 +361,10 @@ Reviewed `server/` (auth, permissions, entities, b2b, integrations, app) and `sr
 - ✅ **Mixed-language strings — already clean** — re-checked `server/`, `src/` (JS/JSX), `.cjs` migrations, and email templates for stray non-English text; the only accented-character matches left are the language picker's native-language labels (`Français`, `Türkçe`), which is correct. The Outlook/test-email strings this item originally flagged were unified to English in earlier commits (`8632d95`, `560a1a5`) — this note was just stale.
 
 All items from the last code review are now resolved.
+
+## Open Source & License
+
+Marvelops TravelPro is free and open-source software licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
+
+- **Contributing**: Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, architectural guidelines, and pull request procedures.
+- **Security**: For responsible disclosure of security vulnerabilities, please refer to [SECURITY.md](SECURITY.md).

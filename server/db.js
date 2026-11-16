@@ -79,6 +79,34 @@ const ENTITIES = [
 // tenantId -> open Database, in LRU order (most-recently-used at the end).
 const dbCache = new Map();
 
+// In-flight active request count per tenant. Used by evictLruTenant to avoid
+// closing a connection mid-flight while an async request for that tenant is executing.
+const activeRequests = new Map();
+let totalEvictionCount = 0;
+
+export function incrementActiveRequests(tenantId) {
+  const key = String(tenantId ?? DEFAULT_TENANT_ID);
+  activeRequests.set(key, (activeRequests.get(key) || 0) + 1);
+}
+
+export function decrementActiveRequests(tenantId) {
+  const key = String(tenantId ?? DEFAULT_TENANT_ID);
+  const cur = activeRequests.get(key) || 0;
+  if (cur <= 1) {
+    activeRequests.delete(key);
+  } else {
+    activeRequests.set(key, cur - 1);
+  }
+}
+
+export function getTenantDbStats() {
+  return {
+    openConnections: dbCache.size,
+    maxOpenConnections: MAX_OPEN_DBS,
+    totalEvictions: totalEvictionCount,
+  };
+}
+
 // Request-scoped tenant context. An incoming request resolves its tenant (from
 // the Host subdomain / JWT claim) and runs the rest of the request inside
 // runWithTenant(), so the ~100 existing call sites that call getDb() with no
@@ -152,17 +180,21 @@ function bootstrapDefaultTenant() {
 
 function evictLruTenant() {
   while (dbCache.size > MAX_OPEN_DBS) {
-    // Never evict the default/legacy tenant — keep it pinned open.
+    // Never evict the default/legacy tenant, and avoid evicting any tenant that
+    // currently has in-flight active requests (activeRequests > 0).
     let victim = null;
     for (const key of dbCache.keys()) {
-      if (key !== DEFAULT_TENANT_ID) {
+      if (key !== DEFAULT_TENANT_ID && (!activeRequests.get(key) || activeRequests.get(key) === 0)) {
         victim = key;
         break;
       }
     }
-    if (victim === null) break; // only the default tenant remains open
+    // If all open non-default tenants are currently executing in-flight requests,
+    // temporarily hold them open rather than closing a connection mid-query.
+    if (victim === null) break;
     const database = dbCache.get(victim);
     dbCache.delete(victim);
+    totalEvictionCount++;
     try {
       database.pragma('wal_checkpoint(TRUNCATE)');
       database.close();

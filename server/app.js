@@ -117,6 +117,8 @@ const mutationLimiter = rateLimit({
   message: { error: { code: 'RATE_LIMITED', message: 'Too many requests. Please try again later.' } },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) =>
+    req.user?.id || (req.tenantId ? `${req.tenantId}:${ipKeyGenerator(req.ip)}` : ipKeyGenerator(req.ip)),
 });
 
 const standardLimiter = rateLimit({
@@ -125,7 +127,8 @@ const standardLimiter = rateLimit({
   message: { error: { code: 'RATE_LIMITED', message: 'Too many requests. Please try again later.' } },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
+  keyGenerator: (req) =>
+    req.user?.id || (req.tenantId ? `${req.tenantId}:${ipKeyGenerator(req.ip)}` : ipKeyGenerator(req.ip)),
 });
 
 app.use('/api/auth/login', strictLimiter);

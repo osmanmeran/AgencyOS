@@ -47,8 +47,9 @@ const SEARCH_CONFIG = [
 ];
 
 function searchWithFts(db, pattern, entityTypes) {
-  // FTS5 search: escape special FTS characters and use prefix matching
-  const sanitized = pattern.replace(/[^\w\s]/g, '').trim();
+  // FTS5 search: escape special FTS characters and use prefix matching.
+  // Uses Unicode letter & number classes (\p{L}\p{N}) so accented & international names aren't stripped.
+  const sanitized = pattern.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
   if (!sanitized) return [];
   const ftsQuery = sanitized
     .split(/\s+/)

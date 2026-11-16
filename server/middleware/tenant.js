@@ -1,5 +1,5 @@
 import { getTenantBySlug, isValidSlug } from '../services/tenants.js';
-import { DEFAULT_TENANT_ID, runWithTenant } from '../db.js';
+import { DEFAULT_TENANT_ID, runWithTenant, incrementActiveRequests, decrementActiveRequests } from '../db.js';
 
 // Name of the cookie that selects the active workspace on the bare/apex domain
 // when wildcard subdomain DNS isn't available (single-domain / cookie mode). Set
@@ -72,6 +72,20 @@ export function workspaceUrl(req) {
  * get a 404 so a request can never silently land on the wrong tenant's data.
  */
 export function tenantMiddleware(req, res, next) {
+  const trackInFlight = (tId) => {
+    if (typeof res?.on !== 'function') return;
+    incrementActiveRequests(tId);
+    let cleaned = false;
+    const cleanup = () => {
+      if (!cleaned) {
+        cleaned = true;
+        decrementActiveRequests(tId);
+      }
+    };
+    res.on('finish', cleanup);
+    res.on('close', cleanup);
+  };
+
   const slug = slugFromHost(req.headers.host);
 
   // A subdomain match is authoritative and strict: an unknown subdomain gets a
@@ -83,6 +97,7 @@ export function tenantMiddleware(req, res, next) {
     }
     req.tenant = tenant;
     req.tenantId = tenant.id;
+    trackInFlight(tenant.id);
     return runWithTenant(tenant.id, () => next());
   }
 
@@ -96,11 +111,13 @@ export function tenantMiddleware(req, res, next) {
     if (tenant) {
       req.tenant = tenant;
       req.tenantId = tenant.id;
+      trackInFlight(tenant.id);
       return runWithTenant(tenant.id, () => next());
     }
   }
 
   req.tenant = null;
   req.tenantId = null;
+  trackInFlight(DEFAULT_TENANT_ID);
   return runWithTenant(DEFAULT_TENANT_ID, () => next());
 }

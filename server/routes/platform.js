@@ -6,6 +6,7 @@ import { isPlatformAdmin, listWorkspaces, platformStats } from '../services/plat
 import { setTenantStatus, extendTrial, trialDays, updateTenant, deleteTenant } from '../services/tenants.js';
 import { backupHealth } from '../services/backupRuns.js';
 import { logAudit, AUDIT_ACTIONS } from '../services/audit.js';
+import { getTenantDbStats } from '../db.js';
 
 const router = Router();
 
@@ -39,7 +40,7 @@ router.get(
     // Backup health rides along with stats so the dashboard surfaces a silent
     // scheduler — the failure mode a per-run alert can't catch, because a job
     // that never runs never sends anything.
-    res.json({ ...platformStats(), backups: backupHealth() });
+    res.json({ ...platformStats(), backups: backupHealth(), connectionPool: getTenantDbStats() });
   }),
 );
 

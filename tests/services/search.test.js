@@ -133,4 +133,14 @@ describe('Search Service', () => {
     const results = searchAll('Zanzibar', staffUser);
     expect(results.find((r) => r.id === badId)).toBeUndefined();
   });
+
+  it('supports queries with international and accented characters without stripping them', () => {
+    const intlClientId = insertEntity('Client', {
+      name: 'Kapadokya Balonculuk',
+      email: 'kapadokya@example.com',
+      company: 'Göreme Tours',
+    });
+    const results = searchAll('Kapadokya', staffUser);
+    expect(results.some((r) => r.id === intlClientId)).toBe(true);
+  });
 });
